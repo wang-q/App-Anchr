@@ -36,6 +36,10 @@ sub validate_args {
 sub execute {
     my ( $self, $opt, $args ) = @_;
 
+    my $stopwatch = AlignDB::Stopwatch->new;
+
+    $stopwatch->block_message("Check basic infrastructures");
+
     if ( IPC::Cmd::can_run("bash") ) {
         print "*OK*: find [bash] in \$PATH\n";
     }
@@ -61,16 +65,41 @@ sub execute {
     }
 
     if ( $opt->{install} ) {
-
-    }
-    else {
-        my $sh = File::ShareDir::dist_file( 'App-Anchr', 'check_dep.sh' );
-        if ( IPC::Cmd::run( [ "bash", $sh ] ) ) {
-            print "*OK*: all dependances present\n";
+        $stopwatch->block_message("Install dependances via Linuxbrew");
+        my $sh = File::ShareDir::dist_file( 'App-Anchr', 'install_dep.sh' );
+        if ( IPC::Cmd::run( command => [ "bash", $sh ], verbose => 1, ) ) {
+            $stopwatch->block_message("OK: all dependances installed");
             exit 0;
         }
-    }
+        else {
+            $stopwatch->block_message("*Failed*");
+            exit 1;
+        }
 
+        $stopwatch->block_message("Install Perl modules via cpanm");
+        my $tar = "https://github.com/wang-q/App-Anchr/archive/0.0.2.tar.gz";
+        if ( IPC::Cmd::run( command => [ "cpanm", "--installdeps", $tar ], verbose => 1, ) ) {
+            print "*OK*: all Perl modules installed\n";
+            exit 0;
+        }
+        else {
+            print "*Failed*\n";
+            exit 1;
+        }
+    }
+    else {
+        $stopwatch->block_message("Check other dependances");
+
+        my $sh = File::ShareDir::dist_file( 'App-Anchr', 'check_dep.sh' );
+        if ( IPC::Cmd::run( command => [ "bash", $sh ], verbose => 1, ) ) {
+            $stopwatch->block_message("OK: all dependances present");
+            exit 0;
+        }
+        else {
+            $stopwatch->block_message("*Failed*");
+            exit 1;
+        }
+    }
 }
 
 1;
