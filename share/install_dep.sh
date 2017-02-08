@@ -21,3 +21,5 @@ do
     brew install wang-q/tap/${package};
     [ $? -ne 0 ] && exit 1;
 done
+
+exit 0

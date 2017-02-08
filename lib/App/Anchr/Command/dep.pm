@@ -69,7 +69,6 @@ sub execute {
         my $sh = File::ShareDir::dist_file( 'App-Anchr', 'install_dep.sh' );
         if ( IPC::Cmd::run( command => [ "bash", $sh ], verbose => 1, ) ) {
             $stopwatch->block_message("OK: all dependances installed");
-            exit 0;
         }
         else {
             $stopwatch->block_message("*Failed*");
@@ -79,11 +78,10 @@ sub execute {
         $stopwatch->block_message("Install Perl modules via cpanm");
         my $tar = "https://github.com/wang-q/App-Anchr/archive/0.0.2.tar.gz";
         if ( IPC::Cmd::run( command => [ "cpanm", "--installdeps", $tar ], verbose => 1, ) ) {
-            print "*OK*: all Perl modules installed\n";
-            exit 0;
+            $stopwatch->block_message("OK: all Perl modules installed");
         }
         else {
-            print "*Failed*\n";
+            $stopwatch->block_message("*Failed*");
             exit 1;
         }
     }
@@ -93,7 +91,6 @@ sub execute {
         my $sh = File::ShareDir::dist_file( 'App-Anchr', 'check_dep.sh' );
         if ( IPC::Cmd::run( command => [ "bash", $sh ], verbose => 1, ) ) {
             $stopwatch->block_message("OK: all dependances present");
-            exit 0;
         }
         else {
             $stopwatch->block_message("*Failed*");
