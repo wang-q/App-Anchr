@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-for package in jdk parallel pigz;
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    brew install jdk
+fi
+
+for package in parallel pigz;
 do
     brew install ${package};
     [ $? -ne 0 ] && exit 1;
