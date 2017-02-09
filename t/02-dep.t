@@ -13,7 +13,7 @@ $result = test_app( 'App::Anchr' => [qw(dep t/not_exists)] );
 like( $result->error, qr{need no input}, 'need no inputs' );
 
 $result = test_app( 'App::Anchr' => [qw(dep)] );
-like( $result->stdout, qr{\*OK\*: find}, 'Check basic infrastructures' );
+like( $result->stdout, qr{OK: find}, 'Check basic infrastructures' );
 
 $result = test_app( 'App::Anchr' => [qw(dep --install)] );
 like( $result->stdout, qr{install_dep},                'install_dep.sh' );

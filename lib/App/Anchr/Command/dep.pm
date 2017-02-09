@@ -39,29 +39,18 @@ sub execute {
     my $stopwatch = AlignDB::Stopwatch->new;
 
     $stopwatch->block_message("Check basic infrastructures");
-
-    if ( IPC::Cmd::can_run("bash") ) {
-        print "*OK*: find [bash] in \$PATH\n";
-    }
-    else {
-        print "*Failed*: can't find [bash] in \$PATH\n";
-        exit 1;
-    }
-
     if ( IPC::Cmd::can_run("brew") ) {
-        print "*OK*: find [brew] in \$PATH\n";
+        print "OK: find [brew] in \$PATH\n";
     }
     else {
-        print "*Failed*: can't find [brew] in \$PATH\n";
-        exit 1;
+        print "Failed: can't find [brew] in \$PATH\n";
     }
 
     if ( IPC::Cmd::can_run("cpanm") ) {
-        print "*OK*: find [cpanm] in \$PATH\n";
+        print "OK: find [cpanm] in \$PATH\n";
     }
     else {
-        print "*Failed*: can't find [cpanm] in \$PATH\n";
-        exit 1;
+        print "Failed: can't find [cpanm] in \$PATH\n";
     }
 
     if ( $opt->{install} ) {
