@@ -110,6 +110,7 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 # works on bash 3
+# http://stackoverflow.com/a/4444841
 ARRAY=( "2_illumina:original"
         "2_illumina/trimmed:trimmed"
         "2_illumina/filter:filter")
