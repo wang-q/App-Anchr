@@ -65,7 +65,7 @@ sub execute {
         }
 
         $stopwatch->block_message("Install Perl modules via cpanm");
-        my $tar = "https://github.com/wang-q/App-Anchr/archive/0.0.2.tar.gz";
+        my $tar = "https://github.com/wang-q/App-Anchr/archive/0.0.5.tar.gz";
         if ( IPC::Cmd::run( command => [ "cpanm", "--installdeps", $tar ], verbose => 1, ) ) {
             $stopwatch->block_message("OK: all Perl modules installed");
         }
