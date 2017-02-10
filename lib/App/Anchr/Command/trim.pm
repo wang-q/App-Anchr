@@ -10,9 +10,10 @@ use constant abstract => "trim PE Illumina fastq files";
 
 sub opt_spec {
     return (
-        [ "outbase|o=s", "prefix of output filenames",         { default => "R" }, ],
-        [ "len|l=i",     "filter reads less or equal to this", { default => 80 }, ],
-        [ "qual|q=i",    "quality threshold",                  { default => 20 }, ],
+        [ "outfile|o=s",  "output filename, [stdout] for screen",      { default => "trim.sh" }, ],
+        [ "basename|b=s", "prefix of fastq filenames",                 { default => "R" }, ],
+        [ "len|l=i",      "filter reads less or equal to this length", { default => 80 }, ],
+        [ "qual|q=i",     "quality threshold",                         { default => 20 }, ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
@@ -57,7 +58,16 @@ sub validate_args {
 sub execute {
     my ( $self, $opt, $args ) = @_;
 
-    my $tt = Template->new;
+    # A stream to 'stdout' or a standard file.
+    my $out_fh;
+    if ( lc $opt->{outfile} eq "stdout" ) {
+        $out_fh = *STDOUT{IO};
+    }
+    else {
+        open $out_fh, ">", $opt->{outfile};
+    }
+
+    my $tt   = Template->new;
     my $text = <<'EOF';
 #!/usr/bin/env bash
 
@@ -135,9 +145,9 @@ find $MY_TMP_DIR -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 #----------------------------#
 # outputs
 #----------------------------#
-mv $MY_TMP_DIR/R1.sickle.fq.gz [% opt.outbase %]1.fq.gz
-mv $MY_TMP_DIR/R2.sickle.fq.gz [% opt.outbase %]2.fq.gz
-mv $MY_TMP_DIR/single.sickle.fq.gz [% opt.outbase %]s.fq.gz
+mv $MY_TMP_DIR/R1.sickle.fq.gz [% opt.basename %]1.fq.gz
+mv $MY_TMP_DIR/R2.sickle.fq.gz [% opt.basename %]2.fq.gz
+mv $MY_TMP_DIR/single.sickle.fq.gz [% opt.basename %]s.fq.gz
 
 exit 0
 
@@ -151,7 +161,8 @@ EOF
         \$output
     ) or Carp::croak Template->error;
 
-    print $output;
+    print {$out_fh} $output;
+    close $out_fh;
 }
 
 1;
