@@ -4,6 +4,8 @@
 - [*E. coli*](#e-coli)
     - [*E. coli*: download](#e-coli-download)
     - [*E. coli*: trim/filter](#e-coli-trimfilter)
+    - [*E. coli*: down sampling](#e-coli-down-sampling)
+    - [*E. coli*: generate super-reads](#e-coli-generate-super-reads)
 
 ## *E. coli*
 
@@ -68,6 +70,7 @@ cd ~/data/anchr/e_coli/2_illumina/trimmed
 anchr trim \
     -l 120 -q 20 \
     ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
     | bash
 ```
 
@@ -80,6 +83,7 @@ cd ~/data/anchr/e_coli/2_illumina/filter
 anchr trim \
     -l 151 -q 20 \
     ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
     | bash
 ```
 
@@ -93,3 +97,75 @@ faops n50 -S -C 2_illumina/R1.fq.gz
 faops n50 -S -C 2_illumina/trimmed/R1.fq.gz
 faops n50 -S -C 2_illumina/filter/R1.fq.gz
 ```
+
+### *E. coli*: down sampling
+
+过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
+
+> Very highly-represented sequences (>1000X) can cause problems for SGA... In these cases, it is
+> worth considering pre-filtering the data...
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=( "2_illumina:original"
+        "2_illumina/trimmed:trimmed"
+        "2_illumina/filter:filter")
+
+for pos in "${ARRAY[@]}" ; do
+    KEY=${pos%%:*}
+    VALUE=${pos#*:}
+    printf "==> %s => %s\n" "$KEY" "$VALUE"
+    
+    for count in 200000 400000 600000 800000 1000000 1200000 1400000 1600000 1800000 2000000 2200000 2400000;
+    do
+        echo "==> Reads ${count}"
+        DIR_COUNT="${BASE_DIR}/${VALUE}_${count}"
+        mkdir -p ${DIR_COUNT}
+        
+        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+            continue     
+        fi
+        
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${KEY}/R1.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R1.fq.gz
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${KEY}/R2.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R2.fq.gz
+    done
+done
+```
+
+### *E. coli*: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+for d in {original,trimmed,filter}_{200000,400000,600000,800000,1000000,1200000,1400000,1600000,1800000,2000000,2200000,2400000};
+do
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        echo "${DIR_COUNT} doesn't exist"
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    perl ~/Scripts/sra/superreads.pl \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 8
+    popd > /dev/null
+done
+```
+
