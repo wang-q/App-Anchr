@@ -22,7 +22,7 @@ do
     check_install homebrew/science/${package};
 done
 
-for package in faops jrunlist scythe sparsemem dazz_db@20161112 daligner@20170203;
+for package in faops jrunlist scythe superreads sparsemem dazz_db@20161112 daligner@20170203;
 do
     check_install wang-q/tap/${package};
 done
