@@ -128,6 +128,7 @@ sickle pe \
     -r $MY_TMP_DIR/R2.scythe.fq.gz \
     -o $MY_TMP_DIR/R1.sickle.fq \
     -p $MY_TMP_DIR/R2.sickle.fq \
+    -s $MY_TMP_DIR/single.sickle.fq
 
 find $MY_TMP_DIR -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 
@@ -136,6 +137,7 @@ find $MY_TMP_DIR -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 #----------------------------#
 mv $MY_TMP_DIR/R1.sickle.fq.gz [% opt.outbase %]1.fq.gz
 mv $MY_TMP_DIR/R2.sickle.fq.gz [% opt.outbase %]2.fq.gz
+mv $MY_TMP_DIR/single.sickle.fq.gz [% opt.outbase %]s.fq.gz
 
 exit 0
 
