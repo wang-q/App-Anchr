@@ -1,16 +1,42 @@
 #!/usr/bin/env bash
 
 # Check external dependencies
+#----------------------------#
+# prepare
+#----------------------------#
+hash seqtk 2>/dev/null || {
+    echo >&2 "faops is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/seqtk";
+    exit 1;
+}
 
-#----------------------------#
-# anchor.sh
-#----------------------------#
+hash fastqc 2>/dev/null || {
+    echo >&2 "fastqc is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/fastqc";
+    exit 1;
+}
+
+hash sickle 2>/dev/null || {
+    echo >&2 "sickle is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/sickle";
+    exit 1;
+}
+
+hash scythe 2>/dev/null || {
+    echo >&2 "scythe is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install wang-q/tap/scythe";
+    exit 1;
+}
+
 hash faops 2>/dev/null || {
     echo >&2 "faops is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
     exit 1;
 }
 
+#----------------------------#
+# anchor.sh
+#----------------------------#
 hash bbmap.sh 2>/dev/null || {
     echo >&2 "bbmap.sh is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/bbtools";
