@@ -49,7 +49,7 @@ if [ "${STAT_TASK}" = "1" ]; then
             "SumFq" "CovFq" "AvgRead" "Kmer" \
             "SumFa" "Discard%" "#Subs" "Subs%" \
             "RealG" "EstG" "Est/Real" \
-            "SumSR" "SumSR/Real" "SR/EstG" \
+            "SumSR" "SR/Real" "SR/Est" \
             "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
