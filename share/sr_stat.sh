@@ -66,28 +66,23 @@ if [ "${STAT_TASK}" = "1" ]; then
         SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
         SECS=$(expr $(stat -c %Y super1.err) - $(stat -c %Y superreads.sh))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             $( basename $( pwd ) ) \
-            \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,)") \
-            $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE}" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE};" ) \
             $( cat environment.sh | perl -n -e '/PE_AVG_READ_LENGTH=\"(\d+)\"/ and print $1' ) \
             $( cat environment.sh | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
-            \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FA}, base => 1000,)") \
-            $( perl -e "printf qq{%.2f%%}, 1 - ${SUM_FA} / ${SUM_FQ}" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_SUBS}, base => 1000,)") \
-            $( perl -e "printf qq{%.2f%%}, ${TOTAL_SUBS} / ${SUM_FA}" ) \
-            \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,)") \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,)") \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FA}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_FA} / ${SUM_FQ}) * 100;" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_SUBS}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.3f%%}, ${TOTAL_SUBS} / ${SUM_FA} * 100;" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
-            \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR}, base => 1000,)") \
-            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${EST_G}" )
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${EST_G}" ) \
             $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${GENOME_SIZE}" ) \
-            \
-            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
+            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR not exists"
     fi
