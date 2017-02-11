@@ -148,6 +148,7 @@ cd ${BASE_DIR}
 
 for d in {original,trimmed,filter}_{200000,400000,600000,800000,1000000,1200000,1400000,1600000,1800000,2000000,2200000,2400000};
 do
+    echo
     echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
 
@@ -162,10 +163,11 @@ do
     fi
     
     pushd ${DIR_COUNT} > /dev/null
-    perl ~/Scripts/sra/superreads.pl \
+    anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
         -s 300 -d 30 -p 8
+    bash superreads.sh
     popd > /dev/null
 done
 ```
