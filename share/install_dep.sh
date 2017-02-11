@@ -18,7 +18,7 @@ do
     check_install ${package}
 done
 
-for package in bbtools bedtools fastqc picard-tools samtools sickle;
+for package in bbtools bedtools fastqc jellyfish picard-tools samtools sickle;
 do
     check_install homebrew/science/${package};
 done
