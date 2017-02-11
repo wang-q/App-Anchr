@@ -172,3 +172,36 @@ do
 done
 ```
 
+Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/data/anchr/e_coli
+cd ${BASE_DIR}
+
+REAL_G=4641652
+
+bash ~/Scripts/sra/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+bash ~/Scripts/sra/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in {original,trimmed,filter}_{200000,400000,600000,800000,1000000,1200000,1400000,1600000,1800000,2000000,2200000,2400000};
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/sra/sr_stat.sh 1 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat1.md
+    
+    bash ~/Scripts/sra/sr_stat.sh 2 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat2.md
+done
+
+cat stat1.md
+cat stat2.md
+```
+

@@ -44,14 +44,14 @@ GENOME_SIZE=$3
 #----------------------------#
 if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-            "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "#reads" "RunTime" "SumSR" "SR/EstG"
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+            "Name" "fqSize" "faSize" "Length" "Kmer" "EstG" "SumSR" "SR/EstG" "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -e "${RESULT_DIR}/environment.sh" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}"
 
-        SECS=$(expr $(stat -c %Y environment.sh) - $(stat -c %Y assemble.sh))
+        SECS=$(expr $(stat -c %Y super1.err) - $(stat -c %Y superreads.sh))
         EST_G=$( cat environment.sh \
             | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
         SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
@@ -68,11 +68,9 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( cat environment.sh \
                 | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
             ${EST_G} \
-            $( cat environment.sh \
-                | perl -n -e '/TOTAL_READS=\"(\d+)\"/ and print $1' ) \
-            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
             ${SUM_SR} \
             $( perl -e "printf qq{%.2f}, ${SUM_SR} * 1.0 / ${EST_G}" )
+            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
     else
         log_warn "RESULT_DIR not exists"
     fi
