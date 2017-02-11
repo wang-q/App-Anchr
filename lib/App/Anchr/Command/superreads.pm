@@ -140,7 +140,7 @@ export PE_AVG_READ_LENGTH=`awk '{if(length($1)>31){n+=length($1);m++;}}END{print
 save PE_AVG_READ_LENGTH
 echo "Average PE read length $PE_AVG_READ_LENGTH"
 
-[% IF opt.kmer == auto -%]
+[% IF opt.kmer == 'auto' -%]
 KMER=$( head -n 80000 [% opt.prefix %].renamed.fastq \
     | tail -n 40000 \
     | perl -e '
@@ -240,7 +240,8 @@ fi
 #----------------------------#
 if [ ! -e pe.cor.fa ]; then
     log_info Error correct PE.
-    quorum_error_correct_reads  -q $((MIN_Q_CHAR + 40)) \\
+    quorum_error_correct_reads \
+        -q $((MIN_Q_CHAR + 40)) \
         --contaminant=[% opt.adapter %] \
         -m 1 -s 1 -g 1 -a 1 -t [% opt.parallel %] -w 10 -e 3 -M \
         quorum_mer_db.jf \
