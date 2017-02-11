@@ -1,18 +1,18 @@
 # Assemble genomes of model organisms by ANCHR
 
-[TOC]: # " "
-- [*E. coli*](#e-coli)
+[TOC levels=1-3]: # " "
+- [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
+- [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [*E. coli*: download](#e-coli-download)
     - [*E. coli*: trim/filter](#e-coli-trimfilter)
     - [*E. coli*: down sampling](#e-coli-down-sampling)
     - [*E. coli*: generate super-reads](#e-coli-generate-super-reads)
+    - [*E. coli*: create anchors](#e-coli-create-anchors)
 
-## *E. coli*
+# *Escherichia coli* str. K-12 substr. MG1655
 
-*Escherichia coli* str. K-12 substr. MG1655
-
-* INSDC: [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
-* paralogs: 0.0323
+* Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
+* Proportion of paralogs: 0.0323
 
 * Real:
 
@@ -36,7 +36,7 @@
     * S: 371,039,918
     * C: 2,457,218
 
-### *E. coli*: download
+## *E. coli*: download
 
 ```bash
 # genome
@@ -59,7 +59,7 @@ ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
 mkdir -p ~/data/anchr/e_coli/3_pacbio
 ```
 
-### *E. coli*: trim/filter
+## *E. coli*: trim/filter
 
 * Trimmed: minimal length 120 bp.
 
@@ -98,7 +98,7 @@ faops n50 -S -C 2_illumina/trimmed/R1.fq.gz
 faops n50 -S -C 2_illumina/filter/R1.fq.gz
 ```
 
-### *E. coli*: down sampling
+## *E. coli*: down sampling
 
 过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
 
@@ -145,7 +145,7 @@ for group in "${ARRAY[@]}" ; do
 done
 ```
 
-### *E. coli*: generate super-reads
+## *E. coli*: generate super-reads
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -289,7 +289,7 @@ find . -type f -name "*.tmp" | xargs rm
 #find . -type f -name "pe.renamed.fastq" | xargs rm
 ```
 
-### E. coli: Create anchors
+## *E. coli*: create anchors
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
