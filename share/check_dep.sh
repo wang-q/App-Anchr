@@ -6,7 +6,7 @@
 # prepare
 #----------------------------#
 hash seqtk 2>/dev/null || {
-    echo >&2 "faops is required but it's not installed.";
+    echo >&2 "seqtk is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/seqtk";
     exit 1;
 }
