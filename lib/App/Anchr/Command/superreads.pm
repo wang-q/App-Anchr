@@ -291,6 +291,7 @@ fi
 #----------------------------#
 # super-reads
 #----------------------------#
+log_info Creating super-reads
 createSuperReadsForDirectory.perl \
     -low-memory -l $KMER \
     -mean-and-stdev-by-prefix-file meanAndStdevByPrefix.pe.txt \
