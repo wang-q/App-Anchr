@@ -19,8 +19,8 @@ $result = test_app( 'App::Anchr' => [qw(superreads t/R1.fq.gz t/R2.fq.gz -a t/no
 like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(superreads t/R1.fq.gz t/R2.fq.gz -o stdout)] );
-is( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ), 70, 'line count' );
-like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
+is( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ), 160, 'line count' );
+like( $result->stdout, qr{masurca.+kmer.+Jellyfish}s, 'bash contents' );
 
 #{    # real run
 #    my $tempdir = Path::Tiny->tempdir;
