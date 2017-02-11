@@ -159,7 +159,7 @@ EOF
             opt  => $opt,
         },
         \$output
-    ) or Carp::croak Template->error;
+    );
 
     print {$out_fh} $output;
     close $out_fh;
