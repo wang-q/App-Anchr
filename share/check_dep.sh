@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Check external dependencies
+
 #----------------------------#
 # prepare
 #----------------------------#
@@ -33,6 +34,23 @@ hash faops 2>/dev/null || {
     echo >&2 "Install with homebrew: brew install wang-q/tap/faops";
     exit 1;
 }
+
+#----------------------------#
+# superreads
+#----------------------------#
+hash jellyfish 2>/dev/null || {
+    echo >&2 "jellyfish is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/jellyfish";
+    exit 1;
+}
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    hash createSuperReadsForDirectory.perl 2>/dev/null || {
+        echo >&2 "superreads is required but it's not installed.";
+        echo >&2 "Install with homebrew: brew install wang-q/tap/superreads";
+        exit 1;
+    }
+fi
 
 #----------------------------#
 # anchor.sh
