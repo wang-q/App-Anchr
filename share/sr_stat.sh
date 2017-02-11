@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 STAT_TASK(1|2|3|4) RESULT_DIR(header) [GENOME_SIZE]"
+USAGE="Usage: $0 STAT_TASK(1|2) RESULT_DIR(header) [GENOME_SIZE]"
 
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
@@ -42,6 +42,13 @@ GENOME_SIZE=$3
 #----------------------------#
 # Run
 #----------------------------#
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $1) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
 if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
@@ -80,18 +87,23 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${EST_G}" ) \
             $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${GENOME_SIZE}" ) \
+            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${EST_G}" ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR not exists"
     fi
 
-elif [ "${STAT_TASK}" = "3" ]; then
+elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-            "Name" "#cor.fa" "#strict.fa" "strict/cor" "N50SRclean" "SumSRclean" "#SRclean" "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+            "Name" "strict%"\
+            "N50SRclean" "Sum" "#" \
+            "N50Anchor"  "Sum" "#" \
+            "N50Anchor2" "Sum" "#" \
+            "N50Others"  "Sum" "#" \
+            "RunTime"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
@@ -99,34 +111,14 @@ elif [ "${STAT_TASK}" = "3" ]; then
         SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
         COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
         COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             $( basename $( dirname $(pwd) ) ) \
-            ${COUNT_COR} \
-            ${COUNT_STRICT} \
-            $( perl -e "printf qq{%.4f}, ${COUNT_STRICT} / ${COUNT_COR}" ) \
-            $( faops n50 -H -N 50 -S -C SR.clean.fasta ) \
+            $( perl -e "printf qq{%.2f%%}, ${COUNT_STRICT} / ${COUNT_COR} * 100;" ) \
+            $( stat_format SR.clean.fasta ) \
+            $( stat_format pe.anchor.fa )   \
+            $( stat_format pe.anchor2.fa )  \
+            $( stat_format pe.others.fa )   \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
-    else
-        log_warn "RESULT_DIR/sr not exists"
-    fi
-
-elif [ "${STAT_TASK}" = "4" ]; then
-    if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-            "Name" \
-            "N50Anchor" "SumAnchor" "#anchor" \
-            "N50Anchor2" "SumAnchor2" "#anchor2" \
-            "N50Others" "SumOthers" "#others"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
-    elif [ -d "${RESULT_DIR}/sr" ]; then
-        log_debug "${RESULT_DIR}"
-        cd "${RESULT_DIR}/sr"
-
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-            $( basename $( dirname $(pwd) ) ) \
-            $( faops n50 -H -N 50 -S -C pe.anchor.fa ) \
-            $( faops n50 -H -N 50 -S -C pe.anchor2.fa ) \
-            $( faops n50 -H -N 50 -S -C pe.others.fa )
     else
         log_warn "RESULT_DIR/sr not exists"
     fi
