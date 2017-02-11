@@ -66,7 +66,7 @@ cd ${RESULT_DIR}/sr
 ln -s ../pe.cor.fa .
 faops filter -a 500 -l 0 ../work1/superReadSequences.fasta SR.filter.fasta
 
-bash ~/Scripts/cpan/App-Anchr/share/overlap.sh SR.filter.fasta 500 .96 SR.ovlp.tsv
+anchr overlap SR.filter.fasta --len 500 --idt .96 -o SR.ovlp.tsv
 
 cat SR.ovlp.tsv \
     | perl -nla -F"\t" -e '

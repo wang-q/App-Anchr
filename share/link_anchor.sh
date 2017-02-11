@@ -165,15 +165,15 @@ faops some renamed.fasta rc.list stdout \
 faops order -l 0 strand.fa <(faops size renamed.fasta | cut -f 1) renamed.rc.fasta
 
 log_info "Run daligner for the second/third time"
-bash ~/Scripts/cpan/App-Anchr/share/overlap.sh renamed.rc.fasta 1000 .70 renamed.rc.ovlp.tsv false
-bash ~/Scripts/cpan/App-Anchr/share/overlap.sh renamed.rc.fasta 10 .98 10.98.ovlp.tsv false
+anchr overlap renamed.rc.fasta --len 1000 --idt .70 --serial -o renamed.rc.ovlp.tsv
+anchr overlap renamed.rc.fasta --len 10   --idt .98 --serial -o 10.98.ovlp.tsv false
 
 log_info "Create outputs"
 popd
-mv ${MY_TMP_DIR}/renamed.rc.fasta ${OUT_BASE}.renamed.fasta
+mv ${MY_TMP_DIR}/renamed.rc.fasta    ${OUT_BASE}.renamed.fasta
 mv ${MY_TMP_DIR}/renamed.rc.ovlp.tsv ${OUT_BASE}.ovlp.tsv
-mv ${MY_TMP_DIR}/10.98.ovlp.tsv ${OUT_BASE}.10.98.ovlp.tsv
-mv ${MY_TMP_DIR}/stdout.replace.tsv ${OUT_BASE}.replace.tsv
+mv ${MY_TMP_DIR}/10.98.ovlp.tsv      ${OUT_BASE}.10.98.ovlp.tsv
+mv ${MY_TMP_DIR}/stdout.replace.tsv  ${OUT_BASE}.replace.tsv
 
 # clean tmp dir
 rm -fr ${MY_TMP_DIR}
