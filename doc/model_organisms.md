@@ -8,6 +8,7 @@
     - [*E. coli*: down sampling](#e-coli-down-sampling)
     - [*E. coli*: generate super-reads](#e-coli-generate-super-reads)
     - [*E. coli*: create anchors](#e-coli-create-anchors)
+    - [*E. coli*: results](#e-coli-results)
     - [*E. coli*: quality assessment](#e-coli-quality-assessment)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
@@ -185,6 +186,42 @@ do
 done
 ```
 
+Clear intermediate files.
+
+```bash
+# masurca
+cd $HOME/data/anchr/e_coli
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
+
+## *E. coli*: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{original trimmed filter}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 8 false 120
+done
+```
+
+## *E. coli*: results
+
 Stats of super-reads
 
 ```bash
@@ -284,40 +321,6 @@ cat stat1.md
     * Real - 4.64M
     * Trimmed - 4.61M (EstG)
     * Filter - 4.59M (EstG)
-
-Clear intermediate files.
-
-```bash
-# masurca
-cd $HOME/data/anchr/e_coli
-
-find . -type f -name "quorum_mer_db.jf" | xargs rm
-find . -type f -name "k_u_hash_0" | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp" | xargs rm
-#find . -type f -name "pe.renamed.fastq" | xargs rm
-```
-
-## *E. coli*: create anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-for d in $(perl -e 'for $n (qw{original trimmed filter}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
-do
-    echo
-    echo "==> Reads ${d}"
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
-        continue
-    fi
-    
-    rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 8 false 120
-done
-```
 
 Stats of anchors
 
@@ -581,10 +584,23 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
-        -s 300 -d 30 -p 8
+        -s 300 -d 30 -p 16
     bash superreads.sh
     popd > /dev/null
 done
+```
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd $HOME/data/anchr/s288c/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
 ```
 
 ## Scer: create anchors
@@ -604,7 +620,7 @@ do
     fi
     
     rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 8 false 120
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 120
 done
 ```
 
@@ -616,7 +632,7 @@ Stats of super-reads
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-REAL_G=4641652
+REAL_G=12157105
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
@@ -669,8 +685,8 @@ cd ${BASE_DIR}
 
 for part in anchor anchor2 others;
 do 
-    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa genome.fa pe.${part}
-    nucmer -l 200 genome.fa pe.${part}.fa
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
