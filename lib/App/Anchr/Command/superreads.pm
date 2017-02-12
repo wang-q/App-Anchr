@@ -243,7 +243,7 @@ if [ ! -e pe.cor.fa ]; then
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
         --contaminant=[% opt.adapter %] \
-        -m 1 -s 1 -g 1 -a 1 -t [% opt.parallel %] -w 10 -e 3 -M \
+        -m 1 -s 1 -g 1 -a 1 -t [% opt.parallel %] -w 10 -e 3 \
         quorum_mer_db.jf \
         [% opt.prefix %].renamed.fastq \
         --no-discard \
@@ -293,7 +293,7 @@ fi
 #----------------------------#
 log_info Creating super-reads
 createSuperReadsForDirectory.perl \
-    -low-memory -l $KMER \
+    -l $KMER \
     -mean-and-stdev-by-prefix-file meanAndStdevByPrefix.pe.txt \
     -kunitigsfile guillaumeKUnitigsAtLeast32bases_all.fasta \
     -t [% opt.parallel %] -mikedebug work1 pe.cor.fa 1> super1.err 2>&1
