@@ -2,6 +2,7 @@
 
 [TOC levels=1-3]: # " "
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
+- [Extra external dependencies](#extra-external-dependencies)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [*E. coli*: download](#e-coli-download)
     - [*E. coli*: trim/filter](#e-coli-trimfilter)
@@ -18,6 +19,16 @@
     - [Scer: create anchors](#scer-create-anchors)
     - [Scer: results](#scer-results)
     - [Scer: quality assessment](#scer-quality-assessment)
+
+# Extra external dependencies
+
+```bash
+brew install gd --without-webp # broken, can't find libwebp.so.6
+brew install homebrew/versions/gnuplot4
+brew install mummer # mummer need gnuplot4
+
+
+```
 
 # *Escherichia coli* str. K-12 substr. MG1655
 
@@ -54,7 +65,13 @@ mkdir -p ~/data/anchr/e_coli/1_genome
 cd ~/data/anchr/e_coli/1_genome
 curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
     > U00096.fa
-ln -s U00096.fa genome.fa
+# simplify header, remove .3
+cat U00096.fa \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > genome.fa
 
 # illumina
 mkdir -p ~/data/anchr/e_coli/2_illumina
@@ -180,7 +197,7 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
-        -s 300 -d 30 -p 8
+        -s 300 -d 30 -p 16
     bash superreads.sh
     popd > /dev/null
 done
@@ -216,13 +233,13 @@ do
     fi
     
     rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 8 false 120
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 120
 done
 ```
 
 ## *E. coli*: results
 
-Stats of super-reads
+* Stats of super-reads
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -246,6 +263,31 @@ do
 done
 
 cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in $(perl -e 'for $n (qw{original trimmed filter}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat2.md
+
+done
+
+cat stat2.md
 ```
 
 | Name             |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% | RealG |  EstG | Est/Real |  SumSR | SumSR/Real | SR/EstG |   RunTime |
@@ -322,31 +364,6 @@ cat stat1.md
     * Trimmed - 4.61M (EstG)
     * Filter - 4.59M (EstG)
 
-Stats of anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
-
-for d in $(perl -e 'for $n (qw{original trimmed filter}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
-do
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
-        continue     
-    fi
-    
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
-        >> ${BASE_DIR}/stat2.md
-
-done
-
-cat stat2.md
-```
-
 | Name             | strict% | N50SRclean |   Sum |    # | N50Anchor |     Sum |    # | N50Anchor2 |     Sum |   # | N50Others |     Sum |    # |   RunTime |
 |:-----------------|--------:|-----------:|------:|-----:|----------:|--------:|-----:|-----------:|--------:|----:|----------:|--------:|-----:|----------:|
 | original_200000  |  64.08% |       6053 | 4.82M | 1204 |      6640 |   3.07M |  604 |       5697 |   1.26M | 297 |      2387 | 482.85K |  303 | 0:01'09'' |
@@ -414,24 +431,14 @@ http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-usi
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-# simplify header, remove .3
-cat 1_genome/genome.fa \
-    | perl -nl -e '
-        /^>(\w+)/ and print qq{>$1} and next;
-        print;
-    ' \
-    > genome.fa
-
 for part in anchor anchor2 others;
 do 
-    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa genome.fa pe.${part}
-    nucmer -l 200 genome.fa pe.${part}.fa
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
-# brew install gd --without-webp
-# brew install homebrew/versions/gnuplot4
-# brew install mummer
+cp ~/data/alignment/self/ecoli/Results/MG1655/MG1655.multi.fas paralog.fasta
 
 cp ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa falcon.fa
 
@@ -626,7 +633,7 @@ done
 
 ## Scer: results
 
-Stats of super-reads
+* Stats of super-reads
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -652,7 +659,7 @@ done
 cat stat1.md
 ```
 
-Stats of anchors
+* Stats of anchors
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -676,6 +683,17 @@ done
 
 cat stat2.md
 ```
+
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |  RealG |   EstG | Est/Real |  SumSR | SR/Real | SR/Est |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|-------:|-------:|---------:|-------:|--------:|-------:|----------:|
+| trimmed_1000000 | 300.72M |  24.7 |     150 |  105 | 300.16M |   0.187% | 242.27K | 0.081% | 12.16M | 11.43M |     0.94 | 13.17M |    1.08 |   1.15 | 0:01'15'' |
+| trimmed_2000000 | 601.46M |  49.5 |     150 |  105 | 600.41M |   0.174% | 480.27K | 0.080% | 12.16M | 11.63M |     0.96 | 14.19M |    1.17 |   1.22 | 0:02'13'' |
+| trimmed_3000000 |  902.2M |  74.2 |     150 |  105 | 900.69M |   0.167% | 716.27K | 0.080% | 12.16M | 11.71M |     0.96 | 16.81M |    1.38 |   1.44 | 0:03'11'' |
+| trimmed_4000000 |    1.2G |  98.9 |     150 |  105 |    1.2G |   0.161% | 945.81K | 0.079% | 12.16M | 11.83M |     0.97 | 19.97M |    1.64 |   1.69 | 0:04'15'' |
+| trimmed_5000000 |    1.5G | 123.7 |     150 |  105 |    1.5G |   0.156% |   1.17M | 0.078% | 12.16M | 11.94M |     0.98 | 24.19M |    1.99 |   2.03 | 0:05'16'' |
+| trimmed_6000000 |    1.8G | 148.4 |     150 |  105 |    1.8G |   0.153% |    1.4M | 0.077% | 12.16M | 12.06M |     0.99 | 27.08M |    2.23 |   2.25 | 0:06'22'' |
+| trimmed_7000000 |   2.11G | 173.2 |     150 |  105 |    2.1G |   0.149% |   1.62M | 0.077% | 12.16M | 12.18M |     1.00 |  29.4M |    2.42 |   2.41 | 0:07'23'' |
+| trimmed_8000000 |   2.41G | 197.9 |     150 |  105 |    2.4G |   0.146% |   1.84M | 0.077% | 12.16M |  12.3M |     1.01 | 31.11M |    2.56 |   2.53 | 0:08'36'' |
 
 ## Scer: quality assessment
 
