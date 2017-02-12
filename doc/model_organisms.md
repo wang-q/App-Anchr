@@ -8,6 +8,15 @@
     - [*E. coli*: down sampling](#e-coli-down-sampling)
     - [*E. coli*: generate super-reads](#e-coli-generate-super-reads)
     - [*E. coli*: create anchors](#e-coli-create-anchors)
+    - [*E. coli*: quality assessment](#e-coli-quality-assessment)
+- [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
+    - [Scer: download](#scer-download)
+    - [Scer: trim](#scer-trim)
+    - [Scer: down sampling](#scer-down-sampling)
+    - [Scer: generate super-reads](#scer-generate-super-reads)
+    - [Scer: create anchors](#scer-create-anchors)
+    - [Scer: results](#scer-results)
+    - [Scer: quality assessment](#scer-quality-assessment)
 
 # *Escherichia coli* str. K-12 substr. MG1655
 
@@ -393,3 +402,280 @@ cat stat2.md
 | filter_2000000   |  87.30% |       8473 | 4.96M |  927 |      8472 |   3.39M |  565 |       9368 |   1.14M | 150 |      4394 | 427.02K |  212 | 0:03'26'' |
 | filter_2200000   |  87.32% |       8666 | 5.14M |  945 |      8666 |   3.02M |  511 |       9207 |   1.45M | 192 |      7343 | 677.79K |  242 | 0:03'47'' |
 | filter_2400000   |  87.33% |       7851 | 5.26M | 1001 |      7964 |   2.73M |  480 |       9277 |   1.77M | 247 |      5905 |  757.9K |  274 | 0:04'04'' |
+
+## *E. coli*: quality assessment
+
+http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+# simplify header, remove .3
+cat 1_genome/genome.fa \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > genome.fa
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa genome.fa pe.${part}
+    nucmer -l 200 genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# brew install gd --without-webp
+# brew install homebrew/versions/gnuplot4
+# brew install mummer
+
+cp ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa falcon.fa
+
+nucmer -l 200 NC_000913.fa falcon.fa
+mummerplot -png out.delta -p falcon --medium
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+```
+
+# *Saccharomyces cerevisiae* S288c
+
+* Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Saccharomyces_cerevisiae/Info/Index)
+* Proportion of paralogs: 0.058
+
+* Real:
+
+    * N50: 924431
+    * S: 12,157,105
+    * C: 17
+
+* Original:
+
+    * N50: 151
+    * S: 1,469,540,607
+    * C: 9,732,057
+
+* Trimmed:
+
+    * N50: 151
+    * S: 1,335,844,095
+    * C: 8,876,935
+
+## Scer: download
+
+```bash
+# genome
+mkdir -p ~/data/anchr/s288c/1_genome
+cd ~/data/anchr/s288c/1_genome
+wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
+faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
+    <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
+    genome.fa
+
+# illumina
+# ENA hasn't synced with SRA for PRJNA340312
+# Downloading with prefetch from sratoolkit
+mkdir -p ~/data/anchr/s288c/2_illumina
+cd ~/data/anchr/s288c/2_illumina
+prefetch --progress 0.5 SRR4074255
+fastq-dump --split-files SRR4074255  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR4074255_1.fastq.gz R1.fq.gz
+ln -s SRR4074255_2.fastq.gz R2.fq.gz
+
+# pacbio
+mkdir -p ~/data/anchr/s288c/3_pacbio
+```
+
+## Scer: trim
+
+* Trimmed: minimal length 120 bp.
+
+```bash
+mkdir -p ~/data/anchr/s288c/2_illumina/trimmed
+cd ~/data/anchr/s288c/2_illumina/trimmed
+
+anchr trim \
+    -l 120 -q 20 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
+    | bash
+```
+
+* Stats
+
+```bash
+cd ~/data/anchr/s288c
+
+faops n50 -S -C 1_genome/genome.fa
+faops n50 -S -C 2_illumina/R1.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz
+```
+
+## Scer: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=( "2_illumina/trimmed:trimmed:8000000")
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    for count in $(perl -e 'print 1000000 * $_, q{ } for 1 .. 8');
+    do
+        if [[ "$count" -gt "$GROUP_MAX" ]]; then
+            continue     
+        fi
+        
+        echo "==> Reads ${GROUP_ID}_${count}"
+        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
+        mkdir -p ${DIR_COUNT}
+        
+        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+            continue     
+        fi
+        
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R1.fq.gz
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R2.fq.gz
+    done
+done
+```
+
+## Scer: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "    pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    anchr superreads \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 300 -d 30 -p 8
+    bash superreads.sh
+    popd > /dev/null
+done
+```
+
+## Scer: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 8 false 120
+done
+```
+
+## Scer: results
+
+Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+REAL_G=4641652
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat1.md
+done
+
+cat stat1.md
+```
+
+Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat2.md
+
+done
+
+cat stat2.md
+```
+
+## Scer: quality assessment
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa genome.fa pe.${part}
+    nucmer -l 200 genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+```
