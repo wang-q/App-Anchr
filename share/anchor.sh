@@ -177,8 +177,7 @@ bbmap.sh \
     outm=unambiguous.sam outu=unmapped.sam
 
 log_debug "sort bam"
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    SortSam \
+picard SortSam \
     INPUT=unambiguous.sam \
     OUTPUT=unambiguous.sort.bam \
     SORT_ORDER=coordinate \
@@ -232,8 +231,7 @@ bbmap.sh \
     outm=ambiguous.sam outu=unmapped2.sam
 
 log_debug "sort bam"
-java -jar ~/share/picard-tools-1.128/picard.jar \
-    SortSam \
+picard SortSam \
     INPUT=ambiguous.sam \
     OUTPUT=ambiguous.sort.bam \
     SORT_ORDER=coordinate \
