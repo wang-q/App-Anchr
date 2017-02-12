@@ -16,6 +16,7 @@ sub opt_spec {
         [ 'jf=i',        'jellyfish hash size',                  { default => 500_000_000, }, ],
         [ 'kmer=s',      'kmer size to be used for super reads', { default => 'auto', }, ],
         [ 'prefix|r=s',  'prefix for paired-reads',              { default => 'pe', }, ],
+        [ 'strict', 'discard any reads altered by error correction', ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'adapter.jf' ) },
         ],
@@ -247,7 +248,8 @@ if [ ! -e pe.cor.fa ]; then
         quorum_mer_db.jf \
         [% opt.prefix %].renamed.fastq \
         --no-discard \
-        -o pe.cor --verbose 1>quorum.err 2>&1 || {
+        -o pe.cor --verbose 1>quorum.err 2>&1 \
+    || {
         mv pe.cor.fa pe.cor.fa.failed;
         log_warn Error correction of PE reads failed. Check pe.cor.log.;
         exit 1;
@@ -264,7 +266,7 @@ if [ ! -e k_u_hash_0 ]; then
 fi
 export ESTIMATED_GENOME_SIZE=$(jellyfish histo -t [% opt.parallel %] -h 1 k_u_hash_0 | tail -n 1 |awk '{print $2}')
 save ESTIMATED_GENOME_SIZE
-echo "Estimated data size: $ESTIMATED_GENOME_SIZE"
+echo "Estimated genome size: $ESTIMATED_GENOME_SIZE"
 
 #----------------------------#
 # Build k-unitigs
