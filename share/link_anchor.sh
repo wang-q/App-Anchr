@@ -166,7 +166,7 @@ faops order -l 0 strand.fa <(faops size renamed.fasta | cut -f 1) renamed.rc.fas
 
 log_info "Run daligner for the second/third time"
 anchr overlap renamed.rc.fasta --len 1000 --idt .70 --serial -o renamed.rc.ovlp.tsv
-anchr overlap renamed.rc.fasta --len 10   --idt .98 --serial -o 10.98.ovlp.tsv false
+anchr overlap renamed.rc.fasta --len 10   --idt .98 --serial -o 10.98.ovlp.tsv
 
 log_info "Create outputs"
 popd
