@@ -2,7 +2,9 @@
 
 [TOC levels=1-3]: # " "
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
-- [Extra external executables](#extra-external-executables)
+- [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
+    - [Extra external executables](#extra-external-executables)
+    - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [*E. coli*: download](#e-coli-download)
     - [*E. coli*: trim/filter](#e-coli-trimfilter)
@@ -32,21 +34,84 @@
     - [Cele: down sampling](#cele-down-sampling)
     - [Cele: generate super-reads](#cele-generate-super-reads)
     - [Cele: create anchors](#cele-create-anchors)
+    - [Cele: results](#cele-results)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
 
-# Extra external executables
+# More tools on downloading and preprocessing data
+
+## Extra external executables
 
 ```bash
-brew install aria2 curl wget             # downloading tools
+brew install aria2 curl wget                # downloading tools
 
-brew install homebrew/science/sratoolkit # NCBI SRAToolkit
+brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
 
-brew install gd --without-webp           # broken, can't find libwebp.so.6
+brew install gd --without-webp              # broken, can't find libwebp.so.6
 brew install homebrew/versions/gnuplot4
-brew install homebrew/sciencemummer      # mummer need gnuplot4
+brew install homebrew/science/mummer        # mummer need gnuplot4
 
-brew install homebrew/sciencequast       # assembly quality assessment
+brew install homebrew/science/quast         # assembly quality assessment
+```
+
+## PacBio specific tools
+
+PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
+public available PacBio data are still in formats of `.bax.h5` or `.hdf5.gz`. For dealing with these
+files, PacBio releases some tools which can be installed by a specific tool, named `pitchfork`.
+
+* Install some third party tools
+
+```bash
+brew install md5sha1sum
+brew install zlib boost openblas
+brew install python cmake ccache hdf5
+brew install samtools
+
+brew cleanup --force # only keep the latest version
+```
+
+* Compiling pitchfork
+
+```bash
+mkdir -p ~/share/pitchfork
+git clone https://github.com/PacificBiosciences/pitchfork ~/share/pitchfork
+cd ~/share/pitchfork
+
+cat <<EOF > settings.mk
+HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib     | sed 's/ /\//')
+HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost    | sed 's/ /\//')
+HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
+
+HAVE_PYTHON   = $(brew --prefix)/bin/python
+HAVE_CMAKE    = $(brew --prefix)/bin/cmake
+HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
+HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5   | sed 's/ /\//')
+
+EOF
+
+# fix several Makefiles
+sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
+
+sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+
+cd ~/share/pitchfork
+make pip
+deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
+
+make GenomicConsensus
+make pbfalcon
+make pbreports
+```
+
+* Compiled binary files are in `~/share/pitchfork/deployment`
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+quiver --help
 ```
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -1152,14 +1217,67 @@ do
 done
 ```
 
+## Cele: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+REAL_G=100286401
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat1.md
+done
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat2.md
+
+done
+
+cat stat2.md
+```
+
 # *Arabidopsis thaliana* Col-0
 
 * Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
 * Proportion of paralogs: 0.1115
 * Real
-    * N50:
+    * N50: 23,459,830
     * S: 119,667,750
-    * C:
+    * C: 7
 * Original
     * N50:
     * S:
