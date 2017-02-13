@@ -17,6 +17,7 @@ sub opt_spec {
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
+        [ "noscythe", "skip the scythe step", ],
         [ "parallel|p=i", "number of threads", { default => 8 }, ],
         { show_defaults => 1, }
     );
@@ -103,6 +104,9 @@ log_debug () {
 MY_TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 log_info "Temp dir: ${MY_TMP_DIR}"
 
+[% IF opt.noscythe -%]
+log_info "Skip the scythe step"
+[% ELSE -%]
 #----------------------------#
 # scythe
 #----------------------------#
@@ -125,11 +129,23 @@ scythe \
     --quiet \
     | pigz -p [% opt.parallel %] -c \
     > $MY_TMP_DIR/R2.scythe.fq.gz
+[% END -%]
 
 #----------------------------#
 # sickle
 #----------------------------#
 log_info "sickle [% args.0 %] [% args.1 %]"
+[% IF opt.noscythe -%]
+sickle pe \
+    -t sanger \
+    -l [% opt.len %] \
+    -q [% opt.qual %] \
+    -f [% args.0 %] \
+    -r [% args.1 %] \
+    -o $MY_TMP_DIR/R1.sickle.fq \
+    -p $MY_TMP_DIR/R2.sickle.fq \
+    -s $MY_TMP_DIR/single.sickle.fq
+[% ELSE -%]
 sickle pe \
     -t sanger \
     -l [% opt.len %] \
@@ -139,6 +155,7 @@ sickle pe \
     -o $MY_TMP_DIR/R1.sickle.fq \
     -p $MY_TMP_DIR/R2.sickle.fq \
     -s $MY_TMP_DIR/single.sickle.fq
+[% END -%]
 
 find $MY_TMP_DIR -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 

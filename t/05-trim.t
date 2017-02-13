@@ -29,6 +29,12 @@ like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -b fancy/NAMES -o stdout)] );
 like( $result->stdout, qr{fancy\/NAMES}s, 'fancy names' );
 
+$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout --noscythe)] );
+ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) < 70, 'line count' );
+ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 40, 'line count' );
+like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
+unlike( $result->stdout, qr{# scythe}s, 'bash contents' );
+
 {    # real run
     my $tempdir = Path::Tiny->tempdir;
     $result = test_app(
