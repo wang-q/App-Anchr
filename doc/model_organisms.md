@@ -53,6 +53,7 @@ brew install homebrew/versions/gnuplot4
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
 brew install homebrew/science/quast         # assembly quality assessment
+quast --test                                # may recompile the bundled nucmer
 ```
 
 ## PacBio specific tools
@@ -109,7 +110,8 @@ make bax2bam
 ```
 
 * Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
-  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`.
+  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`. This action would
+  also pollute your bash environment, if anything went wrong, restart your terminal.
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
@@ -555,6 +557,7 @@ http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-usi
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
+# sort on ref
 for part in anchor anchor2 others;
 do 
     bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_800000/sr/pe.${part}.fa 1_genome/genome.fa pe.${part}
@@ -573,6 +576,15 @@ mummerplot -png out.delta -p falcon --medium
 rm *.[fr]plot
 rm out.delta
 rm *.gp
+
+# quast
+quast --no-check \
+    -R 1_genome/genome.fa \
+    trimmed_800000/sr/pe.anchor.fa \
+    filter_1400000/sr/pe.anchor.fa \
+    paralog.fas \
+    --label "trimmed,filter,paralog" \
+    -o qa
 ```
 
 # *Saccharomyces cerevisiae* S288c
@@ -902,6 +914,15 @@ cp ~/data/alignment/self/yeast/Results/S288c/S288c.multi.fas paralog.fas
 rm *.[fr]plot
 rm out.delta
 rm *.gp
+
+# quast
+quast --no-check \
+    -R 1_genome/genome.fa \
+    trimmed_2000000/sr/pe.anchor.fa \
+    trimmed_3000000/sr/pe.anchor.fa \
+    paralog.fas \
+    --label "2000000,3000000,paralog" \
+    -o qa
 ```
 
 # *Drosophila melanogaster* iso-1
