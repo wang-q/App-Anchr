@@ -58,10 +58,11 @@ brew install homebrew/science/quast         # assembly quality assessment
 ## PacBio specific tools
 
 PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
-public available PacBio data are still in formats of `.bax.h5` or `.hdf5.gz`. For dealing with these
-files, PacBio releases some tools which can be installed by a specific tool, named `pitchfork`.
+public available PacBio data are still in formats of `.bax.h5` or `hdf5.tgz`. For dealing with
+these files, PacBio releases some tools which can be installed by another specific tool, named
+`pitchfork`.
 
-*Can* be compiled under macOS with Homebrew.
+Their tools *can* be compiled under macOS with Homebrew.
 
 * Install some third party tools
 
@@ -143,12 +144,12 @@ bax2bam --help
 
 ## *E. coli*: download
 
-* Reference genome and Illumina data
+* Reference genome
 
 ```bash
-# genome
 mkdir -p ~/data/anchr/e_coli/1_genome
 cd ~/data/anchr/e_coli/1_genome
+
 curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
     > U00096.fa
 # simplify header, remove .3
@@ -158,8 +159,11 @@ cat U00096.fa \
         print;
     ' \
     > genome.fa
+```
 
-# illumina
+* Illumina
+
+```bash
 mkdir -p ~/data/anchr/e_coli/2_illumina
 cd ~/data/anchr/e_coli/2_illumina
 wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
@@ -195,7 +199,6 @@ bax2bam ../E01_1/Analysis_Results/*.bax.h5
 
 # convert .subreads.bam to fasta
 mkdir -p ~/data/anchr/e_coli/3_pacbio/fasta
-cd ~/data/anchr/e_coli/3_pacbio/fasta
 
 samtools fasta \
     ~/data/anchr/e_coli/3_pacbio/bam/m141013*.subreads.bam \
@@ -591,18 +594,22 @@ rm *.gp
 
 ## Scer: download
 
+* Reference genome
+
 ```bash
-# genome
 mkdir -p ~/data/anchr/s288c/1_genome
 cd ~/data/anchr/s288c/1_genome
 wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
 faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
     genome.fa
+```
 
-# illumina
-# ENA hasn't synced with SRA for PRJNA340312
-# Downloading with prefetch from sratoolkit
+* Illumina
+
+    ENA hasn't synced with SRA for PRJNA340312, download with prefetch from sratoolkit.
+
+```bash
 mkdir -p ~/data/anchr/s288c/2_illumina
 cd ~/data/anchr/s288c/2_illumina
 prefetch --progress 0.5 SRR4074255
@@ -611,9 +618,64 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s SRR4074255_1.fastq.gz R1.fq.gz
 ln -s SRR4074255_2.fastq.gz R2.fq.gz
+```
 
-# pacbio
+* PacBio
+
+    PacBio provides a dataset of *S. cerevisiae* strain
+    [W303](https://github.com/PacificBiosciences/DevNet/wiki/Saccharomyces-cerevisiae-W303-Assembly-Contigs),
+    while the reference strain S288c is not provided. So we use the dataset from
+    [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
+    [study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949), and
+    [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878). This is gathered with RS
+    II and P6C4.
+
+```bash
 mkdir -p ~/data/anchr/s288c/3_pacbio
+cd ~/data/anchr/s288c/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
+
+EOF
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/s288c/3_pacbio/untar
+cd ~/data/anchr/s288c/3_pacbio/untar
+tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
+tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
+tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
+tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
+
+# bax2bam
+source ~/share/pitchfork/deployment/setup-env.sh
+mkdir -p ~/data/anchr/s288c/3_pacbio/bam
+cd ~/data/anchr/s288c/3_pacbio/bam
+
+for movie in m150412 m150415 m150417 m150421;
+do 
+    bax2bam ~/data/anchr/s288c/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# bam to fasta
+mkdir -p ~/data/anchr/s288c/3_pacbio/fasta
+
+for movie in m150412 m150415 m150417 m150421;
+do 
+    samtools fasta \
+        ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/s288c/3_pacbio/fasta/${movie}.fasta
+done
+
+#N50     8248
+#S       2585714835
+#C       600574
+faops n50 -S -C ~/data/pacbio/rawdata/S288c/fasta/*.fasta
 ```
 
 ## Scer: trim
@@ -861,18 +923,23 @@ rm *.gp
 
 ## Dmel: download
 
-SRR306628 labels ycnbwsp instead of iso-1.
+* Reference genome
 
 ```bash
-# genome
 mkdir -p ~/data/anchr/iso_1/1_genome
 cd ~/data/anchr/iso_1/1_genome
+
 wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz
 faops order Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz \
     <(for chr in {2L,2R,3L,3R,4,X,Y,dmel_mitochondrion_genome}; do echo $chr; done) \
     genome.fa
+```
 
-# illumina
+* Illumina
+
+    SRR306628 labels ycnbwsp instead of iso-1.
+
+```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/iso_1/2_illumina
 cd ~/data/anchr/iso_1/2_illumina
@@ -882,9 +949,13 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s SRR306628_1.fastq.gz R1.fq.gz
 ln -s SRR306628_2.fastq.gz R2.fq.gz
+```
 
-# pacbio
+* PacBio
+
+```bash
 mkdir -p ~/data/anchr/iso_1/3_pacbio
+
 ```
 
 ## Dmel: trim
@@ -1105,16 +1176,26 @@ cat stat2.md
 
 ## Cele: download
 
+* Reference genome
+
 ```bash
-# genome
 mkdir -p ~/data/anchr/n2/1_genome
 cd ~/data/anchr/n2/1_genome
+
 wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/caenorhabditis_elegans/dna/Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz
 faops order Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,X,MtDNA}; do echo $chr; done) \
     genome.fa
+```
 
-# illumina
+* Illumina
+
+    * Other SRA
+        * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
+        * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
+        * DRR008443
+
+```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/n2/2_illumina
 cd ~/data/anchr/n2/2_illumina
@@ -1124,15 +1205,14 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s SRR065390_1.fastq.gz R1.fq.gz
 ln -s SRR065390_2.fastq.gz R2.fq.gz
-
-# pacbio
-mkdir -p ~/data/anchr/n2/3_pacbio
 ```
 
-* Other SRA
-    * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
-    * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
-    * DRR008443
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/n2/3_pacbio
+
+```
 
 ## Cele: trim
 
@@ -1352,16 +1432,22 @@ cat stat2.md
 
 ## Atha: download
 
+* Reference genome
+
 ```bash
-# genome
 mkdir -p ~/data/anchr/col_0/1_genome
 cd ~/data/anchr/col_0/1_genome
 wget -N ftp://ftp.ensemblgenomes.org/pub/release-29/plants/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz
 faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
     <(for chr in {1,2,3,4,5,Mt,Pt}; do echo $chr; done) \
     genome.fa
+```
 
-# illumina
+* Illumina
+
+    450
+
+```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/col_0/2_illumina
 cd ~/data/anchr/n2/2_illumina
@@ -1371,9 +1457,11 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s _1.fastq.gz R1.fq.gz
 ln -s _2.fastq.gz R2.fq.gz
-
-# pacbio
-mkdir -p ~/data/anchr/col_0/3_pacbio
 ```
 
-450
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/col_0/3_pacbio
+
+```
