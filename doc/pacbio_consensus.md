@@ -9,7 +9,7 @@
     - [[Falcon 参数](https://github.com/PacificBiosciences/FALCON/wiki/Manual)](#falcon-参数)
     - [Falcon 结果文件](#falcon-结果文件)
 - [分析平台的历史](#分析平台的历史)
-- [使用 pitchfork 安装 GenomicConsensus 和 falcon](#使用-pitchfork-安装-genomicconsensus-和-falcon)
+- [安装 GenomicConsensus 和 falcon](#安装-genomicconsensus-和-falcon)
     - [安装Linuxbrew](#安装linuxbrew)
     - [通过 pitchfork 编译](#通过-pitchfork-编译)
     - [直接安装 falcon-integrate, 现在不推荐](#直接安装-falcon-integrate-现在不推荐)
@@ -178,7 +178,7 @@ Quiver 没关系了. 因此, 我们不能直接从最新的代码中得到可以
 PacBio 也知道它的程序是一团乱麻, 给了一个从源码安装的方法,
 [pitchfork](https://github.com/PacificBiosciences/pitchfork), 还很酷地表示, 这是 unsupported.
 
-# 使用 pitchfork 安装 GenomicConsensus 和 falcon
+# 安装 GenomicConsensus 和 falcon
 
 ## 安装Linuxbrew
 
@@ -256,9 +256,9 @@ make -j all
 
 # falcon 样例数据
 
-falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载的, 在墙内无法按说明文件里的提示来使用.
+falcon-examples 里的数据是通过一个小众程序 `git-sym` 从 dropbox 下载的, 在墙内无法按说明文件里的提示来使用.
 
-同时其内的很多设置都是写死的集群路径, 以及sge配置, 大大增加了复杂度, 并让人无法理解.
+同时其内的很多设置都是写死的集群路径, 以及 sge 配置, 大大增加了复杂度, 并让人无法理解.
 
 注意:
 
@@ -381,64 +381,6 @@ canu \
 ```
 
 ## Scer S288c
-
-From [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
-[study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949),
-and [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878).
-
-P6C4.
-
-`.bax.h5` files to `.subreads.bam`, then to `fasta`.
-
-```bash
-mkdir -p ~/data/pacbio/rawdata/S288c
-cd ~/data/pacbio/rawdata/S288c
-
-# download from sra
-cat <<EOF > hdf5.txt
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
-
-EOF
-
-aria2c -x 9 -s 3 -c -i hdf5.txt
-
-# untar
-source ~/share/pitchfork/deployment/setup-env.sh
-
-mkdir -p ~/data/pacbio/rawdata/S288c/untar
-cd ~/data/pacbio/rawdata/S288c
-tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
-tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
-tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
-tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
-
-# bax2bam
-mkdir -p ~/data/pacbio/rawdata/S288c/bam
-cd ~/data/pacbio/rawdata/S288c/bam
-
-for movie in m150412 m150415 m150417 m150421;
-do 
-    bax2bam ~/data/pacbio/rawdata/S288c/untar/${movie}*.bax.h5
-done
-
-# bam to fasta
-mkdir -p ~/data/pacbio/rawdata/S288c/fasta
-
-for movie in m150412 m150415 m150417 m150421;
-do 
-    samtools fasta \
-        ~/data/pacbio/rawdata/S288c/bam/${movie}*.subreads.bam \
-        > ~/data/pacbio/rawdata/S288c/fasta/${movie}.fasta
-done
-
-#N50     8248
-#S       2585714835
-#C       600574
-faops n50 -S -C ~/data/pacbio/rawdata/S288c/fasta/*.fasta
-```
 
 Assembled genomes and annotations.
 
@@ -637,24 +579,6 @@ perl ~/Scripts/download/download.pl -a -i public_SequelData_ArabidopsisDemoData.
 aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_ArabidopsisDemoData.yml.txt
 ```
 
-* 二代数据
-
-之前在 ERA 下载的数据, 方法在[这里](README.md#ath19). 这里用的是 GA IIx, 长度只有 50 bp, 放弃.
-用[这个](README.md#atha-ler-0).
-
-用 `superreads.pl` 运行 masurca
-
-```bash
-mkdir -p ~/data/dna-seq/atha_ler_0/superreads/SRR616965
-cd ~/data/dna-seq/atha_ler_0/superreads/SRR616965
-
-perl ~/Scripts/sra/superreads.pl \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_1.fastq.gz \
-    ~/data/dna-seq/atha_ler_0/process/Ler-0-2/SRR616965/SRR616965_2.fastq.gz \
-    -s 450 -d 50
-
-```
-
 `.subreads.bam` to fasta
 
 ```bash
@@ -730,7 +654,6 @@ EOF
 
 fc_run fc_run.cfg
 ```
-
 
 ## 其它模式生物
 
