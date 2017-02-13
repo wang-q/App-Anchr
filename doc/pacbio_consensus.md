@@ -11,12 +11,10 @@
 - [分析平台的历史](#分析平台的历史)
 - [使用 pitchfork 安装 GenomicConsensus 和 falcon](#使用-pitchfork-安装-genomicconsensus-和-falcon)
     - [安装Linuxbrew](#安装linuxbrew)
-    - [安装最新的第三方依赖.](#安装最新的第三方依赖)
-    - [通过 pitchfork 编译.](#通过-pitchfork-编译)
+    - [通过 pitchfork 编译](#通过-pitchfork-编译)
     - [直接安装 falcon-integrate, 现在不推荐](#直接安装-falcon-integrate-现在不推荐)
 - [falcon 样例数据](#falcon-样例数据)
     - [`falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).](#falconexample-里的-e-coli-样例)
-    - [E. coli Bacterial Assembly (P6C4)](#e-coli-bacterial-assembly-p6c4)
     - [E. coli canu](#e-coli-canu)
     - [Scer S288c](#scer-s288c)
     - [C. elegans](#c-elegans)
@@ -212,65 +210,12 @@ else
 fi
 ```
 
-## 安装最新的第三方依赖.
+## 通过 pitchfork 编译
+
+前期准备工作见[在此](model_organisms.md/#pacbio-specific-tools).
 
 ```bash
-brew install md5sha1sum
-brew install zlib boost openblas
-brew install python cmake ccache hdf5
-brew install samtools
-brew cleanup # only keep the latest version
-
-pip install --upgrade pip setuptools wheel
-pip install --upgrade virtualenv
-```
-
-其它可能有用的程序.
-
-```bash
-echo "==> Add tap science"
-brew tap homebrew/science
-brew tap wang-q/tap
-
-echo "==> Install bioinfomatics softwares"
-brew install clustal-w mafft    # aligning
-brew install seqtk              # fa/fq transforming
-brew install quast              # assembly statistics
-
-echo "==> Install wang-q/tap"
-brew install faops
-```
-
-## 通过 pitchfork 编译.
-
-```bash
-mkdir -p ~/share
-cd ~/share
-git clone https://github.com/PacificBiosciences/pitchfork
 cd ~/share/pitchfork
-
-cat <<EOF > settings.mk
-HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib | sed 's/ /\//')
-HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost | sed 's/ /\//')
-HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
-
-HAVE_PYTHON   = $(brew --prefix)/bin/python
-HAVE_CMAKE    = $(brew --prefix)/bin/cmake
-HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
-HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\//')
-
-EOF
-
-# fix bugs in several Makefile
-sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
-
-sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-
-cd ~/share/pitchfork
-make pip
-deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
 
 make GenomicConsensus
 make pbfalcon
@@ -285,23 +230,6 @@ make pbreports
 source ~/share/pitchfork/deployment/setup-env.sh
 
 quiver --help
-```
-
-单独安装 dextractor, 稍稍修改了下. Falcon 自带的版本只编译了 `dexta` 和 `undexta`.
-
-```bash
-cd ~/share
-git clone https://github.com/wang-q/DEXTRACTOR
-cd ~/share/DEXTRACTOR
-
-cat <<EOF > settings.mk
-HAVE_ZLIB = $(brew --prefix)/Cellar/$(brew list --versions zlib | sed 's/ /\//')
-HAVE_HDF5 = $(brew --prefix)/Cellar/$(brew list --versions hdf5 | sed 's/ /\//')
-
-EOF
-
-make
-
 ```
 
 ## 直接安装 falcon-integrate, 现在不推荐
@@ -334,7 +262,7 @@ falcon-examples里的数据是通过一个小众程序`git-sym`从dropbox下载�
 
 注意:
 
-* fasta 文件**必须**以 `.fasta` 为扩展名
+* fasta 文件 **必须** 以 `.fasta` 为扩展名
 * fasta 文件中的序列名称, 必须符合 falcon (fasta2DB of dazz_db) 的要求, 即 sra 默认名称**不符合要求**,
   错误提示为 `Pacbio header line format error`
 * [这里](https://github.com/PacificBiosciences/FALCON/issues/251)有个脚本帮助解决这个问题. 已经放到本地,
@@ -427,104 +355,6 @@ EOF
 time fc_run fc_run.cfg
 ```
 
-## E. coli Bacterial Assembly (P6C4)
-
-https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly
-
-下载 7 GB 的 E. coli (20 kb library) 数据, 它是 RS II 上 P6C4 的运行结果.
-
-先转化为 `.subreads.bam`, 再转化为 `fasta`.
-
-```bash
-mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4
-cd ~/data/pacbio/rawdata/ecoli_p6c4
-curl -O https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
-
-source ~/share/pitchfork/deployment/setup-env.sh
-
-tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
-
-mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4/bam
-cd ~/data/pacbio/rawdata/ecoli_p6c4/bam
-
-bax2bam ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/Analysis_Results/*.bax.h5
-
-xmllint --format ~/data/pacbio/rawdata/ecoli_p6c4/E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
-    > m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml
-
-mkdir -p ~/data/pacbio/rawdata/ecoli_p6c4/fasta
-cd ~/data/pacbio/rawdata/ecoli_p6c4/fasta
-
-bamtools convert -format fasta \
-    -in ~/data/pacbio/rawdata/ecoli_p6c4/bam/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.subreads.bam \
-    -out m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.subreads.fasta
-
-# N50 13982; 87225
-faops n50 -C *.subreads.fasta
-```
-
-运行 falcon.
-
-```bash
-source ~/share/pitchfork/deployment/setup-env.sh
-
-if [ -d $HOME/data/pacbio/ecoli_p6c4 ];
-then
-    rm -fr $HOME/data/pacbio/ecoli_p6c4
-fi
-mkdir -p $HOME/data/pacbio/ecoli_p6c4
-cd $HOME/data/pacbio/ecoli_p6c4
-find $HOME/data/pacbio/rawdata/ecoli_p6c4/fasta -name "*.fasta" > input.fofn
-
-cat <<EOF > fc_run.cfg
-[General]
-job_type = local
-
-# list of files of the initial bas.h5 files
-input_fofn = input.fofn
-
-input_type = raw
-#input_type = preads
-
-# The length cutoff used for seed reads used for initial mapping
-length_cutoff = 12000
-
-# The length cutoff used for seed reads used for pre-assembly
-length_cutoff_pr = 12000
-
-# Cluster queue setting
-sge_option_da =
-sge_option_la =
-sge_option_pda =
-sge_option_pla =
-sge_option_fc =
-sge_option_cns =
-
-pa_concurrent_jobs = 4
-ovlp_concurrent_jobs = 4
-
-pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
-
-pa_DBsplit_option = -x500 -s50
-ovlp_DBsplit_option = -x500 -s50
-
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 2
-
-overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 2
-
-EOF
-
-#real    104m51.013s
-#user    450m44.099s
-#sys     501m49.603s
-time fc_run fc_run.cfg
-
-#N50     4641042
-#C       1
-faops n50 -C 2-asm-falcon/p_ctg.fa
-```
-
 ## E. coli canu
 
 ```bash
@@ -549,6 +379,7 @@ canu \
     genomeSize=4.8m \
     -pacbio-raw p6.25x.fastq
 ```
+
 ## Scer S288c
 
 From [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
