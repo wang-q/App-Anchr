@@ -2,7 +2,7 @@
 
 [TOC levels=1-3]: # " "
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
-- [Extra external dependencies](#extra-external-dependencies)
+- [Extra external executables](#extra-external-executables)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [*E. coli*: download](#e-coli-download)
     - [*E. coli*: trim/filter](#e-coli-trimfilter)
@@ -35,19 +35,18 @@
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
 
-# Extra external dependencies
+# Extra external executables
 
 ```bash
-brew tap homebrew/science
+brew install aria2 curl wget             # downloading tools
 
-brew install sratoolkit
-brew install aria2 curl wget
+brew install homebrew/science/sratoolkit # NCBI SRAToolkit
 
-brew install gd --without-webp # broken, can't find libwebp.so.6
+brew install gd --without-webp           # broken, can't find libwebp.so.6
 brew install homebrew/versions/gnuplot4
-brew install mummer # mummer need gnuplot4
+brew install homebrew/sciencemummer      # mummer need gnuplot4
 
-brew install quast
+brew install homebrew/sciencequast       # assembly quality assessment
 ```
 
 # *Escherichia coli* str. K-12 substr. MG1655
