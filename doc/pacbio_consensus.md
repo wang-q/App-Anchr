@@ -1,10 +1,8 @@
-# PacBio consensus
+# Falcon 安装与样例
 
 
-[TOC levels=1-3]: #
-
-# Table of Contents
-- [PacBio consensus](#pacbio-consensus)
+[TOC levels=1-3]: # " "
+- [Falcon 安装与样例](#falcon-安装与样例)
 - [RS II 与 Sequel 对比](#rs-ii-与-sequel-对比)
 - [文档](#文档)
     - [[几个术语](http://www.pacb.com/wp-content/uploads/2015/09/Pacific-Biosciences-Glossary-of-Terms.pdf)](#几个术语)
@@ -19,10 +17,12 @@
 - [falcon 样例数据](#falcon-样例数据)
     - [`falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).](#falconexample-里的-e-coli-样例)
     - [E. coli Bacterial Assembly (P6C4)](#e-coli-bacterial-assembly-p6c4)
+    - [E. coli canu](#e-coli-canu)
+    - [Scer S288c](#scer-s288c)
     - [C. elegans](#c-elegans)
+    - [Atha Col-0](#atha-col-0)
     - [复活草](#复活草)
     - [Atha Ler-0](#atha-ler-0)
-    - [Scer S288c](#scer-s288c)
     - [其它模式生物](#其它模式生物)
 - [其它相关的程序](#其它相关的程序)
     - [PacBio 自产](#pacbio-自产)
@@ -911,14 +911,14 @@ fc_run fc_run.cfg
 
 * HGAP: Hierarchical Genome Assembly Process，层次基因组组装, 以相对较长的读长数据为种子 (Seeding Reads),
   以相对较短的读长数据用于内部纠错. 这个时候得到的读长数据足够长也足够准确, 完全可以用于 de novo 组装,
-  而无需二代数据帮忙.
-* PBJelly: 用于gapclosing,
-  [这里有简介.](https://github.com/alvaralmstedt/Tutorials/wiki/Gap-closing-with-PBJelly)
+  而无需二代数据帮忙. Falcon 可以认为是 HGAP 的后续版本.
+* PBJelly: 用于 gap closing,
+  [这里有简介](https://github.com/alvaralmstedt/Tutorials/wiki/Gap-closing-with-PBJelly).
 
 ## 混合组装
 
 * [DBG2LOC](http://www.nature.com/articles/srep31900) - 加上纯二代程序 Platanus (SOAP/ABySS)
-* ectools: 用二代的 contigs 代替 reads 来校正三代
+* ECtools: 用二代的 contigs 代替 reads 来校正三代, 是很多 python 脚本的集合, 现在基本停止发展
 * LoRDEC - Celera Assembler
 * [quickmerge](https://github.com/mahulchak/quickmerge) - 合并纯三代组装与二三代混合组装
 
