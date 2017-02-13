@@ -19,6 +19,21 @@
     - [Scer: create anchors](#scer-create-anchors)
     - [Scer: results](#scer-results)
     - [Scer: quality assessment](#scer-quality-assessment)
+- [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
+    - [Dmel: download](#dmel-download)
+    - [Dmel: trim](#dmel-trim)
+    - [Dmel: down sampling](#dmel-down-sampling)
+    - [Dmel: generate super-reads](#dmel-generate-super-reads)
+    - [Dmel: create anchors](#dmel-create-anchors)
+    - [Dmel: results](#dmel-results)
+- [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
+    - [Cele: download](#cele-download)
+    - [Cele: trim](#cele-trim)
+    - [Cele: down sampling](#cele-down-sampling)
+    - [Cele: generate super-reads](#cele-generate-super-reads)
+    - [Cele: create anchors](#cele-create-anchors)
+- [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
+    - [Atha: download](#atha-download)
 
 # Extra external dependencies
 
@@ -26,6 +41,7 @@
 brew tap homebrew/science
 
 brew install sratoolkit
+brew install aria2 curl wget
 
 brew install gd --without-webp # broken, can't find libwebp.so.6
 brew install homebrew/versions/gnuplot4
@@ -39,19 +55,21 @@ brew install quast
 * Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
 * Proportion of paralogs: 0.0323
 * Real
+    * N50: 4,641,652
     * S: 4,641,652
+    * C: 1
 * Original
     * N50: 151
-    * S: 865,149,970
-    * C: 5,729,470
+    * S: 1,730,299,940
+    * C: 11,458,940
 * Trimmed, 120-151 bp
     * N50: 151
-    * S: 577,015,664
-    * C: 3,871,229
+    * S: 1,138,073,985
+    * C: 7,742,458
 * Filter, 151 bp
     * N50: 151
-    * S: 371,039,918
-    * C: 2,457,218
+    * S: 742,079,836
+    * C: 4,914,436
 
 ## *E. coli*: download
 
@@ -116,9 +134,9 @@ anchr trim \
 cd ~/data/anchr/e_coli
 
 faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz
-faops n50 -S -C 2_illumina/filter/R1.fq.gz
+faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+faops n50 -S -C 2_illumina/filter/R1.fq.gz  2_illumina/filter/R1.fq.gz
 ```
 
 ## *E. coli*: down sampling
@@ -435,7 +453,7 @@ do
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
-cp ~/data/alignment/self/ecoli/Results/MG1655/MG1655.multi.fas paralog.fasta
+cp ~/data/alignment/self/ecoli/Results/MG1655/MG1655.multi.fas paralog.fas
 
 cp ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa falcon.fa
 
@@ -458,12 +476,12 @@ rm *.gp
     * C: 17
 * Original
     * N50: 151
-    * S: 1,469,540,607
-    * C: 9,732,057
-* Trimmed
+    * S: 2,939,081,214
+    * C: 19,464,114
+* Trimmed, 120-151 bp
     * N50: 151
-    * S: 1,335,844,095
-    * C: 8,876,935
+    * S: 2,669,549,333
+    * C: 17,753,870
 
 ## Scer: download
 
@@ -513,8 +531,8 @@ anchr trim \
 cd ~/data/anchr/s288c
 
 faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz
+faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
 ```
 
 ## Scer: down sampling
@@ -710,10 +728,470 @@ do
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
-cp ~/data/alignment/self/yeast/Results/S288c/S288c.multi.fas paralog.fasta
+cp ~/data/alignment/self/yeast/Results/S288c/S288c.multi.fas paralog.fas
 
 # mummerplot files
 rm *.[fr]plot
 rm out.delta
 rm *.gp
+```
+
+# *Drosophila melanogaster* iso-1
+
+* Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Drosophila_melanogaster/Info/Index)
+* Proportion of paralogs: 0.0531
+* Real
+    * N50: 25,286,936
+    * S: 137,567,477
+    * C: 8
+* Original
+    * N50: 146
+    * S: 12,852,672,000
+    * C: 88,032,000
+* Trimmed, 120-146 bp
+    * N50: 146
+    * S: 7,291,209,256
+    * C: 51,441,736
+
+## Dmel: download
+
+SRR306628 labels ycnbwsp instead of iso-1.
+
+```bash
+# genome
+mkdir -p ~/data/anchr/iso_1/1_genome
+cd ~/data/anchr/iso_1/1_genome
+wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/drosophila_melanogaster/dna/Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz
+faops order Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz \
+    <(for chr in {2L,2R,3L,3R,4,X,Y,dmel_mitochondrion_genome}; do echo $chr; done) \
+    genome.fa
+
+# illumina
+# Downloading from ena with aria2
+mkdir -p ~/data/anchr/iso_1/2_illumina
+cd ~/data/anchr/iso_1/2_illumina
+aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR306/SRR306628
+fastq-dump --split-files ./SRR306628  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR306628_1.fastq.gz R1.fq.gz
+ln -s SRR306628_2.fastq.gz R2.fq.gz
+
+# pacbio
+mkdir -p ~/data/anchr/iso_1/3_pacbio
+```
+
+## Dmel: trim
+
+* Trimmed: minimal length 120 bp.
+
+```bash
+mkdir -p ~/data/anchr/iso_1/2_illumina/trimmed
+cd ~/data/anchr/iso_1/2_illumina/trimmed
+
+anchr trim \
+    -l 120 -q 20 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
+    | bash
+```
+
+* Stats
+
+```bash
+cd ~/data/anchr/iso_1
+
+faops n50 -S -C 1_genome/genome.fa
+faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+```
+
+## Dmel: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=( "2_illumina/trimmed:trimmed:25000000")
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 5');
+    do
+        if [[ "$count" -gt "$GROUP_MAX" ]]; then
+            continue     
+        fi
+        
+        echo "==> Reads ${GROUP_ID}_${count}"
+        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
+        mkdir -p ${DIR_COUNT}
+        
+        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+            continue     
+        fi
+        
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R1.fq.gz
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R2.fq.gz
+    done
+done
+```
+
+## Dmel: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "    pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    anchr superreads \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 335 -d 33 -p 16
+    bash superreads.sh
+    popd > /dev/null
+done
+```
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd $HOME/data/anchr/iso_1/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
+
+## Dmel: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 120
+done
+```
+
+## Dmel: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+REAL_G=137567477
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat1.md
+done
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat2.md
+
+done
+
+cat stat2.md
+```
+
+| Name             | SumFq | CovFq | AvgRead | Kmer | SumFa | Discard% | #Subs |  Subs% |   RealG |    EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
+|:-----------------|------:|------:|--------:|-----:|------:|---------:|------:|-------:|--------:|--------:|---------:|--------:|--------:|-------:|----------:|
+| trimmed_5000000  | 1.42G |  10.3 |     141 |   95 | 1.41G |   0.664% | 1.89M | 0.134% | 137.57M | 104.08M |     0.76 | 118.61M |    0.86 |   1.14 | 0:09'15'' |
+| trimmed_10000000 | 2.83G |  20.6 |     140 |   93 | 2.82G |   0.588% | 3.76M | 0.134% | 137.57M | 118.24M |     0.86 | 150.75M |    1.10 |   1.27 | 0:14'12'' |
+| trimmed_15000000 | 4.25G |  30.9 |     139 |   93 | 4.23G |   0.564% |  5.6M | 0.133% | 137.57M |  124.5M |     0.91 | 173.24M |    1.26 |   1.39 | 0:20'46'' |
+| trimmed_20000000 | 5.67G |  41.2 |     138 |   91 | 5.64G |   0.547% | 7.42M | 0.132% | 137.57M | 128.49M |     0.93 | 196.61M |    1.43 |   1.53 | 0:28'10'' |
+| trimmed_25000000 | 7.09G |  51.5 |     137 |   91 | 7.05G |   0.536% |  9.2M | 0.131% | 137.57M | 131.37M |     0.95 | 218.75M |    1.59 |   1.67 | 0:36'08'' |
+
+| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |    Sum |    # | N50Others |    Sum |     # |   RunTime |
+|:-----------------|--------:|-----------:|--------:|------:|----------:|-------:|------:|-----------:|-------:|-----:|----------:|-------:|------:|----------:|
+| trimmed_5000000  |  83.39% |       1008 |  54.97M | 56301 |      1725 | 22.49M | 12883 |       1552 |  2.55M | 1510 |       718 | 29.93M | 41908 | 0:04'54'' |
+| trimmed_10000000 |  83.42% |       1662 |  92.86M | 67622 |      2352 | 56.11M | 25589 |       2577 |  6.36M | 2849 |       776 | 30.39M | 39184 | 0:09'41'' |
+| trimmed_15000000 |  83.55% |       2227 | 108.27M | 65205 |      2818 | 68.62M | 27591 |       3762 | 10.24M | 3520 |       840 | 29.42M | 34094 | 0:14'17'' |
+| trimmed_20000000 |  83.68% |       2731 | 119.48M | 62645 |      3270 | 72.09M | 26071 |       4367 | 16.15M | 4686 |       933 | 31.25M | 31888 | 0:18'08'' |
+| trimmed_25000000 |  83.80% |       2932 | 128.57M | 63780 |      3411 | 69.59M | 24491 |       4829 | 21.49M | 5640 |      1118 | 37.49M | 33649 | 0:21'42'' |
+
+# *Caenorhabditis elegans* N2
+
+* Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Caenorhabditis_elegans/Info/Index)
+* Proportion of paralogs: 0.0472
+* Real
+    * N50: 17,493,829
+    * S: 100,286,401
+    * C: 7
+* Original
+    * N50: 100
+    * S: 6,761,709,200
+    * C: 67,617,092
+* Trimmed, 80-100 bp
+    * N50: 100
+    * S: 4,760,227,361
+    * C: 48,565,296
+
+## Cele: download
+
+```bash
+# genome
+mkdir -p ~/data/anchr/n2/1_genome
+cd ~/data/anchr/n2/1_genome
+wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/caenorhabditis_elegans/dna/Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz
+faops order Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz \
+    <(for chr in {I,II,III,IV,V,X,MtDNA}; do echo $chr; done) \
+    genome.fa
+
+# illumina
+# Downloading from ena with aria2
+mkdir -p ~/data/anchr/n2/2_illumina
+cd ~/data/anchr/n2/2_illumina
+aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR065/SRR065390
+fastq-dump --split-files ./SRR065390  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR065390_1.fastq.gz R1.fq.gz
+ln -s SRR065390_2.fastq.gz R2.fq.gz
+
+# pacbio
+mkdir -p ~/data/anchr/n2/3_pacbio
+```
+
+## Cele: trim
+
+* Trimmed: minimal length 80 bp.
+
+```bash
+mkdir -p ~/data/anchr/n2/2_illumina/trimmed
+cd ~/data/anchr/n2/2_illumina/trimmed
+
+anchr trim \
+    -l 80 -q 20 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
+    | bash
+```
+
+* Stats
+
+```bash
+cd ~/data/anchr/n2
+
+faops n50 -S -C 1_genome/genome.fa
+faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+```
+
+## Cele: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=( "2_illumina/trimmed:trimmed:25000000")
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 5');
+    do
+        if [[ "$count" -gt "$GROUP_MAX" ]]; then
+            continue     
+        fi
+        
+        echo "==> Reads ${GROUP_ID}_${count}"
+        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
+        mkdir -p ${DIR_COUNT}
+        
+        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+            continue     
+        fi
+        
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R1.fq.gz
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R2.fq.gz
+    done
+done
+```
+
+## Cele: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "    pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    anchr superreads \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 200 -d 20 -p 16
+    bash superreads.sh
+    popd > /dev/null
+done
+```
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd $HOME/data/anchr/n2/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
+
+## Cele: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 80
+done
+```
+
+# *Arabidopsis thaliana* Col-0
+
+* Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
+* Proportion of paralogs: 0.1115
+* Real
+    * N50:
+    * S: 119,667,750
+    * C:
+* Original
+    * N50:
+    * S:
+    * C:
+* Trimmed
+    * N50:
+    * S:
+    * C:
+
+## Atha: download
+
+```bash
+# genome
+mkdir -p ~/data/anchr/col_0/1_genome
+cd ~/data/anchr/col_0/1_genome
+wget -N ftp://ftp.ensemblgenomes.org/pub/release-29/plants/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz
+faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
+    <(for chr in {1,2,3,4,5,Mt,Pt}; do echo $chr; done) \
+    genome.fa
+
+# illumina
+# Downloading from ena with aria2
+mkdir -p ~/data/anchr/col_0/2_illumina
+cd ~/data/anchr/n2/2_illumina
+aria2c -x 9 -s 3 -c 
+fastq-dump --split-files ./  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s _1.fastq.gz R1.fq.gz
+ln -s _2.fastq.gz R2.fq.gz
+
+# pacbio
+mkdir -p ~/data/anchr/col_0/3_pacbio
 ```
