@@ -38,6 +38,7 @@
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
 
+
 # More tools on downloading and preprocessing data
 
 ## Extra external executables
@@ -60,6 +61,8 @@ PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017
 public available PacBio data are still in formats of `.bax.h5` or `.hdf5.gz`. For dealing with these
 files, PacBio releases some tools which can be installed by a specific tool, named `pitchfork`.
 
+*Can* be compiled under macOS with Homebrew.
+
 * Install some third party tools
 
 ```bash
@@ -71,7 +74,7 @@ brew install samtools
 brew cleanup --force # only keep the latest version
 ```
 
-* Compiling pitchfork
+* Compiling with `pitchfork`
 
 ```bash
 mkdir -p ~/share/pitchfork
@@ -101,17 +104,16 @@ cd ~/share/pitchfork
 make pip
 deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
 
-make GenomicConsensus
-make pbfalcon
-make pbreports
+make bax2bam
 ```
 
-* Compiled binary files are in `~/share/pitchfork/deployment`
+* Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
+  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`.
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
 
-quiver --help
+bax2bam --help
 ```
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -134,8 +136,14 @@ quiver --help
     * N50: 151
     * S: 742,079,836
     * C: 4,914,436
+* PacBio
+    * N50: 13,982
+    * S: 748,508,361
+    * C: 87,225
 
 ## *E. coli*: download
+
+* Reference genome and Illumina data
 
 ```bash
 # genome
@@ -159,9 +167,42 @@ wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/M
 
 ln -s MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
 ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
+```
 
-# pacbio
+* PacBio
+
+    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly) PacBio
+    provides a 7 GB file for *E. coli* (20 kb library), which is gathered with RS II and the P6C4
+    reagent.
+
+```bash
 mkdir -p ~/data/anchr/e_coli/3_pacbio
+cd ~/data/anchr/e_coli/3_pacbio
+wget -N https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+# Optional, a human readable .metadata.xml file
+#xmllint --format E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
+#    > m141013.metadata.xml
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/e_coli/3_pacbio/bam
+cd ~/data/anchr/e_coli/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+bax2bam ../E01_1/Analysis_Results/*.bax.h5
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/e_coli/3_pacbio/fasta
+cd ~/data/anchr/e_coli/3_pacbio/fasta
+
+samtools fasta \
+    ~/data/anchr/e_coli/3_pacbio/bam/m141013*.subreads.bam \
+    > ~/data/anchr/e_coli/3_pacbio/fasta/m141013.fasta
+
+cd ~/data/anchr/e_coli/3_pacbio
+ln -s fasta/m141013.fasta pacbio.fasta
 ```
 
 ## *E. coli*: trim/filter
@@ -201,6 +242,7 @@ faops n50 -S -C 1_genome/genome.fa
 faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
 faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
 faops n50 -S -C 2_illumina/filter/R1.fq.gz  2_illumina/filter/R1.fq.gz
+faops n50 -S -C 3_pacbio/pacbio.fasta
 ```
 
 ## *E. coli*: down sampling
@@ -432,8 +474,8 @@ cat stat2.md
   但覆盖度过高时, 这些区域之间的 reads 相互支持, 被保留下来的概率大大增加.
     * Discard% 在 CovFq 大于 100 倍时, 快速下降.
 * Illumina reads 错误率约为 1% 不到一点. 当覆盖度过高时, 错误的点重复出现的概率要比完全无偏性的情况大一些.
-    * 理论上 Subs% 应该是恒定值, 但当 CovFq 大于 100 倍时, 这个值在下降, 也就是这些错误的点相互支持, 躲过了
-      Kmer 纠错.
+    * 理论上 Subs% 应该是恒定值, 但当 CovFq 大于 100 倍时, 这个值在下降, 也就是这些错误的点相互支持, 躲过了 Kmer
+      纠错.
 * 直接的反映就是 EstG 过大, SumSR 过大.
 * 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
 * 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
@@ -1087,6 +1129,11 @@ ln -s SRR065390_2.fastq.gz R2.fq.gz
 mkdir -p ~/data/anchr/n2/3_pacbio
 ```
 
+* Other SRA
+    * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
+    * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
+    * DRR008443
+
 ## Cele: trim
 
 * Trimmed: minimal length 80 bp.
@@ -1270,6 +1317,22 @@ done
 cat stat2.md
 ```
 
+| Name             |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |   RealG |   EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
+|:-----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|--------:|-------:|---------:|--------:|--------:|-------:|----------:|
+| trimmed_5000000  | 980.18M |   9.8 |      97 |   71 | 973.45M |   0.686% | 601.64K | 0.062% | 100.29M | 90.12M |     0.90 |  108.1M |    1.08 |   1.20 | 0:05'14'' |
+| trimmed_10000000 |   1.96G |  19.5 |      97 |   71 |   1.95G |   0.481% |   1.03M | 0.053% | 100.29M | 96.45M |     0.96 |  120.9M |    1.21 |   1.25 | 0:09'08'' |
+| trimmed_15000000 |   2.94G |  29.3 |      97 |   71 |   2.93G |   0.455% |    1.5M | 0.051% | 100.29M | 97.72M |     0.97 | 133.09M |    1.33 |   1.36 | 0:13'02'' |
+| trimmed_20000000 |   3.92G |  39.1 |      97 |   71 |    3.9G |   0.446% |   1.99M | 0.051% | 100.29M | 98.24M |     0.98 |  154.7M |    1.54 |   1.57 | 0:17'11'' |
+| trimmed_25000000 |   4.76G |  47.5 |      97 |   71 |   4.74G |   0.444% |   2.41M | 0.051% | 100.29M | 98.52M |     0.98 | 174.67M |    1.74 |   1.77 | 0:20'18'' |
+
+| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |    Sum |    # | N50Others |    Sum |     # |   RunTime |
+|:-----------------|--------:|-----------:|--------:|------:|----------:|-------:|------:|-----------:|-------:|-----:|----------:|-------:|------:|----------:|
+| trimmed_5000000  |  93.93% |        648 |  15.62M | 23227 |      1195 |   1.4M |  1114 |       1635 | 29.94K |   19 |       630 | 14.19M | 22094 | 0:03'20'' |
+| trimmed_10000000 |  94.58% |       1172 |  71.52M | 66496 |      1668 | 38.69M | 23204 |       2023 |  1.93M |  957 |       745 |  30.9M | 42335 | 0:09'38'' |
+| trimmed_15000000 |  94.68% |       2197 |  91.87M | 54955 |      2681 | 60.71M | 25750 |       3488 |  8.87M | 2907 |       834 | 22.29M | 26298 | 0:16'19'' |
+| trimmed_20000000 |  94.71% |       3297 | 103.02M | 46613 |      3574 | 58.78M | 20284 |       5020 |  20.5M | 5102 |      1066 | 23.74M | 21227 | 0:20'47'' |
+| trimmed_25000000 |  94.73% |       3846 | 111.38M | 44620 |      4011 | 51.96M | 16590 |       5379 | 28.72M | 6570 |      1974 |  30.7M | 21460 | 0:26'21'' |
+
 # *Arabidopsis thaliana* Col-0
 
 * Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
@@ -1302,8 +1365,8 @@ faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/col_0/2_illumina
 cd ~/data/anchr/n2/2_illumina
-aria2c -x 9 -s 3 -c 
-fastq-dump --split-files ./  
+aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
+fastq-dump --split-files ./SRR611086
 find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s _1.fastq.gz R1.fq.gz
@@ -1312,3 +1375,5 @@ ln -s _2.fastq.gz R2.fq.gz
 # pacbio
 mkdir -p ~/data/anchr/col_0/3_pacbio
 ```
+
+450
