@@ -149,6 +149,9 @@ mv $MY_TMP_DIR/R1.sickle.fq.gz [% opt.basename %]1.fq.gz
 mv $MY_TMP_DIR/R2.sickle.fq.gz [% opt.basename %]2.fq.gz
 mv $MY_TMP_DIR/single.sickle.fq.gz [% opt.basename %]s.fq.gz
 
+# clean tmp dir
+rm -fr ${MY_TMP_DIR}
+
 exit 0
 
 EOF
