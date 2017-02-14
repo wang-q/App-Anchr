@@ -661,6 +661,8 @@ fc_run fc_run.cfg
 
 # 其它相关的程序
 
+https://github.com/PacificBiosciences/DevNet/wiki/Compatible-Software
+
 ## PacBio 自产
 
 * HGAP: Hierarchical Genome Assembly Process，层次基因组组装, 以相对较长的读长数据为种子 (Seeding Reads),
@@ -673,7 +675,6 @@ fc_run fc_run.cfg
 
 * [DBG2LOC](http://www.nature.com/articles/srep31900) - 加上纯二代程序 Platanus (SOAP/ABySS)
 * ECtools: 用二代的 contigs 代替 reads 来校正三代, 是很多 python 脚本的集合, 现在基本停止发展
-* LoRDEC - Celera Assembler
 * [quickmerge](https://github.com/mahulchak/quickmerge) - 合并纯三代组装与二三代混合组装
 
 # 中文资料
