@@ -413,16 +413,17 @@ brew install wang-q/tap/superreads
 
 # Super-reads and anchors
 
-## E. coli sampling
-
-### E. coli: link anchors
+## E. coli: link anchors
 
 ```bash
 cd ~/zlc/Ecoli/anchorAlign
 
-bash ~/Scripts/sra/link_anchor.sh 1_4.anchor.fasta 1_4.pac.fasta 1_4
-bash ~/Scripts/sra/link_anchor.sh 0_11.anchor.fasta 0_11.pac.fasta 0_11
-bash ~/Scripts/sra/link_anchor.sh 6_56.anchor.fasta 6_56.pac.fasta 6_56
+for id in 0_11 10_13 11_7 12_3 13_33 14_8 15_11 16_20 17_4 18_17 19_19 1_4 20_15 21_13 22_8 23_15 24_34 25_8 26_3 27_30 28_2 29_13 2_27 30_25 31_15 32_28 33_2 34_16 35_3 36_23 37_5 38_29 39_5 3_12 40_9 41_19 4_5 5_7 6_56 7_12 8_15 9_6;
+do
+    bash ~/Scripts/cpan/App-Anchr/share/link_anchor.sh ${id}.anchor.fasta ${id}.pac.fasta ${id};
+    GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
+    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl ${id}.ovlp.tsv --range "1-${GROUP_COUNT}"
+done
 
 # Exceeded memory bound: 502169772
 #poa -preserve_seqorder -read_fasta 9_2.renamed.fasta -clustal 9_2.aln -hb ~/Scripts/sra/poa-blosum80.mat 
@@ -446,7 +447,6 @@ bash ~/Scripts/sra/link_anchor.sh 6_56.anchor.fasta 6_56.pac.fasta 6_56
 #
 #perl ~/Scripts/sra/las2ovlp.pl 9_2.renamed.fasta 9_2.show.txt -r 9_2.replace.tsv
 
-perl ~/Scripts/sra/ovlp_layout.pl 1_4.ovlp.tsv --range 1-4
 
 # 3 5 10 8 4 9 7 2 11 6 1
 perl ~/Scripts/egaz/sparsemem_exact.pl \
