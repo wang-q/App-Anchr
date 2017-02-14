@@ -1523,7 +1523,6 @@ done
 Clear intermediate files.
 
 ```bash
-# masurca
 cd $HOME/data/anchr/col_0/
 
 find . -type f -name "quorum_mer_db.jf" | xargs rm
@@ -1553,3 +1552,78 @@ do
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 80
 done
 ```
+
+## Atha: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+REAL_G=119667750
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
+        >> ${BASE_DIR}/stat1.md
+done
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue     
+    fi
+    
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
+        >> ${BASE_DIR}/stat2.md
+
+done
+
+cat stat2.md
+```
+
+| Name             |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |   RealG |    EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
+|:-----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|--------:|--------:|---------:|--------:|--------:|-------:|----------:|
+| trimmed_5000000  | 994.55M |   8.3 |      99 |   71 | 991.27M |   0.331% | 931.93K | 0.094% | 119.67M | 101.22M |     0.85 |  95.61M |    0.80 |   0.94 | 0:08'15'' |
+| trimmed_10000000 |   1.99G |  16.6 |      99 |   71 |   1.98G |   0.230% |    1.7M | 0.086% | 119.67M | 138.53M |     1.16 |  157.1M |    1.31 |   1.13 | 0:16'17'' |
+| trimmed_15000000 |   2.98G |  24.9 |      99 |   71 |   2.98G |   0.228% |   2.55M | 0.086% | 119.67M | 164.08M |     1.37 | 170.97M |    1.43 |   1.04 | 0:23'41'' |
+| trimmed_20000000 |   3.98G |  33.2 |      99 |   71 |   3.97G |   0.232% |   3.42M | 0.086% | 119.67M | 189.74M |     1.59 | 185.52M |    1.55 |   0.98 | 0:32'17'' |
+| trimmed_25000000 |   4.97G |  41.6 |      99 |   71 |   4.96G |   0.252% |   4.52M | 0.091% | 119.67M | 214.13M |     1.79 | 204.19M |    1.71 |   0.95 | 0:40'54'' |
+| trimmed_30000000 |   5.97G |  49.9 |      99 |   71 |   5.95G |   0.255% |   5.43M | 0.091% | 119.67M | 239.49M |     2.00 | 229.96M |    1.92 |   0.96 | 0:49'53'' |
+| trimmed_35000000 |   6.96G |  58.2 |      99 |   71 |   6.94G |   0.257% |   6.33M | 0.091% | 119.67M | 264.54M |     2.21 | 262.23M |    2.19 |   0.99 | 0:49'02'' |
+| trimmed_40000000 |   7.96G |  66.5 |      99 |   71 |   7.94G |   0.258% |   7.21M | 0.091% | 119.67M | 288.97M |     2.41 | 295.78M |    2.47 |   1.02 | 0:55'58'' |
+
+| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |     Sum |     # | N50Anchor2 |     Sum |    # | N50Others |     Sum |     # |   RunTime |
+|:-----------------|--------:|-----------:|--------:|------:|----------:|--------:|------:|-----------:|--------:|-----:|----------:|--------:|------:|----------:|
+| trimmed_5000000  |  92.99% |       1453 | 714.99K |   638 |      3282 | 178.45K |    71 |       3314 |     94K |   32 |       756 | 442.54K |   535 | 0:02'37'' |
+| trimmed_10000000 |  93.30% |        677 |  19.89M | 28528 |      1175 |   2.35M |  1893 |       2266 |  87.37K |   43 |       648 |  17.46M | 26592 | 0:07'06'' |
+| trimmed_15000000 |  93.31% |       1025 |  71.15M | 73698 |      1461 |  35.41M | 23839 |       1728 | 298.42K |  173 |       733 |  35.44M | 49686 | 0:12'08'' |
+| trimmed_20000000 |  93.29% |       1904 |  98.19M | 64053 |      2295 |  76.69M | 36534 |       2129 |   1.45M |  681 |       775 |  20.06M | 26838 | 0:18'54'' |
+| trimmed_25000000 |  92.98% |       3625 | 106.58M | 42994 |      4003 |  92.91M | 29147 |       3462 |   3.35M | 1110 |       822 |  10.32M | 12737 | 0:25'30'' |
+| trimmed_30000000 |  92.98% |       5965 | 109.59M | 30994 |      6454 |  96.35M | 21184 |       5499 |   5.82M | 1401 |       874 |   7.42M |  8409 | 0:34'15'' |
+| trimmed_35000000 |  92.99% |       8308 | 112.12M | 25573 |      8886 |  94.37M | 16363 |       9098 |  10.09M | 1727 |       950 |   7.66M |  7483 | 0:33'18'' |
+| trimmed_40000000 |  93.00% |       9802 | 114.38M | 23474 |     10394 |  91.42M | 14061 |      11333 |  14.96M | 2076 |       998 |      8M |  7337 | 0:30'34'' |
