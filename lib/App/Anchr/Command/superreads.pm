@@ -246,7 +246,7 @@ fi
 # As we have trimmed reads with sickle, we lower `-e` to 1 from original value of 3,
 # remove `--no-discard`.
 # And we only want most reliable parts of the genome other than the whole genome, so dropping rare
-# k-mers is totally OK for us. Raise `-m` from 1 to 2, `-g` from 1 to 2, and `-a` from ` to 3.
+# k-mers is totally OK for us. Raise `-m` from 1 to 2, `-g` from 1 to 2, and `-a` from 1 to 3.
 if [ ! -e pe.cor.fa ]; then
     log_info Error correct PE.
     quorum_error_correct_reads \
