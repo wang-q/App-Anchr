@@ -9,6 +9,7 @@
     - [Generate super-reads](#generate-super-reads)
     - [Create anchors](#create-anchors)
     - [Results](#results)
+    - [Quality assessment](#quality-assessment)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
