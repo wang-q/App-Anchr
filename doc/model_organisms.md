@@ -37,6 +37,8 @@
     - [Cele: results](#cele-results)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
+    - [Atha: trim](#atha-trim)
+    - [Atha: down sampling](#atha-down-sampling)
 
 
 # More tools on downloading and preprocessing data
@@ -251,11 +253,6 @@ faops n50 -S -C 3_pacbio/pacbio.fasta
 ```
 
 ## *E. coli*: down sampling
-
-过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
-
-> Very highly-represented sequences (>1000X) can cause problems for SGA... In these cases, it is
-> worth considering pre-filtering the data...
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -1392,13 +1389,13 @@ cat stat2.md
     * S: 119,667,750
     * C: 7
 * Original
-    * N50:
-    * S:
-    * C:
+    * N50: 100
+    * S: 9,978,269,800
+    * C: 99,782,698
 * Trimmed
-    * N50:
-    * S:
-    * C:
+    * N50: 100
+    * S: 8,600,245,685
+    * C: 86,472,520
 
 ## Atha: download
 
@@ -1420,13 +1417,13 @@ faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
 ```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/col_0/2_illumina
-cd ~/data/anchr/n2/2_illumina
+cd ~/data/anchr/col_0/2_illumina
 aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
 fastq-dump --split-files ./SRR611086
 find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
-ln -s _1.fastq.gz R1.fq.gz
-ln -s _2.fastq.gz R2.fq.gz
+ln -s SRR611086_1.fastq.gz R1.fq.gz
+ln -s SRR611086_2.fastq.gz R2.fq.gz
 ```
 
 * PacBio
@@ -1434,4 +1431,69 @@ ln -s _2.fastq.gz R2.fq.gz
 ```bash
 mkdir -p ~/data/anchr/col_0/3_pacbio
 
+```
+
+## Atha: trim
+
+* Trimmed: minimal length 80 bp.
+
+```bash
+mkdir -p ~/data/anchr/col_0/2_illumina/trimmed
+cd ~/data/anchr/col_0/2_illumina/trimmed
+
+anchr trim \
+    -l 80 -q 20 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o stdout \
+    | bash
+```
+
+* Stats
+
+```bash
+cd ~/data/anchr/col_0
+
+faops n50 -S -C 1_genome/genome.fa
+faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
+faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+```
+
+## Atha: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=( "2_illumina/trimmed:trimmed:40000000")
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 5');
+    do
+        if [[ "$count" -gt "$GROUP_MAX" ]]; then
+            continue     
+        fi
+        
+        echo "==> Reads ${GROUP_ID}_${count}"
+        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
+        mkdir -p ${DIR_COUNT}
+        
+        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+            continue     
+        fi
+        
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R1.fq.gz
+        seqtk sample -s${count} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
+            | pigz > ${DIR_COUNT}/R2.fq.gz
+    done
+done
 ```
