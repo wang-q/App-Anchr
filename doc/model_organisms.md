@@ -39,6 +39,8 @@
     - [Atha: download](#atha-download)
     - [Atha: trim](#atha-trim)
     - [Atha: down sampling](#atha-down-sampling)
+    - [Atha: generate super-reads](#atha-generate-super-reads)
+    - [Atha: create anchors](#atha-create-anchors)
 
 
 # More tools on downloading and preprocessing data
@@ -444,22 +446,6 @@ cat stat2.md
 | filter_2000000  |    604M | 130.1 |     151 |  105 | 603.57M |   0.071% | 569.58K | 0.094% | 4.64M | 4.57M |     0.99 | 5.73M |    1.23 |   1.25 | 0:02'35'' |
 | filter_2200000  |  664.4M | 143.1 |     151 |  105 | 663.93M |   0.071% |    626K | 0.094% | 4.64M | 4.58M |     0.99 |  6.1M |    1.31 |   1.33 | 0:02'27'' |
 | filter_2400000  |  724.8M | 156.2 |     151 |  105 | 724.28M |   0.071% |  681.8K | 0.094% | 4.64M | 4.59M |     0.99 | 6.46M |    1.39 |   1.41 | 0:02'39'' |
-
-
-* Illumina reads 的分布是有偏性的. 极端 GC 区域, 结构复杂区域都会得到较低的 fq 分值, 本应被 trim 掉.
-  但覆盖度过高时, 这些区域之间的 reads 相互支持, 被保留下来的概率大大增加.
-    * Discard% 在 CovFq 大于 100 倍时, 快速下降.
-* Illumina reads 错误率约为 1% 不到一点. 当覆盖度过高时, 错误的点重复出现的概率要比完全无偏性的情况大一些.
-    * 理论上 Subs% 应该是恒定值, 但当 CovFq 大于 100 倍时, 这个值在下降, 也就是这些错误的点相互支持, 躲过了 Kmer
-      纠错.
-* 直接的反映就是 EstG 过大, SumSR 过大.
-* 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
-* 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
-* trim 的效果比 filter 好. 可能是留下了更多二代测序效果较差的位置. 同样 2400000 对 reads, trim 的 EstG
-  更接近真实值
-    * Real - 4.64M
-    * Trimmed - 4.61M (EstG)
-    * Filter - 4.59M (EstG)
 
 | Name            | strict% | N50SRclean |   Sum |    # | N50Anchor |     Sum |    # | N50Anchor2 |     Sum |   # | N50Others |     Sum |    # |   RunTime |
 |:----------------|--------:|-----------:|------:|-----:|----------:|--------:|-----:|-----------:|--------:|----:|----------:|--------:|-----:|----------:|
@@ -1474,7 +1460,7 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 5');
+    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 8');
     do
         if [[ "$count" -gt "$GROUP_MAX" ]]; then
             continue     
@@ -1495,5 +1481,70 @@ for group in "${ARRAY[@]}" ; do
             ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
             | pigz > ${DIR_COUNT}/R2.fq.gz
     done
+done
+```
+
+## Atha: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+
+    if [ ! -d ${DIR_COUNT} ]; then
+        continue
+    fi
+    
+    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
+        echo "    pe.cor.fa already presents"
+        continue
+    fi
+    
+    pushd ${DIR_COUNT} > /dev/null
+    anchr superreads \
+        R1.fq.gz \
+        R2.fq.gz \
+        -s 200 -d 20 -p 16
+    bash superreads.sh
+    popd > /dev/null
+done
+```
+
+Clear intermediate files.
+
+```bash
+# masurca
+cd $HOME/data/anchr/col_0/
+
+find . -type f -name "quorum_mer_db.jf" | xargs rm
+find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp" | xargs rm
+#find . -type f -name "pe.renamed.fastq" | xargs rm
+```
+
+## Atha: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+do
+    echo
+    echo "==> Reads ${d}"
+    DIR_COUNT="${BASE_DIR}/${d}/"
+    
+    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+        continue
+    fi
+    
+    rm -fr ${DIR_COUNT}/sr
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 80
 done
 ```
