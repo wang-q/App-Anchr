@@ -239,15 +239,22 @@ fi
 #----------------------------#
 # Error correct PE
 #----------------------------#
+# -m Minimum count for a k-mer to be considered "good" (1)
+# -g Number of good k-mer in a row for anchor (2)
+# -w Size of window (10)
+# -e Maximum number of error in a window (3)
+# As we have trimmed reads with sickle, we lower `-e` to 1 from original value of 3,
+# remove `--no-discard`.
+# And we only want most reliable parts of the genome other than the whole genome, so dropping rare
+# k-mers is totally OK for us. Raise `-m` from 1 to 2, `-g` from 1 to 2, and `-a` from ` to 3.
 if [ ! -e pe.cor.fa ]; then
     log_info Error correct PE.
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
         --contaminant=[% opt.adapter %] \
-        -m 1 -s 1 -g 1 -a 1 -t [% opt.parallel %] -w 10 -e 3 \
+        -m 2 -s 1 -g 2 -a 3 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
         [% opt.prefix %].renamed.fastq \
-        --no-discard \
         -o pe.cor --verbose 1>quorum.err 2>&1 \
     || {
         mv pe.cor.fa pe.cor.fa.failed;
