@@ -205,7 +205,7 @@ print YAML::Syck::Dump {
         }
 
         if ( @s > 1 ) {
-            printf {STDERR} "* There should be only one successor, as anchors arn't overlapped\n";
+            printf STDERR "* There should be only one successor, as anchors arn't overlapped\n";
             printf "    [%s] successors\n", scalar @s;
             @s = map { $_->[0] }
                 sort { $a->[1] <=> $b->[1] }
