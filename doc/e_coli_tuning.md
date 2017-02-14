@@ -661,6 +661,17 @@ quast --no-check \
     --label "Q20L120_800000,Q20L120_1200000,Q20L130_1000000,Q20L140_1200000,Q20L151_1400000,Q25L120_2000000,Q25L130_2000000,Q25L140_1200000,Q25L151_1200000,Q30L120_1200000,paralogs" \
     -o 9_qa
 
+rm -fr 9_qa_a2_best
+quast --no-check \
+    -R 1_genome/genome.fa \
+    Q20L151_1400000/sr/pe.anchor.fa \
+    Q20L151_1400000/sr/pe.anchor2.fa \
+    Q25L130_2000000/sr/pe.anchor.fa \
+    Q25L130_2000000/sr/pe.anchor2.fa \
+    1_genome/paralogs.fas \
+    --label "Q20L151_1400000,Q20L151_1400000A2,Q25L130_2000000,Q25L130_2000000A2,paralogs" \
+    -o 9_qa_a2_best
+
 rm -fr 9_qa_a2
 quast --no-check \
     -R 1_genome/genome.fa \
