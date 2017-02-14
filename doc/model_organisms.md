@@ -127,26 +127,6 @@ bax2bam --help
 
 * Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
 * Proportion of paralogs: 0.0323
-* Real
-    * N50: 4,641,652
-    * S: 4,641,652
-    * C: 1
-* Original
-    * N50: 151
-    * S: 1,730,299,940
-    * C: 11,458,940
-* Trimmed, 120-151 bp
-    * N50: 151
-    * S: 1,138,073,985
-    * C: 7,742,458
-* Filter, 151 bp
-    * N50: 151
-    * S: 742,079,836
-    * C: 4,914,436
-* PacBio
-    * N50: 13,982
-    * S: 748,508,361
-    * C: 87,225
 
 ## *E. coli*: download
 
@@ -214,29 +194,31 @@ cd ~/data/anchr/e_coli/3_pacbio
 ln -s fasta/m141013.fasta pacbio.fasta
 ```
 
-## *E. coli*: trim/filter
+## *E. coli*: trim
 
-* Trimmed: minimal length 120 bp.
+* Q20L150
 
 ```bash
-mkdir -p ~/data/anchr/e_coli/2_illumina/trimmed
-cd ~/data/anchr/e_coli/2_illumina/trimmed
+mkdir -p ~/data/anchr/e_coli/2_illumina/Q20L150
+cd ~/data/anchr/e_coli/2_illumina/Q20L150
 
 anchr trim \
-    -l 120 -q 20 \
+    --noscythe \
+    -q 20 -l 150 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
 ```
 
-* Filter: discard any reads with trimmed parts.
+* Q25L130
 
 ```bash
-mkdir -p ~/data/anchr/e_coli/2_illumina/filter
-cd ~/data/anchr/e_coli/2_illumina/filter
+mkdir -p ~/data/anchr/e_coli/2_illumina/Q25L130
+cd ~/data/anchr/e_coli/2_illumina/Q25L130
 
 anchr trim \
-    -l 151 -q 20 \
+    --noscythe \
+    -q 25 -l 130 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
@@ -247,12 +229,33 @@ anchr trim \
 ```bash
 cd ~/data/anchr/e_coli
 
-faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
-faops n50 -S -C 2_illumina/filter/R1.fq.gz  2_illumina/filter/R1.fq.gz
-faops n50 -S -C 3_pacbio/pacbio.fasta
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio"; faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q20L150"; faops n50 -H -S -C 2_illumina/Q20L150/R1.fq.gz 2_illumina/Q20L150/R1.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q25L130"; faops n50 -H -S -C 2_illumina/Q25L130/R1.fq.gz 2_illumina/Q25L130/R1.fq.gz;) >> stat.md
+
+cat stat.md
 ```
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 4641652 |    4641652 |        1 |
+| Illumina |     151 | 1730299940 | 11458940 |
+| PacBio   |   13982 |  748508361 |    87225 |
+| Q20L150  |     151 |  758902238 |  5025846 |
+| Q25L130  |     151 |  642211058 |  4304146 |
 
 ## *E. coli*: down sampling
 
@@ -261,8 +264,8 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/trimmed:trimmed:3800000"
-        "2_illumina/filter:filter:2400000")
+ARRAY=( "2_illumina/Q20L150:Q20L150:2400000"
+        "2_illumina/Q25L130:Q25L130:2000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -301,7 +304,7 @@ done
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed filter}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L150 Q25L130}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
