@@ -483,8 +483,6 @@ cat stat2.md
 
 ## *E. coli*: quality assessment
 
-http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
-
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
@@ -535,6 +533,10 @@ quast --no-check \
     * N50: 151
     * S: 2,669,549,333
     * C: 17,753,870
+* PacBio
+    * N50: 8,412
+    * S: 820,962,526
+    * C: 177,100
 
 ## Scer: download
 
@@ -590,36 +592,38 @@ aria2c -x 9 -s 3 -c -i hdf5.txt
 
 # untar
 mkdir -p ~/data/anchr/s288c/3_pacbio/untar
-cd ~/data/anchr/s288c/3_pacbio/untar
+cd ~/data/anchr/s288c/3_pacbio
 tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
-tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
-tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
-tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
+#tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
+#tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
+#tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
 
-# bax2bam
-source ~/share/pitchfork/deployment/setup-env.sh
+# convert .bax.h5 to .subreads.bam
 mkdir -p ~/data/anchr/s288c/3_pacbio/bam
 cd ~/data/anchr/s288c/3_pacbio/bam
 
+source ~/share/pitchfork/deployment/setup-env.sh
 for movie in m150412 m150415 m150417 m150421;
 do 
     bax2bam ~/data/anchr/s288c/3_pacbio/untar/${movie}*.bax.h5
 done
 
-# bam to fasta
+# convert .subreads.bam to fasta
 mkdir -p ~/data/anchr/s288c/3_pacbio/fasta
 
 for movie in m150412 m150415 m150417 m150421;
-do 
+do
+    if [ ! -e ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
     samtools fasta \
         ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam \
         > ~/data/anchr/s288c/3_pacbio/fasta/${movie}.fasta
 done
 
-#N50     8248
-#S       2585714835
-#C       600574
-faops n50 -S -C ~/data/pacbio/rawdata/S288c/fasta/*.fasta
+cd ~/data/anchr/s288c/3_pacbio
+ln -s fasta/m150412.fasta pacbio.fasta
 ```
 
 ## Scer: trim
@@ -645,6 +649,7 @@ cd ~/data/anchr/s288c
 faops n50 -S -C 1_genome/genome.fa
 faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
 faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+faops n50 -S -C 3_pacbio/pacbio.fasta
 ```
 
 ## Scer: down sampling
