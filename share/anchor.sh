@@ -37,13 +37,11 @@ log_debug () {
 #----------------------------#
 RESULT_DIR=$1
 N_THREADS=${2:-8}
-TOLERATE_SUBS=${3:-true}
-MIN_LENGTH_READ=${4:-100}
+MIN_LENGTH_READ=${3:-100}
 
 log_info "Parameters"
 log_debug "    RESULT_DIR=${RESULT_DIR}"
 log_debug "    N_THREADS=${N_THREADS}"
-log_debug "    TOLERATE_SUBS=${TOLERATE_SUBS}"
 log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
 
 [ -e ${RESULT_DIR}/pe.cor.fa ] || {
