@@ -241,18 +241,19 @@ fi
 #----------------------------#
 # -m Minimum count for a k-mer to be considered "good" (1)
 # -g Number of good k-mer in a row for anchor (2)
+# -a Minimum count for an anchor k-mer (3)
 # -w Size of window (10)
 # -e Maximum number of error in a window (3)
 # As we have trimmed reads with sickle, we lower `-e` to 1 from original value of 3,
 # remove `--no-discard`.
 # And we only want most reliable parts of the genome other than the whole genome, so dropping rare
-# k-mers is totally OK for us. Raise `-m` from 1 to 2, `-g` from 1 to 2, and `-a` from 1 to 3.
+# k-mers is totally OK for us. Raise `-m` from 1 to 3, `-g` from 1 to 3, and `-a` from 1 to 4.
 if [ ! -e pe.cor.fa ]; then
     log_info Error correct PE.
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
         --contaminant=[% opt.adapter %] \
-        -m 2 -s 1 -g 2 -a 3 -t [% opt.parallel %] -w 10 -e 1 \
+        -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
         [% opt.prefix %].renamed.fastq \
         -o pe.cor --verbose 1>quorum.err 2>&1 \
@@ -262,6 +263,10 @@ if [ ! -e pe.cor.fa ]; then
         exit 1;
     }
 fi
+
+echo "Discard any reads with subs"
+mv pe.cor.fa pe.cor.sub.fa
+cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 
 #----------------------------#
 # Estimating genome size.

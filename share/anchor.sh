@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 RESULT_DIR N_THREADS TOLERATE_SUBS MIN_LENGTH_READ"
+USAGE="Usage: $0 RESULT_DIR N_THREADS MIN_LENGTH_READ"
 
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
@@ -127,54 +127,23 @@ faops some -i -l 0 SR.filter.fasta SR.discard.txt SR.clean.fasta
 faops size SR.clean.fasta > sr.chr.sizes
 
 #----------------------------#
-# Prepare strict reads
-#----------------------------#
-log_debug "pe.strict.txt"
-if [ "${TOLERATE_SUBS}" = true ]; then
-    # tolerates 1 substitution
-    cat pe.cor.fa \
-        | perl -nle '/>/ or next; /sub.+sub/ and next; />(\w+)/ and print $1;' \
-        > pe.strict.txt
-else
-    # discard any reads with substitutions
-    cat pe.cor.fa \
-        | perl -nle '/>/ or next; /sub/ and next; />(\w+)/ and print $1;' \
-        > pe.strict.txt
-fi
-
-log_debug "pe.strict.fa"
-# Too large for `faops some`
-split -n10 -d pe.strict.txt pe.part
-
-# No Ns; longer than MIN_LENGTH_READ (70% of read length)
-if [ -e pe.strict.fa ];
-then
-    rm pe.strict.fa
-fi
-
-for part in $(printf "%.2d " {0..9})
-do
-    faops some -l 0 pe.cor.fa pe.part${part} stdout \
-        | faops filter -n 0 -a ${MIN_LENGTH_READ} -l 0 stdin stdout
-    rm pe.part${part}
-done >> pe.strict.fa
-
-#----------------------------#
 # unambiguous
 #----------------------------#
 log_info "unambiguous regions"
 
 # index
 log_debug "bbmap index"
-bbmap.sh ref=SR.clean.fasta
+bbmap.sh ref=SR.clean.fasta \
+    1>bbmap.err 2>&1
 
 log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
     ambiguous=toss \
-    ref=SR.clean.fasta in=pe.strict.fa \
-    outm=unambiguous.sam outu=unmapped.sam
+    ref=SR.clean.fasta in=pe.cor.fa \
+    outm=unambiguous.sam outu=unmapped.sam \
+    1>>bbmap.err 2>&1
 
 log_debug "sort bam"
 picard SortSam \
@@ -219,7 +188,7 @@ fi
 
 for part in $(printf "%.2d " {0..9})
 do
-    faops some -l 0 pe.strict.fa pe.part${part} stdout
+    faops some -l 0 pe.cor.fa pe.part${part} stdout
     rm pe.part${part}
 done >> pe.unmapped.fa
 
@@ -228,7 +197,8 @@ bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
     ref=SR.clean.fasta in=pe.unmapped.fa \
-    outm=ambiguous.sam outu=unmapped2.sam
+    outm=ambiguous.sam outu=unmapped2.sam \
+    1>>bbmap.err 2>&1
 
 log_debug "sort bam"
 picard SortSam \
@@ -252,14 +222,12 @@ log_info "pe.anchor.fa"
 
 log_debug "unambiguous.cover"
 jrunlist cover unambiguous.cover.txt
-runlist stat unambiguous.cover.txt.yml -s sr.chr.sizes -o unambiguous.cover.csv
 
 log_debug "ambiguous.cover"
 jrunlist cover ambiguous.cover.txt
-runlist stat ambiguous.cover.txt.yml -s sr.chr.sizes -o ambiguous.cover.csv
 
 log_debug "unique.cover"
-runlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
+jrunlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
 runlist stat unique.cover.yml -s sr.chr.sizes -o unique.cover.csv
 
 cat unique.cover.csv \

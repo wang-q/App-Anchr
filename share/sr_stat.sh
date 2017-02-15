@@ -51,14 +51,14 @@ stat_format () {
 
 if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             "Name" \
             "SumFq" "CovFq" "AvgRead" "Kmer" \
-            "SumFa" "Discard%" "#Subs" "Subs%" \
+            "SumFa" "Discard%" \
             "RealG" "EstG" "Est/Real" \
             "SumSR" "SR/Real" "SR/Est" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:||\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
         exit 1;
@@ -68,12 +68,11 @@ if [ "${STAT_TASK}" = "1" ]; then
 
         SUM_FQ=$( if [ -e pe.renamed.fastq ]; then faops n50 -H -N 0 -S pe.renamed.fastq; else echo 0; fi )
         SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
-        TOTAL_SUBS=$( cat pe.cor.fa | tr ' ' '\n' | grep ":sub:" | wc -l )
         EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
         SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
         SECS=$(expr $(stat -c %Y super1.err) - $(stat -c %Y superreads.sh))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE};" ) \
@@ -81,8 +80,6 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( cat environment.sh | perl -n -e '/KMER=\"(\d+)\"/ and print $1' ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FA}, base => 1000,);" ) \
             $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_FA} / ${SUM_FQ}) * 100;" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${TOTAL_SUBS}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.3f%%}, ${TOTAL_SUBS} / ${SUM_FA} * 100;" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
@@ -96,24 +93,21 @@ if [ "${STAT_TASK}" = "1" ]; then
 
 elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
-            "Name" "strict%"\
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+            "Name" \
             "N50SRclean" "Sum" "#" \
             "N50Anchor"  "Sum" "#" \
             "N50Anchor2" "Sum" "#" \
             "N50Others"  "Sum" "#" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/sr" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/sr"
 
         SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
-        COUNT_COR=$( faops n50 -H -N 0 -C pe.cor.fa )
-        COUNT_STRICT=$( faops n50 -H -N 0 -C pe.strict.fa )
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( dirname $(pwd) ) ) \
-            $( perl -e "printf qq{%.2f%%}, ${COUNT_STRICT} / ${COUNT_COR} * 100;" ) \
             $( stat_format SR.clean.fasta ) \
             $( stat_format pe.anchor.fa )   \
             $( stat_format pe.anchor2.fa )  \
