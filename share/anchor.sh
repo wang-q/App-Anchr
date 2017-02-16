@@ -148,7 +148,8 @@ picard SortSam \
     INPUT=unambiguous.sam \
     OUTPUT=unambiguous.sort.bam \
     SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT
+    VALIDATION_STRINGENCY=LENIENT \
+    1>>picard.err 2>&1
 
 log_debug "genomeCoverageBed"
 # at least two unambiguous reads covered
@@ -203,7 +204,8 @@ picard SortSam \
     INPUT=ambiguous.sam \
     OUTPUT=ambiguous.sort.bam \
     SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT
+    VALIDATION_STRINGENCY=LENIENT \
+    1>>picard.err 2>&1
 
 log_debug "genomeCoverageBed"
 genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
