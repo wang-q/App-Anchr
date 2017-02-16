@@ -58,7 +58,7 @@ if [ "${STAT_TASK}" = "1" ]; then
             "RealG" "EstG" "Est/Real" \
             "SumSR" "SR/Real" "SR/Est" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:||\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
         exit 1;
