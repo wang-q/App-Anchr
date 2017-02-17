@@ -318,6 +318,10 @@ if [[ ! -e work1/superReads.success ]]; then
 fi
 [% END -%]
 
+if [ ! -e super1.err ]; then
+    touch super1.err
+fi
+
 exit 0
 
 EOF
