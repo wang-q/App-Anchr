@@ -202,6 +202,9 @@ ln -s fasta/m141013.fasta pacbio.fasta
 ```bash
 cd ~/data/anchr/e_coli
 
+# get the default adapter file
+# anchr trim --help
+
 scythe \
     2_illumina/R1.fq.gz \
     -q sanger \
@@ -519,10 +522,12 @@ quast --no-check \
     -R 1_genome/genome.fa \
     Q20L150_1600000/anchor/pe.anchor.fa \
     Q20L150_1600000/k_unitigs.fasta \
+    Q25L130_1400000/anchor/pe.anchor.fa \
+    Q25L130_1400000/k_unitigs.fasta \
     Q25L130_2000000/anchor/pe.anchor.fa \
     Q25L130_2000000/k_unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L150_1600000,Q20L150_1600000K,Q25L130_2000000,Q25L130_2000000K,paralogs" \
+    --label "Q20L150_1600000,Q20L150_1600000K,Q25L130_1400000,Q25L130_1400000K,Q25L130_2000000,Q25L130_2000000K,paralogs" \
     -o 9_qa
 ```
 
@@ -530,22 +535,6 @@ quast --no-check \
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Saccharomyces_cerevisiae/Info/Index)
 * Proportion of paralogs: 0.058
-* Real
-    * N50: 924431
-    * S: 12,157,105
-    * C: 17
-* Original
-    * N50: 151
-    * S: 2,939,081,214
-    * C: 19,464,114
-* Trimmed, 120-151 bp
-    * N50: 151
-    * S: 2,669,549,333
-    * C: 17,753,870
-* PacBio
-    * N50: 8,412
-    * S: 820,962,526
-    * C: 177,100
 
 ## Scer: download
 
@@ -637,17 +626,19 @@ ln -s fasta/m150412.fasta pacbio.fasta
 
 ## Scer: trim
 
-* Trimmed: minimal length 120 bp.
+* Q20L150
 
 ```bash
-mkdir -p ~/data/anchr/s288c/2_illumina/trimmed
-cd ~/data/anchr/s288c/2_illumina/trimmed
+mkdir -p ~/data/anchr/s288c/2_illumina/Q20L150
+pushd ~/data/anchr/s288c/2_illumina/Q20L150
 
 anchr trim \
-    -l 120 -q 20 \
+    -q 20 -l 150 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
+    
+popd
 ```
 
 * Stats
@@ -655,11 +646,30 @@ anchr trim \
 ```bash
 cd ~/data/anchr/s288c
 
-faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
-faops n50 -S -C 3_pacbio/pacbio.fasta
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q20L150";  faops n50 -H -S -C 2_illumina/Q20L150/R1.fq.gz 2_illumina/Q20L150/R1.fq.gz;) >> stat.md
+
+cat stat.md
 ```
+
+| Name     |    N50 |        Sum |        # |
+|:---------|-------:|-----------:|---------:|
+| Genome   | 924431 |   12157105 |       17 |
+| Illumina |    151 | 2939081214 | 19464114 |
+| PacBio   |   8412 |  820962526 |   177100 |
+| Q20L150  |    151 | 2540868460 | 16827778 |
 
 ## Scer: down sampling
 
@@ -668,7 +678,7 @@ BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/trimmed:trimmed:8000000")
+ARRAY=( "2_illumina/Q20L150:Q20L150:8000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -707,7 +717,7 @@ done
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
@@ -726,6 +736,7 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
+        --nosr \
         -s 300 -d 30 -p 16
     bash superreads.sh
     popd > /dev/null
@@ -735,7 +746,6 @@ done
 Clear intermediate files.
 
 ```bash
-# masurca
 cd $HOME/data/anchr/s288c/
 
 find . -type f -name "quorum_mer_db.jf" | xargs rm
@@ -751,18 +761,18 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue
     fi
     
-    rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 120
+    rm -fr ${DIR_COUNT}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 120 false
 done
 ```
 
@@ -779,7 +789,7 @@ REAL_G=12157105
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -803,11 +813,11 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue     
     fi
     
@@ -819,27 +829,27 @@ done
 cat stat2.md
 ```
 
-| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |  RealG |   EstG | Est/Real |  SumSR | SR/Real | SR/Est |   RunTime |
-|:----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|-------:|-------:|---------:|-------:|--------:|-------:|----------:|
-| trimmed_1000000 | 300.72M |  24.7 |     150 |  105 | 300.16M |   0.187% | 242.27K | 0.081% | 12.16M | 11.43M |     0.94 | 13.17M |    1.08 |   1.15 | 0:01'29'' |
-| trimmed_2000000 | 601.46M |  49.5 |     150 |  105 | 600.41M |   0.174% | 480.27K | 0.080% | 12.16M | 11.63M |     0.96 | 14.19M |    1.17 |   1.22 | 0:02'32'' |
-| trimmed_3000000 |  902.2M |  74.2 |     150 |  105 | 900.69M |   0.167% | 716.27K | 0.080% | 12.16M | 11.71M |     0.96 | 16.81M |    1.38 |   1.44 | 0:03'32'' |
-| trimmed_4000000 |    1.2G |  98.9 |     150 |  105 |    1.2G |   0.161% | 945.81K | 0.079% | 12.16M | 11.83M |     0.97 | 19.97M |    1.64 |   1.69 | 0:04'36'' |
-| trimmed_5000000 |    1.5G | 123.7 |     150 |  105 |    1.5G |   0.156% |   1.17M | 0.078% | 12.16M | 11.94M |     0.98 | 24.19M |    1.99 |   2.03 | 0:05'46'' |
-| trimmed_6000000 |    1.8G | 148.4 |     150 |  105 |    1.8G |   0.153% |    1.4M | 0.077% | 12.16M | 12.06M |     0.99 | 27.08M |    2.23 |   2.25 | 0:06'49'' |
-| trimmed_7000000 |   2.11G | 173.2 |     150 |  105 |    2.1G |   0.149% |   1.62M | 0.077% | 12.16M | 12.18M |     1.00 |  29.4M |    2.42 |   2.41 | 0:08'03'' |
-| trimmed_8000000 |   2.41G | 197.9 |     150 |  105 |    2.4G |   0.146% |   1.84M | 0.077% | 12.16M |  12.3M |     1.01 | 31.11M |    2.56 |   2.53 | 0:09'22'' |
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |  RealG |   EstG | Est/Real |  SumKU | SumSR |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|-------:|-------:|---------:|-------:|------:|----------:|
+| Q20L150_1000000 | 301.98M |  24.8 |     150 |  105 |  275.9M |   8.634% | 12.16M | 11.34M |     0.93 | 12.68M |     0 | 0:01'28'' |
+| Q20L150_2000000 | 603.95M |  49.7 |     150 |  105 | 552.38M |   8.539% | 12.16M |  11.5M |     0.95 | 12.62M |     0 | 0:02'33'' |
+| Q20L150_3000000 | 905.93M |  74.5 |     150 |  105 | 828.85M |   8.508% | 12.16M | 11.55M |     0.95 | 12.74M |     0 | 0:03'20'' |
+| Q20L150_4000000 |   1.21G |  99.4 |     150 |  105 |   1.11G |   8.443% | 12.16M | 11.61M |     0.96 | 13.12M |     0 | 0:03'49'' |
+| Q20L150_5000000 |   1.51G | 124.2 |     150 |  105 |   1.38G |   8.358% | 12.16M | 11.67M |     0.96 | 13.59M |     0 | 0:04'43'' |
+| Q20L150_6000000 |   1.81G | 149.0 |     150 |  105 |   1.66G |   8.299% | 12.16M | 11.74M |     0.97 | 14.19M |     0 | 0:05'37'' |
+| Q20L150_7000000 |   2.11G | 173.9 |     150 |  105 |   1.94G |   8.241% | 12.16M | 11.81M |     0.97 |  14.8M |     0 | 0:06'41'' |
+| Q20L150_8000000 |   2.42G | 198.7 |     150 |  105 |   2.22G |   8.190% | 12.16M | 11.88M |     0.98 | 15.45M |     0 | 0:07'56'' |
 
-| Name            | strict% | N50SRclean |    Sum |    # | N50Anchor |    Sum |    # | N50Anchor2 |     Sum |    # | N50Others |     Sum |    # |   RunTime |
-|:----------------|--------:|-----------:|-------:|-----:|----------:|-------:|-----:|-----------:|--------:|-----:|----------:|--------:|-----:|----------:|
-| trimmed_1000000 |  91.83% |       1914 | 10.72M | 6932 |      2230 |  8.43M | 4053 |       2402 | 184.12K |   90 |       783 |   2.11M | 2789 | 0:02'45'' |
-| trimmed_2000000 |  91.93% |       4630 |  11.8M | 3809 |      4922 | 10.09M | 2643 |       4786 | 808.15K |  205 |       901 | 899.18K |  961 | 0:03'45'' |
-| trimmed_3000000 |  91.97% |       7155 | 12.52M | 2790 |      7210 |  8.81M | 1657 |       8725 |   2.64M |  402 |      2252 |   1.07M |  731 | 0:05'05'' |
-| trimmed_4000000 |  92.04% |       8299 | 13.56M | 2622 |      8730 |  6.98M | 1122 |       9116 |   4.52M |  643 |      5226 |   2.06M |  857 | 0:06'37'' |
-| trimmed_5000000 |  92.11% |       8567 | 14.88M | 2711 |      9411 |  4.88M |  751 |       9220 |   6.13M |  802 |      6227 |   3.87M | 1158 | 0:07'24'' |
-| trimmed_6000000 |  92.17% |       7493 | 15.86M | 3102 |      9075 |  3.84M |  594 |       8783 |   6.62M |  909 |      5342 |   5.39M | 1599 | 0:09'00'' |
-| trimmed_7000000 |  92.23% |       6752 | 16.62M | 3511 |      8909 |  3.04M |  476 |       7526 |   6.35M |  980 |      5262 |   7.23M | 2055 | 0:10'02'' |
-| trimmed_8000000 |  92.28% |       6032 | 17.61M | 4041 |      8184 |  2.21M |  382 |       7149 |   6.32M | 1013 |      4864 |   9.08M | 2646 | 0:11'35'' |
+| Name            | N50SRclean |    Sum |    # | N50Anchor |    Sum |    # | N50Anchor2 |    Sum |  # | N50Others |     Sum |    # |   RunTime |
+|:----------------|-----------:|-------:|-----:|----------:|-------:|-----:|-----------:|-------:|---:|----------:|--------:|-----:|----------:|
+| Q20L150_1000000 |       1821 | 10.24M | 6795 |      2119 |  8.27M | 4121 |       1177 | 17.25K | 14 |       769 |   1.95M | 2660 | 0:02'19'' |
+| Q20L150_2000000 |       4157 | 11.24M | 3820 |      4312 | 10.74M | 3136 |       1140 |  3.46K |  3 |       779 | 501.81K |  681 | 0:03'18'' |
+| Q20L150_3000000 |       6312 | 11.37M | 2721 |      6426 | 11.11M | 2357 |       1308 |  3.76K |  3 |       752 | 262.23K |  361 | 0:04'26'' |
+| Q20L150_4000000 |       8000 | 11.41M | 2257 |      8215 | 11.21M | 1988 |       1692 |  2.92K |  2 |       761 | 193.84K |  267 | 0:05'24'' |
+| Q20L150_5000000 |       9316 | 11.44M | 2036 |      9446 | 11.25M | 1780 |       2625 |  3.73K |  2 |       747 | 181.86K |  254 | 0:06'26'' |
+| Q20L150_6000000 |       9759 | 11.44M | 1985 |      9941 | 11.26M | 1745 |       1553 |  1.55K |  1 |       757 | 174.18K |  239 | 0:07'06'' |
+| Q20L150_7000000 |       9558 | 11.45M | 2004 |      9695 | 11.28M | 1768 |          0 |      0 |  0 |       744 | 168.96K |  236 | 0:07'44'' |
+| Q20L150_8000000 |       9327 | 11.46M | 2082 |      9435 | 11.27M | 1826 |       2942 |  2.94K |  1 |       741 | 181.72K |  255 | 0:08'14'' |
 
 ## Scer: quality assessment
 
@@ -849,7 +859,7 @@ cd ${BASE_DIR}
 
 for part in anchor anchor2 others;
 do 
-    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh trimmed_2000000/sr/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L150_2000000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
     nucmer -l 200 1_genome/genome.fa pe.${part}.fa
     mummerplot -png out.delta -p pe.${part} --medium
 done
@@ -862,31 +872,21 @@ rm out.delta
 rm *.gp
 
 # quast
+rm -fr 9_qa
 quast --no-check \
     -R 1_genome/genome.fa \
-    trimmed_2000000/sr/pe.anchor.fa \
-    trimmed_3000000/sr/pe.anchor.fa \
-    paralogs.fas \
-    --label "2000000,3000000,paralogs" \
-    -o qa
+    Q20L150_2000000/anchor/pe.anchor.fa \
+    Q20L150_4000000/anchor/pe.anchor.fa \
+    Q20L150_6000000/anchor/pe.anchor.fa \
+    1_genome/paralogs.fas \
+    --label "2000000,4000000,6000000,paralogs" \
+    -o 9_qa
 ```
 
 # *Drosophila melanogaster* iso-1
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Drosophila_melanogaster/Info/Index)
 * Proportion of paralogs: 0.0531
-* Real
-    * N50: 25,286,936
-    * S: 137,567,477
-    * C: 8
-* Original
-    * N50: 146
-    * S: 12,852,672,000
-    * C: 88,032,000
-* Trimmed, 120-146 bp
-    * N50: 146
-    * S: 7,291,209,256
-    * C: 51,441,736
 
 ## Dmel: download
 
@@ -927,17 +927,19 @@ mkdir -p ~/data/anchr/iso_1/3_pacbio
 
 ## Dmel: trim
 
-* Trimmed: minimal length 120 bp.
+* Q20L120
 
 ```bash
-mkdir -p ~/data/anchr/iso_1/2_illumina/trimmed
-cd ~/data/anchr/iso_1/2_illumina/trimmed
+mkdir -p ~/data/anchr/iso_1/2_illumina/Q20L120
+pushd ~/data/anchr/iso_1/2_illumina/Q20L120
 
 anchr trim \
-    -l 120 -q 20 \
+    -q 20 -l 120 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
+    
+popd
 ```
 
 * Stats
@@ -945,10 +947,30 @@ anchr trim \
 ```bash
 cd ~/data/anchr/iso_1
 
-faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q20L120";  faops n50 -H -S -C 2_illumina/Q20L120/R1.fq.gz 2_illumina/Q20L120/R1.fq.gz;) >> stat.md
+
+cat stat.md
 ```
+
+| Name     |      N50 |         Sum |        # |
+|:---------|---------:|------------:|---------:|
+| Genome   | 25286936 |   137567477 |        8 |
+| Illumina |      146 | 12852672000 | 88032000 |
+| PacBio   |          |             |          |
+| Q20L120  |      146 |  7346135978 | 51441736 |
 
 ## Dmel: down sampling
 
@@ -957,7 +979,7 @@ BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/trimmed:trimmed:25000000")
+ARRAY=( "2_illumina/Q20L120:Q20L120:25000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -996,7 +1018,7 @@ done
 BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L120}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
@@ -1015,6 +1037,7 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
+        --nosr \
         -s 335 -d 33 -p 16
     bash superreads.sh
     popd > /dev/null
@@ -1024,7 +1047,6 @@ done
 Clear intermediate files.
 
 ```bash
-# masurca
 cd $HOME/data/anchr/iso_1/
 
 find . -type f -name "quorum_mer_db.jf" | xargs rm
@@ -1040,18 +1062,18 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L120}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue
     fi
     
-    rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 120
+    rm -fr ${DIR_COUNT}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 120 false
 done
 ```
 
@@ -1068,7 +1090,7 @@ REAL_G=137567477
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L120}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -1092,11 +1114,11 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L120}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue     
     fi
     
@@ -1108,38 +1130,26 @@ done
 cat stat2.md
 ```
 
-| Name             | SumFq | CovFq | AvgRead | Kmer | SumFa | Discard% | #Subs |  Subs% |   RealG |    EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
-|:-----------------|------:|------:|--------:|-----:|------:|---------:|------:|-------:|--------:|--------:|---------:|--------:|--------:|-------:|----------:|
-| trimmed_5000000  | 1.42G |  10.3 |     141 |   95 | 1.41G |   0.664% | 1.89M | 0.134% | 137.57M | 104.08M |     0.76 | 118.61M |    0.86 |   1.14 | 0:09'15'' |
-| trimmed_10000000 | 2.83G |  20.6 |     140 |   93 | 2.82G |   0.588% | 3.76M | 0.134% | 137.57M | 118.24M |     0.86 | 150.75M |    1.10 |   1.27 | 0:14'12'' |
-| trimmed_15000000 | 4.25G |  30.9 |     139 |   93 | 4.23G |   0.564% |  5.6M | 0.133% | 137.57M |  124.5M |     0.91 | 173.24M |    1.26 |   1.39 | 0:20'46'' |
-| trimmed_20000000 | 5.67G |  41.2 |     138 |   91 | 5.64G |   0.547% | 7.42M | 0.132% | 137.57M | 128.49M |     0.93 | 196.61M |    1.43 |   1.53 | 0:28'10'' |
-| trimmed_25000000 | 7.09G |  51.5 |     137 |   91 | 7.05G |   0.536% |  9.2M | 0.131% | 137.57M | 131.37M |     0.95 | 218.75M |    1.59 |   1.67 | 0:36'08'' |
+| Name             | SumFq | CovFq | AvgRead | Kmer | SumFa | Discard% |   RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:-----------------|------:|------:|--------:|-----:|------:|---------:|--------:|--------:|---------:|--------:|------:|----------:|
+| Q20L120_5000000  | 1.42G |  10.3 |     141 |   95 | 1.14G |  19.452% | 137.57M |  94.68M |     0.69 | 119.61M |     0 | 0:08'22'' |
+| Q20L120_10000000 | 2.83G |  20.6 |     140 |   93 | 2.31G |  18.478% | 137.57M | 111.82M |     0.81 | 137.92M |     0 | 0:15'14'' |
+| Q20L120_15000000 | 4.25G |  30.9 |     139 |   93 | 3.48G |  18.123% | 137.57M | 119.21M |     0.87 | 148.11M |     0 | 0:21'59'' |
+| Q20L120_20000000 | 5.67G |  41.2 |     138 |   91 | 4.66G |  17.892% | 137.57M | 123.85M |     0.90 | 155.73M |     0 | 0:29'07'' |
+| Q20L120_25000000 | 7.09G |  51.5 |     137 |   91 | 5.83G |  17.713% | 137.57M | 127.21M |     0.92 | 163.69M |     0 | 0:46'16'' |
 
-| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |    Sum |    # | N50Others |    Sum |     # |   RunTime |
-|:-----------------|--------:|-----------:|--------:|------:|----------:|-------:|------:|-----------:|-------:|-----:|----------:|-------:|------:|----------:|
-| trimmed_5000000  |  83.39% |       1008 |  54.97M | 56301 |      1725 | 22.49M | 12883 |       1552 |  2.55M | 1510 |       718 | 29.93M | 41908 | 0:04'54'' |
-| trimmed_10000000 |  83.42% |       1662 |  92.86M | 67622 |      2352 | 56.11M | 25589 |       2577 |  6.36M | 2849 |       776 | 30.39M | 39184 | 0:09'41'' |
-| trimmed_15000000 |  83.55% |       2227 | 108.27M | 65205 |      2818 | 68.62M | 27591 |       3762 | 10.24M | 3520 |       840 | 29.42M | 34094 | 0:14'17'' |
-| trimmed_20000000 |  83.68% |       2731 | 119.48M | 62645 |      3270 | 72.09M | 26071 |       4367 | 16.15M | 4686 |       933 | 31.25M | 31888 | 0:18'08'' |
-| trimmed_25000000 |  83.80% |       2932 | 128.57M | 63780 |      3411 | 69.59M | 24491 |       4829 | 21.49M | 5640 |      1118 | 37.49M | 33649 | 0:21'42'' |
+| Name             | N50SRclean |     Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |     Sum |   # | N50Others |    Sum |     # |   RunTime |
+|:-----------------|-----------:|--------:|------:|----------:|-------:|------:|-----------:|--------:|----:|----------:|-------:|------:|----------:|
+| Q20L120_5000000  |        903 |  41.22M | 45797 |      1577 |  16.8M | 10364 |       1161 | 230.93K | 195 |       693 | 24.19M | 35238 | 0:06'18'' |
+| Q20L120_10000000 |       1386 |  78.06M | 64045 |      2025 | 50.71M | 25913 |       1178 | 360.82K | 298 |       734 | 26.99M | 37834 | 0:10'51'' |
+| Q20L120_15000000 |       1783 |  92.63M | 63874 |      2375 | 69.11M | 31492 |       1172 | 302.73K | 247 |       749 | 23.21M | 32135 | 0:14'08'' |
+| Q20L120_20000000 |       2185 | 101.08M | 60715 |      2710 | 81.37M | 33713 |       1186 | 240.58K | 196 |       755 | 19.46M | 26806 | 0:18'30'' |
+| Q20L120_25000000 |       2379 | 105.54M | 59727 |      2887 |  87.2M | 34576 |       1198 | 178.44K | 145 |       754 | 18.16M | 25006 | 0:26'37'' |
 
 # *Caenorhabditis elegans* N2
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Caenorhabditis_elegans/Info/Index)
 * Proportion of paralogs: 0.0472
-* Real
-    * N50: 17,493,829
-    * S: 100,286,401
-    * C: 7
-* Original
-    * N50: 100
-    * S: 6,761,709,200
-    * C: 67,617,092
-* Trimmed, 80-100 bp
-    * N50: 100
-    * S: 4,760,227,361
-    * C: 48,565,296
 
 ## Cele: download
 
@@ -1183,17 +1193,19 @@ mkdir -p ~/data/anchr/n2/3_pacbio
 
 ## Cele: trim
 
-* Trimmed: minimal length 80 bp.
+* Q20L80
 
 ```bash
-mkdir -p ~/data/anchr/n2/2_illumina/trimmed
-cd ~/data/anchr/n2/2_illumina/trimmed
+mkdir -p ~/data/anchr/n2/2_illumina/Q20L80
+pushd ~/data/anchr/n2/2_illumina/Q20L80
 
 anchr trim \
-    -l 80 -q 20 \
+    -q 20 -l 80 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
+
+popd
 ```
 
 * Stats
@@ -1201,10 +1213,30 @@ anchr trim \
 ```bash
 cd ~/data/anchr/n2
 
-faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q20L80";  faops n50 -H -S -C 2_illumina/Q20L80/R1.fq.gz 2_illumina/Q20L80/R1.fq.gz;) >> stat.md
+
+cat stat.md
 ```
+
+| Name     |      N50 |        Sum |        # |
+|:---------|---------:|-----------:|---------:|
+| Genome   | 17493829 |  100286401 |        7 |
+| Illumina |      100 | 6761709200 | 67617092 |
+| PacBio   |          |            |          |
+| Q20L80   |      100 | 4771828790 | 48565296 |
 
 ## Cele: down sampling
 
@@ -1213,7 +1245,7 @@ BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/trimmed:trimmed:25000000")
+ARRAY=( "2_illumina/Q20L80:Q20L80:25000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -1252,7 +1284,7 @@ done
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
@@ -1271,6 +1303,7 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
+        --nosr \
         -s 200 -d 20 -p 16
     bash superreads.sh
     popd > /dev/null
@@ -1280,7 +1313,6 @@ done
 Clear intermediate files.
 
 ```bash
-# masurca
 cd $HOME/data/anchr/n2/
 
 find . -type f -name "quorum_mer_db.jf" | xargs rm
@@ -1296,18 +1328,18 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue
     fi
     
-    rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 80
+    rm -fr ${DIR_COUNT}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 80 false
 done
 ```
 
@@ -1324,7 +1356,7 @@ REAL_G=100286401
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -1348,11 +1380,11 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue     
     fi
     
@@ -1384,18 +1416,6 @@ cat stat2.md
 
 * Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
 * Proportion of paralogs: 0.1115
-* Real
-    * N50: 23,459,830
-    * S: 119,667,750
-    * C: 7
-* Original
-    * N50: 100
-    * S: 9,978,269,800
-    * C: 99,782,698
-* Trimmed
-    * N50: 100
-    * S: 8,600,245,685
-    * C: 86,472,520
 
 ## Atha: download
 
@@ -1435,17 +1455,19 @@ mkdir -p ~/data/anchr/col_0/3_pacbio
 
 ## Atha: trim
 
-* Trimmed: minimal length 80 bp.
+* Q20L80
 
 ```bash
-mkdir -p ~/data/anchr/col_0/2_illumina/trimmed
-cd ~/data/anchr/col_0/2_illumina/trimmed
+mkdir -p ~/data/anchr/col_0/2_illumina/Q20L80
+pushd ~/data/anchr/col_0/2_illumina/Q20L80
 
 anchr trim \
-    -l 80 -q 20 \
+    -q 20 -l 80 \
     ../R1.fq.gz ../R2.fq.gz \
     -o stdout \
     | bash
+
+popd
 ```
 
 * Stats
@@ -1453,10 +1475,30 @@ anchr trim \
 ```bash
 cd ~/data/anchr/col_0
 
-faops n50 -S -C 1_genome/genome.fa
-faops n50 -S -C 2_illumina/R1.fq.gz         2_illumina/R2.fq.gz
-faops n50 -S -C 2_illumina/trimmed/R1.fq.gz 2_illumina/trimmed/R2.fq.gz
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Q20L80";  faops n50 -H -S -C 2_illumina/Q20L80/R1.fq.gz 2_illumina/Q20L80/R1.fq.gz;) >> stat.md
+
+cat stat.md
 ```
+
+| Name     |      N50 |        Sum |        # |
+|:---------|---------:|-----------:|---------:|
+| Genome   | 23459830 |  119667750 |        7 |
+| Illumina |      100 | 9978269800 | 99782698 |
+| PacBio   |          |            |          |
+| Q20L80   |      100 | 8618615500 | 86472520 |
 
 ## Atha: down sampling
 
@@ -1465,7 +1507,7 @@ BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/trimmed:trimmed:40000000")
+ARRAY=( "2_illumina/Q20L80:Q20L80:40000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -1504,7 +1546,7 @@ done
 BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
@@ -1523,6 +1565,7 @@ do
     anchr superreads \
         R1.fq.gz \
         R2.fq.gz \
+        --nosr \
         -s 200 -d 20 -p 16
     bash superreads.sh
     popd > /dev/null
@@ -1547,18 +1590,18 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     echo
     echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue
     fi
     
-    rm -fr ${DIR_COUNT}/sr
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false 80
+    rm -fr ${DIR_COUNT}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 80 false
 done
 ```
 
@@ -1575,7 +1618,7 @@ REAL_G=119667750
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
@@ -1599,11 +1642,11 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{trimmed}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
 do
     DIR_COUNT="${BASE_DIR}/${d}/"
     
-    if [ ! -e ${DIR_COUNT}/sr/pe.anchor.fa ]; then
+    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue     
     fi
     
