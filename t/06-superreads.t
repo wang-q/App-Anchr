@@ -20,6 +20,10 @@ like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(superreads t/R1.fq.gz t/R2.fq.gz -o stdout)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 150, 'line count' );
-like( $result->stdout, qr{masurca.+kmer.+Jellyfish}s, 'bash contents' );
+like( $result->stdout, qr{masurca.+kmer.+Jellyfish.+super-reads}s, 'bash contents' );
+
+$result = test_app( 'App::Anchr' => [qw(superreads t/R1.fq.gz t/R2.fq.gz --nosr -o stdout)] );
+ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 150, 'line count' );
+like( $result->stdout, qr{Skip the super-reads step"}, 'bash contents' );
 
 done_testing();

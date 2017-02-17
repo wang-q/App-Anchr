@@ -6,7 +6,7 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "Run MaSuRCA to create super-reads";
+use constant abstract => "Run MaSuRCA to create k-unitigs and super-reads";
 
 sub opt_spec {
     return (
@@ -16,7 +16,7 @@ sub opt_spec {
         [ 'jf=i',        'jellyfish hash size',                  { default => 500_000_000, }, ],
         [ 'kmer=s',      'kmer size to be used for super reads', { default => 'auto', }, ],
         [ 'prefix|r=s',  'prefix for paired-reads',              { default => 'pe', }, ],
-        [ 'strict', 'discard any reads altered by error correction', ],
+        [ "nosr",        "skip the super-reads step", ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'adapter.jf' ) },
         ],
@@ -33,8 +33,6 @@ sub description {
     my $desc;
     $desc .= ucfirst(abstract) . ".\n";
     $desc .= "\tFastq files can be gzipped\n";
-    $desc
-        .= "\tSource code download from ftp://ftp.genome.umd.edu/pub/MaSuRCA/beta/SuperReads_RNA-1.0.1.tar.gz\n";
     return $desc;
 }
 
@@ -283,7 +281,7 @@ echo "Estimated genome size: $ESTIMATED_GENOME_SIZE"
 #----------------------------#
 # Build k-unitigs
 #----------------------------#
-if [ ! -e guillaumeKUnitigsAtLeast32bases_all.fasta ]; then
+if [ ! -e k_unitigs.fasta ]; then
     log_info Creating k-unitigs with k=$KMER
     create_k_unitigs_large_k -c $(($KMER-1)) -t [% opt.parallel %] \
         -m $KMER -n $ESTIMATED_GENOME_SIZE -l $KMER -f 0.000001 pe.cor.fa \
@@ -299,9 +297,12 @@ if [ ! -e guillaumeKUnitigsAtLeast32bases_all.fasta ]; then
                 foreach $k ( keys %h ) { print ">", $n++, " length:", length($k), "\n$k\n" }
             }
         ' \
-        > guillaumeKUnitigsAtLeast32bases_all.fasta
+        > k_unitigs.fasta
 fi
 
+[% IF opt.nosr -%]
+log_info "Skip the super-reads step"
+[% ELSE -%]
 #----------------------------#
 # super-reads
 #----------------------------#
@@ -309,12 +310,13 @@ log_info Creating super-reads
 createSuperReadsForDirectory.perl \
     -l $KMER \
     -mean-and-stdev-by-prefix-file meanAndStdevByPrefix.pe.txt \
-    -kunitigsfile guillaumeKUnitigsAtLeast32bases_all.fasta \
+    -kunitigsfile k_unitigs.fasta \
     -t [% opt.parallel %] -mikedebug work1 pe.cor.fa 1> super1.err 2>&1
 if [[ ! -e work1/superReads.success ]]; then
     log_warn Super reads failed, check super1.err and files in ./work1/
     exit 1
 fi
+[% END -%]
 
 exit 0
 
