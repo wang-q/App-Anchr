@@ -373,11 +373,35 @@ brew link gnuplot4
 ```
 
 ```bash
+cd ~/data/pacbio/rawdata/ecoli_canu
 canu \
     -p ecoli -d ecoli-auto \
     gnuplot=$HOME/.linuxbrew/Cellar/gnuplot/5.0.5_2/bin/gnuplot \
     genomeSize=4.8m \
     -pacbio-raw p6.25x.fastq
+
+```
+
+```bash
+cd ~/data/pacbio/
+quast --no-check \
+    -R ~/data/anchr/e_coli/1_genome/genome.fa \
+    ~/data/pacbio/rawdata/ecoli_canu/ecoli-auto/ecoli.contigs.fasta \
+    ~/data/pacbio/rawdata/ecoli_canu/ecoli-auto/ecoli.unitigs.fasta \
+    ~/data/pacbio/ecoli_test/2-asm-falcon/p_ctg.fa \
+    ~/data/anchr/e_coli/1_genome/paralogs.fas \
+    --label "contigs,unitigs,falcon,paralogs" \
+    -o ecoli_qa
+
+quast --no-check \
+    -R ~/data/anchr/s288c/1_genome/genome.fa \
+    ~/data/pacbio/rawdata/Yeast_PacBio_2016/data/Nuclear_Genome/S288c.genome.fa.gz \
+    ~/data/anchr/s288c/trimmed_2000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
+    ~/data/anchr/s288c/trimmed_4000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
+    ~/data/anchr/s288c/trimmed_8000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
+    ~/data/anchr/s288c/1_genome/paralogs.fas \
+    --label "yjx,2000000,4000000,8000000,paralogs" \
+    -o s288c_qa
 ```
 
 ## Scer S288c
@@ -491,82 +515,6 @@ https://www.ncbi.nlm.nih.gov/sra?LinkName=biosample_sra&from_uid=4539665
 
 ## 复活草
 
-* 预处理
-
-```text
-$ ls -al ~/zlc/Oropetium_thomaeum/pacbio/data/
-total 2517104
-drwxrwxr-x 2 wangq wangq       4096 Nov  2 15:03 .
-drwxrwxr-x 4 wangq wangq       4096 Nov  2 15:04 ..
--rw-rw-r-- 1 wangq wangq 2577500677 Nov  2 15:36 head80.fa
-
-$ head -n 1 ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa
->SRR2058409.1 1 length=5249
-
-$ perl ~/Scripts/sra/falcon_name_fasta.pl -i data/head80.fa
-
-$ head -n 1 ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa.outfile
->falcon_read/000001/0_5249
-
-$ mv ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fa.outfile ~/zlc/Oropetium_thomaeum/pacbio/data/head80.fasta
-```
-
-* 配置文件及运行
-
-```bash
-cd $HOME/share/FALCON-integrate
-source env.sh
-
-if [ -d ~/zlc/Oropetium_thomaeum/pacbio/falcon ];
-then
-    rm -fr ~/zlc/Oropetium_thomaeum/pacbio/falcon
-fi
-mkdir -p ~/zlc/Oropetium_thomaeum/pacbio/falcon
-cd ~/zlc/Oropetium_thomaeum/pacbio/falcon
-find ~/zlc/Oropetium_thomaeum/pacbio/data/ -name "*.fasta" > input.fofn
-
-cat <<EOF > fc_run.cfg
-[General]
-job_type = local
-
-# list of files of the initial bas.h5 files
-input_fofn = input.fofn
-
-input_type = raw
-#input_type = preads
-
-# The length cutoff used for seed reads used for initial mapping
-length_cutoff = 12000
-
-# The length cutoff used for seed reads used for pre-assembly
-length_cutoff_pr = 12000
-
-# Cluster queue setting
-sge_option_da =
-sge_option_la =
-sge_option_pda =
-sge_option_pla =
-sge_option_fc =
-sge_option_cns =
-
-pa_concurrent_jobs = 16
-ovlp_concurrent_jobs = 16
-
-pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
-
-pa_DBsplit_option = -x500 -s50
-ovlp_DBsplit_option = -x500 -s50
-
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
-
-overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 24
-
-EOF
-
-fc_run fc_run.cfg
-```
-
 ## Atha Ler-0
 
 * 三代原始数据
@@ -585,9 +533,6 @@ aria2c -x 9 -s 3 -c -i /home/wangq/data/pacbio/rawdata/public_SequelData_Arabido
 mkdir -p $HOME/data/pacbio/rawdata/ler0_test/fasta
 cd $HOME/data/pacbio/rawdata/ler0_test/fasta
 
-# segfault
-#dextract ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam
-
 samtools fasta \
     ~/data/pacbio/rawdata/public/SequelData/ArabidopsisDemoData/SequenceData/1_A01_customer/m54113_160913_184949.subreads.bam \
     > m54113_160913_184949.fasta
@@ -600,59 +545,6 @@ samtools fasta \
 #S       10753458447
 #C       1135065
 faops n50 -C -S *.fasta
-```
-
-```bash
-source ~/share/pitchfork/deployment/setup-env.sh
-
-if [ -d $HOME/data/pacbio/ler0_test ];
-then
-    rm -fr $HOME/data/pacbio/ler0_test
-fi
-mkdir -p $HOME/data/pacbio/ler0_test
-cd $HOME/data/pacbio/ler0_test
-find $HOME/data/pacbio/rawdata/ler0_test/fasta -name "*.fasta" > input.fofn
-
-cat <<EOF > fc_run.cfg
-[General]
-job_type = local
-
-# list of files of the initial bas.h5 files
-input_fofn = input.fofn
-
-input_type = raw
-#input_type = preads
-
-# The length cutoff used for seed reads used for initial mapping
-length_cutoff = 12000
-
-# The length cutoff used for seed reads used for pre-assembly
-length_cutoff_pr = 12000
-
-# Cluster queue setting
-sge_option_da =
-sge_option_la =
-sge_option_pda =
-sge_option_pla =
-sge_option_fc =
-sge_option_cns =
-
-pa_concurrent_jobs = 16
-ovlp_concurrent_jobs = 16
-
-pa_HPCdaligner_option =  -v -B4 -t16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -B4 -t32 -h60 -e.96 -l500 -s1000
-
-pa_DBsplit_option = -x500 -s50
-ovlp_DBsplit_option = -x500 -s50
-
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
-
-overlap_filtering_setting = --max_diff 100 --max_cov 100 --min_cov 20 --bestn 10 --n_core 24
-
-EOF
-
-fc_run fc_run.cfg
 ```
 
 ## 其它模式生物
