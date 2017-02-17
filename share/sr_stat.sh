@@ -51,14 +51,14 @@ stat_format () {
 
 if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
             "SumFq" "CovFq" "AvgRead" "Kmer" \
             "SumFa" "Discard%" \
             "RealG" "EstG" "Est/Real" \
-            "SumSR" "SR/Real" "SR/Est" \
+            "SumKU" "SumSR" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
         exit 1;
@@ -69,10 +69,11 @@ if [ "${STAT_TASK}" = "1" ]; then
         SUM_FQ=$( if [ -e pe.renamed.fastq ]; then faops n50 -H -N 0 -S pe.renamed.fastq; else echo 0; fi )
         SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
         EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
+        SUM_KU=$( faops n50 -H -N 0 -S k_unitigs.fasta)
         SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
         SECS=$(expr $(stat -c %Y super1.err) - $(stat -c %Y superreads.sh))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | \n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE};" ) \
@@ -83,9 +84,8 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_KU}, base => 1000,);" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${GENOME_SIZE}" ) \
-            $( perl -e "printf qq{%.2f}, ${SUM_SR} / ${EST_G}" ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR not exists"
@@ -101,9 +101,9 @@ elif [ "${STAT_TASK}" = "2" ]; then
             "N50Others"  "Sum" "#" \
             "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
-    elif [ -d "${RESULT_DIR}/sr" ]; then
+    elif [ -d "${RESULT_DIR}/anchor" ]; then
         log_debug "${RESULT_DIR}"
-        cd "${RESULT_DIR}/sr"
+        cd "${RESULT_DIR}/anchor"
 
         SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
@@ -114,7 +114,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
             $( stat_format pe.others.fa )   \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
-        log_warn "RESULT_DIR/sr not exists"
+        log_warn "RESULT_DIR/anchor not exists"
     fi
 
 else
