@@ -70,8 +70,13 @@ if [ "${STAT_TASK}" = "1" ]; then
         SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
         EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
         SUM_KU=$( faops n50 -H -N 0 -S k_unitigs.fasta)
-        SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
-        SECS=$(expr $(stat -c %Y super1.err) - $(stat -c %Y superreads.sh))
+        if [ -e work1/superReadSequences.fasta ]; then
+            SECS=$(expr $(stat -c %Y work1/superReadSequences.fasta) - $(stat -c %Y superreads.sh))
+            SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
+        else
+            SECS=$(expr $(stat -c %Y k_unitigs.fasta) - $(stat -c %Y superreads.sh))
+            SUM_SR=0
+        fi
 
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
