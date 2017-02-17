@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 RESULT_DIR N_THREADS MIN_LENGTH_READ"
+USAGE="Usage: $0 RESULT_DIR N_THREADS MIN_LENGTH_READ USE_SR"
 
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
@@ -38,11 +38,13 @@ log_debug () {
 RESULT_DIR=$1
 N_THREADS=${2:-8}
 MIN_LENGTH_READ=${3:-100}
+USE_SR=${4:-true}
 
 log_info "Parameters"
 log_debug "    RESULT_DIR=${RESULT_DIR}"
 log_debug "    N_THREADS=${N_THREADS}"
 log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
+log_debug "    USE_SR=${USE_SR}"
 
 [ -e ${RESULT_DIR}/pe.cor.fa ] || {
     log_warn "Can't find pe.cor.fa in [${RESULT_DIR}].";
@@ -58,11 +60,16 @@ log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
 # Prepare SR
 #----------------------------#
 log_info "Prepare SR"
-mkdir -p ${RESULT_DIR}/sr
-cd ${RESULT_DIR}/sr
+mkdir -p ${RESULT_DIR}/anchor
+cd ${RESULT_DIR}/anchor
 
 ln -s ../pe.cor.fa .
-faops filter -a 500 -l 0 ../work1/superReadSequences.fasta SR.filter.fasta
+
+if [ "${USE_SR}" = true ] ; then
+    faops filter -a 500 -l 0 ../work1/superReadSequences.fasta SR.filter.fasta
+else
+    faops filter -a 500 -l 0 ../k_unitigs.fasta SR.filter.fasta
+fi
 
 anchr overlap SR.filter.fasta --len 500 --idt .96 -o SR.ovlp.tsv
 
