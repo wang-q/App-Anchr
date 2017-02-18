@@ -61,3 +61,4 @@ bash model/4_proc_cmd.sh
 bash model/5_circos_cmd.sh
 ```
 
+All done.
