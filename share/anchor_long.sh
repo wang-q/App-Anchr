@@ -69,18 +69,18 @@ log_debug "    N_LINKS=${N_LINKS}"
 # Prepare sequences
 #----------------------------#
 log_info "Prepare sequences"
-mkdir -p ${WORKING_DIR}/group
+mkdir -p ${WORKING_DIR}/anchorLong
 cat ${ANCHOR_FILE} \
     | anchr dazzname --prefix anchor stdin -o stdout \
-    | faops filter -l 0 stdin ${WORKING_DIR}/group/anchor.fasta
-mv stdout.replace.tsv ${WORKING_DIR}/group/anchor.replace.tsv
+    | faops filter -l 0 stdin ${WORKING_DIR}/anchorLong/anchor.fasta
+mv stdout.replace.tsv ${WORKING_DIR}/anchorLong/anchor.replace.tsv
 
 cat ${LONG_FILE} \
     | anchr dazzname --prefix long stdin -o stdout \
-    | faops filter -l 0 -a 1000 stdin ${WORKING_DIR}/group/long.fasta
-mv stdout.replace.tsv ${WORKING_DIR}/group/long.replace.tsv
+    | faops filter -l 0 -a 2000 stdin ${WORKING_DIR}/anchorLong/long.fasta
+mv stdout.replace.tsv ${WORKING_DIR}/anchorLong/long.replace.tsv
 
-pushd ${WORKING_DIR}/group
+pushd ${WORKING_DIR}/anchorLong
 
 ANCHOR_SUM=$(faops n50 -H -N 0 -S anchor.fasta)
 ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchor.fasta)
@@ -128,11 +128,24 @@ for i in $(seq 1 1 ${ANCHOR_IDX}); do
     LAcheck -vS anchorLongDB anchorLongDB.${i}
 done
 
-#rm anchorLongDB.*.anchorLongDB.*.las
+rm anchorLongDB.*.anchorLongDB.*.las
 
 LAcat -v anchorLongDB.#.las > anchorLongDB.las
 LAcheck -vS anchorLongDB anchorLongDB
-#rm anchorLongDB.*.las
+rm anchorLongDB.*.las
+
+#----------------------------#
+# show2ovlp
+#----------------------------#
+log_info "show2ovlp"
+LAshow -o anchorLongDB.db anchorLongDB.las > anchorLong.show.txt
+cat anchor.fasta long.fasta \
+    | anchr show2ovlp stdin anchorLong.show.txt -o anchorLong.ovlp.tsv
+
+cat anchorLong.ovlp.tsv \
+    | perl -nla -F"\t" -MAlignDB::IntSpan -e '
+
+     '
 
 #----------------------------#
 # Done
