@@ -7,7 +7,7 @@
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [*E. coli*: download](#e-coli-download)
-    - [*E. coli*: trim/filter](#e-coli-trimfilter)
+    - [*E. coli*: trim](#e-coli-trim)
     - [*E. coli*: down sampling](#e-coli-down-sampling)
     - [*E. coli*: generate super-reads](#e-coli-generate-super-reads)
     - [*E. coli*: create anchors](#e-coli-create-anchors)
@@ -28,6 +28,7 @@
     - [Dmel: generate super-reads](#dmel-generate-super-reads)
     - [Dmel: create anchors](#dmel-create-anchors)
     - [Dmel: results](#dmel-results)
+    - [Dmel: quality assessment](#dmel-quality-assessment)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [Cele: download](#cele-download)
     - [Cele: trim](#cele-trim)
@@ -35,12 +36,15 @@
     - [Cele: generate super-reads](#cele-generate-super-reads)
     - [Cele: create anchors](#cele-create-anchors)
     - [Cele: results](#cele-results)
+    - [Cele: quality assessment](#cele-quality-assessment)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
     - [Atha: trim](#atha-trim)
     - [Atha: down sampling](#atha-down-sampling)
     - [Atha: generate super-reads](#atha-generate-super-reads)
     - [Atha: create anchors](#atha-create-anchors)
+    - [Atha: results](#atha-results)
+    - [Atha: quality assessment](#atha-quality-assessment)
 
 
 # More tools on downloading and preprocessing data
@@ -126,7 +130,7 @@ bax2bam --help
 # *Escherichia coli* str. K-12 substr. MG1655
 
 * Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
-* Proportion of paralogs: 0.0323
+* Proportion of paralogs (> 1000 bp): 0.0323
 
 ## *E. coli*: download
 
@@ -504,7 +508,7 @@ do
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
-cp ~/data/alignment/self/ecoli/Results/MG1655/MG1655.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas 1_genome/paralogs.fas
 
 cp ~/data/pacbio/ecoli_p6c4/2-asm-falcon/p_ctg.fa falcon.fa
 
@@ -534,7 +538,7 @@ quast --no-check \
 # *Saccharomyces cerevisiae* S288c
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Saccharomyces_cerevisiae/Info/Index)
-* Proportion of paralogs: 0.058
+* Proportion of paralogs (> 1000 bp): 0.058
 
 ## Scer: download
 
@@ -864,7 +868,7 @@ do
     mummerplot -png out.delta -p pe.${part} --medium
 done
 
-cp ~/data/alignment/self/yeast/Results/S288c/S288c.multi.fas $HOME/data/anchr/s288c/1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fas
 
 # mummerplot files
 rm *.[fr]plot
@@ -886,7 +890,7 @@ quast --no-check \
 # *Drosophila melanogaster* iso-1
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Drosophila_melanogaster/Info/Index)
-* Proportion of paralogs: 0.0531
+* Proportion of paralogs (> 1000 bp): 0.0661
 
 ## Dmel: download
 
@@ -1146,10 +1150,40 @@ cat stat2.md
 | Q20L120_20000000 |       2185 | 101.08M | 60715 |      2710 | 81.37M | 33713 |       1186 | 240.58K | 196 |       755 | 19.46M | 26806 | 0:18'30'' |
 | Q20L120_25000000 |       2379 | 105.54M | 59727 |      2887 |  87.2M | 34576 |       1198 | 178.44K | 145 |       754 | 18.16M | 25006 | 0:26'37'' |
 
+## Dmel: quality assessment
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L120_25000000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.fas
+
+# quast
+rm -fr 9_qa
+quast --no-check \
+    -R 1_genome/genome.fa \
+    Q20L120_25000000/anchor/pe.anchor.fa \
+    1_genome/paralogs.fas \
+    --label "25000000,paralogs" \
+    -o 9_qa
+```
+
 # *Caenorhabditis elegans* N2
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Caenorhabditis_elegans/Info/Index)
-* Proportion of paralogs: 0.0472
+* Proportion of paralogs (> 1000 bp): 0.0472
 
 ## Cele: download
 
@@ -1396,26 +1430,56 @@ done
 cat stat2.md
 ```
 
-| Name             |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |   RealG |   EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
-|:-----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|--------:|-------:|---------:|--------:|--------:|-------:|----------:|
-| trimmed_5000000  | 980.18M |   9.8 |      97 |   71 | 973.45M |   0.686% | 601.64K | 0.062% | 100.29M | 90.12M |     0.90 |  108.1M |    1.08 |   1.20 | 0:05'14'' |
-| trimmed_10000000 |   1.96G |  19.5 |      97 |   71 |   1.95G |   0.481% |   1.03M | 0.053% | 100.29M | 96.45M |     0.96 |  120.9M |    1.21 |   1.25 | 0:09'08'' |
-| trimmed_15000000 |   2.94G |  29.3 |      97 |   71 |   2.93G |   0.455% |    1.5M | 0.051% | 100.29M | 97.72M |     0.97 | 133.09M |    1.33 |   1.36 | 0:13'02'' |
-| trimmed_20000000 |   3.92G |  39.1 |      97 |   71 |    3.9G |   0.446% |   1.99M | 0.051% | 100.29M | 98.24M |     0.98 |  154.7M |    1.54 |   1.57 | 0:17'11'' |
-| trimmed_25000000 |   4.76G |  47.5 |      97 |   71 |   4.74G |   0.444% |   2.41M | 0.051% | 100.29M | 98.52M |     0.98 | 174.67M |    1.74 |   1.77 | 0:20'18'' |
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   RealG |   EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|---------:|--------:|------:|----------:|
+| Q20L80_5000000  | 980.18M |   9.8 |      97 |   71 | 897.53M |   8.432% | 100.29M | 87.08M |     0.87 | 117.08M |     0 | 0:05'56'' |
+| Q20L80_10000000 |   1.96G |  19.5 |      97 |   71 |   1.82G |   7.346% | 100.29M | 95.68M |     0.95 | 118.27M |     0 | 0:11'08'' |
+| Q20L80_15000000 |   2.94G |  29.3 |      97 |   71 |   2.73G |   7.223% | 100.29M | 97.32M |     0.97 | 115.98M |     0 | 0:16'45'' |
+| Q20L80_20000000 |   3.92G |  39.1 |      97 |   71 |   3.64G |   7.175% | 100.29M | 97.93M |     0.98 | 115.25M |     0 | 0:19'59'' |
+| Q20L80_25000000 |   4.76G |  47.5 |      97 |   71 |   4.42G |   7.153% | 100.29M | 98.21M |     0.98 |  115.3M |     0 | 0:26'45'' |
 
-| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |    Sum |    # | N50Others |    Sum |     # |   RunTime |
-|:-----------------|--------:|-----------:|--------:|------:|----------:|-------:|------:|-----------:|-------:|-----:|----------:|-------:|------:|----------:|
-| trimmed_5000000  |  93.93% |        648 |  15.62M | 23227 |      1195 |   1.4M |  1114 |       1635 | 29.94K |   19 |       630 | 14.19M | 22094 | 0:03'20'' |
-| trimmed_10000000 |  94.58% |       1172 |  71.52M | 66496 |      1668 | 38.69M | 23204 |       2023 |  1.93M |  957 |       745 |  30.9M | 42335 | 0:09'38'' |
-| trimmed_15000000 |  94.68% |       2197 |  91.87M | 54955 |      2681 | 60.71M | 25750 |       3488 |  8.87M | 2907 |       834 | 22.29M | 26298 | 0:16'19'' |
-| trimmed_20000000 |  94.71% |       3297 | 103.02M | 46613 |      3574 | 58.78M | 20284 |       5020 |  20.5M | 5102 |      1066 | 23.74M | 21227 | 0:20'47'' |
-| trimmed_25000000 |  94.73% |       3846 | 111.38M | 44620 |      4011 | 51.96M | 16590 |       5379 | 28.72M | 6570 |      1974 |  30.7M | 21460 | 0:26'21'' |
+| Name            | N50SRclean |    Sum |     # | N50Anchor |    Sum |     # | N50Anchor2 |   Sum | # | N50Others |    Sum |     # |   RunTime |
+|:----------------|-----------:|-------:|------:|----------:|-------:|------:|-----------:|------:|--:|----------:|-------:|------:|----------:|
+| Q20L80_5000000  |        637 | 12.58M | 19037 |      1190 |  1.05M |   845 |          0 |     0 | 0 |       621 | 11.52M | 18192 | 0:04'29'' |
+| Q20L80_10000000 |       1105 | 64.74M | 62975 |      1604 | 36.11M | 22378 |       1096 | 2.16K | 2 |       725 | 28.63M | 40595 | 0:09'23'' |
+| Q20L80_15000000 |       1994 | 83.29M | 53022 |      2499 | 66.13M | 29259 |       2455 | 7.13K | 4 |       749 | 17.15M | 23759 | 0:13'53'' |
+| Q20L80_20000000 |       3050 | 89.24M | 42590 |      3564 | 77.94M | 26959 |       1750 | 3.25K | 2 |       752 |  11.3M | 15629 | 0:17'21'' |
+| Q20L80_25000000 |       3831 | 91.59M | 37420 |      4373 | 82.57M | 24972 |       1890 | 1.89K | 1 |       754 |  9.02M | 12447 | 0:20'04'' |
+
+## Cele: quality assessment
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L80_25000000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
+
+# quast
+rm -fr 9_qa
+quast --no-check \
+    -R 1_genome/genome.fa \
+    Q20L80_25000000/anchor/pe.anchor.fa \
+    1_genome/paralogs.fas \
+    --label "25000000,paralogs" \
+    -o 9_qa
+```
 
 # *Arabidopsis thaliana* Col-0
 
 * Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
-* Proportion of paralogs: 0.1115
+* Proportion of paralogs (> 1000 bp): 0.1158
 
 ## Atha: download
 
@@ -1431,8 +1495,6 @@ faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
 ```
 
 * Illumina
-
-    450
 
 ```bash
 # Downloading from ena with aria2
@@ -1658,24 +1720,55 @@ done
 cat stat2.md
 ```
 
-| Name             |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   #Subs |  Subs% |   RealG |    EstG | Est/Real |   SumSR | SR/Real | SR/Est |   RunTime |
-|:-----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|-------:|--------:|--------:|---------:|--------:|--------:|-------:|----------:|
-| trimmed_5000000  | 994.55M |   8.3 |      99 |   71 | 991.27M |   0.331% | 931.93K | 0.094% | 119.67M | 101.22M |     0.85 |  95.61M |    0.80 |   0.94 | 0:08'15'' |
-| trimmed_10000000 |   1.99G |  16.6 |      99 |   71 |   1.98G |   0.230% |    1.7M | 0.086% | 119.67M | 138.53M |     1.16 |  157.1M |    1.31 |   1.13 | 0:16'17'' |
-| trimmed_15000000 |   2.98G |  24.9 |      99 |   71 |   2.98G |   0.228% |   2.55M | 0.086% | 119.67M | 164.08M |     1.37 | 170.97M |    1.43 |   1.04 | 0:23'41'' |
-| trimmed_20000000 |   3.98G |  33.2 |      99 |   71 |   3.97G |   0.232% |   3.42M | 0.086% | 119.67M | 189.74M |     1.59 | 185.52M |    1.55 |   0.98 | 0:32'17'' |
-| trimmed_25000000 |   4.97G |  41.6 |      99 |   71 |   4.96G |   0.252% |   4.52M | 0.091% | 119.67M | 214.13M |     1.79 | 204.19M |    1.71 |   0.95 | 0:40'54'' |
-| trimmed_30000000 |   5.97G |  49.9 |      99 |   71 |   5.95G |   0.255% |   5.43M | 0.091% | 119.67M | 239.49M |     2.00 | 229.96M |    1.92 |   0.96 | 0:49'53'' |
-| trimmed_35000000 |   6.96G |  58.2 |      99 |   71 |   6.94G |   0.257% |   6.33M | 0.091% | 119.67M | 264.54M |     2.21 | 262.23M |    2.19 |   0.99 | 0:49'02'' |
-| trimmed_40000000 |   7.96G |  66.5 |      99 |   71 |   7.94G |   0.258% |   7.21M | 0.091% | 119.67M | 288.97M |     2.41 | 295.78M |    2.47 |   1.02 | 0:55'58'' |
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% |   RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|--------:|--------:|---------:|--------:|------:|----------:|
+| Q20L80_5000000  | 994.55M |   8.3 |      99 |   71 | 707.85M |  28.828% | 119.67M |  80.47M |     0.67 | 115.95M |     0 | 0:05'57'' |
+| Q20L80_10000000 |   1.99G |  16.6 |      99 |   71 |   1.51G |  24.124% | 119.67M | 114.21M |     0.95 | 160.41M |     0 | 0:13'30'' |
+| Q20L80_15000000 |   2.98G |  24.9 |      99 |   71 |    2.3G |  22.808% | 119.67M |  126.9M |     1.06 | 169.83M |     0 | 0:17'29'' |
+| Q20L80_20000000 |   3.98G |  33.2 |      99 |   71 |   3.11G |  21.758% | 119.67M | 139.64M |     1.17 | 182.61M |     0 | 0:21'04'' |
+| Q20L80_25000000 |   4.97G |  41.6 |      99 |   71 |   3.94G |  20.820% | 119.67M | 154.03M |     1.29 | 201.12M |     0 | 0:33'45'' |
+| Q20L80_30000000 |   5.97G |  49.9 |      99 |   71 |   4.77G |  20.007% | 119.67M | 169.58M |     1.42 |  223.3M |     0 | 0:25'15'' |
+| Q20L80_35000000 |   6.96G |  58.2 |      99 |   71 |   5.62G |  19.289% | 119.67M | 185.76M |     1.55 | 247.36M |     0 | 0:30'35'' |
+| Q20L80_40000000 |   7.96G |  66.5 |      99 |   71 |   6.47G |  18.671% | 119.67M | 202.11M |     1.69 | 272.18M |     0 | 0:37'11'' |
 
-| Name             | strict% | N50SRclean |     Sum |     # | N50Anchor |     Sum |     # | N50Anchor2 |     Sum |    # | N50Others |     Sum |     # |   RunTime |
-|:-----------------|--------:|-----------:|--------:|------:|----------:|--------:|------:|-----------:|--------:|-----:|----------:|--------:|------:|----------:|
-| trimmed_5000000  |  92.99% |       1453 | 714.99K |   638 |      3282 | 178.45K |    71 |       3314 |     94K |   32 |       756 | 442.54K |   535 | 0:02'37'' |
-| trimmed_10000000 |  93.30% |        677 |  19.89M | 28528 |      1175 |   2.35M |  1893 |       2266 |  87.37K |   43 |       648 |  17.46M | 26592 | 0:07'06'' |
-| trimmed_15000000 |  93.31% |       1025 |  71.15M | 73698 |      1461 |  35.41M | 23839 |       1728 | 298.42K |  173 |       733 |  35.44M | 49686 | 0:12'08'' |
-| trimmed_20000000 |  93.29% |       1904 |  98.19M | 64053 |      2295 |  76.69M | 36534 |       2129 |   1.45M |  681 |       775 |  20.06M | 26838 | 0:18'54'' |
-| trimmed_25000000 |  92.98% |       3625 | 106.58M | 42994 |      4003 |  92.91M | 29147 |       3462 |   3.35M | 1110 |       822 |  10.32M | 12737 | 0:25'30'' |
-| trimmed_30000000 |  92.98% |       5965 | 109.59M | 30994 |      6454 |  96.35M | 21184 |       5499 |   5.82M | 1401 |       874 |   7.42M |  8409 | 0:34'15'' |
-| trimmed_35000000 |  92.99% |       8308 | 112.12M | 25573 |      8886 |  94.37M | 16363 |       9098 |  10.09M | 1727 |       950 |   7.66M |  7483 | 0:33'18'' |
-| trimmed_40000000 |  93.00% |       9802 | 114.38M | 23474 |     10394 |  91.42M | 14061 |      11333 |  14.96M | 2076 |       998 |      8M |  7337 | 0:30'34'' |
+| Name            | N50SRclean |     Sum |     # | N50Anchor |     Sum |     # | N50Anchor2 |   Sum | # | N50Others |     Sum |     # |   RunTime |
+|:----------------|-----------:|--------:|------:|----------:|--------:|------:|-----------:|------:|--:|----------:|--------:|------:|----------:|
+| Q20L80_5000000  |       1500 | 532.36K |   448 |         0 |       0 |     0 |          0 |     0 | 0 |      1500 | 532.36K |   448 | 0:02'45'' |
+| Q20L80_10000000 |        656 |   14.5M | 21372 |         0 |       0 |     0 |          0 |     0 | 0 |       656 |   14.5M | 21372 | 0:04'53'' |
+| Q20L80_15000000 |        941 |  62.58M | 69252 |      1387 |  27.67M | 19474 |          0 |     0 | 0 |       717 |   34.9M | 49778 | 0:09'27'' |
+| Q20L80_20000000 |       1639 |  92.22M | 67020 |      2023 |  70.15M | 36628 |       1086 | 3.41K | 3 |       756 |  22.07M | 30389 | 0:15'54'' |
+| Q20L80_25000000 |       3005 | 102.07M | 47207 |      3327 |  91.66M | 33019 |          0 |     0 | 0 |       771 |  10.41M | 14188 | 0:15'54'' |
+| Q20L80_30000000 |       4902 | 105.17M | 33963 |      5217 |  99.16M | 25721 |       1776 | 3.23K | 2 |       766 |   6.01M |  8240 | 0:18'46'' |
+| Q20L80_35000000 |       6833 | 106.59M | 27391 |      7164 | 101.99M | 21035 |       1089 | 1.09K | 1 |       756 |    4.6M |  6355 | 0:20'51'' |
+| Q20L80_40000000 |       8220 |  107.4M | 24504 |      8611 | 103.23M | 18700 |          0 |     0 | 0 |       748 |   4.17M |  5804 | 0:24'19'' |
+
+## Atha: quality assessment
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+for part in anchor anchor2 others;
+do 
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L80_40000000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
+    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
+    mummerplot -png out.delta -p pe.${part} --medium
+done
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+cp ~/data/anchr/paralogs/model/Results/col_0/col_0.multi.fas 1_genome/paralogs.fas
+
+# quast
+rm -fr 9_qa
+quast --no-check \
+    -R 1_genome/genome.fa \
+    Q20L80_30000000/anchor/pe.anchor.fa \
+    Q20L80_40000000/anchor/pe.anchor.fa \
+    1_genome/paralogs.fas \
+    --label "30000000,40000000,paralogs" \
+    -o 9_qa
+```
