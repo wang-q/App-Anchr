@@ -45,7 +45,7 @@ perl ~/Scripts/egaz/self_batch.pl \
     --working_dir ~/data/anchr/paralogs \
     --seq_dir ~/data/anchr/paralogs/genomes \
     -c ~/data/anchr/paralogs/taxon.csv \
-    --length 500  \
+    --length 1000 \
     --norm \
     --name model \
     -t e_coli \
