@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 ANCHOR_FILE LONG_FILE WORKING_DIR BLOCK_SIZE N_THREADS N_LINKS"
+USAGE="Usage: $0 ANCHOR_FILE LONG_FILE WORKING_DIR BLOCK_SIZE N_THREADS"
 
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
@@ -40,15 +40,13 @@ LONG_FILE=$2
 WORKING_DIR=${3:-.}
 BLOCK_SIZE=${4:-50}
 N_THREADS=${5:-8}
-N_LINKS=${6:-2}
 
 log_info "Parameters"
 log_debug "    ANCHOR_FILE=${ANCHOR_FILE}"
 log_debug "    LONG_FILE=${LONG_FILE}"
 log_debug "    WORKING_DIR=${WORKING_DIR}"
-log_debug "    N_THREADS=${N_THREADS}"
 log_debug "    BLOCK_SIZE=${BLOCK_SIZE}"
-log_debug "    N_LINKS=${N_LINKS}"
+log_debug "    N_THREADS=${N_THREADS}"
 
 [ -e ${ANCHOR_FILE} ] || {
     log_warn "Can't find anchor file [${ANCHOR_FILE}].";
@@ -75,17 +73,17 @@ cat ${ANCHOR_FILE} \
     | faops filter -l 0 stdin ${WORKING_DIR}/anchorLong/anchor.fasta
 mv stdout.replace.tsv ${WORKING_DIR}/anchorLong/anchor.replace.tsv
 
+ANCHOR_SUM=$(  faops n50 -H -N 0 -S ${WORKING_DIR}/anchorLong/anchor.fasta)
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${WORKING_DIR}/anchorLong/anchor.fasta)
+log_debug "ANCHOR_SUM ${ANCHOR_SUM}"
+log_debug "ANCHOR_COUNT ${ANCHOR_COUNT}"
+
 cat ${LONG_FILE} \
-    | anchr dazzname --prefix long stdin -o stdout \
+    | anchr dazzname --prefix long --start $((${ANCHOR_COUNT} + 1)) stdin -o stdout \
     | faops filter -l 0 -a 2000 stdin ${WORKING_DIR}/anchorLong/long.fasta
 mv stdout.replace.tsv ${WORKING_DIR}/anchorLong/long.replace.tsv
 
 pushd ${WORKING_DIR}/anchorLong
-
-ANCHOR_SUM=$(faops n50 -H -N 0 -S anchor.fasta)
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchor.fasta)
-log_debug "ANCHOR_SUM ${ANCHOR_SUM}"
-log_debug "ANCHOR_COUNT ${ANCHOR_COUNT}"
 
 #----------------------------#
 # Make the dazzler DB
@@ -141,11 +139,6 @@ log_info "show2ovlp"
 LAshow -o anchorLongDB.db anchorLongDB.las > anchorLong.show.txt
 cat anchor.fasta long.fasta \
     | anchr show2ovlp stdin anchorLong.show.txt -o anchorLong.ovlp.tsv
-
-cat anchorLong.ovlp.tsv \
-    | perl -nla -F"\t" -MAlignDB::IntSpan -e '
-
-     '
 
 #----------------------------#
 # Done
