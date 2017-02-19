@@ -80,7 +80,7 @@ log_debug "ANCHOR_COUNT ${ANCHOR_COUNT}"
 
 cat ${LONG_FILE} \
     | anchr dazzname --prefix long --start $((${ANCHOR_COUNT} + 1)) stdin -o stdout \
-    | faops filter -l 0 -a 2000 stdin ${WORKING_DIR}/anchorLong/long.fasta
+    | faops filter -l 0 -a 1000 stdin ${WORKING_DIR}/anchorLong/long.fasta
 mv stdout.replace.tsv ${WORKING_DIR}/anchorLong/long.replace.tsv
 
 pushd ${WORKING_DIR}/anchorLong
