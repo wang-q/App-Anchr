@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 ANCHOR_FILE PAC_FILE OUT_BASE"
+USAGE="Usage: $0 ANCHOR_FILE LONG_FILE OUT_BASE"
 
 if [ "$#" -lt 3 ]; then
     echo >&2 "$USAGE"
@@ -36,7 +36,7 @@ log_debug () {
 # Parameters
 #----------------------------#
 ANCHOR_FILE=$1
-PAC_FILE=$2
+LONG_FILE=$2
 OUT_BASE=${3:-rename}
 
 [ -e ${ANCHOR_FILE} ] || {
@@ -44,8 +44,8 @@ OUT_BASE=${3:-rename}
     exit 1;
 }
 
-[ -e ${PAC_FILE} ] || {
-    log_warn "Can't find [${PAC_FILE}].";
+[ -e ${LONG_FILE} ] || {
+    log_warn "Can't find [${LONG_FILE}].";
     exit 1;
 }
 
@@ -62,9 +62,9 @@ faops order ${ANCHOR_FILE} \
     <(faops size ${ANCHOR_FILE} | sort -n -r -k2,2 | cut -f 1) \
     ${MY_TMP_DIR}/anchor.fasta
 
-faops order ${PAC_FILE} \
-    <(faops size ${PAC_FILE} | sort -n -r -k2,2 | cut -f 1) \
-    ${MY_TMP_DIR}/pac.fasta
+faops order ${LONG_FILE} \
+    <(faops size ${LONG_FILE} | sort -n -r -k2,2 | cut -f 1) \
+    ${MY_TMP_DIR}/long.fasta
 
 log_info "Preprocess reads to format them for dazzler"
 pushd ${MY_TMP_DIR}
@@ -72,7 +72,7 @@ pushd ${MY_TMP_DIR}
 if [ -e stdout.* ]; then
     rm stdout.*
 fi
-cat anchor.fasta pac.fasta \
+cat anchor.fasta long.fasta \
     | anchr dazzname stdin -o stdout \
     | faops filter -l 0 stdin renamed.fasta
 
