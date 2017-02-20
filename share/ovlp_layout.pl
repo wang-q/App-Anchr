@@ -81,7 +81,7 @@ my %contained;
         my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
         my $contained = $fields[12];
 
-        # ignore need self overlapping
+        # ignore self overlapping
         next if $f_id eq $g_id;
 
         # record contained reads
@@ -221,7 +221,7 @@ print YAML::Syck::Dump {
     printf "Reduced %d edges\n", transitively_reduce($anchor_graph);
     g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
 }
-g2gv( $graph, $ARGV[0] . ".all.png" );
+#g2gv( $graph, $ARGV[0] . ".all.png" );
 
 sub transitively_reduce {
 
