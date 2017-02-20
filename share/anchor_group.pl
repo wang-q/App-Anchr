@@ -16,16 +16,19 @@ use Path::Tiny qw();
 # GetOpt section
 #----------------------------------------------------------#
 my $usage_desc = <<EOF;
-Ovelap--Layout(--Consensus)
+Grouping anthors by long reads
 
-Usage: perl %c [options] <ovlp file>
+Usage: perl %c [options] <ovlp file> <dazz DB>
 EOF
 
 my @opt_spec = (
     [ 'help|h', 'display this message' ],
     [],
-    [ 'range|r=s',    'ranges of reads',  { required => 1 }, ],
-    [ 'coverage|c=i', 'minimal coverage', { default  => 2 }, ],
+    [ 'range|r=s',    'ranges of reads',              { required => 1 }, ],
+    [ 'coverage|c=i', 'minimal coverage',             { default  => 2 }, ],
+    [ "len|l=i",      "minimal length of overlaps",   { default  => 500 }, ],
+    [ "idt|i=f",      "minimal identity of overlaps", { default  => 0.7 }, ],
+    [ "png",          "write a png file via graphviz", ],
     { show_defaults => 1, },
 );
 
@@ -34,8 +37,8 @@ my @opt_spec = (
 
 $usage->die if $opt->{help};
 
-if ( @ARGV != 1 ) {
-    my $message = "This script need one input file.\n\tIt found";
+if ( @ARGV != 2 ) {
+    my $message = "This script need two input files.\n\tIt found";
     $message .= sprintf " [%s]", $_ for @ARGV;
     $message .= ".\n";
     $usage->die( { pre_text => $message } );
@@ -57,12 +60,14 @@ if ( $opt->{range} ) {
 #----------------------------------------------------------#
 # start
 #----------------------------------------------------------#
-my $ovlps        = [];
 my $anchor_range = AlignDB::IntSpan->new->add_runlist( $opt->{range} );
 my $covered = {};    # Coverages of long reads in anchors
 
+# long_id => { anchor_id => overlap_on_long }
+my $links_of = {};
+
 #----------------------------#
-# load overlaps
+# load overlaps and build coverages
 #----------------------------#
 {
     my $in_fh;
@@ -88,6 +93,9 @@ my $covered = {};    # Coverages of long reads in anchors
         # ignore self overlapping
         next if $f_id eq $g_id;
 
+        # ignore poor overlaps
+        next if $identity < $opt->{idt};
+
         # only want anchor-long overlaps
         if ( $anchor_range->contains($f_id) and $anchor_range->contains($g_id) ) {
             next;
@@ -109,6 +117,9 @@ my $covered = {};    # Coverages of long reads in anchors
                 }
             }
             bump_coverage( $covered->{$f_id}, $f_B, $f_E, );
+
+            my ( $beg, $end ) = beg_end( $g_B, $g_E, );
+            $links_of->{$g_id}{$f_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
         }
         elsif ( $anchor_range->contains($g_id) and !$anchor_range->contains($f_id) ) {
             if ( !exists $covered->{$g_id} ) {
@@ -118,12 +129,171 @@ my $covered = {};    # Coverages of long reads in anchors
                 }
             }
             bump_coverage( $covered->{$g_id}, $g_B, $g_E, );
-        }
 
-        # store this overlap
-        push @{$ovlps}, \@fields;
+            my ( $beg, $end ) = beg_end( $f_B, $f_E, );
+            $links_of->{$f_id}{$g_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
+        }
     }
     close $in_fh;
+}
+
+my $trusted        = AlignDB::IntSpan->new;
+my $non_overlapped = $anchor_range->copy;
+for my $anchor_id ( sort { $a <=> $b } keys %{$covered} ) {
+    $non_overlapped->remove($anchor_id);
+    if ( $covered->{$anchor_id}{ $opt->{coverage} }->equals( $covered->{$anchor_id}{all} ) ) {
+        $trusted->add($anchor_id);
+    }
+}
+
+for my $anchor_id ( $anchor_range->diff($trusted)->diff($non_overlapped)->elements ) {
+    printf "%s\t%s\t%s\n", $anchor_id, $covered->{$anchor_id}{all}->runlist,
+        $covered->{$anchor_id}{ $opt->{coverage} }->runlist;
+}
+
+print $trusted, "\n";
+print $trusted->size, "\n";
+print $non_overlapped, "\n";
+
+#----------------------------#
+# grouping
+#----------------------------#
+my $graph = Graph->new( directed => 0 );
+
+for my $long_id ( sort { $a <=> $b } keys %{$links_of} ) {
+    my @anchors = sort { $a <=> $b }
+        grep { $trusted->contains($_) }
+        keys %{ $links_of->{$long_id} };
+
+    my $count = scalar @anchors;
+    next unless $count >= 2;
+
+    for my $i ( 0 .. $count - 1 ) {
+        for my $j ( $i + 1 .. $count - 1 ) {
+
+            #@type AlignDB::IntSpan
+            my $set_i    = $links_of->{$long_id}{ $anchors[$i] };
+            my $set_j    = $links_of->{$long_id}{ $anchors[$j] };
+            my $distance = $set_i->distance($set_j);
+
+            next unless defined $distance;
+
+            $graph->add_edge( $anchors[$i], $anchors[$j] );
+
+            if ( $graph->has_edge_attribute( $anchors[$i], $anchors[$j], "long_ids" ) ) {
+                my $long_ids_ref
+                    = $graph->get_edge_attribute( $anchors[$i], $anchors[$j], "long_ids" );
+                push @{$long_ids_ref}, $long_id;
+
+            }
+            else {
+                $graph->set_edge_attribute( $anchors[$i], $anchors[$j], "long_ids", [$long_id], );
+            }
+
+            if ( $graph->has_edge_attribute( $anchors[$i], $anchors[$j], "distances" ) ) {
+                my $distances_ref
+                    = $graph->get_edge_attribute( $anchors[$i], $anchors[$j], "distances" );
+                push @{$distances_ref}, $distance;
+            }
+            else {
+                $graph->set_edge_attribute( $anchors[$i], $anchors[$j], "distances", [$distance], );
+            }
+        }
+    }
+}
+
+for my $edge ( $graph->edges ) {
+    my $long_ids_ref = $graph->get_edge_attribute( @{$edge}, "long_ids" );
+
+    if ( scalar @{$long_ids_ref} < $opt->{coverage} ) {
+        $graph->delete_edge( @{$edge} );
+    }
+
+    my $distances_ref = $graph->get_edge_attribute( @{$edge}, "distances" );
+
+    if ( !judge_distance($distances_ref) ) {
+        $graph->delete_edge( @{$edge} );
+    }
+}
+
+#----------------------------#
+# Outputs
+#----------------------------#
+my $non_grouped = $trusted->copy;
+
+#@type Path::Tiny
+my $output_path = Path::Tiny::path( $ARGV[0] )->parent->child('group');
+$output_path->mkpath;
+
+my @ccs = map { $_->[0] }
+    sort { $b->[1] <=> $a->[1] }
+    map { [ $_, scalar( @{$_} ) ] }
+    grep { scalar @{$_} > 1 } $graph->connected_components();
+my $cc_serial = 1;
+for my $cc (@ccs) {
+    my @members   = sort { $a <=> $b } @{$cc};
+    my $count     = scalar @members;
+    my $base_name = sprintf "%s_%s", $cc_serial, $count;
+
+    my $tempdir = Path::Tiny->tempdir("group.XXXXXXXX");
+
+    {    # anchors
+        my $cmd;
+        $cmd .= "DBshow -U $ARGV[1] ";
+        $cmd .= join " ", @members;
+        $cmd .= " > " . $output_path->child("$base_name.anchor.fasta")->stringify;
+
+        system $cmd;
+    }
+
+    {    # long reads
+        my $long_id_set = AlignDB::IntSpan->new;
+
+        for my $i ( 0 .. $count - 1 ) {
+            $non_grouped->remove( $members[$i] );
+            for my $j ( $i + 1 .. $count - 1 ) {
+                if ( $graph->has_edge( $members[$i], $members[$j], ) ) {
+                    my $long_ids_ref
+                        = $graph->get_edge_attribute( $members[$i], $members[$j], "long_ids" );
+                    $long_id_set->add( @{$long_ids_ref} );
+                }
+
+            }
+        }
+
+        my $cmd;
+        $cmd .= "DBshow -U $ARGV[1] ";
+        $cmd .= join " ", $long_id_set->as_array;
+        $cmd .= " > " . $output_path->child("$base_name.long.fasta")->stringify;
+
+        system $cmd;
+    }
+
+    $cc_serial++;
+}
+printf "CC count %d\n",    scalar(@ccs);
+printf "Non-grouped %s\n", $non_grouped;
+
+if ( $opt->{png} ) {
+    g2gv0( $graph, $ARGV[0] . ".png" );
+}
+
+#----------------------------------------------------------#
+# Subroutines
+#----------------------------------------------------------#
+sub beg_end {
+    my $beg = shift;
+    my $end = shift;
+
+    if ( $beg > $end ) {
+        ( $beg, $end ) = ( $end, $beg );
+    }
+
+    if ( $beg == 0 ) {
+        $beg = 1;
+    }
+
+    return ( $beg, $end );
 }
 
 sub bump_coverage {
@@ -133,7 +303,7 @@ sub bump_coverage {
 
     return if $tier_of->{ $opt->{coverage} }->equals( $tier_of->{all} );
 
-    $beg = 1 if $beg == 0;
+    ( $beg, $end ) = beg_end( $beg, $end );
 
     my $new_set = AlignDB::IntSpan->new->add_pair( $beg, $end );
     for my $i ( 1 .. $opt->{coverage} ) {
@@ -148,155 +318,45 @@ sub bump_coverage {
     }
 }
 
-#----------------------------#
-# layout
-#----------------------------#
-my $graph = Graph->new( directed => 0, );
+sub judge_distance {
+    my $d_ref = shift;
 
-for my $ovlp ( @{$ovlps} ) {
-    my @fields = @{$ovlp};
+    return 0 unless defined $d_ref;
+    return 0 if ( scalar @{$d_ref} < $opt->{coverage} );
 
-    my ( $f_id,     $g_id, $ovlp_len, $identity ) = @fields[ 0 .. 3 ];
-    my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
-    my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
-    my $contained = $fields[12];
-
-    $graph->add_edge( $f_id, $g_id );
-
-}
-
-my $trusted = AlignDB::IntSpan->new;
-
-for my $id ( sort { $a <=> $b } keys %{$covered} ) {
-    if ( $covered->{$id}{ $opt->{coverage} }->equals( $covered->{$id}{all} ) ) {
-        $trusted->add($id);
+    my $sum = 0;
+    my $min = $d_ref->[0];
+    my $max = $min;
+    for my $d ( @{$d_ref} ) {
+        $sum += $d;
+        if ( $d < $min ) { $min = $d; }
+        if ( $d > $max ) { $max = $d; }
+    }
+    my $avg = $sum / scalar( @{$d_ref} );
+    my $v   = $max - $min;
+    if ( $v < 200 or abs( $v / $avg ) < 0.2 ) {
+        return 1;
     }
     else {
-        printf "%s\t%s\t%s\n", $id, $covered->{$id}{all}->runlist,
-            $covered->{$id}{ $opt->{coverage} }->runlist;
+        return 0;
     }
 }
 
-print $trusted, "\n";
-print $trusted->size, "\n";
+sub g2gv0 {
 
-#
-#print YAML::Syck::Dump {
-#    nodes                 => scalar $graph->vertices,
-#    edges                 => scalar $graph->edges,
-#    is_dag                => $graph->is_dag,
-#    is_simple_graph       => $graph->is_simple_graph,
-#    is_cyclic             => $graph->is_cyclic,
-#    is_strongly_connected => $graph->is_strongly_connected,
-#    is_weakly_connected   => $graph->is_weakly_connected,
-#    exterior_vertices     => scalar $graph->exterior_vertices(),
-#    interior_vertices     => scalar $graph->interior_vertices(),
-#    isolated_vertices     => scalar $graph->isolated_vertices(),
-#};
-#
-#{
-#    my $anchor_graph = Graph->new( directed => 1 );
-#
-#    my @nodes = $graph->vertices;
-#
-#    my @linkers = grep { !$anchor_range->contains($_) } @nodes;
-#
-#    for my $l (@linkers) {
-#        my @p = grep { $anchor_range->contains($_) } $graph->predecessors($l);
-#        my @s = grep { $anchor_range->contains($_) } $graph->successors($l);
-#
-#        for my $p (@p) {
-#            for my $s (@s) {
-#                printf "    Add by linkers: %s -> %s\n", $p, $s;
-#                $anchor_graph->add_edge( $p, $s );
-#            }
-#        }
-#
-#        if ( @p > 1 ) {
-#            printf "    [%s] predecessors\n", scalar @p;
-#            @p = map { $_->[0] }
-#                sort { $b->[1] <=> $a->[1] }
-#                map { [ $_, $graph->get_edge_weight( $_, $l ) ] } @p;
-#            for my $i ( 0 .. $#p - 1 ) {
-#                printf "    Add by p distances: %s -> %s\n", $p[$i], $p[ $i + 1 ];
-#                $anchor_graph->add_edge( $p[$i], $p[ $i + 1 ] );
-#            }
-#        }
-#
-#        if ( @s > 1 ) {
-#            printf STDERR "* There should be only one successor, as anchors arn't overlapped\n";
-#            printf "    [%s] successors\n", scalar @s;
-#            @s = map { $_->[0] }
-#                sort { $a->[1] <=> $b->[1] }
-#                map { [ $_, $graph->get_edge_weight( $l, $_, ) ] } @s;
-#            for my $i ( 0 .. $#s - 1 ) {
-#                printf "    Add by s distances: %s -> %s\n", $s[$i], $s[ $i + 1 ];
-#                $anchor_graph->add_edge( $s[$i], $s[ $i + 1 ] );
-#            }
-#        }
-#
-#    }
-#
-#    #    g2gv( $anchor_graph, $ARGV[0] . ".png" );
-#    #    printf "Reduced %d edges\n", transitively_reduce($anchor_graph);
-#    g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
-#}
-#
-##g2gv( $graph, $ARGV[0] . ".all.png" );
-#
-#sub transitively_reduce {
-#
-#    #@type Graph
-#    my $g = shift;
-#
-#    my $count = 0;
-#    my $prev_count;
-#    while (1) {
-#        last if defined $prev_count and $prev_count == $count;
-#        $prev_count = $count;
-#
-#        for my $v ( $g->vertices ) {
-#            next if $g->out_degree($v) < 2;
-#
-#          #            printf "Node %s, in %d, out %d\n", $v, $g->in_degree($v), $g->out_degree($v);
-#
-#            my @s = sort { $a <=> $b } $g->successors($v);
-#
-#            #            printf "    Successers %s\n", join( " ", @s );
-#
-#            for my $i ( 0 .. $#s ) {
-#                for my $j ( 0 .. $#s ) {
-#                    next if $i == $j;
-#                    if ( $g->is_reachable( $s[$i], $s[$j] ) ) {
-#                        $g->delete_edge( $v, $s[$j] );
-#
-#                    #                        printf "    Exiests edge %s -> %s\n", $s[$i], $s[$j];
-#                    #                        printf "        So remove edge %s -> %s\n", $v, $s[$j];
-#                        $count++;
-#                    }
-#                }
-#            }
-#        }
-#    }
-#
-#    return $count;
-#}
-#
-#sub g2gv {
-#
-#    #@type Graph
-#    my $g  = shift;
-#    my $fn = shift;
-#
-#    my $gv = GraphViz->new( directed => 1 );
-#
-#    for my $v ( $g->vertices ) {
-#        $gv->add_node($v);
-#    }
-#
-#    for my $e ( $g->edges ) {
-#        $gv->add_edge( @{$e} );
-#    }
-#
-#    Path::Tiny::path($fn)->spew_raw( $gv->as_png );
-#}
+    #@type Graph
+    my $g  = shift;
+    my $fn = shift;
+
+    my $gv = GraphViz->new( directed => 0 );
+
+    for my $v ( $g->vertices ) {
+        $gv->add_node($v);
+    }
+
+    for my $e ( $g->edges ) {
+        $gv->add_edge( @{$e} );
+    }
+
+    Path::Tiny::path($fn)->spew_raw( $gv->as_png );
+}
