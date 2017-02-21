@@ -66,11 +66,7 @@ cat ${MY_TMP_DIR}/replace.tsv \
     | perl -nla -e '/\(\-\)/ and print $F[0];' \
     > ${MY_TMP_DIR}/rc.list
 
-faops some -l 0 -i ${FA_FILE} ${MY_TMP_DIR}/rc.list stdout \
-    > ${MY_TMP_DIR}/strand.fa
-faops some ${FA_FILE} ${MY_TMP_DIR}/rc.list stdout \
-    | faops rc -l 0 stdin stdout \
-    >> ${MY_TMP_DIR}/strand.fa
+faops rc -l 0 -f ${MY_TMP_DIR}/rc.list ${FA_FILE} ${MY_TMP_DIR}/strand.fa
 
 log_info "Recreate replace.tsv"
 # now all positive strands
