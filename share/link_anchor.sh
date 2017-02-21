@@ -85,7 +85,7 @@ log_info "Run daligner for the first time"
 if [ -e myDB.las ]; then
     rm myDB.las
 fi
-HPC.daligner myDB -v -M4 -e.70 -l1000 -s1000 -mdust > job.sh
+HPC.daligner myDB -v -M4 -e.80 -l1000 -s1000 -mdust > job.sh
 bash job.sh
 
 log_info "To positive strands"
@@ -165,7 +165,7 @@ faops some renamed.fasta rc.list stdout \
 faops order -l 0 strand.fa <(faops size renamed.fasta | cut -f 1) renamed.rc.fasta
 
 log_info "Run daligner for the second/third time"
-anchr overlap renamed.rc.fasta --len 1000 --idt .70 --serial -o renamed.rc.ovlp.tsv
+anchr overlap renamed.rc.fasta --len 1000 --idt .80 --serial -o renamed.rc.ovlp.tsv
 anchr overlap renamed.rc.fasta --len 10   --idt .98 --serial -o 10.98.ovlp.tsv
 
 log_info "Create outputs"

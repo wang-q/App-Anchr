@@ -544,11 +544,11 @@ cd ${BASE_DIR}
 
 head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
 
-bash ~/Scripts/cpan/App-Anchr/share/anchor_long.sh \
+anchr overlap2 \
     ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
-    ${BASE_DIR}/3_pacbio/pacbio.20x.fasta\
-    ${BASE_DIR}/Q20L150_1600000 \
-    20
+    ${BASE_DIR}/3_pacbio/pacbio.20x.fasta \
+    -d ${BASE_DIR}/Q20L150_1600000/anchorLong \
+    -b 20
 
 perl ~/Scripts/cpan/App-Anchr/share/anchor_group.pl \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
