@@ -63,8 +63,11 @@ if ( $opt->{range} ) {
 my $anchor_range = AlignDB::IntSpan->new->add_runlist( $opt->{range} );
 my $covered = {};    # Coverages of long reads in anchors
 
-# long_id => { anchor_id => overlap_on_long }
+# long_id => { anchor_id => overlap_on_long, }
 my $links_of = {};
+
+# long_id => number_of_trusted
+my $count_trusted_of = {};
 
 #----------------------------#
 # load overlaps and build coverages
@@ -95,6 +98,7 @@ my $links_of = {};
 
         # ignore poor overlaps
         next if $identity < $opt->{idt};
+        next if $ovlp_len < $opt->{len};
 
         # only want anchor-long overlaps
         if ( $anchor_range->contains($f_id) and $anchor_range->contains($g_id) ) {
@@ -146,14 +150,17 @@ for my $anchor_id ( sort { $a <=> $b } keys %{$covered} ) {
     }
 }
 
-for my $anchor_id ( $anchor_range->diff($trusted)->diff($non_overlapped)->elements ) {
-    printf "%s\t%s\t%s\n", $anchor_id, $covered->{$anchor_id}{all}->runlist,
-        $covered->{$anchor_id}{ $opt->{coverage} }->runlist;
-}
+my $non_trusted = $anchor_range->diff($trusted)->diff($non_overlapped);
 
-print $trusted, "\n";
+#for my $anchor_id ( $non_trusted->elements ) {
+#    printf "%s\t%s\t%s\n", $anchor_id, $covered->{$anchor_id}{all}->runlist,
+#        $covered->{$anchor_id}{ $opt->{coverage} }->runlist;
+#}
+
+printf "Trusted: %s\n", $trusted;
 print $trusted->size, "\n";
-print $non_overlapped, "\n";
+printf "Non-trusted: %s\n",    $non_trusted;
+printf "Non-overlapped: %s\n", $non_overlapped;
 
 #----------------------------#
 # grouping
@@ -166,16 +173,25 @@ for my $long_id ( sort { $a <=> $b } keys %{$links_of} ) {
         keys %{ $links_of->{$long_id} };
 
     my $count = scalar @anchors;
+
+    # long reads overlapped with 2 or more anchors will participate in distances judgment
+    $count_trusted_of->{$long_id} = $count;
     next unless $count >= 2;
 
     for my $i ( 0 .. $count - 1 ) {
         for my $j ( $i + 1 .. $count - 1 ) {
 
             #@type AlignDB::IntSpan
-            my $set_i    = $links_of->{$long_id}{ $anchors[$i] };
-            my $set_j    = $links_of->{$long_id}{ $anchors[$j] };
-            my $distance = $set_i->distance($set_j);
+            my $set_i = $links_of->{$long_id}{ $anchors[$i] };
+            next unless ref $set_i eq "AlignDB::IntSpan";
+            next if $set_i->is_empty;
 
+            #@type AlignDB::IntSpan
+            my $set_j = $links_of->{$long_id}{ $anchors[$j] };
+            next unless ref $set_j eq "AlignDB::IntSpan";
+            next if $set_j->is_empty;
+
+            my $distance = $set_i->distance($set_j);
             next unless defined $distance;
 
             $graph->add_edge( $anchors[$i], $anchors[$j] );
@@ -184,7 +200,6 @@ for my $long_id ( sort { $a <=> $b } keys %{$links_of} ) {
                 my $long_ids_ref
                     = $graph->get_edge_attribute( $anchors[$i], $anchors[$j], "long_ids" );
                 push @{$long_ids_ref}, $long_id;
-
             }
             else {
                 $graph->set_edge_attribute( $anchors[$i], $anchors[$j], "long_ids", [$long_id], );
@@ -219,7 +234,11 @@ for my $edge ( $graph->edges ) {
 #----------------------------#
 # Outputs
 #----------------------------#
-my $non_grouped = $trusted->copy;
+my $non_grouped = AlignDB::IntSpan->new;
+for my $cc ( grep { scalar @{$_} == 1 } $graph->connected_components() ) {
+    $non_grouped->add( $cc->[0] );
+}
+printf "Non-grouped: %s\n", $non_grouped;
 
 #@type Path::Tiny
 my $output_path = Path::Tiny::path( $ARGV[0] )->parent->child('group');
@@ -237,6 +256,8 @@ for my $cc (@ccs) {
 
     my $tempdir = Path::Tiny->tempdir("group.XXXXXXXX");
 
+    $output_path->child("groups.txt")->append("$base_name\n");
+
     {    # anchors
         my $cmd;
         $cmd .= "DBshow -U $ARGV[1] ";
@@ -250,14 +271,23 @@ for my $cc (@ccs) {
         my $long_id_set = AlignDB::IntSpan->new;
 
         for my $i ( 0 .. $count - 1 ) {
-            $non_grouped->remove( $members[$i] );
             for my $j ( $i + 1 .. $count - 1 ) {
                 if ( $graph->has_edge( $members[$i], $members[$j], ) ) {
                     my $long_ids_ref
                         = $graph->get_edge_attribute( $members[$i], $members[$j], "long_ids" );
-                    $long_id_set->add( @{$long_ids_ref} );
-                }
 
+                    # long reads overlapped with 3 anchors will be used to layout anchors
+                    my @really_long_ids;
+                    if ( $count >= 3 ) {
+                        @really_long_ids = grep { $count_trusted_of->{$_} >= 3 } @{$long_ids_ref};
+                    }
+                    else {
+                        @really_long_ids = @{$long_ids_ref};
+                    }
+                    if ( @really_long_ids > 0 ) {
+                        $long_id_set->add(@really_long_ids);
+                    }
+                }
             }
         }
 
@@ -271,8 +301,7 @@ for my $cc (@ccs) {
 
     $cc_serial++;
 }
-printf "CC count %d\n",    scalar(@ccs);
-printf "Non-grouped %s\n", $non_grouped;
+printf "CC count %d\n", scalar(@ccs);
 
 if ( $opt->{png} ) {
     g2gv0( $graph, $ARGV[0] . ".png" );
