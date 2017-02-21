@@ -13,6 +13,7 @@
     - [*E. coli*: create anchors](#e-coli-create-anchors)
     - [*E. coli*: results](#e-coli-results)
     - [*E. coli*: quality assessment](#e-coli-quality-assessment)
+    - [*E. coli*: anchor-long](#e-coli-anchor-long)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
     - [Scer: trim](#scer-trim)
@@ -56,8 +57,8 @@ brew install aria2 curl wget                # downloading tools
 
 brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
 
-brew install gd --without-webp              # broken, can't find libwebp.so.6
-brew install homebrew/versions/gnuplot4
+brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
+brew reinstall --build-from-source homebrew/versions/gnuplot4 
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
 brew install homebrew/science/quast         # assembly quality assessment
@@ -505,7 +506,7 @@ for part in anchor anchor2 others;
 do 
     bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L150_1600000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
     nucmer -l 200 1_genome/genome.fa pe.${part}.fa
-    mummerplot -png out.delta -p pe.${part} --medium
+    mummerplot out.delta --png --prefix pe.${part} --size large
 done
 
 cp ~/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas 1_genome/paralogs.fas
@@ -533,6 +534,40 @@ quast --no-check \
     1_genome/paralogs.fas \
     --label "Q20L150_1600000,Q20L150_1600000K,Q25L130_1400000,Q25L130_1400000K,Q25L130_2000000,Q25L130_2000000K,paralogs" \
     -o 9_qa
+```
+
+## *E. coli*: anchor-long
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
+
+bash ~/Scripts/cpan/App-Anchr/share/anchor_long.sh \
+    ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
+    ${BASE_DIR}/3_pacbio/pacbio.20x.fasta\
+    ${BASE_DIR}/Q20L150_1600000 \
+    20
+
+perl ~/Scripts/cpan/App-Anchr/share/anchor_group.pl \
+    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
+    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLongDB.db \
+    --range "1-929" --len 1000 --idt 0.85 -c 3
+
+for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
+do
+    echo ${id};
+    bash ~/Scripts/cpan/App-Anchr/share/link_anchor.sh \
+         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.anchor.fasta \
+         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.long.fasta \
+         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id};
+    GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
+    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
+        --range "1-${GROUP_COUNT}"
+done
+
 ```
 
 # *Saccharomyces cerevisiae* S288c
