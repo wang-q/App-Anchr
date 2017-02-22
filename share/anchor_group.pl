@@ -8,6 +8,7 @@ use FindBin;
 use YAML::Syck qw();
 
 use AlignDB::IntSpan;
+use App::Fasops::Common;
 use Graph;
 use GraphViz;
 use Path::Tiny qw();
@@ -51,8 +52,7 @@ for (@ARGV) {
 }
 
 if ( $opt->{range} ) {
-    eval { AlignDB::IntSpan->new( $opt->{range} ); };
-    if ($@) {
+    if ( !AlignDB::IntSpan->valid( $opt->{range} ) ) {
         $usage->die( { pre_text => "Invalid --range [$opt->{range}]\n" } );
     }
 }
@@ -234,8 +234,9 @@ for my $edge ( $graph->edges ) {
 #----------------------------#
 # Outputs
 #----------------------------#
+my @ccs         = $graph->connected_components();
 my $non_grouped = AlignDB::IntSpan->new;
-for my $cc ( grep { scalar @{$_} == 1 } $graph->connected_components() ) {
+for my $cc ( grep { scalar @{$_} == 1 } @ccs ) {
     $non_grouped->add( $cc->[0] );
 }
 printf "Non-grouped: %s\n", $non_grouped;
@@ -244,10 +245,10 @@ printf "Non-grouped: %s\n", $non_grouped;
 my $output_path = Path::Tiny::path( $ARGV[0] )->parent->child('group');
 $output_path->mkpath;
 
-my @ccs = map { $_->[0] }
+@ccs = map { $_->[0] }
     sort { $b->[1] <=> $a->[1] }
     map { [ $_, scalar( @{$_} ) ] }
-    grep { scalar @{$_} > 1 } $graph->connected_components();
+    grep { scalar @{$_} > 1 } @ccs;
 my $cc_serial = 1;
 for my $cc (@ccs) {
     my @members   = sort { $a <=> $b } @{$cc};
@@ -258,7 +259,8 @@ for my $cc (@ccs) {
 
     $output_path->child("groups.txt")->append("$base_name\n");
 
-    {    # anchors
+    {
+        # anchors
         my $cmd;
         $cmd .= "DBshow -U $ARGV[1] ";
         $cmd .= join " ", @members;
@@ -267,7 +269,24 @@ for my $cc (@ccs) {
         system $cmd;
     }
 
-    {    # long reads
+    {    # distances
+        my $fn_distance = $output_path->child("$base_name.dis.tsv");
+        for my $i ( 0 .. $count - 1 ) {
+            for my $j ( $i + 1 .. $count - 1 ) {
+                if ( $graph->has_edge( $members[$i], $members[$j], ) ) {
+                    my $distances_ref
+                        = $graph->get_edge_attribute( $members[$i], $members[$j], "distances" );
+                    my $line = sprintf "%s\t%s\t%s\n", $members[$i], $members[$j],
+                        join( ",", @{$distances_ref} );
+                    $fn_distance->append($line);
+
+                }
+            }
+        }
+    }
+
+    {
+        # long reads
         my $long_id_set = AlignDB::IntSpan->new;
 
         for my $i ( 0 .. $count - 1 ) {
@@ -276,27 +295,34 @@ for my $cc (@ccs) {
                     my $long_ids_ref
                         = $graph->get_edge_attribute( $members[$i], $members[$j], "long_ids" );
 
-                    # long reads overlapped with 3 anchors will be used to layout anchors
-                    my @really_long_ids;
-                    if ( $count >= 3 ) {
-                        @really_long_ids = grep { $count_trusted_of->{$_} >= 3 } @{$long_ids_ref};
-                    }
-                    else {
-                        @really_long_ids = @{$long_ids_ref};
-                    }
-                    if ( @really_long_ids > 0 ) {
-                        $long_id_set->add(@really_long_ids);
-                    }
+ # long reads overlapped with 3 anchors will be used to layout anchors
+ #                    my @really_long_ids;
+ #                    if ( $count >= 3 ) {
+ #                        @really_long_ids = grep { $count_trusted_of->{$_} >= 3 } @{$long_ids_ref};
+ #                    }
+ #                    else {
+ #                        @really_long_ids = @{$long_ids_ref};
+ #                    }
+ #                    if ( @really_long_ids > 0 ) {
+ #                        $long_id_set->add(@really_long_ids);
+ #                    }
+
+                    $long_id_set->add( @{$long_ids_ref} );
                 }
             }
         }
 
-        my $cmd;
-        $cmd .= "DBshow -U $ARGV[1] ";
-        $cmd .= join " ", $long_id_set->as_array;
-        $cmd .= " > " . $output_path->child("$base_name.long.fasta")->stringify;
+        if ( $long_id_set->is_empty ) {
+            print STDERR "WARNING: no valid long reads in [$base_name]\n";
+        }
+        else {
+            my $cmd;
+            $cmd .= "DBshow -U $ARGV[1] ";
+            $cmd .= join " ", $long_id_set->as_array;
+            $cmd .= " > " . $output_path->child("$base_name.long.fasta")->stringify;
 
-        system $cmd;
+            system $cmd;
+        }
     }
 
     $cc_serial++;
