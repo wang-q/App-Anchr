@@ -548,24 +548,29 @@ anchr overlap2 \
     ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
     ${BASE_DIR}/3_pacbio/pacbio.20x.fasta \
     -d ${BASE_DIR}/Q20L150_1600000/anchorLong \
-    -b 20
+    -b 20 --len 1000 --idt 0.8
 
 perl ~/Scripts/cpan/App-Anchr/share/anchor_group.pl \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLongDB.db \
-    --range "1-929" --len 1000 --idt 0.85 -c 3
+    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.db \
+    --range "1-929" --len 1000 --idt 0.85 -c 3 --png
 
 for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
 do
     echo ${id};
-    bash ~/Scripts/cpan/App-Anchr/share/link_anchor.sh \
-         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.anchor.fasta \
-         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.long.fasta \
-         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id};
-    GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
-    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
-        --range "1-${GROUP_COUNT}"
+    anchr orient \
+        --len 1000 --idt 0.85 \
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.anchor.fasta \
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.long.fasta \
+        -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.strand.fasta;
+        
+    anchr overlap --len 1000 --idt 0.85 \
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.strand.fasta \
+        -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv
+#    GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
+#    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
+#        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
+#        --range "1-${GROUP_COUNT}"
 done
 
 ```
