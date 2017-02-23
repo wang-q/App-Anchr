@@ -65,9 +65,6 @@ my $anchor_range = AlignDB::IntSpan->new->add_runlist( $opt->{range} );
 # long_id => { anchor_id => overlap_on_long, }
 my $links_of = {};
 
-# long_id => number_of_trusted
-my $count_trusted_of = {};
-
 #----------------------------#
 # load overlaps and build links
 #----------------------------#
@@ -136,7 +133,6 @@ for my $long_id ( sort { $a <=> $b } keys %{$links_of} ) {
     my $count = scalar @anchors;
 
     # long reads overlapped with 2 or more anchors will participate in distances judgment
-    $count_trusted_of->{$long_id} = $count;
     next unless $count >= 2;
 
     for my $i ( 0 .. $count - 1 ) {
@@ -221,8 +217,7 @@ for my $cc (@ccs) {
 
     $output_path->child("groups.txt")->append("$basename\n");
 
-    {
-        # anchors
+    {    # anchors
         my $cmd;
         $cmd .= "DBshow -U $ARGV[1] ";
         $cmd .= join " ", @members;
@@ -247,8 +242,7 @@ for my $cc (@ccs) {
         }
     }
 
-    {
-        # long reads
+    {    # long reads
         my $long_id_set = AlignDB::IntSpan->new;
 
         for my $i ( 0 .. $count - 1 ) {
@@ -256,18 +250,6 @@ for my $cc (@ccs) {
                 if ( $graph->has_edge( $members[$i], $members[$j], ) ) {
                     my $long_ids_ref
                         = $graph->get_edge_attribute( $members[$i], $members[$j], "long_ids" );
-
- # long reads overlapped with 3 anchors will be used to layout anchors
- #                    my @really_long_ids;
- #                    if ( $count >= 3 ) {
- #                        @really_long_ids = grep { $count_trusted_of->{$_} >= 3 } @{$long_ids_ref};
- #                    }
- #                    else {
- #                        @really_long_ids = @{$long_ids_ref};
- #                    }
- #                    if ( @really_long_ids > 0 ) {
- #                        $long_id_set->add(@really_long_ids);
- #                    }
 
                     $long_id_set->add( @{$long_ids_ref} );
                 }
