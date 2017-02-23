@@ -13,6 +13,8 @@ use Graph;
 use GraphViz;
 use Path::Tiny qw();
 
+use App::Anchr::Common;
+
 #----------------------------------------------------------#
 # GetOpt section
 #----------------------------------------------------------#
@@ -110,11 +112,11 @@ my $links_of = {};
         $seen_pair{$pair}++;
 
         if ( $anchor_range->contains($f_id) and !$anchor_range->contains($g_id) ) {
-            my ( $beg, $end ) = beg_end( $g_B, $g_E, );
+            my ( $beg, $end ) = App::Anchr::Common::beg_end( $g_B, $g_E, );
             $links_of->{$g_id}{$f_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
         }
         elsif ( $anchor_range->contains($g_id) and !$anchor_range->contains($f_id) ) {
-            my ( $beg, $end ) = beg_end( $f_B, $f_E, );
+            my ( $beg, $end ) = App::Anchr::Common::beg_end( $f_B, $f_E, );
             $links_of->{$f_id}{$g_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
         }
     }
@@ -202,18 +204,20 @@ printf "Non-grouped: %s\n", $non_grouped;
 #@type Path::Tiny
 my $output_path = Path::Tiny::path( $ARGV[0] )->parent->child('group');
 $output_path->mkpath;
+$output_path->child("groups.txt")->remove;
 
 @ccs = map { $_->[0] }
     sort { $b->[1] <=> $a->[1] }
     map { [ $_, scalar( @{$_} ) ] }
     grep { scalar @{$_} > 1 } @ccs;
+
 my $cc_serial = 1;
 for my $cc (@ccs) {
     my @members  = sort { $a <=> $b } @{$cc};
     my $count    = scalar @members;
     my $basename = sprintf "%s_%s", $cc_serial, $count;
 
-    my $tempdir = Path::Tiny->tempdir("group.XXXXXXXX");
+    #    my $tempdir = Path::Tiny->tempdir("group.XXXXXXXX");
 
     $output_path->child("groups.txt")->append("$basename\n");
 
@@ -221,6 +225,7 @@ for my $cc (@ccs) {
         my $cmd;
         $cmd .= "DBshow -U $ARGV[1] ";
         $cmd .= join " ", @members;
+        $cmd .= " | faops filter -l 0 stdin stdout";
         $cmd .= " > " . $output_path->child("$basename.anchor.fasta")->stringify;
 
         system $cmd;
@@ -244,6 +249,7 @@ for my $cc (@ccs) {
 
     {    # long reads
         my $long_id_set = AlignDB::IntSpan->new;
+        my @anchor_long_pairs;
 
         for my $i ( 0 .. $count - 1 ) {
             for my $j ( $i + 1 .. $count - 1 ) {
@@ -252,6 +258,11 @@ for my $cc (@ccs) {
                         = $graph->get_edge_attribute( $members[$i], $members[$j], "long_ids" );
 
                     $long_id_set->add( @{$long_ids_ref} );
+
+                    for my $long_id ( @{$long_ids_ref} ) {
+                        push @anchor_long_pairs, [ $members[$i], $long_id ];
+                        push @anchor_long_pairs, [ $members[$j], $long_id ];
+                    }
                 }
             }
         }
@@ -263,9 +274,20 @@ for my $cc (@ccs) {
             my $cmd;
             $cmd .= "DBshow -U $ARGV[1] ";
             $cmd .= join " ", $long_id_set->as_array;
+            $cmd .= " | faops filter -l 0 stdin stdout";
             $cmd .= " > " . $output_path->child("$basename.long.fasta")->stringify;
 
             system $cmd;
+
+            # serials to names
+            my $name_of
+                = App::Anchr::Common::serial2name( $ARGV[1], [ @members, $long_id_set->as_array ] );
+
+            @anchor_long_pairs
+                = sort map { sprintf( "%s\t%s\n", $name_of->{ $_->[0] }, $name_of->{ $_->[1] } ) }
+                @anchor_long_pairs;
+            @anchor_long_pairs = App::Fasops::Common::uniq(@anchor_long_pairs);
+            $output_path->child("$basename.valid.tsv")->spew(@anchor_long_pairs);
         }
     }
 
@@ -280,21 +302,6 @@ if ( $opt->{png} ) {
 #----------------------------------------------------------#
 # Subroutines
 #----------------------------------------------------------#
-sub beg_end {
-    my $beg = shift;
-    my $end = shift;
-
-    if ( $beg > $end ) {
-        ( $beg, $end ) = ( $end, $beg );
-    }
-
-    if ( $beg == 0 ) {
-        $beg = 1;
-    }
-
-    return ( $beg, $end );
-}
-
 sub judge_distance {
     my $d_ref = shift;
 
