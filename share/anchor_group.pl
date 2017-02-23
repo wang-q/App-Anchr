@@ -61,7 +61,6 @@ if ( $opt->{range} ) {
 # start
 #----------------------------------------------------------#
 my $anchor_range = AlignDB::IntSpan->new->add_runlist( $opt->{range} );
-my $covered = {};    # Coverages of long reads in anchors
 
 # long_id => { anchor_id => overlap_on_long, }
 my $links_of = {};
@@ -114,53 +113,16 @@ my $count_trusted_of = {};
         $seen_pair{$pair}++;
 
         if ( $anchor_range->contains($f_id) and !$anchor_range->contains($g_id) ) {
-            if ( !exists $covered->{$f_id} ) {
-                $covered->{$f_id} = { all => AlignDB::IntSpan->new->add_pair( 1, $f_len ), };
-                for my $i ( 1 .. $opt->{coverage} ) {
-                    $covered->{$f_id}{$i} = AlignDB::IntSpan->new;
-                }
-            }
-            bump_coverage( $covered->{$f_id}, $f_B, $f_E, );
-
             my ( $beg, $end ) = beg_end( $g_B, $g_E, );
             $links_of->{$g_id}{$f_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
         }
         elsif ( $anchor_range->contains($g_id) and !$anchor_range->contains($f_id) ) {
-            if ( !exists $covered->{$g_id} ) {
-                $covered->{$g_id} = { all => AlignDB::IntSpan->new->add_pair( 1, $g_len ), };
-                for my $i ( 1 .. $opt->{coverage} ) {
-                    $covered->{$g_id}{$i} = AlignDB::IntSpan->new;
-                }
-            }
-            bump_coverage( $covered->{$g_id}, $g_B, $g_E, );
-
             my ( $beg, $end ) = beg_end( $f_B, $f_E, );
             $links_of->{$f_id}{$g_id} = AlignDB::IntSpan->new->add_pair( $beg, $end );
         }
     }
     close $in_fh;
 }
-
-my $trusted        = AlignDB::IntSpan->new;
-my $non_overlapped = $anchor_range->copy;
-for my $anchor_id ( sort { $a <=> $b } keys %{$covered} ) {
-    $non_overlapped->remove($anchor_id);
-    if ( $covered->{$anchor_id}{ $opt->{coverage} }->equals( $covered->{$anchor_id}{all} ) ) {
-        $trusted->add($anchor_id);
-    }
-}
-
-my $non_trusted = $anchor_range->diff($trusted)->diff($non_overlapped);
-
-#for my $anchor_id ( $non_trusted->elements ) {
-#    printf "%s\t%s\t%s\n", $anchor_id, $covered->{$anchor_id}{all}->runlist,
-#        $covered->{$anchor_id}{ $opt->{coverage} }->runlist;
-#}
-
-printf "Trusted: %s\n", $trusted;
-print $trusted->size, "\n";
-printf "Non-trusted: %s\n",    $non_trusted;
-printf "Non-overlapped: %s\n", $non_overlapped;
 
 #----------------------------#
 # grouping
@@ -169,7 +131,6 @@ my $graph = Graph->new( directed => 0 );
 
 for my $long_id ( sort { $a <=> $b } keys %{$links_of} ) {
     my @anchors = sort { $a <=> $b }
-        grep { $trusted->contains($_) }
         keys %{ $links_of->{$long_id} };
 
     my $count = scalar @anchors;
@@ -251,26 +212,26 @@ $output_path->mkpath;
     grep { scalar @{$_} > 1 } @ccs;
 my $cc_serial = 1;
 for my $cc (@ccs) {
-    my @members   = sort { $a <=> $b } @{$cc};
-    my $count     = scalar @members;
-    my $base_name = sprintf "%s_%s", $cc_serial, $count;
+    my @members  = sort { $a <=> $b } @{$cc};
+    my $count    = scalar @members;
+    my $basename = sprintf "%s_%s", $cc_serial, $count;
 
     my $tempdir = Path::Tiny->tempdir("group.XXXXXXXX");
 
-    $output_path->child("groups.txt")->append("$base_name\n");
+    $output_path->child("groups.txt")->append("$basename\n");
 
     {
         # anchors
         my $cmd;
         $cmd .= "DBshow -U $ARGV[1] ";
         $cmd .= join " ", @members;
-        $cmd .= " > " . $output_path->child("$base_name.anchor.fasta")->stringify;
+        $cmd .= " > " . $output_path->child("$basename.anchor.fasta")->stringify;
 
         system $cmd;
     }
 
     {    # distances
-        my $fn_distance = $output_path->child("$base_name.dis.tsv");
+        my $fn_distance = $output_path->child("$basename.dis.tsv");
         for my $i ( 0 .. $count - 1 ) {
             for my $j ( $i + 1 .. $count - 1 ) {
                 if ( $graph->has_edge( $members[$i], $members[$j], ) ) {
@@ -313,13 +274,13 @@ for my $cc (@ccs) {
         }
 
         if ( $long_id_set->is_empty ) {
-            print STDERR "WARNING: no valid long reads in [$base_name]\n";
+            print STDERR "WARNING: no valid long reads in [$basename]\n";
         }
         else {
             my $cmd;
             $cmd .= "DBshow -U $ARGV[1] ";
             $cmd .= join " ", $long_id_set->as_array;
-            $cmd .= " > " . $output_path->child("$base_name.long.fasta")->stringify;
+            $cmd .= " > " . $output_path->child("$basename.long.fasta")->stringify;
 
             system $cmd;
         }
@@ -349,28 +310,6 @@ sub beg_end {
     }
 
     return ( $beg, $end );
-}
-
-sub bump_coverage {
-    my $tier_of = shift;
-    my $beg     = shift;
-    my $end     = shift;
-
-    return if $tier_of->{ $opt->{coverage} }->equals( $tier_of->{all} );
-
-    ( $beg, $end ) = beg_end( $beg, $end );
-
-    my $new_set = AlignDB::IntSpan->new->add_pair( $beg, $end );
-    for my $i ( 1 .. $opt->{coverage} ) {
-        my $i_set = $tier_of->{$i}->intersect($new_set);
-        $tier_of->{$i}->add($new_set);
-
-        my $j = $i + 1;
-        last if $j > $opt->{coverage};
-        $new_set = $i_set->copy;
-
-       #        printf "%s\t%s\t%s\n", $tier_of->{all}->runlist, $i_set->runlist, $new_set->runlist;
-    }
 }
 
 sub judge_distance {
