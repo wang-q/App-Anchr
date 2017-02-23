@@ -69,7 +69,7 @@ my $links_of = {};
 my $count_trusted_of = {};
 
 #----------------------------#
-# load overlaps and build coverages
+# load overlaps and build links
 #----------------------------#
 {
     my $in_fh;
@@ -87,7 +87,7 @@ my $count_trusted_of = {};
         my @fields = split "\t", $line;
         next unless @fields == 13;
 
-        my ( $f_id,     $g_id, $ovlp_len, $identity ) = @fields[ 0 .. 3 ];
+        my ( $f_id,     $g_id, $ovlp_len, $ovlp_idt ) = @fields[ 0 .. 3 ];
         my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
         my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
         my $contained = $fields[12];
@@ -96,7 +96,7 @@ my $count_trusted_of = {};
         next if $f_id eq $g_id;
 
         # ignore poor overlaps
-        next if $identity < $opt->{idt};
+        next if $ovlp_idt < $opt->{idt};
         next if $ovlp_len < $opt->{len};
 
         # only want anchor-long overlaps
@@ -183,12 +183,13 @@ for my $edge ( $graph->edges ) {
 
     if ( scalar @{$long_ids_ref} < $opt->{coverage} ) {
         $graph->delete_edge( @{$edge} );
+        next;
     }
 
     my $distances_ref = $graph->get_edge_attribute( @{$edge}, "distances" );
-
     if ( !judge_distance($distances_ref) ) {
         $graph->delete_edge( @{$edge} );
+        next;
     }
 }
 

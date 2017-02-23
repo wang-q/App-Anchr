@@ -76,7 +76,7 @@ my %contained;
     while ( my $line = <$in_fh> ) {
         chomp $line;
         my @fields = split "\t", $line;
-        my ( $f_id,     $g_id, $ovlp_len, $identity ) = @fields[ 0 .. 3 ];
+        my ( $f_id,     $g_id, $ovlp_len, $ovlp_idt ) = @fields[ 0 .. 3 ];
         my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
         my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
         my $contained = $fields[12];
@@ -92,7 +92,10 @@ my %contained;
             $contained{$g_id}++;
         }
 
-        # String graph is bidirectional, skip duplicated overlaps
+        # we've orient all sequences to the same strand
+        next if $g_strand == 1;
+
+        # skip duplicated overlaps
         my $pair = join( "-", sort ( $f_id, $g_id ) );
         next if $seen_pair{$pair};
         $seen_pair{$pair}++;
@@ -112,7 +115,7 @@ my $anchor_range = AlignDB::IntSpan->new->add_runlist( $opt->{range} );
 for my $ovlp ( @{$ovlps} ) {
     my @fields = @{$ovlp};
 
-    my ( $f_id,     $g_id, $ovlp_len, $identity ) = @fields[ 0 .. 3 ];
+    my ( $f_id,     $g_id, $ovlp_len, $ovlp_idt ) = @fields[ 0 .. 3 ];
     my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
     my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
     my $contained = $fields[12];
@@ -221,6 +224,7 @@ print YAML::Syck::Dump {
     printf "Reduced %d edges\n", transitively_reduce($anchor_graph);
     g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
 }
+
 #g2gv( $graph, $ARGV[0] . ".all.png" );
 
 sub transitively_reduce {
@@ -237,12 +241,7 @@ sub transitively_reduce {
         for my $v ( $g->vertices ) {
             next if $g->out_degree($v) < 2;
 
-          #            printf "Node %s, in %d, out %d\n", $v, $g->in_degree($v), $g->out_degree($v);
-
             my @s = sort { $a <=> $b } $g->successors($v);
-
-            #            printf "    Successers %s\n", join( " ", @s );
-
             for my $i ( 0 .. $#s ) {
                 for my $j ( 0 .. $#s ) {
                     next if $i == $j;
