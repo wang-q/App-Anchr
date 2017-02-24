@@ -53,7 +53,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 fi
 
 #----------------------------#
-# anchor.sh
+# anchors
 #----------------------------#
 hash bbmap.sh 2>/dev/null || {
     echo >&2 "bbmap.sh is required but it's not installed.";
@@ -80,10 +80,16 @@ hash runlist 2>/dev/null || {
 }
 
 #----------------------------#
-# link_anchor.sh
+# group anchors
 #----------------------------#
 # faops
 # runlist
+
+hash dot 2>/dev/null || {
+    echo >&2 "GraphViz is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install graphviz";
+    exit 1;
+}
 
 hash fasta2DB 2>/dev/null || {
     echo >&2 "DAZZ_DB is required but it's not installed.";
@@ -94,6 +100,12 @@ hash fasta2DB 2>/dev/null || {
 hash daligner 2>/dev/null || {
     echo >&2 "daligner is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/daligner@20170203";
+    exit 1;
+}
+
+perl -MGraphViz -e "1" 2>/dev/null || {
+    echo >&2 "GraphViz is required but it's not installed.";
+    echo >&2 "Install with cpanm: cpanm GraphViz";
     exit 1;
 }
 
