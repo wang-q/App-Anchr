@@ -562,24 +562,58 @@ echo ${ANCHOR_COUNT}
 anchr group \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.db \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 -c 3 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 3000 -c 3 --png
+
+cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
+    | parallel --no-run-if-empty -j 4 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.85 \
+            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.anchor.fasta \
+            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.long.fasta \
+            -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta;
+        
+        anchr overlap --len 1000 --idt 0.85 \
+            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta \
+            -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.ovlp.tsv;
+    '
+
+# false strand
+# 19/8663
+#anchor/142/0_1046
+#anchor/143/0_3701
+#anchor/235/0_1608
+#anchor/253/0_1460
+#anchor/278/0_2586
+#anchor/362/0_1210
+#anchor/634/0_3193
+#anchor/736/0_2060
+#anchor/804/0_4814
+#anchor/813/0_1886
+#anchor/838/0_1829
+#anchor/863/0_4250
+#anchor/88/0_3121
+#anchor/907/0_1627
+#anchor/92/0_1472
+cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print if $F[8] == 1;' \
+    | sort | uniq \
+    | wc -l
+cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print;' \
+    | sort | uniq \
+    | wc -l
+cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq
 
 for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
 do
     echo ${id};
-    anchr orient \
-        --len 1000 --idt 0.85 \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.anchor.fasta \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.long.fasta \
-        -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.strand.fasta;
-        
-    anchr overlap --len 1000 --idt 0.85 \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.strand.fasta \
-        -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv;
     GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
-#    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
-#        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
-#        --range "1-${GROUP_COUNT}"
+    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
+        --range "1-${GROUP_COUNT}"
 done
 
 ```
