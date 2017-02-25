@@ -19,4 +19,9 @@ $result = test_app( 'App::Anchr' => [qw(restrict t/1_4.ovlp.tsv t/1_4.restrict.t
 is( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ), 36, 'line count' );
 unlike( $result->stdout, qr{pac.+pac}, 'no long-long overlaps' );
 
+$result = test_app( 'App::Anchr' => [qw(restrict t/1_4.ovlp.tsv t/1_4.2.restrict.tsv -o stdout)] );
+is( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ), 28, 'line count' );
+unlike( $result->stdout, qr{pac.+pac}, 'no long-long overlaps' );
+unlike( $result->stdout, qr{pac7556_20928}, 'no pac7556_20928' );
+
 done_testing();
