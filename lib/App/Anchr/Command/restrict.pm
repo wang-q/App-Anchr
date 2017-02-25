@@ -6,7 +6,7 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => 'restrict overlaps in known pairs';
+use constant abstract => 'restrict overlaps to known pairs';
 
 sub opt_spec {
     return ( [ "outfile|o=s", "output filename, [stdout] for screen" ], { show_defaults => 1, } );
