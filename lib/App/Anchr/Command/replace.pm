@@ -1,4 +1,4 @@
-package App::Anchr::Command::ovlpreplace;
+package App::Anchr::Command::replace;
 use strict;
 use warnings;
 use autodie;
@@ -17,7 +17,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr ovlpreplace [options] <.ovlp.tsv> <.replace.tsv>";
+    return "anchr replace [options] <.ovlp.tsv> <.replace.tsv>";
 }
 
 sub description {
