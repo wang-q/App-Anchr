@@ -566,7 +566,7 @@ echo ${ANCHOR_COUNT}
 anchr group \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.db \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 5 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 5000 -c 3 --png
 
 cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
     | parallel --no-run-if-empty -j 4 '
@@ -588,24 +588,15 @@ cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
 
 # false strand
 cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print if $F[8] == 1;' \
-    | sort | uniq \
-    | wc -l
-cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print;' \
-    | sort | uniq \
-    | wc -l
-cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
 for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
 do
     echo ${id};
-    GROUP_COUNT=$(id=${id} perl -e '@p = split q{_}, $ENV{id}; print $p[1];')
-    perl ~/Scripts/cpan/App-Anchr/share/ovlp_layout.pl \
+    perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
         ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
-        --range "1-${GROUP_COUNT}"
+        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.relation.tsv
 done
 
 ```
