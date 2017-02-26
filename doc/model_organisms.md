@@ -538,6 +538,9 @@ quast --no-check \
 
 ## *E. coli*: anchor-long
 
+* 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
+* multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
+
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
@@ -550,6 +553,7 @@ anchr cover \
     ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
     ${BASE_DIR}/3_pacbio/pacbio.20x.fasta \
     -o ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta
+faops n50 -S -C ~/data/anchr/e_coli/Q20L150_1600000/covered/covered.fasta
 
 anchr overlap2 \
     ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta \
@@ -562,7 +566,7 @@ echo ${ANCHOR_COUNT}
 anchr group \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.db \
     ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 3000 -c 3 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 5 --png
 
 cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
     | parallel --no-run-if-empty -j 4 '
@@ -571,30 +575,18 @@ cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
             --len 1000 --idt 0.85 \
             ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.anchor.fasta \
             ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.long.fasta \
+            -r ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.restrict.tsv \
             -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta;
         
         anchr overlap --len 1000 --idt 0.85 \
             ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta \
-            -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.ovlp.tsv;
+            -o stdout \
+            | anchr restrict \
+                stdin ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.restrict.tsv \
+                -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.ovlp.tsv;
     '
 
 # false strand
-# 19/8663
-#anchor/142/0_1046
-#anchor/143/0_3701
-#anchor/235/0_1608
-#anchor/253/0_1460
-#anchor/278/0_2586
-#anchor/362/0_1210
-#anchor/634/0_3193
-#anchor/736/0_2060
-#anchor/804/0_4814
-#anchor/813/0_1886
-#anchor/838/0_1829
-#anchor/863/0_4250
-#anchor/88/0_3121
-#anchor/907/0_1627
-#anchor/92/0_1472
 cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print if $F[8] == 1;' \
     | sort | uniq \
@@ -605,7 +597,7 @@ cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
     | wc -l
 cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq
+    | sort | uniq -c
 
 for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
 do
@@ -617,6 +609,15 @@ do
 done
 
 ```
+
+| #Anchor |  max | cov | Multi-matched | Non-grouped |  CC | false strand |
+|:--------|-----:|----:|--------------:|------------:|----:|-------------:|
+| 950     | 5000 |   2 |            19 |          16 |  59 |            2 |
+|         |      |   3 |            19 |          45 |  89 |            2 |
+|         |      |   5 |            19 |         194 | 154 |            0 |
+|         | 2000 |   2 |            19 |          18 |  84 |            2 |
+|         |      |   3 |            19 |          50 | 110 |            2 |
+|         |      |   5 |            19 |         204 | 163 |            0 |
 
 # *Saccharomyces cerevisiae* S288c
 
