@@ -86,8 +86,8 @@ my $graph = Graph->new( directed => 1 );
         next if $seen_pair{$pair};
         $seen_pair{$pair}++;
 
-        $is_anchor{$f_id}++ if ( $f_id =~ /^$opt->{anchor}/ );
-        $is_anchor{$g_id}++ if ( $g_id =~ /^$opt->{anchor}/ );
+        $is_anchor{$f_id}++ if ( index( $f_id, $opt->{prefix} . "/" ) == 0 );
+        $is_anchor{$g_id}++ if ( index( $g_id, $opt->{prefix} . "/" ) == 0 );
 
         if ( $f_B > 0 ) {
 
@@ -144,41 +144,48 @@ my $anchor_graph = Graph->new( directed => 1 );
 
         for my $p (@p) {
             for my $s (@s) {
-                printf "    Add by linkers: %s -> %s\n", $p, $s;
                 $anchor_graph->add_edge( $p, $s );
             }
         }
 
         if ( @p > 1 ) {
-            printf "    [%s] predecessors\n", scalar @p;
             @p = map { $_->[0] }
                 sort { $b->[1] <=> $a->[1] }
                 map { [ $_, $graph->get_edge_weight( $_, $l ) ] } @p;
             for my $i ( 0 .. $#p - 1 ) {
-                printf "    Add by p distances: %s -> %s\n", $p[$i], $p[ $i + 1 ];
                 $anchor_graph->add_edge( $p[$i], $p[ $i + 1 ] );
             }
         }
 
         if ( @s > 1 ) {
             printf STDERR "* There should be only one successor, as anchors arn't overlapped\n";
-            printf "    [%s] successors\n", scalar @s;
             @s = map { $_->[0] }
                 sort { $a->[1] <=> $b->[1] }
                 map { [ $_, $graph->get_edge_weight( $l, $_, ) ] } @s;
             for my $i ( 0 .. $#s - 1 ) {
-                printf "    Add by s distances: %s -> %s\n", $s[$i], $s[ $i + 1 ];
                 $anchor_graph->add_edge( $s[$i], $s[ $i + 1 ] );
             }
         }
 
     }
     g2gv( $anchor_graph, $ARGV[0] . ".png" );
-    printf "Reduced %d edges\n", transitive_reduction($anchor_graph);
+    transitive_reduction($anchor_graph);
     g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
 }
 
-#g2gv( $graph, $ARGV[0] . ".all.png" );
+if ( $anchor_graph->is_dag ) {
+    if ( scalar $anchor_graph->exterior_vertices() == 2 ) {
+        my @ts = $anchor_graph->topological_sort;
+
+        print "    @ts\n";
+    }
+    else {
+        print "    Branched\n";
+    }
+}
+else {
+    print "    Cyclic\n";
+}
 
 sub transitive_reduction {
 
