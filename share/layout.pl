@@ -4,13 +4,8 @@ use warnings;
 use autodie;
 
 use Getopt::Long::Descriptive;
-use FindBin;
-use YAML::Syck qw();
 
-use AlignDB::IntSpan;
-use Graph;
-use GraphViz;
-use Path::Tiny qw();
+use App::Anchr::Common;
 
 #----------------------------------------------------------#
 # GetOpt section
@@ -25,6 +20,8 @@ my @opt_spec = (
     [ 'help|h', 'display this message' ],
     [],
     [ 'prefix|p=s', 'prefix of anchors', { default => "anchor" }, ],
+    [ 'ao=s',       'overlaps between anchors', ],
+    [ "png",        "write a png file via graphviz", ],
     { show_defaults => 1, },
 );
 
@@ -40,7 +37,6 @@ if ( @ARGV != 2 ) {
     $usage->die( { pre_text => $message } );
 }
 for (@ARGV) {
-    next if lc $_ eq "stdin";
     if ( !Path::Tiny::path($_)->is_file ) {
         $usage->die( { pre_text => "The input file [$_] doesn't exist.\n" } );
     }
@@ -49,79 +45,70 @@ for (@ARGV) {
 #----------------------------------------------------------#
 # start
 #----------------------------------------------------------#
-my %is_anchor;
 
 #----------------------------#
 # load overlaps and build graph
 #----------------------------#
 my $graph = Graph->new( directed => 1 );
-
+my %is_anchor;
 {
-    my $in_fh;
-    if ( lc $ARGV[0] eq 'stdin' ) {
-        $in_fh = *STDIN{IO};
-    }
-    else {
-        open $in_fh, "<", $ARGV[0];
-    }
+    open my $in_fh, "<", $ARGV[0];
 
     my %seen_pair;
-
     while ( my $line = <$in_fh> ) {
-        chomp $line;
-        my @fields = split "\t", $line;
-        my ( $f_id,     $g_id, $ovlp_len, $ovlp_idt ) = @fields[ 0 .. 3 ];
-        my ( $f_strand, $f_B,  $f_E,      $f_len )    = @fields[ 4 .. 7 ];
-        my ( $g_strand, $g_B,  $g_E,      $g_len )    = @fields[ 8 .. 11 ];
-        my $contained = $fields[12];
+        my $info = App::Anchr::Common::parse_ovlp_line($line);
 
         # ignore self overlapping
-        next if $f_id eq $g_id;
+        next if $info->{f_id} eq $info->{g_id};
 
         # we've orient all sequences to the same strand
-        next if $g_strand == 1;
+        next if $info->{g_strand} == 1;
 
         # skip duplicated overlaps
-        my $pair = join( "-", sort ( $f_id, $g_id ) );
+        my $pair = join( "-", sort ( $info->{f_id}, $info->{g_id} ) );
         next if $seen_pair{$pair};
         $seen_pair{$pair}++;
 
-        $is_anchor{$f_id}++ if ( index( $f_id, $opt->{prefix} . "/" ) == 0 );
-        $is_anchor{$g_id}++ if ( index( $g_id, $opt->{prefix} . "/" ) == 0 );
+        $is_anchor{ $info->{f_id} }++ if ( index( $info->{f_id}, $opt->{prefix} . "/" ) == 0 );
+        $is_anchor{ $info->{g_id} }++ if ( index( $info->{g_id}, $opt->{prefix} . "/" ) == 0 );
 
-        if ( $f_B > 0 ) {
+        if ( $info->{f_B} > 0 ) {
 
-            if ( $f_E == $f_len ) {
+            if ( $info->{f_E} == $info->{f_len} ) {
 
                 #          f.B        f.E
                 # f ========+---------->
                 # g         -----------+=======>
                 #          g.B        g.E
-                $graph->add_weighted_edge( $f_id, $g_id, $g_len - $g_E );
+                $graph->add_weighted_edge( $info->{f_id}, $info->{g_id},
+                    $info->{g_len} - $info->{g_E} );
             }
             else {
                 #          f.B        f.E
                 # f ========+----------+=======>
                 # g         ----------->
                 #          g.B        g.E
-                $graph->add_weighted_edge( $g_id, $f_id, $f_len - $f_E );
+                $graph->add_weighted_edge( $info->{g_id}, $info->{f_id},
+                    $info->{f_len} - $info->{f_E} );
             }
         }
         else {
-            if ( $g_E == $g_len ) {
+            if ( $info->{g_E} == $info->{g_len} ) {
 
                 #          f.B        f.E
                 # f         -----------+=======>
                 # g ========+---------->
                 #          g.B        g.E
-                $graph->add_weighted_edge( $g_id, $f_id, $f_len - $f_E );
+                $graph->add_weighted_edge( $info->{g_id}, $info->{f_id},
+                    $info->{f_len} - $info->{f_E} );
             }
             else {
                 #          f.B        f.E
                 # f         ----------->
                 # g ========+----------+=======>
                 #          g.B        g.E
-                $graph->add_weighted_edge( $f_id, $g_id, $g_len - $g_E );
+                $graph->add_weighted_edge( $info->{f_id}, $info->{g_id},
+                    $info->{g_len} - $info->{g_E} );
             }
         }
     }
@@ -168,16 +155,22 @@ my $anchor_graph = Graph->new( directed => 1 );
         }
 
     }
-    g2gv( $anchor_graph, $ARGV[0] . ".png" );
-    transitive_reduction($anchor_graph);
-    g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
+    if ( $opt->{png} ) {
+        App::Anchr::Common::g2gv( $anchor_graph, $ARGV[0] . ".png" );
+    }
+    App::Anchr::Common::transitive_reduction($anchor_graph);
+    if ( $opt->{png} ) {
+        App::Anchr::Common::g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
+    }
 }
 
+my @paths;
 if ( $anchor_graph->is_dag ) {
-    if ( scalar $anchor_graph->exterior_vertices() == 2 ) {
-        my @ts = $anchor_graph->topological_sort;
+    if ( scalar $anchor_graph->exterior_vertices == 2 ) {
+        print "    Linear\n";
 
-        print "    @ts\n";
+        my @ts = $anchor_graph->topological_sort;
+        push @paths, \@ts;
     }
     else {
         print "    Branched\n";
@@ -187,52 +180,10 @@ else {
     print "    Cyclic\n";
 }
 
-sub transitive_reduction {
+for my $path (@paths) {
+    my @nodes = @{$path};
 
-    #@type Graph
-    my $g = shift;
+    for my $i ( 0 .. $#nodes ) {
 
-    my $count = 0;
-    my $prev_count;
-    while (1) {
-        last if defined $prev_count and $prev_count == $count;
-        $prev_count = $count;
-
-        for my $v ( $g->vertices ) {
-            next if $g->out_degree($v) < 2;
-
-            my @s = sort { $a cmp $b } $g->successors($v);
-            for my $i ( 0 .. $#s ) {
-                for my $j ( 0 .. $#s ) {
-                    next if $i == $j;
-                    if ( $g->is_reachable( $s[$i], $s[$j] ) ) {
-                        $g->delete_edge( $v, $s[$j] );
-
-                        $count++;
-                    }
-                }
-            }
-        }
     }
-
-    return $count;
-}
-
-sub g2gv {
-
-    #@type Graph
-    my $g  = shift;
-    my $fn = shift;
-
-    my $gv = GraphViz->new( directed => 1 );
-
-    for my $v ( $g->vertices ) {
-        $gv->add_node($v);
-    }
-
-    for my $e ( $g->edges ) {
-        $gv->add_edge( @{$e} );
-    }
-
-    Path::Tiny::path($fn)->spew_raw( $gv->as_png );
 }
