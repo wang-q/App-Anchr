@@ -41,6 +41,11 @@ for (@ARGV) {
         $usage->die( { pre_text => "The input file [$_] doesn't exist.\n" } );
     }
 }
+if ( $opt->{ao} ) {
+    if ( !Path::Tiny::path( $opt->{ao} )->is_file ) {
+        $usage->die( { pre_text => "The overlap file [$opt->{ao}] doesn't exist.\n" } );
+    }
+}
 
 #----------------------------------------------------------#
 # start
@@ -162,6 +167,29 @@ my $anchor_graph = Graph->new( directed => 1 );
     if ( $opt->{png} ) {
         App::Anchr::Common::g2gv( $anchor_graph, $ARGV[0] . ".reduced.png" );
     }
+}
+
+#----------------------------#
+# existing overlaps
+#----------------------------#
+my $existing_ovlp_of = {};
+if ( $opt->{ao} ) {
+    open my $in_fh, "<", $opt->{ao};
+
+    while ( my $line = <$in_fh> ) {
+        my $info = App::Anchr::Common::parse_ovlp_line($line);
+
+        # ignore self overlapping
+        next if $info->{f_id} eq $info->{g_id};
+
+        # we've orient all sequences to the same strand
+        next if $info->{g_strand} == 1;
+
+        my $pair = join( "-", sort ( $info->{f_id}, $info->{g_id} ) );
+
+        $existing_ovlp_of->{$pair} = $info;
+    }
+    close $in_fh;
 }
 
 my @paths;
