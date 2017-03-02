@@ -13,15 +13,17 @@ use App::Anchr::Common;
 my $usage_desc = <<EOF;
 Layout anchors
 
-Usage: perl %c [options] <.ovlp.tsv> <.relation.tsv>
+Usage: perl %c [options] <.ovlp.tsv> <.relation.tsv> <strand.fasta>
 EOF
 
 my @opt_spec = (
     [ 'help|h', 'display this message' ],
     [],
-    [ 'prefix|p=s', 'prefix of anchors', { default => "anchor" }, ],
-    [ 'ao=s',       'overlaps between anchors', ],
-    [ "png",        "write a png file via graphviz", ],
+    [ "outfile|o=s", "output filename, [stdout] for screen", ],
+    [ 'border=i', 'length of borders in anchors', { default => 100 }, ],
+    [ 'pa=s',     'prefix of anchors',            { default => "anchor" }, ],
+    [ 'oa=s',     'overlaps between anchors', ],
+    [ "png",      "write a png file via graphviz", ],
     { show_defaults => 1, },
 );
 
@@ -30,8 +32,8 @@ my @opt_spec = (
 
 $usage->die if $opt->{help};
 
-if ( @ARGV != 2 ) {
-    my $message = "This script need two input files.\n\tIt found";
+if ( @ARGV != 3 ) {
+    my $message = "This script need three input files.\n\tIt found";
     $message .= sprintf " [%s]", $_ for @ARGV;
     $message .= ".\n";
     $usage->die( { pre_text => $message } );
@@ -41,21 +43,23 @@ for (@ARGV) {
         $usage->die( { pre_text => "The input file [$_] doesn't exist.\n" } );
     }
 }
-if ( $opt->{ao} ) {
-    if ( !Path::Tiny::path( $opt->{ao} )->is_file ) {
-        $usage->die( { pre_text => "The overlap file [$opt->{ao}] doesn't exist.\n" } );
-    }
+
+if ( !exists $opt->{outfile} ) {
+    $opt->{outfile} = Path::Tiny::path( $ARGV[0] )->absolute . ".contig.fasta";
 }
 
-#----------------------------------------------------------#
-# start
-#----------------------------------------------------------#
+if ( $opt->{oa} ) {
+    if ( !Path::Tiny::path( $opt->{oa} )->is_file ) {
+        $usage->die( { pre_text => "The overlap file [$opt->{oa}] doesn't exist.\n" } );
+    }
+}
 
 #----------------------------#
 # load overlaps and build graph
 #----------------------------#
 my $graph = Graph->new( directed => 1 );
 my %is_anchor;
+my $links_of = {};    # long_id => { anchor_id => overlap_on_long, }
 {
     open my $in_fh, "<", $ARGV[0];
 
@@ -74,8 +78,8 @@ my %is_anchor;
         next if $seen_pair{$pair};
         $seen_pair{$pair}++;
 
-        $is_anchor{ $info->{f_id} }++ if ( index( $info->{f_id}, $opt->{prefix} . "/" ) == 0 );
-        $is_anchor{ $info->{g_id} }++ if ( index( $info->{g_id}, $opt->{prefix} . "/" ) == 0 );
+        $is_anchor{ $info->{f_id} }++ if ( index( $info->{f_id}, $opt->{pa} . "/" ) == 0 );
+        $is_anchor{ $info->{g_id} }++ if ( index( $info->{g_id}, $opt->{pa} . "/" ) == 0 );
 
         if ( $info->{f_B} > 0 ) {
 
@@ -116,6 +120,18 @@ my %is_anchor;
                     $info->{g_len} - $info->{g_E} );
             }
         }
+
+        if ( $is_anchor{ $info->{f_id} } and !$is_anchor{ $info->{g_id} } ) {
+            my ( $beg, $end ) = App::Anchr::Common::beg_end( $info->{g_B}, $info->{g_E}, );
+            $links_of->{ $info->{g_id} }{ $info->{f_id} }
+                = AlignDB::IntSpan->new->add_pair( $beg, $end );
+        }
+        elsif ( $is_anchor{ $info->{g_id} } and !$is_anchor{ $info->{f_id} } ) {
+            my ( $beg, $end ) = App::Anchr::Common::beg_end( $info->{f_B}, $info->{f_E}, );
+            $links_of->{ $info->{f_id} }{ $info->{g_id} }
+                = AlignDB::IntSpan->new->add_pair( $beg, $end );
+        }
+
     }
     close $in_fh;
 }
@@ -125,9 +141,7 @@ my %is_anchor;
 #----------------------------#
 my $anchor_graph = Graph->new( directed => 1 );
 {
-
     my @nodes = $graph->vertices;
-
     my @linkers = grep { !$is_anchor{$_} } @nodes;
 
     for my $l (@linkers) {
@@ -158,8 +172,8 @@ my $anchor_graph = Graph->new( directed => 1 );
                 $anchor_graph->add_edge( $s[$i], $s[ $i + 1 ] );
             }
         }
-
     }
+
     if ( $opt->{png} ) {
         App::Anchr::Common::g2gv( $anchor_graph, $ARGV[0] . ".png" );
     }
@@ -170,11 +184,37 @@ my $anchor_graph = Graph->new( directed => 1 );
 }
 
 #----------------------------#
+# existing relations
+#----------------------------#
+my $relation_of = {};
+{
+    for my $line ( Path::Tiny::path( $ARGV[1] )->lines( { chomp => 1 } ) ) {
+        my @fields = split "\t", $line;
+
+        my $anchor_0   = $fields[0];
+        my $anchor_1   = $fields[1];
+        my @distances  = split ",", $fields[2];
+        my @long_reads = split ",", $fields[3];
+
+        my $pair = join "-", sort ( $anchor_0, $anchor_1, );
+        $relation_of->{$pair} = {
+            distances  => \@distances,
+            long_reads => \@long_reads,
+        };
+    }
+}
+
+#----------------------------#
+# loading sequences
+#----------------------------#
+my $seq_of = App::Fasops::Common::read_fasta( $ARGV[2] );
+
+#----------------------------#
 # existing overlaps
 #----------------------------#
 my $existing_ovlp_of = {};
-if ( $opt->{ao} ) {
-    open my $in_fh, "<", $opt->{ao};
+if ( $opt->{oa} ) {
+    open my $in_fh, "<", $opt->{oa};
 
     while ( my $line = <$in_fh> ) {
         my $info = App::Anchr::Common::parse_ovlp_line($line);
@@ -192,6 +232,9 @@ if ( $opt->{ao} ) {
     close $in_fh;
 }
 
+#----------------------------#
+# link anchors
+#----------------------------#
 my @paths;
 if ( $anchor_graph->is_dag ) {
     if ( scalar $anchor_graph->exterior_vertices == 2 ) {
@@ -208,10 +251,121 @@ else {
     print "    Cyclic\n";
 }
 
-for my $path (@paths) {
-    my @nodes = @{$path};
+my $basename = Path::Tiny::path( $opt->{outfile} )->basename();
+($basename) = split /\./, $basename;
+my $contig;
+my $count = 1;
+for my $i ( 0 .. $#paths ) {
+    $contig .= sprintf ">%s_%d\n", $basename, $count;
 
-    for my $i ( 0 .. $#nodes ) {
+    my @nodes = @{ $paths[$i] };
+
+    my $flag_start = 1;
+    for my $j ( 0 .. $#nodes - 1 ) {
+        my $anchor_0 = $nodes[$j];
+        my $anchor_1 = $nodes[ $j + 1 ];
+        my $pair     = join "-", sort ( $anchor_0, $anchor_1, );
+
+        if ($flag_start) {
+            $contig .= $seq_of->{$anchor_0};
+            $flag_start = 0;
+        }
+
+        if ( !exists $relation_of->{$pair} ) {
+            print STDERR "    No reliable links between $pair\n";
+            $count++;
+            $contig .= "\n";
+            $contig .= sprintf ">%s_%d\n", $basename, $count;
+            $flag_start = 1;
+            next;
+        }
+
+        my $seq_anchor_1 = $seq_of->{$anchor_1};
+
+        if ( $existing_ovlp_of->{$pair} ) {
+            my $ovlp_len = $existing_ovlp_of->{$pair}{ovlp_len};
+
+            #            my $ovlp_idt = $existing_ovlp_of->{$pair}{ovlp_idt};
+
+            $contig .= substr $seq_anchor_1, $ovlp_len - 1;
+        }
+        else {
+            my $avg_distance
+                = int App::Fasops::Common::mean( @{ $relation_of->{$pair}{distances} } );
+
+            if ( $avg_distance < 0 ) {
+                if ( abs($avg_distance) < 5 ) {
+                    $contig .= substr $seq_anchor_1, abs($avg_distance) - 1;
+                }
+                else {
+                    my $ovlp_len_120      = int( abs($avg_distance) * 1.2 );
+                    my $ovlp_seq_contig   = substr $contig, -$ovlp_len_120;
+                    my $ovlp_seq_anchor_1 = substr $seq_anchor_1, 0, $ovlp_len_120;
+
+                    my $ovlp_seq;
+                    if ( abs($avg_distance) < 30 ) {
+
+                        # abs($avg_distance) should be less than 30.
+                        # Larger overlaps have been detected by daligner (--oa)
+                        my ( $lcss, $offset_contig, $offset_anchor_1 )
+                            = App::Anchr::Common::lcss( $ovlp_seq_contig, $ovlp_seq_anchor_1 );
+
+                        # build overlap sequences
+                        substr $ovlp_seq_contig,   $offset_contig,   length($lcss), "";
+                        substr $ovlp_seq_anchor_1, $offset_anchor_1, length($lcss), "";
+                        $ovlp_seq = $ovlp_seq_contig . $lcss . $ovlp_seq_anchor_1;
+                    }
+                    else {
+
+                        # call poa
+                        $ovlp_seq = App::Anchr::Common::poa_consensus(
+                            [ $ovlp_seq_contig, $ovlp_seq_anchor_1 ] );
+                    }
+
+                    # remove length of ovlp_len_120 from contig and anchor_1
+                    substr $contig, -$ovlp_len_120, $ovlp_len_120, "";
+                    substr $seq_anchor_1, 0, $ovlp_len_120, "";
+
+                    $contig .= $ovlp_seq . $seq_anchor_1;
+                }
+            }
+            else {
+                my @spaces;
+                for my $long_read ( @{ $relation_of->{$pair}{long_reads} } ) {
+
+                    #@type AlignDB::IntSpan
+                    my $intspan_0 = $links_of->{$long_read}{$anchor_0};
+                    next unless defined $intspan_0;
+
+                    #@type AlignDB::IntSpan
+                    my $intspan_1 = $links_of->{$long_read}{$anchor_1};
+                    next unless defined $intspan_1;
+
+                    # reduce ends
+                    $intspan_0 = $intspan_0->trim( $opt->{border} );
+                    $intspan_1 = $intspan_1->trim( $opt->{border} );
+
+                    my $intspan_space = $intspan_0->union($intspan_1)->holes;
+                    next if $intspan_space->is_empty;
+
+                    push @spaces, $intspan_space->substr_span( $seq_of->{$long_read} );
+                }
+
+                my $space_seq;
+                $space_seq = App::Anchr::Common::poa_consensus( \@spaces );
+
+                # remove length of $opt->{border} from contig and anchor_1
+                substr $contig, -$opt->{border}, $opt->{border}, "";
+                substr $seq_anchor_1, 0, $opt->{border}, "";
+
+                $contig .= $space_seq;
+                $contig .= $seq_anchor_1;
+            }
+        }
 
     }
+
+    $contig .= "\n";
 }
+
+Path::Tiny::path( $opt->{outfile} )->spew($contig);
