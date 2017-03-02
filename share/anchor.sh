@@ -51,11 +51,6 @@ log_debug "    USE_SR=${USE_SR}"
     exit 1;
 }
 
-#[ -e ${RESULT_DIR}/work1/superReadSequences.fasta ] || {
-#    log_warn "Can't find superReadSequences.fasta in [${RESULT_DIR}/work1].";
-#    exit 1;
-#}
-
 #----------------------------#
 # Prepare SR
 #----------------------------#
