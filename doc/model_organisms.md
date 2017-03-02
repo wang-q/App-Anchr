@@ -526,13 +526,11 @@ rm -fr 9_qa
 quast --no-check \
     -R 1_genome/genome.fa \
     Q20L150_1600000/anchor/pe.anchor.fa \
-    Q20L150_1600000/k_unitigs.fasta \
     Q25L130_1400000/anchor/pe.anchor.fa \
-    Q25L130_1400000/k_unitigs.fasta \
     Q25L130_2000000/anchor/pe.anchor.fa \
-    Q25L130_2000000/k_unitigs.fasta \
+    Q20L150_1600000/anchorLong/contig.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L150_1600000,Q20L150_1600000K,Q25L130_1400000,Q25L130_1400000K,Q25L130_2000000,Q25L130_2000000K,paralogs" \
+    --label "Q20L150_1600000,Q25L130_1400000,Q25L130_2000000,contig,paralogs" \
     -o 9_qa
 ```
 
@@ -545,70 +543,108 @@ quast --no-check \
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
+#head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
+head -n 46000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
 
 mkdir -p ${BASE_DIR}/Q20L150_1600000/covered
 anchr cover \
     -b 20 -c 2 --len 1000 --idt 0.85 \
     ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
-    ${BASE_DIR}/3_pacbio/pacbio.20x.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
     -o ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta
-faops n50 -S -C ~/data/anchr/e_coli/Q20L150_1600000/covered/covered.fasta
+faops n50 -S -C ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta
 
 anchr overlap2 \
     ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.20x.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
     -d ${BASE_DIR}/Q20L150_1600000/anchorLong \
     -b 20 --len 1000 --idt 0.85
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchor.fasta)
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/Q20L150_1600000/anchorLong/anchor.fasta)
 echo ${ANCHOR_COUNT}
 anchr group \
-    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.db \
-    ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 5000 -c 3 --png
+    ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.db \
+    ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 10 --png
 
-cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt \
+pushd ${BASE_DIR}/Q20L150_1600000/anchorLong
+cat group/groups.txt \
     | parallel --no-run-if-empty -j 4 '
         echo {};
         anchr orient \
             --len 1000 --idt 0.85 \
-            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.anchor.fasta \
-            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.long.fasta \
-            -r ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.restrict.tsv \
-            -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta;
-        
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
         anchr overlap --len 1000 --idt 0.85 \
-            ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.strand.fasta \
+            group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
-                stdin ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.restrict.tsv \
-                -o ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/{}.ovlp.tsv;
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
     '
+popd
 
 # false strand
-cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
+cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-for id in $(cat ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/groups.txt);
+for id in $(cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/groups.txt);
 do
     echo ${id};
     perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
-        ~/data/anchr/e_coli/Q20L150_1600000/anchorLong/group/${id}.relation.tsv
+        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
+        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.relation.tsv \
+        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.strand.fasta \
+        --oa ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.anchor.ovlp.tsv \
+        --png \
+        -o ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.contig.fasta
 done
+
+faops n50 -S -C ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.contig.fasta
+cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.contig.fasta \
+    >  ${BASE_DIR}/Q20L150_1600000/anchorLong/contig.fasta
+
+rm -fr 9_qa
+quast --no-check \
+    -R 1_genome/genome.fa \
+    Q20L150_1600000/anchor/pe.anchor.fa \
+    Q20L150_1600000/anchorLong/contig.fasta \
+    1_genome/paralogs.fas \
+    --label "Q20L150_1600000,contig,paralogs" \
+    -o 9_qa
 
 ```
 
-| #Anchor |  max | cov | Multi-matched | Non-grouped |  CC | false strand |
-|:--------|-----:|----:|--------------:|------------:|----:|-------------:|
-| 950     | 5000 |   2 |            19 |          16 |  59 |            2 |
-|         |      |   3 |            19 |          45 |  89 |            2 |
-|         |      |   5 |            19 |         194 | 154 |            0 |
-|         | 2000 |   2 |            19 |          18 |  84 |            2 |
-|         |      |   3 |            19 |          50 | 110 |            2 |
-|         |      |   5 |            19 |         204 | 163 |            0 |
+| Long | cover | #Anchor |  max | linker | Multi-matched | Non-grouped |  CC | false strand |
+|-----:|------:|:-------:|-----:|-------:|--------------:|------------:|----:|-------------:|
+|  20x |     2 |   950   | 5000 |      2 |            19 |          16 |  59 |            2 |
+|      |       |         |      |      3 |            19 |          45 |  89 |            2 |
+|      |       |         |      |      5 |            19 |         194 | 154 |            0 |
+|      |       |         | 2000 |      2 |            19 |          18 |  84 |            2 |
+|      |       |         |      |      3 |            19 |          50 | 110 |            2 |
+|      |       |         |      |      5 |            19 |         204 | 163 |            0 |
+|  40x |     2 |   930   | 5000 |      2 |            38 |           3 |  27 |            1 |
+|      |       |         |      |      3 |            38 |           3 |  28 |            1 |
+|      |       |         |      |      5 |            38 |          10 |  60 |            1 |
+|      |       |         | 2000 |      5 |            38 |          14 |  87 |            0 |
+|      |       |         |      |     10 |            38 |         192 | 169 |            0 |
 
 # *Saccharomyces cerevisiae* S288c
 
@@ -960,6 +996,69 @@ quast --no-check \
     1_genome/paralogs.fas \
     --label "2000000,4000000,6000000,paralogs" \
     -o 9_qa
+```
+
+## Scer: anchor-long
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+head -n 230000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
+faops n50 -S -C ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
+
+mkdir -p ${BASE_DIR}/Q20L150_6000000/covered
+anchr cover \
+    -b 20 -c 2 --len 1000 --idt 0.85 \
+    ${BASE_DIR}/Q20L150_6000000/anchor/pe.anchor.fa \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
+    -o ${BASE_DIR}/Q20L150_6000000/covered/covered.fasta
+faops n50 -S -C ${BASE_DIR}/Q20L150_6000000/covered/covered.fasta
+
+anchr overlap2 \
+    ${BASE_DIR}/Q20L150_6000000/covered/covered.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
+    -d ${BASE_DIR}/Q20L150_6000000/anchorLong \
+    -b 20 --len 1000 --idt 0.85
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/Q20L150_6000000/anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+anchr group \
+    ${BASE_DIR}/Q20L150_6000000/anchorLong/anchorLong.db \
+    ${BASE_DIR}/Q20L150_6000000/anchorLong/anchorLong.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 5000 -c 3 --png
+
+cat ${BASE_DIR}/Q20L150_6000000/anchorLong/group/groups.txt \
+    | parallel --no-run-if-empty -j 4 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.85 \
+            ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.anchor.fasta \
+            ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.long.fasta \
+            -r ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.restrict.tsv \
+            -o ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.strand.fasta;
+        
+        anchr overlap --len 1000 --idt 0.85 \
+            ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.restrict.tsv \
+                -o ~/data/anchr/s288c/Q20L150_6000000/anchorLong/group/{}.ovlp.tsv;
+    '
+
+# false strand
+cat ${BASE_DIR}/Q20L150_6000000/anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+for id in $(cat ${BASE_DIR}/Q20L150_6000000/anchorLong/group/groups.txt);
+do
+    echo ${id};
+    perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
+        ${BASE_DIR}/Q20L150_6000000/anchorLong/group/${id}.ovlp.tsv \
+        ${BASE_DIR}/Q20L150_6000000/anchorLong/group/${id}.relation.tsv
+done
+
 ```
 
 # *Drosophila melanogaster* iso-1
