@@ -565,7 +565,7 @@ echo ${ANCHOR_COUNT}
 anchr group \
     ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.db \
     ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 10 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 5 --png
 
 pushd ${BASE_DIR}/Q20L150_1600000/anchorLong
 cat group/groups.txt \
@@ -626,8 +626,9 @@ quast --no-check \
     -R 1_genome/genome.fa \
     Q20L150_1600000/anchor/pe.anchor.fa \
     Q20L150_1600000/anchorLong/contig.fasta \
+    contig_2_14.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L150_1600000,contig,paralogs" \
+    --label "Q20L150_1600000,contig,contig_2_14,paralogs" \
     -o 9_qa
 
 ```
