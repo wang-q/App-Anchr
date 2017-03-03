@@ -104,75 +104,15 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
     > unambiguous.cover.txt
 
 #----------------------------#
-# ambiguous
-#----------------------------#
-log_info "ambiguous regions"
-
-log_debug "pe.unmapped.txt"
-cat unmapped.sam \
-    | perl -nle '
-        /^@/ and next;
-        @fields = split "\t";
-        print $fields[0];
-    ' \
-    > pe.unmapped.txt
-
-log_debug "pe.unmapped.fa"
-
-# Too large for `faops some`
-split -n10 -d pe.unmapped.txt pe.part
-
-if [ -e pe.unmapped.fa ];
-then
-    rm pe.unmapped.fa
-fi
-
-for part in $(printf "%.2d " {0..9})
-do
-    faops some -l 0 pe.cor.fa pe.part${part} stdout
-    rm pe.part${part}
-done >> pe.unmapped.fa
-
-log_debug "bbmap"
-bbmap.sh \
-    maxindel=0 strictmaxindel perfectmode \
-    threads=${N_THREADS} \
-    ref=SR.clean.fasta in=pe.unmapped.fa \
-    outm=ambiguous.sam outu=unmapped2.sam \
-    1>>bbmap.err 2>&1
-
-log_debug "sort bam"
-picard SortSam \
-    INPUT=ambiguous.sam \
-    OUTPUT=ambiguous.sort.bam \
-    SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT \
-    1>>picard.err 2>&1
-
-log_debug "genomeCoverageBed"
-genomeCoverageBed -bga -split -g sr.chr.sizes -ibam ambiguous.sort.bam \
-    | perl -nlae '
-        $F[3] == 0 and next;
-        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
-    ' \
-    > ambiguous.cover.txt
-
-#----------------------------#
 # anchor
 #----------------------------#
 log_info "pe.anchor.fa"
 
 log_debug "unambiguous.cover"
-jrunlist cover unambiguous.cover.txt
+jrunlist cover unambiguous.cover.txt -o unambiguous.cover.yml
+jrunlist stat sr.chr.sizes unambiguous.cover.yml -o unambiguous.cover.csv
 
-log_debug "ambiguous.cover"
-jrunlist cover ambiguous.cover.txt
-
-log_debug "unique.cover"
-jrunlist compare --op diff unambiguous.cover.txt.yml ambiguous.cover.txt.yml -o unique.cover.yml
-runlist stat unique.cover.yml -s sr.chr.sizes -o unique.cover.csv
-
-cat unique.cover.csv \
+cat unambiguous.cover.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
@@ -192,10 +132,10 @@ faops some -l 0 SR.clean.fasta anchor.txt pe.anchor.fa
 log_info "pe.anchor2.fa & pe.others.fa"
 
 # contiguous unique region longer than 1000
-jrunlist span unique.cover.yml --op excise -n 1000 -o stdout \
-    | runlist stat stdin -s sr.chr.sizes -o unique2.cover.csv
+jrunlist span unambiguous.cover.yml --op excise -n 1000 -o unambiguous2.cover.yml
+jrunlist stat sr.chr.sizes unambiguous2.cover.yml -o unambiguous2.cover.csv
 
-cat unique2.cover.csv \
+cat unambiguous2.cover.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
@@ -203,9 +143,9 @@ cat unique2.cover.csv \
         print $F[0];
     ' \
     | sort -n \
-    > unique2.txt
+    > unambiguous2.txt
 
-cat unique2.txt \
+cat unambiguous2.txt \
     | perl -nl -MPath::Tiny -e '
         BEGIN {
             %seen = ();
@@ -224,81 +164,15 @@ faops some -l 0 SR.clean.fasta anchor2.txt pe.anchor2.fa
 faops some -l 0 -i SR.clean.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
 
-rm unique2.cover.csv unique2.txt
-
-#----------------------------#
-# Record unique regions
-#----------------------------#
-log_info "Record unique regions"
-
-cat pe.anchor2.fa \
-    | perl -nl -MPath::Tiny -e '
-        BEGIN {
-            %seen = ();
-            @ls = grep {/\S/}
-                  path(q{unique.cover.yml})->lines({ chomp => 1});
-            for (@ls) {
-                /^(\d+):\s+([\d,-]+)/ or next;
-                $seen{$1} = $2;
-            }
-            $flag = 0;
-        }
-
-        if (/^>(\d+)/) {
-            if ($seen{$1}) {
-                print qq{>$1|$seen{$1}};
-                $flag = 1;
-            }
-        }
-        elsif (/^\w+/) {
-            if ($flag) {
-                print;
-                $flag = 0;
-            }
-        }
-    ' \
-    > pe.anchor2.record.fa
-
-cat pe.others.fa \
-    | perl -nl -MPath::Tiny -e '
-        BEGIN {
-            %seen = ();
-            @ls = grep {/\S/}
-                  path(q{unique.cover.yml})->lines({ chomp => 1});
-            for (@ls) {
-                /^(\d+):\s+([\d,-]+)/ or next;
-                $seen{$1} = $2;
-            }
-            $flag = 0;
-        }
-
-        if (/^>(\d+)/) {
-            if ($seen{$1}) {
-                print qq{>$1|$seen{$1}};
-            }
-            else {
-                print;
-            }
-            $flag = 1;
-        }
-        elsif (/^\w+/) {
-            if ($flag) {
-                print;
-                $flag = 0;
-            }
-        }
-    ' \
-    > pe.others.record.fa
+#rm unambiguous2.*
 
 #----------------------------#
 # Clear intermediate files
 #----------------------------#
 log_info "Clear intermediate files"
 
-find . -type f -name "ambiguous.sam"   | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "unambiguous.sam" | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "unmapped.sam"    | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "pe.unmapped.fa"  | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
+#find . -type f -name "pe.unmapped.fa"  | parallel --no-run-if-empty -j 1 rm
 
 #----------------------------#
 # Done

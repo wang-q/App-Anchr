@@ -388,7 +388,7 @@ do
     fi
     
     rm -fr ${DIR_COUNT}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 120 false
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 false
 done
 ```
 
