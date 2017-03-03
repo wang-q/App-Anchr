@@ -103,6 +103,8 @@ genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
     ' \
     > unambiguous.cover.txt
 
+find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
+
 #----------------------------#
 # anchor
 #----------------------------#
@@ -125,6 +127,8 @@ cat unambiguous.cover.csv \
 
 log_debug "pe.anchor.fa"
 faops some -l 0 SR.clean.fasta anchor.txt pe.anchor.fa
+
+rm unambiguous.cover.txt
 
 #----------------------------#
 # anchor2
@@ -164,15 +168,7 @@ faops some -l 0 SR.clean.fasta anchor2.txt pe.anchor2.fa
 faops some -l 0 -i SR.clean.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
 
-#rm unambiguous2.*
-
-#----------------------------#
-# Clear intermediate files
-#----------------------------#
-log_info "Clear intermediate files"
-
-find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
-#find . -type f -name "pe.unmapped.fa"  | parallel --no-run-if-empty -j 1 rm
+rm unambiguous2.*
 
 #----------------------------#
 # Done
