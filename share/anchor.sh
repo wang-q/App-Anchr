@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-USAGE="Usage: $0 RESULT_DIR N_THREADS MIN_LENGTH_READ USE_SR"
+USAGE="Usage: $0 RESULT_DIR N_THREADS USE_SR"
 
 if [ "$#" -lt 1 ]; then
     echo >&2 "$USAGE"
@@ -37,13 +37,11 @@ log_debug () {
 #----------------------------#
 RESULT_DIR=$1
 N_THREADS=${2:-8}
-MIN_LENGTH_READ=${3:-100}
-USE_SR=${4:-true}
+USE_SR=${3:-true}
 
 log_info "Parameters"
 log_debug "    RESULT_DIR=${RESULT_DIR}"
 log_debug "    N_THREADS=${N_THREADS}"
-log_debug "    MIN_LENGTH_READ=${MIN_LENGTH_READ}"
 log_debug "    USE_SR=${USE_SR}"
 
 [ -e ${RESULT_DIR}/pe.cor.fa ] || {
@@ -61,68 +59,10 @@ cd ${RESULT_DIR}/anchor
 ln -s ../pe.cor.fa .
 
 if [ "${USE_SR}" = true ] ; then
-    faops filter -a 500 -l 0 ../work1/superReadSequences.fasta SR.filter.fasta
+    anchr merge ../work1/superReadSequences.fasta --len 500 --idt 0.98 -o SR.clean.fasta
 else
-    faops filter -a 500 -l 0 ../k_unitigs.fasta SR.filter.fasta
+    anchr merge ../k_unitigs.fasta --len 500 --idt 0.98 -o SR.clean.fasta
 fi
-
-anchr overlap SR.filter.fasta --len 500 --idt .96 -o SR.ovlp.tsv
-
-cat SR.ovlp.tsv \
-    | perl -nla -F"\t" -e '
-        next unless scalar(@F) == 13;
-
-        # discard contained SR
-        my $f_id = $F[0];
-        my $g_id = $F[1];
-
-        if ($F[12] eq q{contains}) {
-            print $g_id;
-            next;
-        }
-        if ($F[12] eq q{contained}) {
-            print $f_id;
-            next;
-        }
-
-        # discard nearly contained SR
-        my $o_len = $F[2];
-        my $f_len = $F[7];
-        my $g_len = $F[11];
-
-        my $f_r = $o_len / $f_len;
-        my $g_r = $o_len / $g_len;
-
-        if ($f_r <= 0.9 and $g_r > 0.9) {
-            print $g_id;
-            next;
-        }
-
-        if ($g_r <= 0.9 and $f_r > 0.9) {
-            print $f_id;
-            next;
-        }
-
-        if ($f_r > 0.9 and $g_r > 0.9) {
-            if ( $f_len >= $g_len) {
-                print $g_id;
-            }
-            else {
-                print $f_id;
-            }
-            next;
-        }
-
-        # more strict identity
-        next unless $F[3] > 0.99;
-
-        if ($f_len / $g_len > 2 and $g_r > 0.5) {
-            print $g_id;
-        }
-    ' \
-    | sort -n | uniq > SR.discard.txt
-
-faops some -i -l 0 SR.filter.fasta SR.discard.txt SR.clean.fasta
 
 faops size SR.clean.fasta > sr.chr.sizes
 
