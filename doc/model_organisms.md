@@ -22,6 +22,7 @@
     - [Scer: create anchors](#scer-create-anchors)
     - [Scer: results](#scer-results)
     - [Scer: quality assessment](#scer-quality-assessment)
+    - [Scer: anchor-long](#scer-anchor-long)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [Dmel: download](#dmel-download)
     - [Dmel: trim](#dmel-trim)
