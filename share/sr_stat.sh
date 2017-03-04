@@ -66,7 +66,7 @@ if [ "${STAT_TASK}" = "1" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}"
 
-        SUM_FQ=$( if [ -e pe.renamed.fastq ]; then faops n50 -H -N 0 -S pe.renamed.fastq; else echo 0; fi )
+        SUM_FQ=$( faops n50 -H -N 0 -S R1.fq.gz R2.fq.gz )
         SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
         EST_G=$( cat environment.sh | perl -n -e '/ESTIMATED_GENOME_SIZE=\"(\d+)\"/ and print $1' )
         SUM_KU=$( faops n50 -H -N 0 -S k_unitigs.fasta)
