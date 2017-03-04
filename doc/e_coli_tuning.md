@@ -19,8 +19,6 @@
 
 ## Symlinks
 
-* Reference genome
-
 ```bash
 mkdir -p ~/data/anchr/e_coli_tuning/1_genome
 cd ~/data/anchr/e_coli_tuning/1_genome
@@ -32,6 +30,14 @@ cd ~/data/anchr/e_coli_tuning/2_illumina
 
 ln -s ~/data/anchr/e_coli/2_illumina/R1.fq.gz R1.fq.gz
 ln -s ~/data/anchr/e_coli/2_illumina/R2.fq.gz R2.fq.gz
+
+ln -s ~/data/anchr/e_coli/2_illumina/R1.scythe.fq.gz R1.scythe.fq.gz
+ln -s ~/data/anchr/e_coli/2_illumina/R2.scythe.fq.gz R2.scythe.fq.gz
+
+mkdir -p ~/data/anchr/e_coli_tuning/3_pacbio
+cd ~/data/anchr/e_coli_tuning/3_pacbio
+
+ln -s ~/data/anchr/e_coli/3_pacbio/pacbio.fasta pacbio.fasta
 ```
 
 ## Combinations of different quality values and read lengths
@@ -42,11 +48,6 @@ ln -s ~/data/anchr/e_coli/2_illumina/R2.fq.gz R2.fq.gz
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli_tuning
 cd ${BASE_DIR}
-
-cd ~/data/anchr/e_coli_tuning/2_illumina
-
-ln -s ~/data/anchr/e_coli/2_illumina/R1.scythe.fq.gz R1.scythe.fq.gz
-ln -s ~/data/anchr/e_coli/2_illumina/R2.scythe.fq.gz R2.scythe.fq.gz
 
 cd ${BASE_DIR}
 for qual in 20 25 30; do
@@ -86,6 +87,8 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
@@ -105,6 +108,7 @@ cat stat.md
 |:---------|--------:|-----------:|---------:|
 | Genome   | 4641652 |    4641652 |        1 |
 | Illumina |     151 | 1730299940 | 11458940 |
+| PacBio   |   13982 |  748508361 |    87225 |
 | scythe   |     151 | 1724565376 | 11458940 |
 | Q20L120  |     151 | 1138097252 |  7742646 |
 | Q20L130  |     151 |  977384738 |  6561892 |
@@ -635,7 +639,8 @@ quast --no-check \
     Q25L120_2800000/anchor/pe.anchor.fa \
     Q25L150_1200000/anchor/pe.anchor.fa \
     Q30L120_1200000/anchor/pe.anchor.fa \
+    merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L120_1600000,Q20L150_1600000,Q25L120_2800000,Q25L150_1200000,Q30L120_1200000,paralogs" \
+    --label "Q20L120_1600000,Q20L150_1600000,Q25L120_2800000,Q25L150_1200000,Q30L120_1200000,merge,paralogs" \
     -o 9_qa
 ```
