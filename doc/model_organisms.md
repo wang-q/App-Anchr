@@ -522,6 +522,19 @@ rm *.[fr]plot
 rm out.delta
 rm *.gp
 
+# merge anchors
+anchr contained \
+    Q20L150_1600000/anchor/pe.anchor.fa \
+    Q20L150_2400000/anchor/pe.anchor.fa \
+    Q25L130_1000000/anchor/pe.anchor.fa \
+    Q25L130_2000000/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin anchor.contained.fasta
+anchr orient anchor.contained.fasta --len 1000 --idt 0.98 -o anchor.orient.fasta
+anchr merge anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 2000 -l 0 stdin anchor.merge.fasta
+
 # quast
 rm -fr 9_qa
 quast --no-check \
