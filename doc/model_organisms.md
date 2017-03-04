@@ -311,7 +311,7 @@ for group in "${ARRAY[@]}" ; do
             continue     
         fi
         
-        echo "==> Reads ${GROUP_ID}_${count}"
+        echo "==> Group ${GROUP_ID}_${count}"
         DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
         mkdir -p ${DIR_COUNT}
         
@@ -899,7 +899,7 @@ do
     if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
         continue
     fi
-    
+
     rm -fr ${DIR_COUNT}/anchor
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 120 false
 done
