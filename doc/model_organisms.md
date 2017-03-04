@@ -540,11 +540,11 @@ rm -fr 9_qa
 quast --no-check \
     -R 1_genome/genome.fa \
     Q20L150_1600000/anchor/pe.anchor.fa \
-    Q25L130_1400000/anchor/pe.anchor.fa \
     Q25L130_2000000/anchor/pe.anchor.fa \
-    Q20L150_1600000/anchorLong/contig.fasta \
+    anchor.orient.fasta \
+    anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L150_1600000,Q25L130_1400000,Q25L130_2000000,contig,paralogs" \
+    --label "Q20L150_1600000,Q25L130_2000000,orient,merge,paralogs" \
     -o 9_qa
 ```
 
@@ -560,28 +560,28 @@ cd ${BASE_DIR}
 #head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
 head -n 46000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
 
-mkdir -p ${BASE_DIR}/Q20L150_1600000/covered
+mkdir -p ${BASE_DIR}/covered
 anchr cover \
-    -b 20 -c 2 --len 1000 --idt 0.85 \
-    ${BASE_DIR}/Q20L150_1600000/anchor/pe.anchor.fa \
+    -b 20 -c 2 --len 1000 --idt 0.8 \
+    ${BASE_DIR}/anchor.merge.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -o ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta
-faops n50 -S -C ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta
+    -o ${BASE_DIR}/covered/covered.fasta
+faops n50 -S -C ${BASE_DIR}/covered/covered.fasta
 
 anchr overlap2 \
-    ${BASE_DIR}/Q20L150_1600000/covered/covered.fasta \
+    ${BASE_DIR}/covered/covered.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/Q20L150_1600000/anchorLong \
+    -d ${BASE_DIR}/anchorLong \
     -b 20 --len 1000 --idt 0.85
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/Q20L150_1600000/anchorLong/anchor.fasta)
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong/anchor.fasta)
 echo ${ANCHOR_COUNT}
 anchr group \
-    ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.db \
-    ${BASE_DIR}/Q20L150_1600000/anchorLong/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 2000 -c 5 --png
+    ${BASE_DIR}/anchorLong/anchorLong.db \
+    ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 500 -c 2 --png
 
-pushd ${BASE_DIR}/Q20L150_1600000/anchorLong
+pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 4 '
         echo {};
@@ -615,34 +615,33 @@ cat group/groups.txt \
 popd
 
 # false strand
-cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.ovlp.tsv \
+cat ${BASE_DIR}/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-for id in $(cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/groups.txt);
+for id in $(cat ${BASE_DIR}/anchorLong/group/groups.txt);
 do
     echo ${id};
     perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
-        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.ovlp.tsv \
-        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.relation.tsv \
-        ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.strand.fasta \
-        --oa ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.anchor.ovlp.tsv \
+        ${BASE_DIR}/anchorLong/group/${id}.ovlp.tsv \
+        ${BASE_DIR}/anchorLong/group/${id}.relation.tsv \
+        ${BASE_DIR}/anchorLong/group/${id}.strand.fasta \
+        --oa ${BASE_DIR}/anchorLong/group/${id}.anchor.ovlp.tsv \
         --png \
-        -o ${BASE_DIR}/Q20L150_1600000/anchorLong/group/${id}.contig.fasta
+        -o ${BASE_DIR}/anchorLong/group/${id}.contig.fasta
 done
 
-faops n50 -S -C ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.contig.fasta
-cat ${BASE_DIR}/Q20L150_1600000/anchorLong/group/*.contig.fasta \
-    >  ${BASE_DIR}/Q20L150_1600000/anchorLong/contig.fasta
+faops n50 -S -C ${BASE_DIR}/anchorLong/group/*.contig.fasta
+cat ${BASE_DIR}/anchorLong/group/*.contig.fasta \
+    >  ${BASE_DIR}/anchorLong/contig.fasta
 
 rm -fr 9_qa
 quast --no-check \
     -R 1_genome/genome.fa \
-    Q20L150_1600000/anchor/pe.anchor.fa \
-    Q20L150_1600000/anchorLong/contig.fasta \
-    contig_2_14.fasta \
+    anchor.merge.fasta \
+    anchorLong/contig.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L150_1600000,contig,contig_2_14,paralogs" \
+    --label "merge,contig,paralogs" \
     -o 9_qa
 
 ```
