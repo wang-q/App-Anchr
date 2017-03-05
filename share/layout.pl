@@ -284,10 +284,7 @@ for my $i ( 0 .. $#paths ) {
 
         if ( $existing_ovlp_of->{$pair} ) {
             my $ovlp_len = $existing_ovlp_of->{$pair}{ovlp_len};
-
-            #            my $ovlp_idt = $existing_ovlp_of->{$pair}{ovlp_idt};
-
-            $contig .= substr $seq_anchor_1, $ovlp_len - 1;
+            $contig .= substr $seq_anchor_1, $ovlp_len;
         }
         else {
             my $avg_distance
@@ -295,7 +292,7 @@ for my $i ( 0 .. $#paths ) {
 
             if ( $avg_distance < 0 ) {
                 if ( abs($avg_distance) < 5 ) {
-                    $contig .= substr $seq_anchor_1, abs($avg_distance) - 1;
+                    $contig .= substr $seq_anchor_1, abs($avg_distance);
                 }
                 else {
                     my $ovlp_len_120      = int( abs($avg_distance) * 1.2 );
@@ -310,13 +307,20 @@ for my $i ( 0 .. $#paths ) {
                         my ( $lcss, $offset_contig, $offset_anchor_1 )
                             = App::Anchr::Common::lcss( $ovlp_seq_contig, $ovlp_seq_anchor_1 );
 
-                        # build overlap sequences
-                        substr $ovlp_seq_contig,   $offset_contig,   length($lcss), "";
-                        substr $ovlp_seq_anchor_1, $offset_anchor_1, length($lcss), "";
-                        $ovlp_seq = $ovlp_seq_contig . $lcss . $ovlp_seq_anchor_1;
+                        if ($lcss) {
+
+                            # build overlap sequences
+                            substr $ovlp_seq_contig,   $offset_contig,   length($lcss), "";
+                            substr $ovlp_seq_anchor_1, $offset_anchor_1, length($lcss), "";
+                            $ovlp_seq = $ovlp_seq_contig . $lcss . $ovlp_seq_anchor_1;
+                        }
+                        else {
+                            # call poa
+                            $ovlp_seq = App::Anchr::Common::poa_consensus(
+                                [ $ovlp_seq_contig, $ovlp_seq_anchor_1 ] );
+                        }
                     }
                     else {
-
                         # call poa
                         $ovlp_seq = App::Anchr::Common::poa_consensus(
                             [ $ovlp_seq_contig, $ovlp_seq_anchor_1 ] );
@@ -351,8 +355,14 @@ for my $i ( 0 .. $#paths ) {
                     push @spaces, $intspan_space->substr_span( $seq_of->{$long_read} );
                 }
 
-                my $space_seq;
-                $space_seq = App::Anchr::Common::poa_consensus( \@spaces );
+                my $left_border = substr $contig, -$opt->{border};
+                my $right_border = substr $seq_anchor_1, 0, $opt->{border};
+                for my $s (@spaces) {
+                    substr $s, 0, $opt->{border}, $left_border;
+                    substr $s, -$opt->{border}, $opt->{border}, $right_border;
+                }
+
+                my $space_seq = App::Anchr::Common::poa_consensus( \@spaces );
 
                 # remove length of $opt->{border} from contig and anchor_1
                 substr $contig, -$opt->{border}, $opt->{border}, "";
