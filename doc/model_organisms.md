@@ -550,9 +550,6 @@ quast --no-check \
 
 ## *E. coli*: anchor-long
 
-* 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
-* multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
-
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
@@ -645,20 +642,6 @@ quast --no-check \
     -o 9_qa
 
 ```
-
-| Long | cover | #Anchor |  max | linker | Multi-matched | Non-grouped |  CC | false strand |
-|-----:|------:|:-------:|-----:|-------:|--------------:|------------:|----:|-------------:|
-|  20x |     2 |   950   | 5000 |      2 |            19 |          16 |  59 |            2 |
-|      |       |         |      |      3 |            19 |          45 |  89 |            2 |
-|      |       |         |      |      5 |            19 |         194 | 154 |            0 |
-|      |       |         | 2000 |      2 |            19 |          18 |  84 |            2 |
-|      |       |         |      |      3 |            19 |          50 | 110 |            2 |
-|      |       |         |      |      5 |            19 |         204 | 163 |            0 |
-|  40x |     2 |   930   | 5000 |      2 |            38 |           3 |  27 |            1 |
-|      |       |         |      |      3 |            38 |           3 |  28 |            1 |
-|      |       |         |      |      5 |            38 |          10 |  60 |            1 |
-|      |       |         | 2000 |      5 |            38 |          14 |  87 |            0 |
-|      |       |         |      |     10 |            38 |         192 | 169 |            0 |
 
 # *Saccharomyces cerevisiae* S288c
 
