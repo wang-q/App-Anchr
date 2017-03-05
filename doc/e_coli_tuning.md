@@ -793,7 +793,7 @@ cat ${BASE_DIR}/anchorLong/group/*.ovlp.tsv \
 for id in $(cat ${BASE_DIR}/anchorLong/group/groups.txt);
 do
     echo ${id};
-    perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
+    anchr layout \
         ${BASE_DIR}/anchorLong/group/${id}.ovlp.tsv \
         ${BASE_DIR}/anchorLong/group/${id}.relation.tsv \
         ${BASE_DIR}/anchorLong/group/${id}.strand.fasta \
