@@ -685,3 +685,138 @@ quast --no-check \
     --label "Q20L120,Q20L130,Q20L140,Q20L150,Q25L120,Q25L130,Q25L140,Q25L150,Q30L120,merge,paralogs" \
     -o 9_qa
 ```
+
+## anchor-long
+
+* 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
+* multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli_tuning
+cd ${BASE_DIR}
+
+#head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
+head -n 46000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
+
+mkdir -p ${BASE_DIR}/covered
+anchr cover \
+    -b 20 -c 2 --len 1000 --idt 0.8 \
+    ${BASE_DIR}/merge/anchor.merge.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
+    -o ${BASE_DIR}/covered/covered.fasta
+faops n50 -S -C ${BASE_DIR}/covered/covered.fasta
+
+anchr overlap2 \
+    ${BASE_DIR}/covered/covered.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
+    -d ${BASE_DIR}/anchorLong \
+    -b 20 --len 1000 --idt 0.85
+
+anchr overlap \
+    ${BASE_DIR}/covered/covered.fasta \
+    --serial --len 10 --idt 0.98 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.98 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > ${BASE_DIR}/anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+anchr group \
+    ${BASE_DIR}/anchorLong/anchorLong.db \
+    ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
+    --oa ${BASE_DIR}/anchorLong/anchor.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 50 -c 4 --png
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 4 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.85 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.85 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+    '
+popd
+
+# false strand
+cat ${BASE_DIR}/anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+for id in $(cat ${BASE_DIR}/anchorLong/group/groups.txt);
+do
+    echo ${id};
+    perl ~/Scripts/cpan/App-Anchr/share/layout.pl \
+        ${BASE_DIR}/anchorLong/group/${id}.ovlp.tsv \
+        ${BASE_DIR}/anchorLong/group/${id}.relation.tsv \
+        ${BASE_DIR}/anchorLong/group/${id}.strand.fasta \
+        --oa ${BASE_DIR}/anchorLong/group/${id}.anchor.ovlp.tsv \
+        --png \
+        -o ${BASE_DIR}/anchorLong/group/${id}.contig.fasta
+done
+
+faops n50 -S -C ${BASE_DIR}/anchorLong/group/*.contig.fasta
+
+cat \
+    ${BASE_DIR}/anchorLong/group/non_grouped.fasta\
+    ${BASE_DIR}/anchorLong/group/*.contig.fasta \
+    >  ${BASE_DIR}/anchorLong/contig.fasta
+faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
+
+rm -fr 9_qa_contig
+quast --no-check \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    anchorLong/contig.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,contig,paralogs" \
+    -o 9_qa_contig
+
+```
