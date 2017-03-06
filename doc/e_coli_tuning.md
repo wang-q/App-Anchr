@@ -10,6 +10,7 @@
     - [Create anchors](#create-anchors)
     - [Results](#results)
     - [Quality assessment](#quality-assessment)
+    - [anchor-long](#anchor-long)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -782,6 +783,14 @@ cat group/groups.txt \
                 print;
             '\'' \
             > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
     '
 popd
 
@@ -789,18 +798,6 @@ popd
 cat ${BASE_DIR}/anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
-
-for id in $(cat ${BASE_DIR}/anchorLong/group/groups.txt);
-do
-    echo ${id};
-    anchr layout \
-        ${BASE_DIR}/anchorLong/group/${id}.ovlp.tsv \
-        ${BASE_DIR}/anchorLong/group/${id}.relation.tsv \
-        ${BASE_DIR}/anchorLong/group/${id}.strand.fasta \
-        --oa ${BASE_DIR}/anchorLong/group/${id}.anchor.ovlp.tsv \
-        --png \
-        -o ${BASE_DIR}/anchorLong/group/${id}.contig.fasta
-done
 
 faops n50 -S -C ${BASE_DIR}/anchorLong/group/*.contig.fasta
 
