@@ -1,6 +1,5 @@
 # Falcon 安装与样例
 
-
 [TOC levels=1-3]: # " "
 - [Falcon 安装与样例](#falcon-安装与样例)
 - [RS II 与 Sequel 对比](#rs-ii-与-sequel-对比)
@@ -15,7 +14,6 @@
     - [直接安装 falcon-integrate, 现在不推荐](#直接安装-falcon-integrate-现在不推荐)
 - [falcon 样例数据](#falcon-样例数据)
     - [`falcon/example` 里的 [*E. coli* 样例](https://github.com/PacificBiosciences/FALCON/wiki/Setup:-Complete-example).](#falconexample-里的-e-coli-样例)
-    - [E. coli canu](#e-coli-canu)
     - [Scer S288c](#scer-s288c)
     - [C. elegans](#c-elegans)
     - [Atha Col-0](#atha-col-0)
@@ -353,55 +351,6 @@ EOF
 #user    940m48.526s
 #sys     194m47.010s
 time fc_run fc_run.cfg
-```
-
-## E. coli canu
-
-```bash
-mkdir -p ~/data/pacbio/rawdata/ecoli_canu
-cd ~/data/pacbio/rawdata/ecoli_canu
-
-curl -L -o p6.25x.fastq http://gembox.cbcb.umd.edu/mhap/raw/ecoli_p6_25x.filtered.fastq
-
-# canu requires gnuplot 5 while mummer requires gnuplot 4
-brew install canu
-brew install gnuplot
-brew unlink gnuplot
-brew install gnuplot4
-brew unlink gnuplot4
-brew link gnuplot4
-```
-
-```bash
-cd ~/data/pacbio/rawdata/ecoli_canu
-canu \
-    -p ecoli -d ecoli-auto \
-    gnuplot=$HOME/.linuxbrew/Cellar/gnuplot/5.0.5_2/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw p6.25x.fastq
-
-```
-
-```bash
-cd ~/data/pacbio/
-quast --no-check \
-    -R ~/data/anchr/e_coli/1_genome/genome.fa \
-    ~/data/pacbio/rawdata/ecoli_canu/ecoli-auto/ecoli.contigs.fasta \
-    ~/data/pacbio/rawdata/ecoli_canu/ecoli-auto/ecoli.unitigs.fasta \
-    ~/data/pacbio/ecoli_test/2-asm-falcon/p_ctg.fa \
-    ~/data/anchr/e_coli/1_genome/paralogs.fas \
-    --label "contigs,unitigs,falcon,paralogs" \
-    -o ecoli_qa
-
-quast --no-check \
-    -R ~/data/anchr/s288c/1_genome/genome.fa \
-    ~/data/pacbio/rawdata/Yeast_PacBio_2016/data/Nuclear_Genome/S288c.genome.fa.gz \
-    ~/data/anchr/s288c/trimmed_2000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
-    ~/data/anchr/s288c/trimmed_4000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
-    ~/data/anchr/s288c/trimmed_8000000/guillaumeKUnitigsAtLeast32bases_all.fasta \
-    ~/data/anchr/s288c/1_genome/paralogs.fas \
-    --label "yjx,2000000,4000000,8000000,paralogs" \
-    -o s288c_qa
 ```
 
 ## Scer S288c

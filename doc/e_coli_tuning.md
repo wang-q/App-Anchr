@@ -817,3 +817,23 @@ quast --no-check \
     -o 9_qa_contig
 
 ```
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli_tuning
+cd ${BASE_DIR}
+
+canu \
+    -p ecoli -d canu \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+rm -fr 9_qa_canu
+quast --no-check \
+    -R 1_genome/genome.fa \
+    anchorLong/contig.fasta \
+    canu/ecoli.unitigs.fasta \
+    1_genome/paralogs.fas \
+    --label "contigs,canu,paralogs" \
+    -o 9_qa_canu
+```

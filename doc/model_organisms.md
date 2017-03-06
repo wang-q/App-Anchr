@@ -64,6 +64,15 @@ brew install homebrew/science/mummer        # mummer need gnuplot4
 
 brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
+
+# canu requires gnuplot 5 while mummer requires gnuplot 4
+brew install canu
+
+brew unlink gnuplot4
+brew install gnuplot
+brew unlink gnuplot
+
+brew link gnuplot4
 ```
 
 ## PacBio specific tools
