@@ -210,7 +210,7 @@ fi
 
 ## 通过 pitchfork 编译
 
-前期准备工作见[在此](model_organisms.md/#pacbio-specific-tools).
+前期准备工作见[在此](e_coli.md/#pacbio-specific-tools).
 
 ```bash
 cd ~/share/pitchfork
