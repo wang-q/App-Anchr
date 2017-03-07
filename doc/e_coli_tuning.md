@@ -823,7 +823,7 @@ BASE_DIR=$HOME/data/anchr/e_coli_tuning
 cd ${BASE_DIR}
 
 canu \
-    -p ecoli -d canu \
+    -p ecoli -d canu-raw \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=4.8m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
