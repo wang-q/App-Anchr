@@ -962,7 +962,6 @@ quast --no-check \
     1_genome/paralogs.fas \
     --label "merge,contig,paralogs" \
     -o 9_qa_contig
-
 ```
 
 ```bash
