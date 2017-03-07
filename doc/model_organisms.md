@@ -254,15 +254,15 @@ for group in "${ARRAY[@]}" ; do
     for count in $(perl -e 'print 1000000 * $_, q{ } for 1 .. 8');
     do
         if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue     
+            continue;
         fi
         
-        echo "==> Reads ${GROUP_ID}_${count}"
+        echo "==> Group ${GROUP_ID}_${count}"
         DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
         mkdir -p ${DIR_COUNT}
         
         if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue     
+            continue;
         fi
         
         seqtk sample -s${count} \
@@ -281,31 +281,41 @@ done
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{original Q20L120 Q20L130 Q20L140 Q20L150 Q25L120 Q25L130 Q25L140 Q25L150 Q30L120 Q30L130 Q30L140 Q30L150}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
-do
-    echo
-    DIR_COUNT="${BASE_DIR}/${d}/"
+perl -e '
+    for my $n (
+        qw{
+        original
+        Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        for my $i ( 1 .. 8 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 6 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
 
-    if [ ! -d ${DIR_COUNT} ]; then
-        continue
-    fi
-    
-    echo "==> Group ${DIR_COUNT}"
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
 
-    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
-        echo "    pe.cor.fa already presents"
-        continue
-    fi
-    
-    pushd ${DIR_COUNT} > /dev/null
-    anchr superreads \
-        R1.fq.gz \
-        R2.fq.gz \
-        --nosr \
-        -s 300 -d 30 -p 16
-    bash superreads.sh
-    popd > /dev/null
-done
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o stdout \
+            | bash
+    "
 ```
 
 Clear intermediate files.
@@ -313,12 +323,12 @@ Clear intermediate files.
 ```bash
 cd $HOME/data/anchr/s288c/
 
-find . -type f -name "quorum_mer_db.jf" | xargs rm
-find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp" | xargs rm
-find . -type f -name "pe.renamed.fastq" | xargs rm
-find . -type f -name "pe.cor.sub.fa" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
 ```
 
 ## Scer: create anchors
@@ -337,13 +347,13 @@ perl -e '
         }
         )
     {
-        for my $i ( 1 .. 25 ) {
-            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        for my $i ( 1 .. 8 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
         }
     }
     ' \
-    | parallel --no-run-if-empty -j 4 "
-        echo "==> Group {}"
+    | parallel --no-run-if-empty -j 6 "
+        echo '==> Group {}'
 
         if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
@@ -378,8 +388,8 @@ perl -e '
         }
         )
     {
-        for my $i ( 1 .. 25 ) {
-            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        for my $i ( 1 .. 8 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
         }
     }
     ' \
@@ -413,8 +423,8 @@ perl -e '
         }
         )
     {
-        for my $i ( 1 .. 25 ) {
-            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        for my $i ( 1 .. 8 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
         }
     }
     ' \
