@@ -205,34 +205,26 @@ scythe \
     | pigz -p 4 -c \
     > 2_illumina/R2.scythe.fq.gz
 
-
 cd ${BASE_DIR}
-for qual in 20 25 30; do
-    for len in 120 130 140 150; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-        
-        mkdir -p ${DIR_COUNT}
-        pushd ${DIR_COUNT}
+parallel --no-run-if-empty -j 6 "
+        mkdir -p 2_illumina/Q{1}L{2}
+        cd 2_illumina/Q{1}L{2}
         
         anchr trim \
             --noscythe \
-            -q ${qual} -l ${len} \
+            -q {1} -l {2} \
             ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
             -o stdout \
             | bash
+    " ::: 20 25 30 ::: 120 130 140 150
 
-        popd
-    done
-done
-
-# clear dirs stack
-dirs -c
 ```
 
 * Stats
 
 ```bash
-cd ~/data/anchr/e_coli
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -291,7 +283,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=( "2_illumina:original:4000000"
         "2_illumina/Q20L120:Q20L120:3800000"
         "2_illumina/Q20L130:Q20L130:3200000"
