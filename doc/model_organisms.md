@@ -134,22 +134,49 @@ ln -s fasta/m150412.fasta pacbio.fasta
 * Q20L150
 
 ```bash
-mkdir -p ~/data/anchr/s288c/2_illumina/Q20L150
-pushd ~/data/anchr/s288c/2_illumina/Q20L150
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
 
-anchr trim \
-    -q 20 -l 150 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o stdout \
-    | bash
-    
-popd
+# get the default adapter file
+# anchr trim --help
+scythe \
+    2_illumina/R1.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R1.scythe.fq.gz
+
+scythe \
+    2_illumina/R2.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R2.scythe.fq.gz
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+        mkdir -p 2_illumina/Q{1}L{2}
+        cd 2_illumina/Q{1}L{2}
+        
+        anchr trim \
+            --noscythe \
+            -q {1} -l {2} \
+            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+            -o stdout \
+            | bash
+    " ::: 20 25 30 ::: 120 130 140 150
+
 ```
 
 * Stats
 
 ```bash
-cd ~/data/anchr/s288c
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -162,9 +189,18 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Q20L150";  faops n50 -H -S -C 2_illumina/Q20L150/R1.fq.gz 2_illumina/Q20L150/R1.fq.gz;) >> stat.md
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 120 130 140 150; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
 
 cat stat.md
 ```
@@ -174,7 +210,19 @@ cat stat.md
 | Genome   | 924431 |   12157105 |       17 |
 | Illumina |    151 | 2939081214 | 19464114 |
 | PacBio   |   8412 |  820962526 |   177100 |
-| Q20L150  |    151 | 2540868460 | 16827778 |
+| scythe   |    151 | 2856064236 | 19464114 |
+| Q20L120  |    151 | 2671314209 | 17768540 |
+| Q20L130  |    151 | 2637766736 | 17510028 |
+| Q20L140  |    151 | 2589334780 | 17160084 |
+| Q20L150  |    151 | 2540801666 | 16827778 |
+| Q25L120  |    151 | 2468125943 | 16421630 |
+| Q25L130  |    151 | 2431389599 | 16140530 |
+| Q25L140  |    151 | 2383125715 | 15792300 |
+| Q25L150  |    151 | 2348269619 | 15552026 |
+| Q30L120  |    151 | 2244788901 | 14947056 |
+| Q30L130  |    151 | 2203023127 | 14630350 |
+| Q30L140  |    151 | 2147806869 | 14234194 |
+| Q30L150  |    151 | 2104817905 | 13939512 |
 
 ## Scer: down sampling
 
@@ -182,8 +230,19 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-# works on bash 3
-ARRAY=( "2_illumina/Q20L150:Q20L150:8000000")
+ARRAY=( "2_illumina:original:8000000"
+        "2_illumina/Q20L120:Q20L120:8000000"
+        "2_illumina/Q20L130:Q20L130:8000000"
+        "2_illumina/Q20L140:Q20L140:8000000"
+        "2_illumina/Q20L150:Q20L150:8000000"
+        "2_illumina/Q25L120:Q25L120:8000000"
+        "2_illumina/Q25L130:Q25L130:8000000"
+        "2_illumina/Q25L140:Q25L140:7000000"
+        "2_illumina/Q25L150:Q25L150:7000000"
+        "2_illumina/Q30L120:Q30L120:7000000"
+        "2_illumina/Q30L130:Q30L130:7000000"
+        "2_illumina/Q30L140:Q30L140:7000000"
+        "2_illumina/Q30L150:Q30L150:7000000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -222,16 +281,17 @@ done
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
+for d in $(perl -e 'for $n (qw{original Q20L120 Q20L130 Q20L140 Q20L150 Q25L120 Q25L130 Q25L140 Q25L150 Q30L120 Q30L130 Q30L140 Q30L150}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
 do
     echo
-    echo "==> Reads ${d}"
     DIR_COUNT="${BASE_DIR}/${d}/"
 
     if [ ! -d ${DIR_COUNT} ]; then
         continue
     fi
     
+    echo "==> Group ${DIR_COUNT}"
+
     if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
         echo "    pe.cor.fa already presents"
         continue
@@ -257,7 +317,8 @@ find . -type f -name "quorum_mer_db.jf" | xargs rm
 find . -type f -name "k_u_hash_0" | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
 find . -type f -name "*.tmp" | xargs rm
-#find . -type f -name "pe.renamed.fastq" | xargs rm
+find . -type f -name "pe.renamed.fastq" | xargs rm
+find . -type f -name "pe.cor.sub.fa" | xargs rm
 ```
 
 ## Scer: create anchors
@@ -266,19 +327,32 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
-do
-    echo
-    echo "==> Reads ${d}"
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
-        continue
-    fi
+perl -e '
+    for my $n (
+        qw{
+        original
+        Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        for my $i ( 1 .. 25 ) {
+            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo "==> Group {}"
 
-    rm -fr ${DIR_COUNT}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 120 false
-done
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
 ```
 
 ## Scer: results
@@ -294,17 +368,28 @@ REAL_G=12157105
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
-do
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ ! -d ${DIR_COUNT} ]; then
-        continue     
-    fi
-    
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
-        >> ${BASE_DIR}/stat1.md
-done
+perl -e '
+    for my $n (
+        qw{
+        original
+        Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        for my $i ( 1 .. 25 ) {
+            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
 
 cat stat1.md
 ```
@@ -318,18 +403,28 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{Q20L150}) { for $i (1 .. 8) { printf qq{%s_%d }, $n, (1000000 * $i); } }');
-do
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
-        continue     
-    fi
-    
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
-        >> ${BASE_DIR}/stat2.md
+perl -e '
+    for my $n (
+        qw{
+        original
+        Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        for my $i ( 1 .. 25 ) {
+            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
 
-done
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
 
 cat stat2.md
 ```
