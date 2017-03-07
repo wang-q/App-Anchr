@@ -2,8 +2,11 @@
 
 [TOC level=1-3]: # " "
 - [Tuning parameters for the dataset of *E. coli*](#tuning-parameters-for-the-dataset-of-e-coli)
+- [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
+    - [Extra external executables](#extra-external-executables)
+    - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
-    - [Symlinks](#symlinks)
+    - [Download](#download)
     - [Combinations of different quality values and read lengths](#combinations-of-different-quality-values-and-read-lengths)
     - [Down sampling](#down-sampling)
     - [Generate super-reads](#generate-super-reads)
@@ -13,42 +16,195 @@
     - [anchor-long](#anchor-long)
 
 
+# More tools on downloading and preprocessing data
+
+## Extra external executables
+
+```bash
+brew install aria2 curl wget                # downloading tools
+
+brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
+
+brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
+brew reinstall --build-from-source homebrew/versions/gnuplot4 
+brew install homebrew/science/mummer        # mummer need gnuplot4
+
+brew install homebrew/science/quast         # assembly quality assessment
+quast --test                                # may recompile the bundled nucmer
+
+# canu requires gnuplot 5 while mummer requires gnuplot 4
+brew install canu
+
+brew unlink gnuplot4
+brew install gnuplot
+brew unlink gnuplot
+
+brew link gnuplot4
+```
+
+## PacBio specific tools
+
+PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
+public available PacBio data are still in formats of `.bax.h5` or `hdf5.tgz`. For dealing with
+these files, PacBio releases some tools which can be installed by another specific tool, named
+`pitchfork`.
+
+Their tools *can* be compiled under macOS with Homebrew.
+
+* Install some third party tools
+
+```bash
+brew install md5sha1sum
+brew install zlib boost openblas
+brew install python cmake ccache hdf5
+brew install samtools
+
+brew cleanup --force # only keep the latest version
+```
+
+* Compiling with `pitchfork`
+
+```bash
+mkdir -p ~/share/pitchfork
+git clone https://github.com/PacificBiosciences/pitchfork ~/share/pitchfork
+cd ~/share/pitchfork
+
+cat <<EOF > settings.mk
+HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib     | sed 's/ /\//')
+HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost    | sed 's/ /\//')
+HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
+
+HAVE_PYTHON   = $(brew --prefix)/bin/python
+HAVE_CMAKE    = $(brew --prefix)/bin/cmake
+HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
+HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5   | sed 's/ /\//')
+
+EOF
+
+# fix several Makefiles
+sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
+
+sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+
+cd ~/share/pitchfork
+make pip
+deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
+
+make bax2bam
+```
+
+* Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
+  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`. This action would
+  also pollute your bash environment, if anything went wrong, restart your terminal.
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+bax2bam --help
+```
+
 # *Escherichia coli* str. K-12 substr. MG1655
 
 * Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
-* Proportion of paralogs: 0.0323
+* Proportion of paralogs (> 1000 bp): 0.0323
 
-## Symlinks
+## Download
+
+* Reference genome
 
 ```bash
-mkdir -p ~/data/anchr/e_coli_tuning/1_genome
-cd ~/data/anchr/e_coli_tuning/1_genome
+mkdir -p ~/data/anchr/e_coli/1_genome
+cd ~/data/anchr/e_coli/1_genome
 
-ln -s ~/data/anchr/e_coli/1_genome/genome.fa genome.fa
+curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
+    > U00096.fa
+# simplify header, remove .3
+cat U00096.fa \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > genome.fa
+```
 
-mkdir -p ~/data/anchr/e_coli_tuning/2_illumina
-cd ~/data/anchr/e_coli_tuning/2_illumina
+* Illumina
 
-ln -s ~/data/anchr/e_coli/2_illumina/R1.fq.gz R1.fq.gz
-ln -s ~/data/anchr/e_coli/2_illumina/R2.fq.gz R2.fq.gz
+```bash
+mkdir -p ~/data/anchr/e_coli/2_illumina
+cd ~/data/anchr/e_coli/2_illumina
+wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+wget -N ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
 
-ln -s ~/data/anchr/e_coli/2_illumina/R1.scythe.fq.gz R1.scythe.fq.gz
-ln -s ~/data/anchr/e_coli/2_illumina/R2.scythe.fq.gz R2.scythe.fq.gz
+ln -s MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
+ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
+```
 
-mkdir -p ~/data/anchr/e_coli_tuning/3_pacbio
-cd ~/data/anchr/e_coli_tuning/3_pacbio
+* PacBio
 
-ln -s ~/data/anchr/e_coli/3_pacbio/pacbio.fasta pacbio.fasta
+    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly) PacBio
+    provides a 7 GB file for *E. coli* (20 kb library), which is gathered with RS II and the P6C4
+    reagent.
+
+```bash
+mkdir -p ~/data/anchr/e_coli/3_pacbio
+cd ~/data/anchr/e_coli/3_pacbio
+wget -N https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
+
+# Optional, a human readable .metadata.xml file
+#xmllint --format E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
+#    > m141013.metadata.xml
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/e_coli/3_pacbio/bam
+cd ~/data/anchr/e_coli/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+bax2bam ../E01_1/Analysis_Results/*.bax.h5
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/e_coli/3_pacbio/fasta
+
+samtools fasta \
+    ~/data/anchr/e_coli/3_pacbio/bam/m141013*.subreads.bam \
+    > ~/data/anchr/e_coli/3_pacbio/fasta/m141013.fasta
+
+cd ~/data/anchr/e_coli/3_pacbio
+ln -s fasta/m141013.fasta pacbio.fasta
 ```
 
 ## Combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 120, 130, 140 and 151
+* len: 120, 130, 140 and 150
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
+
+# get the default adapter file
+# anchr trim --help
+scythe \
+    2_illumina/R1.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R1.scythe.fq.gz
+
+scythe \
+    2_illumina/R2.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R2.scythe.fq.gz
+
 
 cd ${BASE_DIR}
 for qual in 20 25 30; do
@@ -76,7 +232,7 @@ dirs -c
 * Stats
 
 ```bash
-cd ~/data/anchr/e_coli_tuning
+cd ~/data/anchr/e_coli
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -132,7 +288,7 @@ cat stat.md
 > worth considering pre-filtering the data...
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 # works on bash 3
@@ -184,7 +340,7 @@ done
 ## Generate super-reads
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 for d in $(perl -e 'for $n (qw{original Q20L120 Q20L130 Q20L140 Q20L150 Q25L120 Q25L130 Q25L140 Q25L150 Q30L120 Q30L130 Q30L140 Q30L150}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
@@ -217,7 +373,7 @@ done
 Clear intermediate files.
 
 ```bash
-cd $HOME/data/anchr/e_coli_tuning
+cd $HOME/data/anchr/e_coli
 
 find . -type f -name "quorum_mer_db.jf" | xargs rm
 find . -type f -name "k_u_hash_0" | xargs rm
@@ -230,7 +386,7 @@ find . -type f -name "pe.cor.sub.fa" | xargs rm
 ## Create anchors
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 perl -e '
@@ -266,7 +422,7 @@ perl -e '
 * Stats of super-reads
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 REAL_G=4641652
@@ -303,7 +459,7 @@ cat stat1.md
 * Stats of anchors
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
@@ -629,7 +785,7 @@ cat stat2.md
 http://www.opiniomics.org/generate-a-single-contig-hybrid-assembly-of-e-coli-using-miseq-and-minion-data/
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 # sort on ref
@@ -693,7 +849,7 @@ quast --no-check \
 * multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 #head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
@@ -819,7 +975,7 @@ quast --no-check \
 ```
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli_tuning
+BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 canu \
