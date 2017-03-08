@@ -307,7 +307,7 @@ for group in "${ARRAY[@]}" ; do
     for count in $(perl -e 'print 200000 * $_, q{ } for 1 .. 20');
     do
         if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue     
+            continue;
         fi
         
         echo "==> Group ${GROUP_ID}_${count}"
@@ -315,7 +315,7 @@ for group in "${ARRAY[@]}" ; do
         mkdir -p ${DIR_COUNT}
         
         if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue     
+            continue;
         fi
         
         seqtk sample -s${count} \
@@ -334,31 +334,43 @@ done
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{original Q20L120 Q20L130 Q20L140 Q20L150 Q25L120 Q25L130 Q25L140 Q25L150 Q30L120 Q30L130 Q30L140 Q30L150}) { for $i (1 .. 25) { printf qq{%s_%d }, $n, (200000 * $i); } }');
-do
-    echo
-    DIR_COUNT="${BASE_DIR}/${d}/"
 
-    if [ ! -d ${DIR_COUNT} ]; then
-        continue
-    fi
-    
-    echo "==> Group ${DIR_COUNT}"
+perl -e '
+    for my $n (
+        qw{
+        original
+        Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L120 Q30L130 Q30L140 Q30L150
+        }
+        )
+    {
+        for my $i ( 1 .. 25 ) {
+            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 6 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
 
-    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
-        echo "    pe.cor.fa already presents"
-        continue
-    fi
-    
-    pushd ${DIR_COUNT} > /dev/null
-    anchr superreads \
-        R1.fq.gz \
-        R2.fq.gz \
-        --nosr \
-        -s 300 -d 30 -p 16
-    bash superreads.sh
-    popd > /dev/null
-done
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -s 300 -d 30 -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
 ```
 
 Clear intermediate files.
@@ -366,12 +378,12 @@ Clear intermediate files.
 ```bash
 cd $HOME/data/anchr/e_coli
 
-find . -type f -name "quorum_mer_db.jf" | xargs rm
-find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp" | xargs rm
-find . -type f -name "pe.renamed.fastq" | xargs rm
-find . -type f -name "pe.cor.sub.fa" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
 ```
 
 ## Create anchors
@@ -436,7 +448,7 @@ perl -e '
         }
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -902,7 +914,7 @@ anchr group \
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
-    | parallel --no-run-if-empty -j 4 '
+    | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
             --len 1000 --idt 0.85 \
@@ -978,7 +990,7 @@ rm -fr 9_qa_canu
 quast --no-check \
     -R 1_genome/genome.fa \
     anchorLong/contig.fasta \
-    canu/ecoli.unitigs.fasta \
+    canu-raw/ecoli.unitigs.fasta \
     1_genome/paralogs.fas \
     --label "contigs,canu,paralogs" \
     -o 9_qa_canu
