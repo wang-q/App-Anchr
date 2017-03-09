@@ -907,6 +907,8 @@ anchr overlap \
 
 ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong/anchor.fasta)
 echo ${ANCHOR_COUNT}
+
+rm -fr ${BASE_DIR}/anchorLong/group
 anchr group \
     ${BASE_DIR}/anchorLong/anchorLong.db \
     ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
@@ -985,27 +987,29 @@ anchr overlap2 \
     ${BASE_DIR}/anchorLong/contig.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
     -d ${BASE_DIR}/anchorLong2 \
-    -b 20 --len 2000 --idt 0.85
+    -b 20 --len 1000 --idt 0.85
 
 ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong2/anchor.fasta)
 echo ${ANCHOR_COUNT}
+
+rm -fr ${BASE_DIR}/anchorLong2/group
 anchr group \
     ${BASE_DIR}/anchorLong2/anchorLong.db \
     ${BASE_DIR}/anchorLong2/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 2000 --idt 0.85 --max 2000 -c 8 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 200 -c 8 --png
 
 pushd ${BASE_DIR}/anchorLong2
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 2000 --idt 0.85 \
+            --len 1000 --idt 0.85 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 2000 --idt 0.85 \
+        anchr overlap --len 1000 --idt 0.85 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
