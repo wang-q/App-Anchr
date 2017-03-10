@@ -13,7 +13,7 @@ sub opt_spec {
         [ "outfile|o=s", "output filename, [stdout] for screen", ],
         [ 'range|r=s',    'ranges of anchors',            { required => 1 }, ],
         [ 'border=i',     'length of borders in anchors', { default  => 100 }, ],
-        [ 'power=f',      'multiplying power',            { default  => 2.4 }, ],
+        [ 'power=f',      'multiplying power',            { default  => 3 }, ],
         [ "len|l=i",      "minimal length of overlaps",   { default  => 1000 }, ],
         [ "idt|i=f",      "minimal identity of overlaps", { default  => 0.85 }, ],
         [ "parallel|p=i", "number of threads",            { default  => 4 }, ],
