@@ -229,6 +229,16 @@ sub execute {
         );
     }
 
+    {
+        # Outputs. stdout is handeld by faops
+        my $cmd;
+        $cmd .= "faops filter -l 0 break.fasta";
+        $cmd .= " $opt->{outfile}";
+        App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
+
+        $tempdir->child("break.yml")->copy("$opt->{outfile}.break.yml");
+    }
+
     chdir $cwd;
 }
 
