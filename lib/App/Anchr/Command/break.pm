@@ -12,6 +12,7 @@ sub opt_spec {
     return (
         [ "outfile|o=s", "output filename, [stdout] for screen", ],
         [ 'range|r=s',    'ranges of anchors',            { required => 1 }, ],
+        [ 'border=i',     'length of borders in anchors', { default  => 100 }, ],
         [ "len|l=i",      "minimal length of overlaps",   { default  => 1000 }, ],
         [ "idt|i=f",      "minimal identity of overlaps", { default  => 0.85 }, ],
         [ "parallel|p=i", "number of threads",            { default  => 4 }, ],
@@ -193,7 +194,8 @@ sub execute {
 
             #@type AlignDB::IntSpan
             my $set = $links_of->{$long_id}{$anchor_id};
-            $covered->add($set);
+            $set = $set->trim( $opt->{border} );
+            $covered->add($set);    # avoid overlapped anchors
         }
 
         my $rest_set = $full_set_of->{$long_id}->diff($covered)->pad( int( $opt->{len} * 1.2 ) );
@@ -222,9 +224,11 @@ sub execute {
 
         YAML::Syck::DumpFile(
             "break.yml",
-            {   "contained_long" => $contained_long->runlist,
-                "multi_matched"  => $multi_matched->runlist,
-                "region_of"      => { map { $_ => $region_of->{$_}->runlist } keys %{$region_of} },
+            {   "Contained"           => $contained_long->runlist,
+                "Contained count"     => $contained_long->size,
+                "Multi-matched"       => $multi_matched->runlist,
+                "Multi-matched count" => $multi_matched->size,
+                "region_of" => { map { $_ => $region_of->{$_}->runlist } keys %{$region_of} },
             }
         );
     }
