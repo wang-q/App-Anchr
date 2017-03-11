@@ -770,18 +770,43 @@ cat stat2.md
 | Q30L140_200000   |        439 |   3.6M |  11302 |      1735 | 751.26K |  432 |       1217 |   4.66K |   4 |       294 |   2.85M |  10866 | 0:00'46'' |
 | Q30L150_200000   |        454 |  3.29M |  10037 |      1776 | 670.38K |  380 |       1211 |   2.36K |   2 |       336 |   2.62M |   9655 | 0:00'33'' |
 
-| Name            | N50SRclean |   Sum |    # | N50Anchor |   Sum |    # | N50Anchor2 |    Sum |  # | N50Others |     Sum |    # |   RunTime |
-|:----------------|-----------:|------:|-----:|----------:|------:|-----:|-----------:|-------:|---:|----------:|--------:|-----:|----------:|
-| original_400000 |       2975 | 4.94M | 5517 |      3732 | 4.01M | 1322 |       1371 | 77.99K | 57 |       466 | 853.04K | 4138 | 0:00'48'' |
-| Q20L120_1600000 |       8918 | 4.75M | 1843 |      9319 |  4.5M |  714 |          0 |      0 |  0 |       228 | 248.01K | 1129 | 0:02'28'' |
-| Q20L130_1600000 |       7656 | 4.75M | 1967 |      8107 | 4.48M |  802 |       1284 |  1.28K |  1 |       244 | 266.62K | 1164 | 0:02'34'' |
-| Q20L140_1600000 |       5973 | 4.75M | 2271 |      6570 |  4.4M |  935 |          0 |      0 |  0 |       357 | 350.93K | 1336 | 0:02'24'' |
-| Q20L150_1600000 |       5984 | 4.75M | 2299 |      6574 | 4.37M |  930 |          0 |      0 |  0 |       433 | 373.96K | 1369 | 0:02'20'' |
-| Q25L120_2400000 |      11128 | 4.68M | 1355 |     11817 |  4.5M |  604 |          0 |      0 |  0 |       268 | 177.99K |  751 | 0:03'36'' |
-| Q25L130_2000000 |       7488 | 4.69M | 1783 |      7988 | 4.41M |  830 |          0 |      0 |  0 |       478 | 284.45K |  953 | 0:02'48'' |
-| Q25L140_1200000 |       3524 | 4.71M | 3163 |      4237 | 4.02M | 1227 |       1117 |  1.12K |  1 |       556 | 687.16K | 1935 | 0:01'59'' |
-| Q25L150_1200000 |       3093 | 4.71M | 3401 |      3914 | 3.96M | 1270 |       1146 |  1.15K |  1 |       547 | 750.43K | 2130 | 0:01'53'' |
-| Q30L120_1200000 |       3776 |  4.7M | 3030 |      4350 | 4.09M | 1219 |          0 |      0 |  0 |       528 |  610.2K | 1811 | 0:02'10'' |
+| Name            | N50SRclean |   Sum |    # | N50Anchor |   Sum |    # | N50Anchor2 |     Sum |  # | N50Others |     Sum |    # |   RunTime |
+|:----------------|-----------:|------:|-----:|----------:|------:|-----:|-----------:|--------:|---:|----------:|--------:|-----:|----------:|
+| original_400000 |       2975 | 4.94M | 5517 |      3732 | 4.01M | 1322 |       1371 |  77.99K | 57 |       466 | 853.04K | 4138 | 0:00'48'' |
+| Q20L120_1600000 |       8918 | 4.75M | 1843 |      9319 |  4.5M |  714 |          0 |       0 |  0 |       228 | 248.01K | 1129 | 0:02'28'' |
+| Q20L130_1600000 |       7656 | 4.75M | 1967 |      8107 | 4.48M |  802 |       1284 |   1.28K |  1 |       244 | 266.62K | 1164 | 0:02'34'' |
+| Q20L140_1600000 |       5973 | 4.75M | 2271 |      6570 |  4.4M |  935 |          0 |       0 |  0 |       357 | 350.93K | 1336 | 0:02'24'' |
+| Q20L150_1600000 |       5984 | 4.75M | 2299 |      6574 | 4.37M |  930 |          0 |       0 |  0 |       433 | 373.96K | 1369 | 0:02'20'' |
+| Q25L120_2400000 |      11128 | 4.68M | 1355 |     11817 |  4.5M |  604 |          0 |       0 |  0 |       268 | 177.99K |  751 | 0:03'36'' |
+| Q25L130_2000000 |       7488 | 4.69M | 1783 |      7988 | 4.41M |  830 |          0 |       0 |  0 |       478 | 284.45K |  953 | 0:02'48'' |
+| Q25L140_1200000 |       3524 | 4.71M | 3163 |      4237 | 4.02M | 1227 |       1117 |   1.12K |  1 |       556 | 687.16K | 1935 | 0:01'59'' |
+| Q25L150_1200000 |       3093 | 4.71M | 3401 |      3914 | 3.96M | 1270 |       1146 |   1.15K |  1 |       547 | 750.43K | 2130 | 0:01'53'' |
+| Q30L120_1200000 |       3776 |  4.7M | 3030 |      4350 | 4.09M | 1219 |          0 |       0 |  0 |       528 |  610.2K | 1811 | 0:02'10'' |
+| Q25L150_SR      |       3287 |  4.8M | 2948 |      4031 | 3.69M | 1173 |       9118 | 305.53K | 56 |       635 | 811.23K | 1719 | 0:02'15'' |
+
+## With PE
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+mkdir -p Q25L150_SR
+cd ${BASE_DIR}/Q25L150_SR
+ln -s ../Q25L150_1200000/R1.fq.gz R1.fq.gz
+ln -s ../Q25L150_1200000/R2.fq.gz R2.fq.gz
+
+anchr superreads \
+    R1.fq.gz R2.fq.gz \
+    -s 300 -d 30 -p 16 \
+    -o superreads.sh
+bash superreads.sh
+
+rm -fr anchor
+bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 16 true
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 .
+
+```
 
 ## Quality assessment
 
@@ -807,7 +832,7 @@ rm out.delta
 rm *.gp
 
 # merge anchors
-mkdir merge
+mkdir -p merge
 anchr contained \
     Q20L120_1600000/anchor/pe.anchor.fa \
     Q20L130_1600000/anchor/pe.anchor.fa \
@@ -913,7 +938,7 @@ anchr group \
     ${BASE_DIR}/anchorLong/anchorLong.db \
     ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
     --oa ${BASE_DIR}/anchorLong/anchor.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 5 -c 4 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 1 -c 4 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
@@ -969,14 +994,6 @@ cat \
     >  ${BASE_DIR}/anchorLong/contig.fasta
 faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
 
-rm -fr 9_qa_contig
-quast --no-check \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,paralogs" \
-    -o 9_qa_contig
 ```
 
 ```bash
@@ -996,7 +1013,7 @@ rm -fr ${BASE_DIR}/anchorLong2/group
 anchr group \
     ${BASE_DIR}/anchorLong2/anchorLong.db \
     ${BASE_DIR}/anchorLong2/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 200 -c 8 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 500 -c 8
 
 pushd ${BASE_DIR}/anchorLong2
 cat group/groups.txt \
@@ -1020,7 +1037,6 @@ cat group/groups.txt \
             group/{}.ovlp.tsv \
             group/{}.relation.tsv \
             group/{}.strand.fasta \
-            --png \
             -o group/{}.contig.fasta
     '
 popd
@@ -1037,16 +1053,6 @@ cat \
     ${BASE_DIR}/anchorLong2/group/*.contig.fasta \
     >  ${BASE_DIR}/anchorLong2/contig.fasta
 faops n50 -S -C ${BASE_DIR}/anchorLong2/contig.fasta
-
-rm -fr 9_qa_contig2
-quast --no-check \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    anchorLong2/contig.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,contig2,paralogs" \
-    -o 9_qa_contig2
 ```
 
 ```bash
@@ -1054,14 +1060,94 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 anchr overlap2 \
-    ${BASE_DIR}/anchorLong/contig.fasta \
+    ${BASE_DIR}/anchorLong2/contig.fasta \
+    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
+    -d ${BASE_DIR}/anchorLong3 \
+    -b 20 --len 2000 --idt 0.85
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong3/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr ${BASE_DIR}/anchorLong3/group
+anchr group \
+    ${BASE_DIR}/anchorLong3/anchorLong.db \
+    ${BASE_DIR}/anchorLong3/anchorLong.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 2000 --idt 0.85 --max 500 -c 4
+
+pushd ${BASE_DIR}/anchorLong3
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 2000 --idt 0.85 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 2000 --idt 0.85 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat ${BASE_DIR}/anchorLong3/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+faops n50 -S -C ${BASE_DIR}/anchorLong3/group/*.contig.fasta
+
+cat \
+    ${BASE_DIR}/anchorLong3/group/non_grouped.fasta\
+    ${BASE_DIR}/anchorLong3/group/*.contig.fasta \
+    >  ${BASE_DIR}/anchorLong3/contig.fasta
+faops n50 -S -C ${BASE_DIR}/anchorLong3/contig.fasta
+
+rm -fr 9_qa_contig
+quast --no-check \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    anchorLong/contig.fasta \
+    anchorLong2/contig.fasta \
+    anchorLong3/contig.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,contig,contig2,contig3,paralogs" \
+    -o 9_qa_contig
+```
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+anchr overlap2 \
+    ${BASE_DIR}/anchorLong3/contig.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
     -d ${BASE_DIR}/contigLong \
-    --all \
-    -b 20 --len 500 --idt 0.80
+    -b 20 --len 1000 --idt 0.85 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/anchor.fasta)
 echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/long.fasta)
+echo ${LONG_COUNT}
+
+# breaksLong
+anchr break \
+    ${BASE_DIR}/contigLong/anchorLong.db \
+    ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 \
+    -o contigLong/breaksLong.fasta
+
+# containedLong
 cat ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
     | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
         BEGIN {
@@ -1069,7 +1155,6 @@ cat ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
         }
 
         @F == 13 or next;
-        $F[3] > 0.85 or next;
 
         my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
         next if $seen{$pair};
@@ -1079,30 +1164,101 @@ cat ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
             if ( $F[12] eq "contains" ) {
                 print $F[1];
             }
-            elsif ( $F[11] - $F[2] < 500 ) {
-                print $F[1];
-            }
         }
     ' \
     | sort -n | uniq \
-    > ${BASE_DIR}/contigLong/containedLong.serial.txt
-DBshow -n contigLong/anchorLong.db \
-    ${BASE_DIR}/contigLong/containedLong.serial.txt \
-    | sed 's/^>//' \
-    > ${BASE_DIR}/contigLong/containedLong.txt
+    > contigLong/containedLong.serial.txt
 
-faops some -i -l 0 \
+DBshow -n contigLong/anchorLong.db \
+    contigLong/containedLong.serial.txt \
+    | sed 's/^>//' \
+    > contigLong/containedLong.header.txt
+
+faops some -l 0 \
     contigLong/long.fasta \
-    contigLong/containedLong.txt \
-    contigLong/independentLong.fasta
-    
+    contigLong/containedLong.header.txt \
+    contigLong/containedLong.fasta
+
+# nonOverlappedLong
+cat contigLong/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            print $F[1];
+        }
+    ' \
+    | sort -n | uniq \
+    > contigLong/overlappedLong.serial.txt
+
+grep -Fx -v \
+    -f contigLong/overlappedLong.serial.txt \
+    <(seq $((${CONTIG_COUNT} + 1)) 1 ${LONG_COUNT}) \
+    > contigLong/nonOverlappedLong.serial.txt
+
+DBshow -n contigLong/anchorLong.db \
+    contigLong/nonOverlappedLong.serial.txt \
+    | sed 's/^>//' \
+    > contigLong/nonOverlappedLong.header.txt
+
+faops some -l 0 \
+    contigLong/long.fasta \
+    contigLong/nonOverlappedLong.header.txt \
+    contigLong/nonOverlappedLong.fasta
+
+# canu
+rm -fr canu-breaks
 canu \
-    -p ecoli -d canu-independent \
+    -p ecoli -d canu-breaks \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=4.8m \
-    -pacbio-raw contigLong/independentLong.fasta
+    -pacbio-raw contigLong/breaksLong.fasta
 
+rm -fr canu-contained
+canu \
+    -p ecoli -d canu-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw contigLong/containedLong.fasta
 
+rm -fr canu-non-overlapped
+canu \
+    -p ecoli -d canu-non-overlapped \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw contigLong/nonOverlappedLong.fasta
+
+faops n50 -S -C contigLong/breaksLong.fasta
+faops n50 -S -C contigLong/containedLong.fasta
+faops n50 -S -C contigLong/nonOverlappedLong.fasta
+
+faops n50 -S -C canu-breaks/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-contained/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-non-overlapped/ecoli.trimmedReads.fasta.gz
+
+faops n50 -S -C canu-breaks/ecoli.unitigs.fasta
+faops n50 -S -C canu-breaks/ecoli.contigs.fasta
+faops n50 -S -C canu-contained/ecoli.unitigs.fasta
+faops n50 -S -C canu-contained/ecoli.contigs.fasta
+
+rm -fr 9_qa_parts
+quast --no-check \
+    -R 1_genome/genome.fa \
+    anchorLong3/contig.fasta \
+    canu-breaks/ecoli.unitigs.fasta \
+    canu-contained/ecoli.unitigs.fasta \
+    canu-non-overlapped/ecoli.trimmedReads.fasta.gz \
+    1_genome/paralogs.fas \
+    --label "contig3,breaks,contained,non-overlapped,paralogs" \
+    -o 9_qa_parts
 ```
 
 ```bash
@@ -1110,7 +1266,13 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 canu \
-    -p ecoli -d canu-raw \
+    -p ecoli -d canu-raw-all \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.fasta
+
+canu \
+    -p ecoli -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=4.8m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
@@ -1118,10 +1280,10 @@ canu \
 rm -fr 9_qa_canu
 quast --no-check \
     -R 1_genome/genome.fa \
-    anchorLong/contig.fasta \
-    canu-independent/ecoli.unitigs.fasta \
-    canu-raw/ecoli.unitigs.fasta \
+    anchorLong3/contig.fasta \
+    canu-raw-all/ecoli.unitigs.fasta \
+    canu-raw-40x/ecoli.unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "contig,independent,canu,paralogs" \
+    --label "contig3,canu-all,canu-40x,paralogs" \
     -o 9_qa_canu
 ```
