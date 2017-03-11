@@ -871,7 +871,9 @@ quast --no-check \
     -o 9_qa
 ```
 
-## anchor-long
+## Expand anchors
+
+### anchorLong
 
 * 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
 * multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
@@ -996,6 +998,8 @@ faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
 
 ```
 
+### contigLong
+
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
@@ -1003,137 +1007,8 @@ cd ${BASE_DIR}
 anchr overlap2 \
     ${BASE_DIR}/anchorLong/contig.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/anchorLong2 \
-    -b 20 --len 1000 --idt 0.85
-
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong2/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr ${BASE_DIR}/anchorLong2/group
-anchr group \
-    ${BASE_DIR}/anchorLong2/anchorLong.db \
-    ${BASE_DIR}/anchorLong2/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 500 -c 10
-
-pushd ${BASE_DIR}/anchorLong2
-cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.85 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.85 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-# false strand
-cat ${BASE_DIR}/anchorLong2/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-faops n50 -S -C ${BASE_DIR}/anchorLong2/group/*.contig.fasta
-
-cat \
-    ${BASE_DIR}/anchorLong2/group/non_grouped.fasta\
-    ${BASE_DIR}/anchorLong2/group/*.contig.fasta \
-    >  ${BASE_DIR}/anchorLong2/contig.fasta
-faops n50 -S -C ${BASE_DIR}/anchorLong2/contig.fasta
-```
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-anchr overlap2 \
-    ${BASE_DIR}/anchorLong2/contig.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/anchorLong3 \
-    -b 20 --len 2000 --idt 0.85
-
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong3/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr ${BASE_DIR}/anchorLong3/group
-anchr group \
-    ${BASE_DIR}/anchorLong3/anchorLong.db \
-    ${BASE_DIR}/anchorLong3/anchorLong.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 2000 --idt 0.85 --max 500 -c 4
-
-pushd ${BASE_DIR}/anchorLong3
-cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
-        echo {};
-        anchr orient \
-            --len 2000 --idt 0.85 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 2000 --idt 0.85 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-# false strand
-cat ${BASE_DIR}/anchorLong3/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-faops n50 -S -C ${BASE_DIR}/anchorLong3/group/*.contig.fasta
-
-cat \
-    ${BASE_DIR}/anchorLong3/group/non_grouped.fasta\
-    ${BASE_DIR}/anchorLong3/group/*.contig.fasta \
-    >  ${BASE_DIR}/anchorLong3/contig.fasta
-faops n50 -S -C ${BASE_DIR}/anchorLong3/contig.fasta
-
-rm -fr 9_qa_contig
-quast --no-check \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    anchorLong2/contig.fasta \
-    anchorLong3/contig.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,contig2,contig3,paralogs" \
-    -o 9_qa_contig
-```
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-anchr overlap2 \
-    ${BASE_DIR}/anchorLong3/contig.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
     -d ${BASE_DIR}/contigLong \
-    -b 20 --len 1000 --idt 0.85 --all
+    -b 20 --len 2000 --idt 0.85 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1144,40 +1019,39 @@ echo ${LONG_COUNT}
 anchr break \
     ${BASE_DIR}/contigLong/anchorLong.db \
     ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.85 --power 1 \
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.85 --power 1.1 \
     -o contigLong/breaksLong.fasta
 
-# containedLong
-cat ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
-    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
-        BEGIN {
-            our %seen;
-        }
+# canu
+rm -fr canu-breaks
+canu \
+    -correct \
+    -p ecoli -d canu-breaks \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw contigLong/breaksLong.fasta
 
-        @F == 13 or next;
+canu \
+    -trim \
+    -p ecoli -d canu-breaks \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-corrected canu-breaks/ecoli.correctedReads.fasta.gz
 
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
+faops n50 -S -C contigLong/breaksLong.fasta
+faops n50 -S -C canu-breaks/ecoli.trimmedReads.fasta.gz
+```
 
-        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
-            if ( $F[12] eq "contains" ) {
-                print $F[1];
-            }
-        }
-    ' \
-    | sort -n | uniq \
-    > contigLong/containedLong.serial.txt
+* nonOverlappedLong
 
-DBshow -n contigLong/anchorLong.db \
-    contigLong/containedLong.serial.txt \
-    | sed 's/^>//' \
-    > contigLong/containedLong.header.txt
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
 
-faops some -l 0 \
-    contigLong/long.fasta \
-    contigLong/containedLong.header.txt \
-    contigLong/containedLong.fasta
+CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/long.fasta)
+echo ${LONG_COUNT}
 
 # nonOverlappedLong
 cat contigLong/anchorLong.ovlp.tsv \
@@ -1214,97 +1088,43 @@ faops some -l 0 \
     contigLong/nonOverlappedLong.header.txt \
     contigLong/nonOverlappedLong.fasta
 
-# canu
-rm -fr canu-parts
-canu \
-    -p ecoli -d canu-parts \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw contigLong/anchor.fasta contigLong/breaksLong.fasta contigLong/nonOverlappedLong.fasta
-
-rm -fr canu-breaks
-canu \
-    -correct \
-    -p ecoli -d canu-breaks \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw contigLong/breaksLong.fasta
-
-canu \
-    -trim \
-    -p ecoli -d canu-breaks \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-corrected canu-breaks/ecoli.correctedReads.fasta.gz
-
-rm -fr canu-non-overlapped
-canu \
-    -p ecoli -d canu-non-overlapped \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw contigLong/nonOverlappedLong.fasta
-
-rm -fr canu-contained
-canu \
-    -p ecoli -d canu-contained \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw contigLong/containedLong.fasta
-
-faops n50 -S -C contigLong/breaksLong.fasta
-faops n50 -S -C contigLong/containedLong.fasta
 faops n50 -S -C contigLong/nonOverlappedLong.fasta
 
-faops n50 -S -C canu-breaks/ecoli.trimmedReads.fasta.gz
-faops n50 -S -C canu-contained/ecoli.trimmedReads.fasta.gz
-faops n50 -S -C canu-non-overlapped/ecoli.trimmedReads.fasta.gz
-
-faops n50 -S -C canu-breaks/ecoli.contigs.fasta
-faops n50 -S -C canu-contained/ecoli.contigs.fasta
-
-rm -fr 9_qa_parts
-quast --no-check \
-    -R 1_genome/genome.fa \
-    anchorLong3/contig.fasta \
-    canu-breaks/ecoli.contigs.fasta \
-    canu-contained/ecoli.contigs.fasta \
-    canu-non-overlapped/ecoli.trimmedReads.fasta.gz \
-    1_genome/paralogs.fas \
-    --label "contig3,breaks,contained,non-overlapped,paralogs" \
-    -o 9_qa_parts
 ```
+
+### contigTrim
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 anchr overlap2 \
-    anchorLong3/contig.fasta \
+    anchorLong/contig.fasta \
     canu-breaks/ecoli.trimmedReads.fasta.gz \
     -d contigTrim \
-    -b 10 --len 1000 --idt 0.95 --all
+    -b 10 --len 2000 --idt 0.98
 
-CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong3/anchor.fasta)
+CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
 
 rm -fr ${BASE_DIR}/contigTrim/group
 anchr group \
     ${BASE_DIR}/contigTrim/anchorLong.db \
     ${BASE_DIR}/contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.95 --max 500 -c 2
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.98 --max 500 -c 8
 
 pushd ${BASE_DIR}/contigTrim
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.95 \
+            --len 2000 --idt 0.98 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.95 \
+        anchr overlap --len 2000 --idt 0.98 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1332,18 +1152,85 @@ cat \
     >  ${BASE_DIR}/contigTrim/contig.fasta
 faops n50 -S -C ${BASE_DIR}/contigTrim/contig.fasta
 
-rm -fr 9_qa_contig
-quast --no-check \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    anchorLong2/contig.fasta \
-    anchorLong3/contig.fasta \
-    contigTrim/contig.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,contig2,contig3,contigTrim,paralogs" \
-    -o 9_qa_contig
+```
 
+### contigFinal
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+anchr overlap2 \
+    contigTrim/contig.fasta \
+    canu-breaks/ecoli.trimmedReads.fasta.gz \
+    -d contigFinal \
+    -b 10 --len 1000 --idt 0.98
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigFinal/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigFinal/long.fasta)
+echo ${LONG_COUNT}
+
+# nonContainedLong
+cat ${BASE_DIR}/contigFinal/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            if ( $F[12] eq "contains" ) {
+                print $F[1];
+            }
+        }
+    ' \
+    | sort -n | uniq \
+    > contigFinal/containedLong.serial.txt
+
+DBshow -n contigFinal/anchorLong.db \
+    contigFinal/containedLong.serial.txt \
+    | sed 's/^>//' \
+    > contigFinal/containedLong.header.txt
+
+faops some -i -l 0 \
+    contigFinal/long.fasta \
+    contigFinal/containedLong.header.txt \
+    contigFinal/nonContainedLong.fasta
+
+faops n50 -S -C contigFinal/nonContainedLong.fasta
+
+# canu
+rm -fr canu-non-contained
+canu \
+    -correct \
+    -p ecoli -d canu-non-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw contigFinal/nonContainedLong.fasta contigLong/nonOverlappedLong.fasta
+
+canu \
+    -trim \
+    -p ecoli -d canu-non-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-corrected canu-non-contained/ecoli.correctedReads.fasta.gz
+
+rm -fr canu-anchor
+canu \
+    -assemble \
+    -p ecoli -d canu-anchor \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-corrected \
+    contigFinal/anchor.fasta \
+    contigFinal/anchor.fasta \
+    canu-non-contained/ecoli.trimmedReads.fasta.gz
 ```
 
 ```bash
@@ -1351,24 +1238,27 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 canu \
-    -p ecoli -d canu-raw-all \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw 3_pacbio/pacbio.fasta
-
-canu \
     -p ecoli -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=4.8m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
-rm -fr 9_qa_canu
+canu \
+    -p ecoli -d canu-raw-all \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.fasta
+
+rm -fr 9_qa_contig
 quast --no-check \
     -R 1_genome/genome.fa \
-    anchorLong3/contig.fasta \
-    canu-raw-all/ecoli.unitigs.fasta \
+    merge/anchor.merge.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-anchor/ecoli.contigs.fasta \
     canu-raw-40x/ecoli.unitigs.fasta \
+    canu-raw-all/ecoli.unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "contig3,canu-all,canu-40x,paralogs" \
-    -o 9_qa_canu
+    --label "merge,contig,contigTrim,canu-anchor,canu-40x,canu-all,paralogs" \
+    -o 9_qa_contig
 ```
