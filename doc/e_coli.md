@@ -843,7 +843,7 @@ anchr contained \
     Q25L140_1200000/anchor/pe.anchor.fa \
     Q25L150_1200000/anchor/pe.anchor.fa \
     Q30L120_1200000/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99 \
+    --len 1000 --idt 0.98 --proportion 0.99999 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
@@ -885,19 +885,21 @@ cd ${BASE_DIR}
 #head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
 head -n 46000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
 
-mkdir -p ${BASE_DIR}/covered
+rm -fr covered
+mkdir -p covered
 anchr cover \
     -c 2 -m 60 \
     -b 20 --len 1000 --idt 0.8 \
-    ${BASE_DIR}/merge/anchor.merge.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -o ${BASE_DIR}/covered/covered.fasta
-faops n50 -S -C ${BASE_DIR}/covered/covered.fasta
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -o covered/covered.fasta
+faops n50 -S -C covered/covered.fasta
 
+rm -fr anchorLong
 anchr overlap2 \
-    ${BASE_DIR}/covered/covered.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/anchorLong \
+    covered/covered.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -d anchorLong \
     -b 20 --len 1000 --idt 0.85
 
 anchr overlap \
@@ -1004,6 +1006,7 @@ faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
+rm -fr contigLong
 anchr overlap2 \
     ${BASE_DIR}/anchorLong/contig.fasta \
     ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
