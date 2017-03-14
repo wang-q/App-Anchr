@@ -12,8 +12,13 @@
     - [Generate super-reads](#generate-super-reads)
     - [Create anchors](#create-anchors)
     - [Results](#results)
+    - [With PE](#with-pe)
     - [Quality assessment](#quality-assessment)
-    - [anchor-long](#anchor-long)
+    - [Expand anchors](#expand-anchors)
+        - [anchorLong](#anchorlong)
+        - [contigLong](#contiglong)
+        - [contigTrim](#contigtrim)
+        - [contigFinal](#contigfinal)
 
 
 # More tools on downloading and preprocessing data
