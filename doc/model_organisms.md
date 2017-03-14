@@ -129,9 +129,10 @@ cd ~/data/anchr/s288c/3_pacbio
 ln -s fasta/m150412.fasta pacbio.fasta
 ```
 
-## Scer: trim
+## Scer: combinations of different quality values and read lengths
 
-* Q20L150
+* qual: 20, 25, and 30
+* len: 120, 130, 140 and 150
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -321,7 +322,7 @@ perl -e '
 Clear intermediate files.
 
 ```bash
-cd $HOME/data/anchr/s288c/
+cd $HOME/data/anchr/s288c
 
 find . -type f -name "quorum_mer_db.jf"          | xargs rm
 find . -type f -name "k_u_hash_0"                | xargs rm
@@ -692,7 +693,7 @@ anchr contained \
     Q30L130_7000000/anchor/pe.anchor.fa \
     Q30L140_7000000/anchor/pe.anchor.fa \
     Q30L150_7000000/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 \
+    --len 1000 --idt 0.98 --proportion 0.99999 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
@@ -723,7 +724,9 @@ quast --no-check \
     -o 9_qa
 ```
 
-## Scer: anchor-long
+## Scer: expand anchors
+
+* anchorLong
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -732,18 +735,21 @@ cd ${BASE_DIR}
 head -n 230000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
 faops n50 -S -C ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
 
-mkdir -p ${BASE_DIR}/covered
+rm -fr covered
+mkdir -p covered
 anchr cover \
-    -b 20 -c 2 --len 1000 --idt 0.8 \
-    ${BASE_DIR}/merge/anchor.merge.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -o ${BASE_DIR}/covered/covered.fasta
-faops n50 -S -C ${BASE_DIR}/covered/covered.fasta
+    -c 2 -m 60 \
+    -b 20 --len 1000 --idt 0.8 \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -o covered/covered.fasta
+faops n50 -S -C covered/covered.fasta
 
+rm -fr anchorLong
 anchr overlap2 \
-    ${BASE_DIR}/covered/covered.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/anchorLong \
+    covered/covered.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -d anchorLong \
     -b 20 --len 1000 --idt 0.85
 
 anchr overlap \
@@ -780,11 +786,13 @@ anchr overlap \
 
 ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong/anchor.fasta)
 echo ${ANCHOR_COUNT}
+
+rm -fr ${BASE_DIR}/anchorLong/group
 anchr group \
     ${BASE_DIR}/anchorLong/anchorLong.db \
     ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
     --oa ${BASE_DIR}/anchorLong/anchor.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 50 -c 4 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 1 -c 4 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
@@ -840,14 +848,255 @@ cat \
     >  ${BASE_DIR}/anchorLong/contig.fasta
 faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
 
-rm -fr 9_qa_contig
-quast --no-check \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
+```
+
+* contigLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+rm -fr contigLong
+anchr overlap2 \
     anchorLong/contig.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,paralogs" \
-    -o 9_qa_contig
+    3_pacbio/pacbio.40x.fasta \
+    -d contigLong \
+    -b 20 --len 2000 --idt 0.85 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigLong/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C contigLong/long.fasta)
+echo ${LONG_COUNT}
+
+# breaksLong
+anchr break \
+    contigLong/anchorLong.db \
+    contigLong/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.85 --power 1.1 \
+    -o contigLong/breaksLong.fasta
+
+# canu
+rm -fr canu-breaks
+canu \
+    -correct \
+    -p s288c -d canu-breaks \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-raw contigLong/breaksLong.fasta
+
+canu \
+    -trim \
+    -p s288c -d canu-breaks \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-corrected canu-breaks/s288c.correctedReads.fasta.gz
+
+faops n50 -S -C contigLong/breaksLong.fasta
+faops n50 -S -C canu-breaks/s288c.trimmedReads.fasta.gz
+
+```
+
+* nonOverlappedLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigLong/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C contigLong/long.fasta)
+echo ${LONG_COUNT}
+
+# nonOverlappedLong
+cat contigLong/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            print $F[1];
+        }
+    ' \
+    | sort -n | uniq \
+    > contigLong/overlappedLong.serial.txt
+
+grep -Fx -v \
+    -f contigLong/overlappedLong.serial.txt \
+    <(seq $((${CONTIG_COUNT} + 1)) 1 ${LONG_COUNT}) \
+    > contigLong/nonOverlappedLong.serial.txt
+
+DBshow -n contigLong/anchorLong.db \
+    contigLong/nonOverlappedLong.serial.txt \
+    | sed 's/^>//' \
+    > contigLong/nonOverlappedLong.header.txt
+
+faops some -l 0 \
+    contigLong/long.fasta \
+    contigLong/nonOverlappedLong.header.txt \
+    contigLong/nonOverlappedLong.fasta
+
+faops n50 -S -C contigLong/nonOverlappedLong.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    anchorLong/contig.fasta \
+    canu-breaks/s288c.trimmedReads.fasta.gz \
+    -d contigTrim \
+    -b 10 --len 1000 --idt 0.96
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr ${BASE_DIR}/contigTrim/group
+anchr group \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.96 --max 5000 -c 8
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.96 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.96 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+faops n50 -S -C contigTrim/group/*.contig.fasta
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+faops n50 -S -C contigTrim/contig.fasta
+
+```
+
+* contigFinal
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+rm -fr contigFinal
+anchr overlap2 \
+    contigTrim/contig.fasta \
+    canu-breaks/s288c.trimmedReads.fasta.gz \
+    -d contigFinal \
+    -b 10 --len 1000 --idt 0.96
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigFinal/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C contigFinal/long.fasta)
+echo ${LONG_COUNT}
+
+# nonContainedLong
+cat contigFinal/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            if ( $F[12] eq "overlap" ) {
+                print $F[1];
+            }
+        }
+    ' \
+    | sort -n | uniq \
+    > contigFinal/nonContainedLong.serial.txt
+
+DBshow -n contigFinal/anchorLong.db \
+    contigFinal/nonContainedLong.serial.txt \
+    | sed 's/^>//' \
+    > contigFinal/nonContainedLong.header.txt
+
+faops some -l 0 \
+    contigFinal/long.fasta \
+    contigFinal/nonContainedLong.header.txt \
+    contigFinal/nonContainedLong.fasta
+
+faops n50 -S -C contigFinal/nonContainedLong.fasta
+
+# canu
+rm -fr canu-non-contained
+canu \
+    -correct \
+    -p s288c -d canu-non-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-raw \
+    contigFinal/nonContainedLong.fasta \
+    contigLong/nonOverlappedLong.fasta
+
+canu \
+    -trim \
+    -p s288c -d canu-non-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-corrected canu-non-contained/s288c.correctedReads.fasta.gz
+
+faops n50 -S -C canu-non-contained/s288c.trimmedReads.fasta.gz
+
+rm -fr canu-anchor
+canu \
+    -assemble \
+    -p s288c -d canu-anchor \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-corrected \
+    contigFinal/anchor.fasta \
+    contigFinal/anchor.fasta \
+    canu-non-contained/s288c.trimmedReads.fasta.gz
+
+rm -fr canu-anchor2
+canu \
+    -assemble \
+    -p s288c -d canu-anchor2 \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-corrected \
+    contigFinal/anchor.fasta \
+    contigFinal/anchor.fasta \
+    contigFinal/nonContainedLong.fasta
 ```
 
 ```bash
@@ -855,19 +1104,31 @@ BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
 canu \
-    -p s288c -d canu-raw \
+    -p s288c -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=12.2m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
-rm -fr 9_qa_canu
+canu \
+    -p s288c -d canu-raw-all \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-raw 3_pacbio/pacbio.fasta
+
+rm -fr 9_qa_contig
 quast --no-check \
     -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
     anchorLong/contig.fasta \
-    canu-raw/s288c.unitigs.fasta \
+    contigTrim/contig.fasta \
+    canu-anchor/s288c.contigs.fasta \
+    canu-anchor2/s288c.contigs.fasta \
+    canu-raw-40x/s288c.unitigs.fasta \
+    canu-raw-all/s288c.unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "contigs,canu,paralogs" \
-    -o 9_qa_canu
+    --label "merge,contig,contigTrim,canu-anchor,canu-anchor2,canu-40x,canu-all,paralogs" \
+    -o 9_qa_contig
+
 ```
 
 # *Drosophila melanogaster* iso-1
