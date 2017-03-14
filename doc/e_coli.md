@@ -878,10 +878,10 @@ quast --no-check \
 
 ## Expand anchors
 
-### anchorLong
+* anchorLong
 
-* 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
-* multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
+    * 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
+    * multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -1005,7 +1005,7 @@ faops n50 -S -C ${BASE_DIR}/anchorLong/contig.fasta
 
 ```
 
-### contigLong
+* contigLong
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -1013,20 +1013,20 @@ cd ${BASE_DIR}
 
 rm -fr contigLong
 anchr overlap2 \
-    ${BASE_DIR}/anchorLong/contig.fasta \
-    ${BASE_DIR}/3_pacbio/pacbio.40x.fasta \
-    -d ${BASE_DIR}/contigLong \
+    anchorLong/contig.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -d contigLong \
     -b 20 --len 2000 --idt 0.85 --all
 
-CONTIG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/anchor.fasta)
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigLong/anchor.fasta)
 echo ${CONTIG_COUNT}
-LONG_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/contigLong/long.fasta)
+LONG_COUNT=$(faops n50 -H -N 0 -C contigLong/long.fasta)
 echo ${LONG_COUNT}
 
 # breaksLong
 anchr break \
-    ${BASE_DIR}/contigLong/anchorLong.db \
-    ${BASE_DIR}/contigLong/anchorLong.ovlp.tsv \
+    contigLong/anchorLong.db \
+    contigLong/anchorLong.ovlp.tsv \
     --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.85 --power 1.1 \
     -o contigLong/breaksLong.fasta
 
@@ -1101,7 +1101,7 @@ faops n50 -S -C contigLong/nonOverlappedLong.fasta
 
 ```
 
-### contigTrim
+* contigTrim
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -1159,7 +1159,7 @@ faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
-### contigFinal
+* contigFinal
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
