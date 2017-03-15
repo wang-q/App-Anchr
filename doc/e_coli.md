@@ -939,15 +939,15 @@ anchr overlap \
     | sort -k 1n,1n -k 2n,2n \
     > ${BASE_DIR}/anchorLong/anchor.ovlp.tsv
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C ${BASE_DIR}/anchorLong/anchor.fasta)
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
 echo ${ANCHOR_COUNT}
 
-rm -fr ${BASE_DIR}/anchorLong/group
+rm -fr anchorLong/group
 anchr group \
-    ${BASE_DIR}/anchorLong/anchorLong.db \
-    ${BASE_DIR}/anchorLong/anchorLong.ovlp.tsv \
-    --oa ${BASE_DIR}/anchorLong/anchor.ovlp.tsv \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max 1 -c 4 --png
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max "-1" -c 4 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
