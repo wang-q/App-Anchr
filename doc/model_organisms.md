@@ -693,7 +693,7 @@ anchr contained \
     Q30L130_7000000/anchor/pe.anchor.fa \
     Q30L140_7000000/anchor/pe.anchor.fa \
     Q30L150_7000000/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
@@ -704,7 +704,7 @@ faops n50 -S -C merge/anchor.merge.fasta
 
 # quast
 rm -fr 9_qa
-quast --no-check \
+quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
     Q20L120_6000000/anchor/pe.anchor.fa \
     Q20L130_6000000/anchor/pe.anchor.fa \
@@ -1057,7 +1057,13 @@ cat contigFinal/anchorLong.ovlp.tsv \
         $seen{$pair} = $_;
 
         if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
-            if ( $F[12] eq "overlap" ) {
+            if ( $F[12] eq "contains" ) {
+                next;
+            }
+            elsif ( $F[11] - $F[2] > 500 ) {
+                next;
+            }
+            else {
                 print $F[1];
             }
         }
