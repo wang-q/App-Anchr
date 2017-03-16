@@ -878,7 +878,176 @@ faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
-* contigLong
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/s288c.contigs.fasta \
+    -d contigTrim \
+    -b 20 --len 2000 --idt 0.96
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.96 --max 100000 -c 1
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 2000 --idt 0.96 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 2000 --idt 0.96 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+faops n50 -S -C contigTrim/group/*.contig.fasta
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+faops n50 -S -C contigTrim/contig.fasta
+
+```
+
+* nonContainedLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+rm -fr longStandalone
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/s288c.trimmedReads.fasta.gz \
+    -d longStandalone \
+    -b 20 --len 1000 --idt 0.96 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C longStandalone/anchor.fasta)
+echo ${CONTIG_COUNT}
+LONG_COUNT=$(faops n50 -H -N 0 -C longStandalone/long.fasta)
+echo ${LONG_COUNT}
+
+# nonOverlappedLong
+cat longStandalone/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            print $F[1];
+        }
+    ' \
+    | sort -n | uniq \
+    > longStandalone/overlappedLong.serial.txt
+
+grep -Fx -v \
+    -f contigLong/overlappedLong.serial.txt \
+    <(seq $((${CONTIG_COUNT} + 1)) 1 ${LONG_COUNT}) \
+    > longStandalone/nonOverlappedLong.serial.txt
+
+DBshow -n longStandalone/anchorLong.db \
+    longStandalone/nonOverlappedLong.serial.txt \
+    | sed 's/^>//' \
+    > longStandalone/nonOverlappedLong.header.txt
+
+faops some -l 0 \
+    longStandalone/long.fasta \
+    longStandalone/nonOverlappedLong.header.txt \
+    longStandalone/nonOverlappedLong.fasta
+
+faops n50 -S -C longStandalone/nonOverlappedLong.fasta
+
+# nonContainedLong
+cat longStandalone/anchorLong.ovlp.tsv \
+    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
+        BEGIN {
+            our %seen;
+        }
+
+        @F == 13 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
+            if ( $F[12] eq "contains" ) {
+                next;
+            }
+            elsif ( $F[11] - $F[2] < 500 ) {
+                next;
+            }
+            else {
+                print $F[1];
+            }
+        }
+    ' \
+    | sort -n | uniq \
+    > longStandalone/nonContainedLong.serial.txt
+
+DBshow -n longStandalone/anchorLong.db \
+    longStandalone/nonContainedLong.serial.txt \
+    | sed 's/^>//' \
+    > longStandalone/nonContainedLong.header.txt
+
+faops some -l 0 \
+    longStandalone/long.fasta \
+    longStandalone/nonContainedLong.header.txt \
+    longStandalone/nonContainedLong.fasta
+
+faops n50 -S -C longStandalone/nonContainedLong.fasta
+
+# canu-non-contained
+rm -fr canu-non-contained
+canu \
+    -trim-assemble \
+    -p s288c -d canu-non-contained \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=12.2m \
+    -pacbio-corrected \
+    longStandalone/nonOverlappedLong.fasta \
+    longStandalone/nonContainedLong.fasta
+
+```
+
+* breaksLong
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -918,214 +1087,7 @@ faops n50 -S -C canu-breaks/s288c.trimmedReads.fasta.gz
 
 ```
 
-* nonOverlappedLong
-
-```bash
-BASE_DIR=$HOME/data/anchr/s288c
-cd ${BASE_DIR}
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigLong/anchor.fasta)
-echo ${CONTIG_COUNT}
-LONG_COUNT=$(faops n50 -H -N 0 -C contigLong/long.fasta)
-echo ${LONG_COUNT}
-
-# nonOverlappedLong
-cat contigLong/anchorLong.ovlp.tsv \
-    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
-        BEGIN {
-            our %seen;
-        }
-
-        @F == 13 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
-            print $F[1];
-        }
-    ' \
-    | sort -n | uniq \
-    > contigLong/overlappedLong.serial.txt
-
-grep -Fx -v \
-    -f contigLong/overlappedLong.serial.txt \
-    <(seq $((${CONTIG_COUNT} + 1)) 1 ${LONG_COUNT}) \
-    > contigLong/nonOverlappedLong.serial.txt
-
-DBshow -n contigLong/anchorLong.db \
-    contigLong/nonOverlappedLong.serial.txt \
-    | sed 's/^>//' \
-    > contigLong/nonOverlappedLong.header.txt
-
-faops some -l 0 \
-    contigLong/long.fasta \
-    contigLong/nonOverlappedLong.header.txt \
-    contigLong/nonOverlappedLong.fasta
-
-faops n50 -S -C contigLong/nonOverlappedLong.fasta
-
-```
-
-* contigTrim
-
-```bash
-BASE_DIR=$HOME/data/anchr/s288c
-cd ${BASE_DIR}
-
-rm -fr contigTrim
-anchr overlap2 \
-    anchorLong/contig.fasta \
-    canu-breaks/s288c.trimmedReads.fasta.gz \
-    -d contigTrim \
-    -b 20 --len 1000 --idt 0.96
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
-echo ${CONTIG_COUNT}
-
-rm -fr contigTrim/group
-anchr group \
-    contigTrim/anchorLong.db \
-    contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.96 --max 20000 -c 4
-
-pushd ${BASE_DIR}/contigTrim
-cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.96 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.96 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
-cat \
-    contigTrim/group/non_grouped.fasta \
-    contigTrim/group/*.contig.fasta \
-    >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
-
-```
-
-* contigFinal
-
-```bash
-BASE_DIR=$HOME/data/anchr/s288c
-cd ${BASE_DIR}
-
-rm -fr contigFinal
-anchr overlap2 \
-    contigTrim/contig.fasta \
-    canu-breaks/s288c.trimmedReads.fasta.gz \
-    -d contigFinal \
-    -b 20 --len 1000 --idt 0.96
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigFinal/anchor.fasta)
-echo ${CONTIG_COUNT}
-LONG_COUNT=$(faops n50 -H -N 0 -C contigFinal/long.fasta)
-echo ${LONG_COUNT}
-
-# nonContainedLong
-cat contigFinal/anchorLong.ovlp.tsv \
-    | CONTIG_COUNT=${CONTIG_COUNT} perl -nla -e '
-        BEGIN {
-            our %seen;
-        }
-
-        @F == 13 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        if ( $F[0] <= $ENV{CONTIG_COUNT} and $F[1] > $ENV{CONTIG_COUNT} ) {
-            if ( $F[12] eq "contains" ) {
-                next;
-            }
-            elsif ( $F[11] - $F[2] > 500 ) {
-                next;
-            }
-            else {
-                print $F[1];
-            }
-        }
-    ' \
-    | sort -n | uniq \
-    > contigFinal/nonContainedLong.serial.txt
-
-DBshow -n contigFinal/anchorLong.db \
-    contigFinal/nonContainedLong.serial.txt \
-    | sed 's/^>//' \
-    > contigFinal/nonContainedLong.header.txt
-
-faops some -l 0 \
-    contigFinal/long.fasta \
-    contigFinal/nonContainedLong.header.txt \
-    contigFinal/nonContainedLong.fasta
-
-faops n50 -S -C contigFinal/nonContainedLong.fasta
-
-# canu
-rm -fr canu-non-contained
-canu \
-    -trim \
-    -p s288c -d canu-non-contained \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
-    -pacbio-corrected \
-    contigFinal/nonContainedLong.fasta \
-    contigLong/nonOverlappedLong.fasta
-
-canu \
-    -assemble \
-    -p s288c -d canu-non-contained \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
-    -pacbio-corrected canu-non-contained/s288c.trimmedReads.fasta.gz
-
-faops n50 -S -C canu-non-contained/s288c.trimmedReads.fasta.gz
-
-rm -fr canu-anchor
-canu \
-    -assemble \
-    -p s288c -d canu-anchor \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
-    -pacbio-corrected \
-    contigFinal/anchor.fasta \
-    contigFinal/anchor.fasta \
-    canu-non-contained/s288c.trimmedReads.fasta.gz
-
-rm -fr canu-anchor2
-canu \
-    -assemble \
-    -p s288c -d canu-anchor2 \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
-    -pacbio-corrected \
-    contigFinal/anchor.fasta \
-    contigFinal/anchor.fasta \
-    contigFinal/nonContainedLong.fasta
-```
+* quast
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
