@@ -762,7 +762,7 @@ cd ${BASE_DIR}
 rm -fr covered
 mkdir -p covered
 anchr cover \
-    --parallel 24 \
+    --parallel 16 \
     -c 2 -m 40 \
     -b 20 --len 1000 --idt 0.9 \
     merge/anchor.merge.fasta \
@@ -772,7 +772,7 @@ faops n50 -S -C covered/covered.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
-    --parallel 24 \
+    --parallel 16 \
     covered/covered.fasta \
     canu-raw-40x/s288c.trimmedReads.fasta.gz \
     -d anchorLong \
@@ -818,8 +818,8 @@ anchr group \
     anchorLong/anchorLong.db \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
-    --parallel 24 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.96 --max 0 -c 2 --png
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.96 --max "-15" -c 2 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
@@ -872,7 +872,8 @@ faops n50 -S -C anchorLong/group/*.contig.fasta
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
-    >  anchorLong/contig.fasta
+   | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
+
 faops n50 -S -C anchorLong/contig.fasta
 
 ```
@@ -885,7 +886,7 @@ cd ${BASE_DIR}
 
 rm -fr contigLong
 anchr overlap2 \
-    --parallel 24 \
+    --parallel 16 \
     anchorLong/contig.fasta \
     canu-raw-40x/s288c.trimmedReads.fasta.gz \
     -d contigLong \
@@ -1134,15 +1135,13 @@ rm -fr 9_qa_contig
 quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
+    covered/covered.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-anchor/s288c.contigs.fasta \
-    canu-anchor2/s288c.contigs.fasta \
-    canu-non-contained/s288c.contigs.fasta \
     canu-raw-40x/s288c.unitigs.fasta \
     canu-raw-all/s288c.unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,contig,contigTrim,canu-anchor,canu-anchor2,canu-non-contained,canu-40x,canu-all,paralogs" \
+    --label "merge,covered,contig,contigTrim,canu-40x,canu-all,paralogs" \
     -o 9_qa_contig
 
 ```
