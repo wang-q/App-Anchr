@@ -129,6 +129,8 @@ cat U00096.fa \
         print;
     ' \
     > genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
 ```
 
 * Illumina
@@ -241,6 +243,8 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
@@ -263,6 +267,7 @@ cat stat.md
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
 | Genome   | 4641652 |    4641652 |        1 |
+| Paralogs |    1934 |     195673 |      106 |
 | Illumina |     151 | 1730299940 | 11458940 |
 | PacBio   |   13982 |  748508361 |    87225 |
 | scythe   |     151 | 1724565376 | 11458940 |
