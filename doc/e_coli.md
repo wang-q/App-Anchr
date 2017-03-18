@@ -181,7 +181,7 @@ ln -s fasta/m141013.fasta pacbio.fasta
 ## Combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 120, 130, 140 and 150
+* len: 100, 110, 120, 130, 140 and 150
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -212,13 +212,18 @@ parallel --no-run-if-empty -j 6 "
         mkdir -p 2_illumina/Q{1}L{2}
         cd 2_illumina/Q{1}L{2}
         
+        if [ -e R1.fq.gz ]; then
+            echo '    R1.fq.gz already presents'
+            exit;
+        fi
+
         anchr trim \
             --noscythe \
             -q {1} -l {2} \
             ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
             -o stdout \
             | bash
-    " ::: 20 25 30 ::: 120 130 140 150
+    " ::: 20 25 30 ::: 100 110 120 130 140 150
 
 ```
 
@@ -243,7 +248,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 120 130 140 150; do
+    for len in 100 110 120 130 140 150; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -261,14 +266,20 @@ cat stat.md
 | Illumina |     151 | 1730299940 | 11458940 |
 | PacBio   |   13982 |  748508361 |    87225 |
 | scythe   |     151 | 1724565376 | 11458940 |
+| Q20L100  |     151 | 1316581647 |  9150886 |
+| Q20L110  |     151 | 1242406364 |  8547376 |
 | Q20L120  |     151 | 1138097252 |  7742646 |
 | Q20L130  |     151 |  977384738 |  6561892 |
 | Q20L140  |     151 |  786030615 |  5213876 |
 | Q20L150  |     151 |  742742028 |  4918836 |
+| Q25L100  |     151 | 1097441477 |  7882294 |
+| Q25L110  |     151 |  987545269 |  6976114 |
 | Q25L120  |     151 |  839150352 |  5820278 |
 | Q25L130  |     151 |  634128805 |  4303670 |
 | Q25L140  |     151 |  421124326 |  2798656 |
 | Q25L150  |     151 |  373356309 |  2472564 |
+| Q30L100  |     133 |  713315968 |  5456016 |
+| Q30L110  |     136 |  555209466 |  4121294 |
 | Q30L120  |     140 |  383365150 |  2755884 |
 | Q30L130  |     151 |  211952097 |  1468318 |
 | Q30L140  |     151 |   92578231 |   617860 |
