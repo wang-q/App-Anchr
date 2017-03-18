@@ -14,11 +14,8 @@
     - [Results](#results)
     - [With PE](#with-pe)
     - [Quality assessment](#quality-assessment)
+    - [3GS](#3gs)
     - [Expand anchors](#expand-anchors)
-        - [anchorLong](#anchorlong)
-        - [contigLong](#contiglong)
-        - [contigTrim](#contigtrim)
-        - [contigFinal](#contigfinal)
 
 
 # More tools on downloading and preprocessing data
