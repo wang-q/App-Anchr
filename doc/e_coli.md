@@ -302,18 +302,22 @@ BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
 ARRAY=( "2_illumina:original:4000000"
-        "2_illumina/Q20L120:Q20L120:3800000"
+        "2_illumina/Q20L100:Q20L100:4000000"
+        "2_illumina/Q20L110:Q20L110:4000000"
+        "2_illumina/Q20L120:Q20L120:4000000"
         "2_illumina/Q20L130:Q20L130:3200000"
-        "2_illumina/Q20L140:Q20L140:2600000"
+        "2_illumina/Q20L140:Q20L140:2400000"
         "2_illumina/Q20L150:Q20L150:2400000"
+        "2_illumina/Q25L100:Q25L100:4000000"
+        "2_illumina/Q25L110:Q25L110:3200000"
         "2_illumina/Q25L120:Q25L120:2800000"
         "2_illumina/Q25L130:Q25L130:2000000"
         "2_illumina/Q25L140:Q25L140:1200000"
         "2_illumina/Q25L150:Q25L150:1200000"
+        "2_illumina/Q30L100:Q30L100:2400000"
+        "2_illumina/Q30L110:Q30L110:2000000"
         "2_illumina/Q30L120:Q30L120:1200000"
-        "2_illumina/Q30L130:Q30L130:600000"
-        "2_illumina/Q30L140:Q30L140:200000"
-        "2_illumina/Q30L150:Q30L150:200000")
+        "2_illumina/Q30L130:Q30L130:400000")
 
 for group in "${ARRAY[@]}" ; do
     
@@ -322,7 +326,7 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    for count in $(perl -e 'print 200000 * $_, q{ } for 1 .. 20');
+    for count in $(perl -e 'print 400000 * $_, q{ } for 1 .. 10');
     do
         if [[ "$count" -gt "$GROUP_MAX" ]]; then
             continue;
@@ -352,19 +356,18 @@ done
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-
 perl -e '
     for my $n (
         qw{
         original
-        Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
         }
         )
     {
-        for my $i ( 1 .. 25 ) {
-            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        for my $i ( 1 .. 10 ) {
+            printf qq{%s_%d\n}, $n, ( 400000 * $i );
         }
     }
     ' \
@@ -455,14 +458,14 @@ perl -e '
     for my $n (
         qw{
         original
-        Q20L120 Q20L130 Q20L140 Q20L150
-        Q25L120 Q25L130 Q25L140 Q25L150
-        Q30L120 Q30L130 Q30L140 Q30L150
+        Q20L100 Q20L110 Q20L120 Q20L130 Q20L140 Q20L150
+        Q25L100 Q25L110 Q25L120 Q25L130 Q25L140 Q25L150
+        Q30L100 Q30L110 Q30L120 Q30L130 Q30L140 Q30L150
         }
         )
     {
-        for my $i ( 1 .. 25 ) {
-            printf qq{%s_%d\n}, $n, ( 200000 * $i );
+        for my $i ( 1 .. 10 ) {
+            printf qq{%s_%d\n}, $n, ( 400000 * $i );
         }
     }
     ' \
