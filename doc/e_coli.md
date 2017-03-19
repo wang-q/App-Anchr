@@ -110,6 +110,8 @@ bax2bam --help
 # *Escherichia coli* str. K-12 substr. MG1655
 
 * Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
+* Taxonomy ID:
+  [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=511145&lvl=3&lin=f&keep=1&srchmode=1&unlock)
 * Proportion of paralogs (> 1000 bp): 0.0323
 
 ## Download
@@ -909,28 +911,26 @@ faops n50 -S -C canu-raw-all/ecoli.trimmedReads.fasta.gz
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-rm -fr covered
-mkdir -p covered
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
     -b 10 --len 1000 --idt 0.9 \
     merge/anchor.merge.fasta \
     canu-raw-40x/ecoli.trimmedReads.fasta.gz \
-    -o covered/covered.fasta
-faops n50 -S -C covered/covered.fasta
+    -o merge/anchor.cover.fasta
+faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    covered/covered.fasta \
+    merge/anchor.cover.fasta \
     canu-raw-40x/ecoli.trimmedReads.fasta.gz \
     -d anchorLong \
-    -b 10 --len 1000 --idt 0.96
+    -b 10 --len 1000 --idt 0.98
 
 anchr overlap \
-    covered/covered.fasta \
-    --serial --len 10 --idt 0.98 \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -939,7 +939,7 @@ anchr overlap \
         }
 
         @F == 13 or next;
-        $F[3] > 0.98 or next;
+        $F[3] > 0.9999 or next;
 
         my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
         next if $seen{$pair};
@@ -969,27 +969,27 @@ anchr group \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.96 --max "-15" -c 2 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.85 \
+            --len 1000 --idt 0.98 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.85 \
+        anchr overlap --len 1000 --idt 0.98 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 10 --idt 0.98 \
+        anchr overlap --len 10 --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''
@@ -1040,7 +1040,7 @@ anchr overlap2 \
     anchorLong/contig.fasta \
     canu-raw-40x/ecoli.contigs.fasta \
     -d contigTrim \
-    -b 10 --len 2000 --idt 0.96
+    -b 10 --len 2000 --idt 0.96 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1051,7 +1051,7 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.96 --max 100000 -c 1 --png
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.96 --max 20000 -c 1 --png
 
 pushd ${BASE_DIR}/contigTrim
 cat group/groups.txt \
@@ -1064,7 +1064,7 @@ cat group/groups.txt \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 2000 --idt 0.96 \
+        anchr overlap --len 2000 --idt 0.96 --all \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1075,6 +1075,7 @@ cat group/groups.txt \
             group/{}.ovlp.tsv \
             group/{}.relation.tsv \
             group/{}.strand.fasta \
+            --png \
             -o group/{}.contig.fasta
     '
 popd
@@ -1082,7 +1083,6 @@ popd
 faops n50 -S -C contigTrim/group/*.contig.fasta
 
 cat \
-    contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
 faops n50 -S -C contigTrim/contig.fasta
@@ -1099,13 +1099,14 @@ rm -fr 9_qa_contig
 quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
-    covered/covered.fasta \
+    merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/ecoli.unitigs.fasta \
     canu-raw-all/ecoli.unitigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,covered,contig,contigTrim,canu-40x,canu-all,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-all,paralogs" \
     -o 9_qa_contig
 
 ```
+
