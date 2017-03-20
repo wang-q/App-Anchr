@@ -294,11 +294,6 @@ cat stat.md
 
 ## Down sampling
 
-过高的 coverage 会造成不好的影响. SGA 的文档里也说了类似的事情.
-
-> Very highly-represented sequences (>1000X) can cause problems for SGA... In these cases, it is
-> worth considering pre-filtering the data...
-
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
@@ -352,7 +347,7 @@ for group in "${ARRAY[@]}" ; do
 done
 ```
 
-## Generate super-reads
+## Generate k-unitigs/super-reads
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -373,7 +368,7 @@ perl -e '
         }
     }
     ' \
-    | parallel --no-run-if-empty -j 6 "
+    | parallel --no-run-if-empty -j 4 "
         echo '==> Group {}'
         
         if [ ! -d ${BASE_DIR}/{} ]; then
@@ -631,19 +626,6 @@ cat stat2.md
 | Q30L120_1200000  | 333.85M |  71.9 |     138 |   91 | 324.89M |   2.686% | 4.64M | 4.52M |     0.97 |   4.7M |     0 | 0:03'33'' |
 | Q30L130_400000   | 115.47M |  24.9 |     144 |   95 | 111.91M |   3.087% | 4.64M |  4.2M |     0.90 |  4.57M |     0 | 0:01'55'' |
 
-* 本应被 trim 掉. 但覆盖度过高时, 这些区域之间的 reads 相互支持, 被保留下来的概率大大增加. Discard% 在 CovFq 大于
-  100 倍时, 快速下降.
-
-* 直接的反映就是 EstG 过大, SumSR 过大.
-* 留下的错误片段, 会形成 **伪独立** 片段, 降低 N50 SR
-* 留下的错误位点, 会形成 **伪杂合** 位点, 降低 N50 SR
-* trimmed 的 N50 比 filter 要大一些, 可能是留下了更多二代测序效果较差的位置. 同样 2400000 对 reads, trim 的 EstG
-  更接近真实值
-    * Real - 4.64M
-    * Trimmed - 4.61M (EstG)
-    * Filter - 4.59M (EstG)
-* 但是 trimmed 里出 misassemblies 的概率要比 filter 大.
-
 | Name             | N50SRclean |    Sum |      # | N50Anchor |     Sum |    # | N50Anchor2 |    Sum |  # | N50Others |     Sum |      # |   RunTime |
 |:-----------------|-----------:|-------:|-------:|----------:|--------:|-----:|-----------:|-------:|---:|----------:|--------:|-------:|----------:|
 | original_400000  |       2975 |  4.94M |   5517 |      3732 |   4.01M | 1322 |       1371 | 77.99K | 57 |       466 | 853.04K |   4138 | 0:01'06'' |
@@ -878,8 +860,8 @@ quast --no-check --threads 24 \
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-#head -n 23000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.20x.fasta
-head -n 46000 ${BASE_DIR}/3_pacbio/pacbio.fasta > ${BASE_DIR}/3_pacbio/pacbio.40x.fasta
+head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
 
 canu \
     -p ecoli -d canu-raw-40x \
@@ -893,6 +875,8 @@ canu \
     genomeSize=4.8m \
     -pacbio-raw 3_pacbio/pacbio.fasta
 
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
 faops n50 -S -C canu-raw-40x/ecoli.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
 
@@ -902,10 +886,20 @@ faops n50 -S -C canu-raw-all/ecoli.trimmedReads.fasta.gz
 
 ## Expand anchors
 
-* anchorLong
+三代 reads 里有一个常见的错误, 即单一 ZMW 里的测序结果中, 接头序列部分的测序结果出现了较多的错误,
+因此并没有将接头序列去除干净, 形成的 subreads 里含有多份基因组上同一片段, 它们之间以接头序列为间隔. 二代 contigs
+有可能会与一条三代 reads 匹配多次, 对组装造成影响. `anchr group` 命令里提供了选项, 将这种三代的 reads 去除.
+此判断没有放到 `anchr cover` 里, 因为拆分出的的 anchors 里也可能会有匹配多次的情况.
 
-    * 只有基于 distances 的判断的话, `anchr group` 无法消除 false strands.
-    * multi-matched 判断不能放到 `anchr cover` 里, 拆分的 anchors 里也有 multi-matched 的部分.
+```text
+      ===
+------------>
+             )
+  <----------
+      ===
+```
+
+* anchorLong
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
@@ -1083,6 +1077,7 @@ popd
 faops n50 -S -C contigTrim/group/*.contig.fasta
 
 cat \
+    contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
 faops n50 -S -C contigTrim/contig.fasta
