@@ -1125,29 +1125,105 @@ wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/drosophila_melanogaster/dna/D
 faops order Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz \
     <(for chr in {2L,2R,3L,3R,4,X,Y,dmel_mitochondrion_genome}; do echo $chr; done) \
     genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.fas
 ```
 
 * Illumina
 
-    SRR306628 labels ycnbwsp instead of iso-1.
+    * [ERX645969](http://www.ebi.ac.uk/ena/data/view/ERX645969): ERR701706-ERR701711
+    * SRR306628 labels ycnbwsp instead of iso-1.
 
 ```bash
-# Downloading from ena with aria2
 mkdir -p ~/data/anchr/iso_1/2_illumina
 cd ~/data/anchr/iso_1/2_illumina
-aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR306/SRR306628
-fastq-dump --split-files ./SRR306628  
-find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
-ln -s SRR306628_1.fastq.gz R1.fq.gz
-ln -s SRR306628_2.fastq.gz R2.fq.gz
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701706
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701707
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701708
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701709
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701710
+ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701711
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+c0c877f8ba0bba7e26597e415d7591e1        ERR701706
+8737074782482ced94418a579bc0e8db        ERR701707
+e638730be88ee74102511c5091850359        ERR701708
+d2bf01cb606e5d2ccad76bd1380e17a3        ERR701709
+a51e6c1c09f225f1b6628b614c046ed0        ERR701710
+dab2d1f14eff875f456045941a955b51        ERR701711
+EOF
+
+md5sum --check sra_md5.txt
+
+for sra in ERR7017{06,07,08,09,10,11}; do
+    echo ${sra}
+    fastq-dump --split-files ./${sra}
+done
+
+cat ERR7017{06,07,08,09,10,11}_1.fastq > R1.fq
+cat ERR7017{06,07,08,09,10,11}_2.fastq > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+3rm *.fastq
 ```
 
 * PacBio
 
+    PacBio provides a dataset of *D. melanogaster* strain
+    [ISO1](https://github.com/PacificBiosciences/DevNet/wiki/Drosophila-sequence-and-assembly), the
+    same stock used in the official BDGP reference assemblies. This is gathered with RS II and
+    P5C3.
+
 ```bash
 mkdir -p ~/data/anchr/iso_1/3_pacbio
+cd ~/data/anchr/iso_1/3_pacbio
 
+cat <<EOF > tgz.txt
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro1_24NOV2013_398.tgz
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro2_25NOV2013_399.tgz
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro3_26NOV2013_400.tgz
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro4_28NOV2013_401.tgz
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro5_29NOV2013_402.tgz
+https://s3.amazonaws.com/datasets.pacb.com/2014/Drosophila/raw/Dro6_1DEC2013_403.tgz
+EOF
+aria2c -x 9 -s 3 -c -i tgz.txt
+
+# untar
+mkdir -p ~/data/anchr/iso_1/3_pacbio/untar
+cd ~/data/anchr/iso_1/3_pacbio
+tar xvfz Dro1_24NOV2013_398.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/iso_1/3_pacbio/bam
+cd ~/data/anchr/iso_1/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150412 m150415 m150417 m150421;
+do 
+    bax2bam ~/data/anchr/iso_1/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/iso_1/3_pacbio/fasta
+
+for movie in m150412 m150415 m150417 m150421;
+do
+    if [ ! -e ~/data/anchr/iso_1/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/iso_1/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/iso_1/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/iso_1/3_pacbio
+ln -s fasta/m150412.fasta pacbio.fasta
 ```
 
 ## Dmel: trim
@@ -1388,8 +1464,6 @@ done
 rm *.[fr]plot
 rm out.delta
 rm *.gp
-
-cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.fas
 
 # quast
 rm -fr 9_qa
