@@ -23,7 +23,7 @@ $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -a t/not_exis
 like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout)] );
-ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 70, 'line count' );
+is( scalar( grep {/\S/} split( /\n/, $result->stdout ) ), 67, 'line count' );
 like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -b fancy/NAMES -o stdout)] );
