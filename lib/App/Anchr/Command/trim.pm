@@ -100,9 +100,6 @@ log_debug () {
 #----------------------------#
 # Run
 #----------------------------#
-# create tmp dir
-MY_TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
-log_info "Temp dir: ${MY_TMP_DIR}"
 
 [% IF opt.noscythe -%]
 log_info "Skip the scythe step"
@@ -118,7 +115,7 @@ scythe \
     -a [% opt.adapter %] \
     --quiet \
     | pigz -p [% opt.parallel %] -c \
-    > $MY_TMP_DIR/R1.scythe.fq.gz
+    > R1.scythe.fq.gz
 
 log_info "scythe [% args.1 %]"
 scythe \
@@ -128,7 +125,7 @@ scythe \
     -a [% opt.adapter %] \
     --quiet \
     | pigz -p [% opt.parallel %] -c \
-    > $MY_TMP_DIR/R2.scythe.fq.gz
+    > R2.scythe.fq.gz
 [% END -%]
 
 #----------------------------#
@@ -142,32 +139,29 @@ sickle pe \
     -q [% opt.qual %] \
     -f [% args.0 %] \
     -r [% args.1 %] \
-    -o $MY_TMP_DIR/R1.sickle.fq \
-    -p $MY_TMP_DIR/R2.sickle.fq \
-    -s $MY_TMP_DIR/single.sickle.fq
+    -o R1.sickle.fq \
+    -p R2.sickle.fq \
+    -s single.sickle.fq
 [% ELSE -%]
 sickle pe \
     -t sanger \
     -l [% opt.len %] \
     -q [% opt.qual %] \
-    -f $MY_TMP_DIR/R1.scythe.fq.gz \
-    -r $MY_TMP_DIR/R2.scythe.fq.gz \
-    -o $MY_TMP_DIR/R1.sickle.fq \
-    -p $MY_TMP_DIR/R2.sickle.fq \
-    -s $MY_TMP_DIR/single.sickle.fq
+    -f R1.scythe.fq.gz \
+    -r R2.scythe.fq.gz \
+    -o R1.sickle.fq \
+    -p R2.sickle.fq \
+    -s single.sickle.fq
 [% END -%]
 
-find $MY_TMP_DIR -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
+find . -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 
 #----------------------------#
 # outputs
 #----------------------------#
-mv $MY_TMP_DIR/R1.sickle.fq.gz [% opt.basename %]1.fq.gz
-mv $MY_TMP_DIR/R2.sickle.fq.gz [% opt.basename %]2.fq.gz
-mv $MY_TMP_DIR/single.sickle.fq.gz [% opt.basename %]s.fq.gz
-
-# clean tmp dir
-rm -fr ${MY_TMP_DIR}
+mv R1.sickle.fq.gz [% opt.basename %]1.fq.gz
+mv R2.sickle.fq.gz [% opt.basename %]2.fq.gz
+mv single.sickle.fq.gz [% opt.basename %]s.fq.gz
 
 exit 0
 
