@@ -1218,7 +1218,6 @@ done
 
 # convert .subreads.bam to fasta
 mkdir -p ~/data/anchr/iso_1/3_pacbio/fasta
-
 for movie in m131124_190051 m131124_221952 m131125_013854 m131125_045830 m131130_054035 m131130_091217 m131130_124231 m131130_161213 m131130_194336 m131130_231441 m131201_024805 m131201_061903 m131201_223357 m131202_020424 m131202_053545 m131202_090545 m131202_123546 m131202_160616 m131202_193958 m131202_231109;
 do
     if [ ! -e ~/data/anchr/iso_1/3_pacbio/bam/${movie}*.subreads.bam ]; then
@@ -1230,8 +1229,8 @@ do
         > ~/data/anchr/iso_1/3_pacbio/fasta/${movie}.fasta
 done
 
-cd ~/data/anchr/iso_1/3_pacbio
-ln -s fasta/m150412.fasta pacbio.fasta
+cd ~/data/anchr/iso_1
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 ```
 
 ## Dmel: combinations of different quality values and read lengths
@@ -1323,7 +1322,7 @@ cat stat.md
 | Genome   | 25286936 |   137567477 |         8 |
 | Paralogs |     4031 |    13665900 |      4492 |
 | Illumina |      101 | 18115734306 | 179363706 |
-| PacBio   |          |             |           |
+| PacBio   |    41580 |  5620710497 |    630193 |
 | scythe   |      101 | 17014607406 | 179363706 |
 | Q20L70   |      101 | 15520436296 | 154314198 |
 | Q20L80   |      101 | 15345399470 | 152291188 |
@@ -1633,9 +1632,10 @@ quast --no-check --threads 24 \
 BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
-head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+cd 3_pacbio/
+ln -s pacbio.fasta pacbio.40x.fasta
 
+cd ${BASE_DIR}
 canu \
     -p iso_1 -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
@@ -1646,6 +1646,213 @@ faops n50 -S -C 3_pacbio/pacbio.40x.fasta
 
 faops n50 -S -C canu-raw-40x/iso_1.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/iso_1.trimmedReads.fasta.gz
+
+```
+
+## Dmel: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 10 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/iso_1.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+faops n50 -S -C merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/iso_1.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 10 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+faops n50 -S -C anchorLong/group/*.contig.fasta
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
+
+faops n50 -S -C anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/iso_1.contigs.fasta \
+    -d contigTrim \
+    -b 10 --len 2000 --idt 0.96 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.96 --max 20000 -c 1 --png
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 2000 --idt 0.96 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 2000 --idt 0.96 --all \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+faops n50 -S -C contigTrim/group/*.contig.fasta
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+faops n50 -S -C contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 24 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/iso_1.unitigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
+    -o 9_qa_contig
 
 ```
 
