@@ -1097,8 +1097,8 @@ quast --no-check --threads 24 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/ecoli.unitigs.fasta \
-    canu-raw-all/ecoli.unitigs.fasta \
+    canu-raw-40x/ecoli.contigs.fasta \
+    canu-raw-all/ecoli.contigs.fasta \
     1_genome/paralogs.fas \
     --label "merge,cover,contig,contigTrim,canu-40x,canu-all,paralogs" \
     -o 9_qa_contig
