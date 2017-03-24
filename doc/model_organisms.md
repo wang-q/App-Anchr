@@ -2565,22 +2565,104 @@ faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
 
 * Illumina
 
+    [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246[accn])
+
 ```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/col_0/2_illumina
 cd ~/data/anchr/col_0/2_illumina
-aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
-fastq-dump --split-files ./SRR611086
-find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
-ln -s SRR611086_1.fastq.gz R1.fq.gz
-ln -s SRR611086_2.fastq.gz R2.fq.gz
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR616/SRR616966
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+b884e83b47c485c9a07f732b3805e7cf	SRR611086
+102db119d1040c3bf85af5e4da6e456d	SRR616966
+EOF
+
+md5sum --check sra_md5.txt
+
+for sra in SRR61{1086,6966}; do
+    echo ${sra}
+    fastq-dump --split-files ./${sra}
+done
+
+cat SRR61{1086,6966}_1.fastq > R1.fq
+cat SRR61{1086,6966}_2.fastq > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+rm *.fastq
+
 ```
 
 * PacBio
 
+Chin, C.-S. *et al.* Phased diploid genome assembly with single-molecule real-time sequencing. *Nature Methods* (2016). doi:10.1038/nmeth.4035
+
+https://www.ncbi.nlm.nih.gov/biosample/4539665
+
 ```bash
 mkdir -p ~/data/anchr/col_0/3_pacbio
+cd ~/data/anchr/col_0/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405242_SRR3405242_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405243_SRR3405243_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405244_SRR3405244_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405245_SRR3405245_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405246_SRR3405246_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405247_SRR3405247_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405248_SRR3405248_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405249_SRR3405249_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405250_SRR3405250_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405251_SRR3405251_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405252_SRR3405252_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405253_SRR3405253_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405254_SRR3405254_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405255_SRR3405255_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405256_SRR3405256_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405257_SRR3405257_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405258_SRR3405258_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405259_SRR3405259_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405260_SRR3405260_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405261_SRR3405261_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405262_SRR3405262_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405263_SRR3405263_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405264_SRR3405264_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405265_SRR3405265_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405266_SRR3405266_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405267_SRR3405267_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405268_SRR3405268_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405269_SRR3405269_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405270_SRR3405270_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405271_SRR3405271_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405272_SRR3405272_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405273_SRR3405273_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405274_SRR3405274_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405275_SRR3405275_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405276_SRR3405276_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405277_SRR3405277_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405278_SRR3405278_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405279_SRR3405279_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405280_SRR3405280_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405281_SRR3405281_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405282_SRR3405282_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405283_SRR3405283_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405284_SRR3405284_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405285_SRR3405285_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405286_SRR3405286_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405287_SRR3405287_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405288_SRR3405288_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405289_SRR3405289_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405290_SRR3405290_hdf5.tgz
+EOF
+
+aria2c -x 9 -s 3 -c -i hdf5.txt
 
 ```
 
