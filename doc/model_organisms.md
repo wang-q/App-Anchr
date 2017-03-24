@@ -1873,6 +1873,8 @@ wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/caenorhabditis_elegans/dna/Ca
 faops order Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,X,MtDNA}; do echo $chr; done) \
     genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
 ```
 
 * Illumina
@@ -1881,24 +1883,69 @@ faops order Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz \
         * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
         * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
         * DRR008443
+        * SRR065390
 
 ```bash
 # Downloading from ena with aria2
 mkdir -p ~/data/anchr/n2/2_illumina
 cd ~/data/anchr/n2/2_illumina
-aria2c -x 9 -s 3 -c ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR065/SRR065390
-fastq-dump --split-files ./SRR065390  
-find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
-ln -s SRR065390_1.fastq.gz R1.fq.gz
-ln -s SRR065390_2.fastq.gz R2.fq.gz
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR157/009/SRR1571299
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR157/002/SRR1571322
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+8b6c83b413af32eddb58c12044c5411b        SRR1571299
+1951826a35d31272615afa19ea9a552c        SRR1571322
+EOF
+
+md5sum --check sra_md5.txt
+
+for sra in SRR1571{299,322}; do
+    echo ${sra}
+    fastq-dump --split-files ./${sra}
+done
+
+cat SRR1571{299,322}_1.fastq > R1.fq
+cat SRR1571{299,322}_2.fastq > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+rm *.fastq
+
 ```
 
 * PacBio
 
-```bash
-mkdir -p ~/data/anchr/n2/3_pacbio
+https://github.com/PacificBiosciences/DevNet/wiki/C.-elegans-data-set
 
+```bash
+mkdir -p ~/data/anchr/n2/3_pacbio/fasta
+cd ~/data/anchr/n2/3_pacbio/fasta
+
+perl -MMojo::UserAgent -e '
+    my $url = q{http://datasets.pacb.com.s3.amazonaws.com/2014/c_elegans/wget.html};
+
+    my $ua   = Mojo::UserAgent->new->max_redirects(10);
+    my $tx   = $ua->get($url);
+    my $base = $tx->req->url;
+
+    $tx->res->dom->find(q{a})->map( sub { $base->new( $_->{href} )->to_abs($base) } )
+        ->each( sub                     { print shift . "\n" } );
+' \
+    | grep subreads.fasta \
+    > s3.url.txt
+
+aria2c -x 9 -s 3 -c -i s3.url.txt
+find . -type f -name "*.fasta" | parallel -j 2 pigz -p 8
+
+cd ~/data/anchr/n2/3_pacbio
+find fasta -type f -name "*.subreads.fasta.gz" \
+    | sort \
+    | xargs zcat \
+    | faops filter -l 0 stdin pacbio.fasta
 ```
 
 ## Cele: trim
