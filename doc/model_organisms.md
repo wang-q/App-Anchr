@@ -1948,27 +1948,60 @@ find fasta -type f -name "*.subreads.fasta.gz" \
     | faops filter -l 0 stdin pacbio.fasta
 ```
 
-## Cele: trim
+## Cele: combinations of different quality values and read lengths
 
-* Q20L80
+* qual: 20, 25, and 30
+* len: 70, 80, 90, and 100
 
 ```bash
-mkdir -p ~/data/anchr/n2/2_illumina/Q20L80
-pushd ~/data/anchr/n2/2_illumina/Q20L80
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
 
-anchr trim \
-    -q 20 -l 80 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o stdout \
-    | bash
+# get the default adapter file
+# anchr trim --help
+scythe \
+    2_illumina/R1.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R1.scythe.fq.gz
 
-popd
+scythe \
+    2_illumina/R2.fq.gz \
+    -q sanger \
+    -M 100 \
+    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    --quiet \
+    | pigz -p 4 -c \
+    > 2_illumina/R2.scythe.fq.gz
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+        mkdir -p 2_illumina/Q{1}L{2}
+        cd 2_illumina/Q{1}L{2}
+        
+        if [ -e R1.fq.gz ]; then
+            echo '    R1.fq.gz already presents'
+            exit;
+        fi
+
+        anchr trim \
+            --noscythe \
+            -q {1} -l {2} \
+            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+            -o stdout \
+            | bash
+    " ::: 20 25 30 ::: 70 80 90 100
+
 ```
 
 * Stats
 
 ```bash
-cd ~/data/anchr/n2
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -1978,12 +2011,23 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Q20L80";  faops n50 -H -S -C 2_illumina/Q20L80/R1.fq.gz 2_illumina/Q20L80/R1.fq.gz;) >> stat.md
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 70 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
 
 cat stat.md
 ```
