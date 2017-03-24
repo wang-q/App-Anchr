@@ -161,20 +161,20 @@ parallel --no-run-if-empty -j 2 "
 
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 6 "
-        mkdir -p 2_illumina/Q{1}L{2}
-        cd 2_illumina/Q{1}L{2}
-        
-        if [ -e R1.fq.gz ]; then
-            echo '    R1.fq.gz already presents'
-            exit;
-        fi
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
 
-        anchr trim \
-            --noscythe \
-            -q {1} -l {2} \
-            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-            -o stdout \
-            | bash
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
     " ::: 20 25 30 ::: 100 110 120 130 140 150
 
 ```
@@ -1193,7 +1193,6 @@ aria2c -x 9 -s 3 -c -i tgz.txt
 mkdir -p ~/data/anchr/iso_1/3_pacbio/untar
 cd ~/data/anchr/iso_1/3_pacbio
 tar xvfz Dro1_24NOV2013_398.tgz --directory untar
-
 tar xvfz Dro5_29NOV2013_402.tgz --directory untar
 tar xvfz Dro6_1DEC2013_403.tgz --directory untar
 
@@ -1251,22 +1250,24 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 6 "
-        mkdir -p 2_illumina/Q{1}L{2}
-        cd 2_illumina/Q{1}L{2}
-        
-        if [ -e R1.fq.gz ]; then
-            echo '    R1.fq.gz already presents'
-            exit;
-        fi
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
 
-        anchr trim \
-            --noscythe \
-            -q {1} -l {2} \
-            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-            -o stdout \
-            | bash
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
     " ::: 20 25 30 ::: 70 80 90 100
+
+#rsync -avP -e "ssh -T -c arcfour -o Compression=no -x" ~/data/anchr/iso_1/2_illumina/ wangq@wq.nju.edu.cn:data/anchr/iso_1/2_illumina
 
 ```
 
@@ -1958,21 +1959,21 @@ parallel --no-run-if-empty -j 2 "
     " ::: R1 R2
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 6 "
-        mkdir -p 2_illumina/Q{1}L{2}
-        cd 2_illumina/Q{1}L{2}
-        
-        if [ -e R1.fq.gz ]; then
-            echo '    R1.fq.gz already presents'
-            exit;
-        fi
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
 
-        anchr trim \
-            --noscythe \
-            -q {1} -l {2} \
-            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-            -o stdout \
-            | bash
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
     " ::: 20 25 30 ::: 70 80 90 100
 
 ```
@@ -2560,8 +2561,8 @@ EOF
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-b884e83b47c485c9a07f732b3805e7cf	SRR611086
-102db119d1040c3bf85af5e4da6e456d	SRR616966
+b884e83b47c485c9a07f732b3805e7cf    SRR611086
+102db119d1040c3bf85af5e4da6e456d    SRR616966
 EOF
 
 md5sum --check sra_md5.txt
@@ -2646,9 +2647,11 @@ aria2c -x 9 -s 3 -c -i hdf5.txt
 
 ```
 
-## Atha: trim
 
-* Q20L80
+## Atha: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 70, 80, 90, and 100
 
 ```bash
 BASE_DIR=$HOME/data/anchr/col_0
@@ -2684,7 +2687,6 @@ parallel --no-run-if-empty -j 4 "
         | bash
     " ::: 20 25 30 ::: 70 80 90 100
 
-popd
 ```
 
 * Stats
