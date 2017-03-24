@@ -189,44 +189,36 @@ ln -s fasta/m141013.fasta pacbio.fasta
 
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
 
 # get the default adapter file
 # anchr trim --help
-scythe \
-    2_illumina/R1.fq.gz \
-    -q sanger \
-    -M 100 \
-    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-    --quiet \
-    | pigz -p 4 -c \
-    > 2_illumina/R1.scythe.fq.gz
-
-scythe \
-    2_illumina/R2.fq.gz \
-    -q sanger \
-    -M 100 \
-    -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-    --quiet \
-    | pigz -p 4 -c \
-    > 2_illumina/R2.scythe.fq.gz
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
 
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 6 "
-        mkdir -p 2_illumina/Q{1}L{2}
-        cd 2_illumina/Q{1}L{2}
-        
-        if [ -e R1.fq.gz ]; then
-            echo '    R1.fq.gz already presents'
-            exit;
-        fi
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
 
-        anchr trim \
-            --noscythe \
-            -q {1} -l {2} \
-            ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-            -o stdout \
-            | bash
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
     " ::: 20 25 30 ::: 100 110 120 130 140 150
 
 ```
