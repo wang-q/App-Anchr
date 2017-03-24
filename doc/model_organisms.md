@@ -2312,6 +2312,237 @@ quast --no-check --threads 24 \
     1_genome/paralogs.fas \
     --label "Q20L70,Q20L80,Q20L90,Q20L100,Q25L70,Q25L80,Q25L90,Q25L100,Q30L70,Q30L80,Q30L90,Q30L100,merge,paralogs" \
     -o 9_qa
+
+```
+
+## Cele: 3GS
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+head -n 740000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+cd ${BASE_DIR}
+canu \
+    -p n2 -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=100.3m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+faops n50 -S -C canu-raw-40x/n2.correctedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/n2.trimmedReads.fasta.gz
+
+```
+
+## Cele: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 50 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/n2.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+faops n50 -S -C merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/n2.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 50 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+faops n50 -S -C anchorLong/group/*.contig.fasta
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
+
+faops n50 -S -C anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/n2.contigs.fasta \
+    -d contigTrim \
+    -b 50 --len 2000 --idt 0.96 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 2000 --idt 0.96 --max 20000 -c 1 --png
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 2000 --idt 0.96 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 2000 --idt 0.96 --all \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+faops n50 -S -C contigTrim/group/*.contig.fasta
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+faops n50 -S -C contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 24 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/n2.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
+    -o 9_qa_contig
+
 ```
 
 # *Arabidopsis thaliana* Col-0
