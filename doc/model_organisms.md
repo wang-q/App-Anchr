@@ -2046,37 +2046,39 @@ BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/Q20L80:Q20L80:25000000")
+ARRAY=( "2_illumina/Q20L70:Q20L70"
+        "2_illumina/Q20L80:Q20L80"
+        "2_illumina/Q20L90:Q20L90"
+        "2_illumina/Q20L100:Q20L100"
+        "2_illumina/Q25L70:Q25L70"
+        "2_illumina/Q25L80:Q25L80"
+        "2_illumina/Q25L90:Q25L90"
+        "2_illumina/Q25L100:Q25L100"
+        "2_illumina/Q30L70:Q30L70"
+        "2_illumina/Q30L80:Q30L80"
+        "2_illumina/Q30L90:Q30L90"
+        "2_illumina/Q30L100:Q30L100"
+        )
 
 for group in "${ARRAY[@]}" ; do
     
     GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
     GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
-    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
 
-    for count in $(perl -e 'print 5000000 * $_, q{ } for 1 .. 5');
-    do
-        if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue     
-        fi
-        
-        echo "==> Reads ${GROUP_ID}_${count}"
-        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
-        mkdir -p ${DIR_COUNT}
-        
-        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue     
-        fi
-        
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R1.fq.gz
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R2.fq.gz
-    done
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
 done
+
 ```
 
 ## Cele: generate super-reads
@@ -2085,30 +2087,39 @@ done
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
-do
-    echo
-    echo "==> Reads ${d}"
-    DIR_COUNT="${BASE_DIR}/${d}/"
+perl -e '
+    for my $n (
+        qw{
+        Q20L70 Q20L80 Q20L90 Q20L100
+        Q25L70 Q25L80 Q25L90 Q25L100
+        Q30L70 Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
 
-    if [ ! -d ${DIR_COUNT} ]; then
-        continue
-    fi
-    
-    if [ -e ${DIR_COUNT}/pe.cor.fa ]; then
-        echo "    pe.cor.fa already presents"
-        continue
-    fi
-    
-    pushd ${DIR_COUNT} > /dev/null
-    anchr superreads \
-        R1.fq.gz \
-        R2.fq.gz \
-        --nosr \
-        -s 200 -d 20 -p 16
-    bash superreads.sh
-    popd > /dev/null
-done
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
 ```
 
 Clear intermediate files.
@@ -2116,11 +2127,12 @@ Clear intermediate files.
 ```bash
 cd $HOME/data/anchr/n2/
 
-find . -type f -name "quorum_mer_db.jf" | xargs rm
-find . -type f -name "k_u_hash_0" | xargs rm
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
 find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp" | xargs rm
-#find . -type f -name "pe.renamed.fastq" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
 ```
 
 ## Cele: create anchors
@@ -2129,19 +2141,29 @@ find . -type f -name "*.tmp" | xargs rm
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
-do
-    echo
-    echo "==> Reads ${d}"
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
-        continue
-    fi
-    
-    rm -fr ${DIR_COUNT}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${DIR_COUNT} 16 80 false
-done
+perl -e '
+    for my $n (
+        qw{
+        Q20L70 Q20L80 Q20L90 Q20L100
+        Q25L70 Q25L80 Q25L90 Q25L100
+        Q30L70 Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 4 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
 ```
 
 ## Cele: results
@@ -2157,17 +2179,25 @@ REAL_G=100286401
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
 
-for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
-do
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ ! -d ${DIR_COUNT} ]; then
-        continue     
-    fi
-    
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${DIR_COUNT} ${REAL_G} \
-        >> ${BASE_DIR}/stat1.md
-done
+perl -e '
+    for my $n (
+        qw{
+        Q20L70 Q20L80 Q20L90 Q20L100
+        Q25L70 Q25L80 Q25L90 Q25L100
+        Q30L70 Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
 
 cat stat1.md
 ```
@@ -2181,18 +2211,25 @@ cd ${BASE_DIR}
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/stat2.md
 
-for d in $(perl -e 'for $n (qw{Q20L80}) { for $i (1 .. 5) { printf qq{%s_%d }, $n, (5000000 * $i); } }');
-do
-    DIR_COUNT="${BASE_DIR}/${d}/"
-    
-    if [ ! -e ${DIR_COUNT}/anchor/pe.anchor.fa ]; then
-        continue     
-    fi
-    
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${DIR_COUNT} \
-        >> ${BASE_DIR}/stat2.md
+perl -e '
+    for my $n (
+        qw{
+        Q20L70 Q20L80 Q20L90 Q20L100
+        Q25L70 Q25L80 Q25L90 Q25L100
+        Q30L70 Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 16 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
 
-done
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
 
 cat stat2.md
 ```
@@ -2213,33 +2250,67 @@ cat stat2.md
 | Q20L80_20000000 |       3050 | 89.24M | 42590 |      3564 | 77.94M | 26959 |       1750 | 3.25K | 2 |       752 |  11.3M | 15629 | 0:17'21'' |
 | Q20L80_25000000 |       3831 | 91.59M | 37420 |      4373 | 82.57M | 24972 |       1890 | 1.89K | 1 |       754 |  9.02M | 12447 | 0:20'04'' |
 
-## Cele: quality assessment
+## Cele: merge anchors from different groups of reads
 
 ```bash
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-for part in anchor anchor2 others;
-do 
-    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh Q20L80_25000000/anchor/pe.${part}.fa 1_genome/genome.fa pe.${part}
-    nucmer -l 200 1_genome/genome.fa pe.${part}.fa
-    mummerplot -png out.delta -p pe.${part} --medium
-done
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L70/anchor/pe.anchor.fa \
+    Q20L80/anchor/pe.anchor.fa \
+    Q20L90/anchor/pe.anchor.fa \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L70/anchor/pe.anchor.fa \
+    Q25L80/anchor/pe.anchor.fa \
+    Q25L90/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L70/anchor/pe.anchor.fa \
+    Q30L80/anchor/pe.anchor.fa \
+    Q30L90/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+faops n50 -S -C merge/anchor.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
 
 # mummerplot files
 rm *.[fr]plot
 rm out.delta
 rm *.gp
 
-cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
+mv anchor.sort.png merge/
 
 # quast
 rm -fr 9_qa
-quast --no-check \
+quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
-    Q20L80_25000000/anchor/pe.anchor.fa \
+    Q20L70/anchor/pe.anchor.fa \
+    Q20L80/anchor/pe.anchor.fa \
+    Q20L90/anchor/pe.anchor.fa \
+    Q20L100/anchor/pe.anchor.fa \
+    Q25L70/anchor/pe.anchor.fa \
+    Q25L80/anchor/pe.anchor.fa \
+    Q25L90/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q30L70/anchor/pe.anchor.fa \
+    Q30L80/anchor/pe.anchor.fa \
+    Q30L90/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "25000000,paralogs" \
+    --label "Q20L70,Q20L80,Q20L90,Q20L100,Q25L70,Q25L80,Q25L90,Q25L100,Q30L70,Q30L80,Q30L90,Q30L100,merge,paralogs" \
     -o 9_qa
 ```
 
