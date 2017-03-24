@@ -1100,8 +1100,8 @@ quast --no-check --threads 24 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/s288c.unitigs.fasta \
-    canu-raw-all/s288c.unitigs.fasta \
+    canu-raw-40x/s288c.contigs.fasta \
+    canu-raw-all/s288c.contigs.fasta \
     1_genome/paralogs.fas \
     --label "merge,cover,contig,contigTrim,canu-40x,canu-all,paralogs" \
     -o 9_qa_contig
@@ -1660,7 +1660,7 @@ cd ${BASE_DIR}
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
-    -b 10 --len 1000 --idt 0.9 \
+    -b 50 --len 1000 --idt 0.9 \
     merge/anchor.merge.fasta \
     canu-raw-40x/iso_1.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
@@ -1672,7 +1672,7 @@ anchr overlap2 \
     merge/anchor.cover.fasta \
     canu-raw-40x/iso_1.trimmedReads.fasta.gz \
     -d anchorLong \
-    -b 10 --len 1000 --idt 0.98
+    -b 50 --len 1000 --idt 0.98
 
 anchr overlap \
     merge/anchor.cover.fasta \
@@ -1715,7 +1715,7 @@ anchr group \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
@@ -1786,7 +1786,7 @@ anchr overlap2 \
     anchorLong/contig.fasta \
     canu-raw-40x/iso_1.contigs.fasta \
     -d contigTrim \
-    -b 10 --len 2000 --idt 0.96 --all
+    -b 50 --len 2000 --idt 0.96 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1849,7 +1849,7 @@ quast --no-check --threads 24 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/iso_1.unitigs.fasta \
+    canu-raw-40x/iso_1.contigs.fasta \
     1_genome/paralogs.fas \
     --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
     -o 9_qa_contig
