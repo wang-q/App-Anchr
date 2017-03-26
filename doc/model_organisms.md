@@ -2719,7 +2719,8 @@ parallel --no-run-if-empty -j 4 "
 * Stats
 
 ```bash
-cd ~/data/anchr/col_0
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -2729,12 +2730,23 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Q20L80";  faops n50 -H -S -C 2_illumina/Q20L80/R1.fq.gz 2_illumina/Q20L80/R1.fq.gz;) >> stat.md
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 70 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
 
 cat stat.md
 ```
