@@ -106,9 +106,9 @@ aria2c -x 9 -s 3 -c -i hdf5.txt
 mkdir -p ~/data/anchr/s288c/3_pacbio/untar
 cd ~/data/anchr/s288c/3_pacbio
 tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
-#tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
-#tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
-#tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
+tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
+tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
+tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
 
 # convert .bax.h5 to .subreads.bam
 mkdir -p ~/data/anchr/s288c/3_pacbio/bam
@@ -134,8 +134,15 @@ do
         > ~/data/anchr/s288c/3_pacbio/fasta/${movie}.fasta
 done
 
-cd ~/data/anchr/s288c/3_pacbio
-ln -s fasta/m150412.fasta pacbio.fasta
+cd ~/data/anchr/s288c
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+
+head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
 ```
 
 ## Scer: combinations of different quality values and read lengths
@@ -219,7 +226,7 @@ cat stat.md
 | Genome   | 924431 |   12157105 |       17 |
 | Paralogs |   3851 |    1059148 |      366 |
 | Illumina |    151 | 2939081214 | 19464114 |
-| PacBio   |   8412 |  820962526 |   177100 |
+| PacBio   |   8169 | 3529504618 |   846948 |
 | scythe   |    151 | 2856064236 | 19464114 |
 | Q20L100  |    151 | 2715518542 | 18143428 |
 | Q20L110  |    151 | 2696726129 | 17978274 |
@@ -861,9 +868,6 @@ quast --no-check --threads 24 \
 BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
-head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
 canu \
     -p s288c -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
@@ -871,15 +875,15 @@ canu \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
 canu \
-    -p s288c -d canu-raw-all \
+    -p s288c -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=12.2m \
-    -pacbio-raw 3_pacbio/pacbio.fasta
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
 faops n50 -S -C canu-raw-40x/s288c.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/s288c.trimmedReads.fasta.gz
 
-faops n50 -S -C canu-raw-all/s288c.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/s288c.trimmedReads.fasta.gz
 ```
 
 ## Scer: expand anchors
