@@ -201,6 +201,13 @@ samtools fasta \
 
 cd ~/data/anchr/e_coli/3_pacbio
 ln -s fasta/m141013.fasta pacbio.fasta
+
+head -n 46000 pacbio.fasta > pacbio.40x.fasta
+faops n50 -S -C pacbio.40x.fasta
+
+head -n 92000 pacbio.fasta > pacbio.80x.fasta
+faops n50 -S -C pacbio.80x.fasta
+
 ```
 
 ## Combinations of different quality values and read lengths
@@ -285,7 +292,7 @@ cat stat.md
 | Paralogs |    1934 |     195673 |      106 |
 | Illumina |     151 | 1730299940 | 11458940 |
 | PacBio   |   13982 |  748508361 |    87225 |
-| scythe   |     151 | 1724565376 | 11458940 |
+| scythe   |     151 | 1725458874 | 11458940 |
 | Q20L100  |     151 | 1316581647 |  9150886 |
 | Q20L110  |     151 | 1242406364 |  8547376 |
 | Q20L120  |     151 | 1138097252 |  7742646 |
@@ -873,9 +880,6 @@ quast --no-check --threads 24 \
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
 canu \
     -p ecoli -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
@@ -883,17 +887,15 @@ canu \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
 canu \
-    -p ecoli -d canu-raw-all \
+    -p ecoli -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=4.8m \
-    -pacbio-raw 3_pacbio/pacbio.fasta
-
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
 faops n50 -S -C canu-raw-40x/ecoli.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
 
-faops n50 -S -C canu-raw-all/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
 
 ```
 
@@ -1111,9 +1113,9 @@ quast --no-check --threads 24 \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/ecoli.contigs.fasta \
-    canu-raw-all/ecoli.contigs.fasta \
+    canu-raw-80x/ecoli.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-all,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
     -o 9_qa_contig
 
 ```
