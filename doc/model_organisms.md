@@ -2574,67 +2574,136 @@ rm *.fastq
 
 Chin, C.-S. *et al.* Phased diploid genome assembly with single-molecule real-time sequencing. *Nature Methods* (2016). doi:10.1038/nmeth.4035
 
+P4C2 is not supported in newer version of SMRTAnalysis.
+
 https://www.ncbi.nlm.nih.gov/biosample/4539665
+
+[SRX1715692](https://www.ncbi.nlm.nih.gov/sra/SRX1715692[accn])
+
 
 ```bash
 mkdir -p ~/data/anchr/col_0/3_pacbio
 cd ~/data/anchr/col_0/3_pacbio
 
-# download from sra
-cat <<EOF > hdf5.txt
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405242_SRR3405242_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405243_SRR3405243_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405244_SRR3405244_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405245_SRR3405245_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405246_SRR3405246_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405247_SRR3405247_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405248_SRR3405248_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405249_SRR3405249_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405250_SRR3405250_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405251_SRR3405251_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405252_SRR3405252_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405253_SRR3405253_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405254_SRR3405254_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405255_SRR3405255_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405256_SRR3405256_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405257_SRR3405257_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405258_SRR3405258_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405259_SRR3405259_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405260_SRR3405260_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405261_SRR3405261_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405262_SRR3405262_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405263_SRR3405263_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405264_SRR3405264_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405265_SRR3405265_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405266_SRR3405266_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405267_SRR3405267_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405268_SRR3405268_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405269_SRR3405269_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405270_SRR3405270_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405271_SRR3405271_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405272_SRR3405272_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405273_SRR3405273_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405274_SRR3405274_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405275_SRR3405275_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405276_SRR3405276_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405277_SRR3405277_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405278_SRR3405278_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405279_SRR3405279_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405280_SRR3405280_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405281_SRR3405281_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405282_SRR3405282_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405283_SRR3405283_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405284_SRR3405284_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405285_SRR3405285_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405286_SRR3405286_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405287_SRR3405287_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405288_SRR3405288_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405289_SRR3405289_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR3405290_SRR3405290_hdf5.tgz
+cat <<EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/002/SRR3405242
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/003/SRR3405243
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/004/SRR3405244
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/006/SRR3405246
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/008/SRR3405248
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/000/SRR3405250
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/002/SRR3405252
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/003/SRR3405253
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/004/SRR3405254
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/005/SRR3405255
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/006/SRR3405256
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/007/SRR3405257
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/008/SRR3405258
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/009/SRR3405259
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/005/SRR3405245
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/007/SRR3405247
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/009/SRR3405249
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/001/SRR3405251
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/000/SRR3405260
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/003/SRR3405263
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/005/SRR3405265
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/007/SRR3405267
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/009/SRR3405269
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/001/SRR3405271
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/004/SRR3405274
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/005/SRR3405275
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/006/SRR3405276
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/007/SRR3405277
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/008/SRR3405278
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/009/SRR3405279
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/000/SRR3405280
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/001/SRR3405281
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/002/SRR3405282
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/003/SRR3405283
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/004/SRR3405284
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/005/SRR3405285
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/006/SRR3405286
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/007/SRR3405287
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/008/SRR3405288
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/009/SRR3405289
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/000/SRR3405290
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/001/SRR3405261
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/002/SRR3405262
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/004/SRR3405264
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/006/SRR3405266
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/008/SRR3405268
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/000/SRR3405270
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/002/SRR3405272
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR340/003/SRR3405273
 EOF
 
-aria2c -x 9 -s 3 -c -i hdf5.txt
+aria2c -x 6 -s 3 -c -i sra_ftp.txt
 
+cat << EOF > sra_md5.txt
+be9c803f847ff1c81d153110cc699390        SRR3405242
+c68a2c3b62245a697722fd3f8fda7a2d        SRR3405243
+7116e8a0de87b1acd016d9b284e4795c        SRR3405244
+51f8e5ee4565aace4e5a5cba73e3e597        SRR3405246
+f339f580e86aad3a5487b5cec8ae80d4        SRR3405248
+1a8246ed1f7c38801cfc603e088abb70        SRR3405250
+a0ce8435a7fa2e7ddbd6ac181902f751        SRR3405252
+8754f69a1c8c1f00b58b48454c1c01ad        SRR3405253
+367508500303325e855666133505a5af        SRR3405254
+d250f69fcf2975c89ceab5a4f9425b36        SRR3405255
+badd9b2d23f94d1c98263d2e786742ae        SRR3405256
+6c5cbd3bce9459283a415d8a5c05c86e        SRR3405257
+32da7a364c8cbda5cf76b87f7c51b475        SRR3405258
+eb3819adf483451ac670f89d1ea6b76e        SRR3405259
+5337862eeb0945f932de74e8f7b9ec4f        SRR3405245
+4545ce4666878fcbcda1e7737be1896b        SRR3405247
+71d61bc64e3ca9b91f08b1c6b1389f16        SRR3405249
+b9a911b8eb4fbfe29dff8cf920429f18        SRR3405251
+99bae070fa90d53c8f15b9cf42c634f6        SRR3405260
+830e02f1f3cb66b9e085803a21ad8040        SRR3405263
+86d28c63f00095ae0ff1151e7e0bf7b4        SRR3405265
+3e048ad8dbb526d4a533ee1d5ec10a43        SRR3405267
+1b73ed3a1124f5f025c511672c1e18d3        SRR3405269
+fa07c85b9e6258abcef8bdb730ab812f        SRR3405271
+aeb6ab7edfa42e5e27704b7625c659c1        SRR3405274
+0eb24fcc9b40f6fe0f013fe79dd7edf7        SRR3405275
+f051e0065602477e0a1d13a6d0a42d3d        SRR3405276
+178540e33e9f4f76adc8509b147d7ff6        SRR3405277
+6fdfa97e2eacf0ac186b5333e97c334b        SRR3405278
+a6bb6b57db82eb6e4161847f9d35a608        SRR3405279
+8399b8e8e4d48c7374a414a9585efa5b        SRR3405280
+e725278a3837775e214b39093a900927        SRR3405281
+fab9120bfa1130b300f7e82b74d23173        SRR3405282
+33929263f09811d7f7360a9675e82cdd        SRR3405283
+7f9e58c6fa43e8f2f3fa2496e149d2cb        SRR3405284
+b9a469affbff1bdcb1b299c106c2c1b9        SRR3405285
+688ab23dbfe7977f9de780486a8d5c6b        SRR3405286
+fadc273d324413017e45570e3bf0ee6e        SRR3405287
+6f4b0eb22cb523ddecb842042d500ceb        SRR3405288
+03a4581c1b951dba3bb9e295e9113bf3        SRR3405289
+51fa78f451a33bd44f985ac220e17efe        SRR3405290
+fac8c4c2a862a4d572d77d0deb4b0abc        SRR3405261
+3fd1a3d8140cfa96a0287e9e2b6055c4        SRR3405262
+f908e6194fb3a0026b5263acadbd2600        SRR3405264
+e04a7d96ba91ebb11772c019981ea9eb        SRR3405266
+784e28febf413c6dfa842802aa106a55        SRR3405268
+05b91a051fc52417858e93ce3b22fe2e        SRR3405270
+07bca433005313a4a2c8050e32952f58        SRR3405272
+a9bbee29c3d507760c4c33fbbe436fa6        SRR3405273
+EOF
+
+for sra in SRR34052{42,43,44,46,48,50,52,53,54,55,56,57,58,59,45,47,49,51,60,63,65,67,69,71,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,61,62,64,66,68,70,72,73}; do
+    echo ${sra}
+    fastq-dump ./${sra}
+done
+
+cat SRR61{1086,6966}_1.fastq > R1.fq
+cat SRR61{1086,6966}_2.fastq > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+rm *.fastq
+
+cd ~/data/anchr/col_0
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 ```
 
 
