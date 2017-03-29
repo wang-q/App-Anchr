@@ -39,7 +39,7 @@
     - [Atha: generate super-reads](#atha-generate-super-reads)
     - [Atha: create anchors](#atha-create-anchors)
     - [Atha: results](#atha-results)
-    - [Atha: quality assessment](#atha-quality-assessment)
+    - [Atha: merge anchors from different groups of reads](#atha-merge-anchors-from-different-groups-of-reads)
 
 
 # *Saccharomyces cerevisiae* S288c
@@ -880,10 +880,9 @@ canu \
     genomeSize=12.2m \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
-faops n50 -S -C canu-raw-40x/s288c.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/s288c.trimmedReads.fasta.gz
-
 faops n50 -S -C canu-raw-80x/s288c.trimmedReads.fasta.gz
+
 ```
 
 ## Scer: expand anchors
@@ -1101,9 +1100,9 @@ quast --no-check --threads 24 \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/s288c.contigs.fasta \
-    canu-raw-all/s288c.contigs.fasta \
+    canu-raw-80x/s288c.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-all,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
     -o 9_qa_contig
 
 ```
@@ -1197,6 +1196,9 @@ aria2c -x 9 -s 3 -c -i tgz.txt
 mkdir -p ~/data/anchr/iso_1/3_pacbio/untar
 cd ~/data/anchr/iso_1/3_pacbio
 tar xvfz Dro1_24NOV2013_398.tgz --directory untar
+#tar xvfz Dro2_25NOV2013_399.tgz --directory untar
+#tar xvfz Dro3_26NOV2013_400.tgz --directory untar
+#tar xvfz Dro4_28NOV2013_401.tgz --directory untar
 tar xvfz Dro5_29NOV2013_402.tgz --directory untar
 tar xvfz Dro6_1DEC2013_403.tgz --directory untar
 
@@ -2723,7 +2725,7 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 ## Atha: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 70, 80, 90, and 100
+* len: 80, 90, and 100
 
 ```bash
 BASE_DIR=$HOME/data/anchr/col_0
@@ -2757,7 +2759,7 @@ parallel --no-run-if-empty -j 4 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 70 80 90 100
+    " ::: 20 25 30 ::: 80 90 100
 
 ```
 
@@ -2784,7 +2786,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 70 80 90 100; do
+    for len in 80 90 100; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -2803,15 +2805,12 @@ cat stat.md
 | Illumina |      100 | 14948629000 | 149486290 |
 | PacBio   |          |             |           |
 | scythe   |      100 | 14859828281 | 149486290 |
-| Q20L70   |      100 | 13225437735 | 133614584 |
 | Q20L80   |      100 | 12829458794 | 129008212 |
 | Q20L90   |      100 | 12277500278 | 122999098 |
 | Q20L100  |      100 | 11657500600 | 116575006 |
-| Q25L70   |      100 | 12010989921 | 121705042 |
 | Q25L80   |      100 | 11511159939 | 115877888 |
 | Q25L90   |      100 | 10876573032 | 108964030 |
 | Q25L100  |      100 | 10306275200 | 103062752 |
-| Q30L70   |      100 |  9997814782 | 102202028 |
 | Q30L80   |      100 |  9282649748 |  93816534 |
 | Q30L90   |      100 |  8452773268 |  84758028 |
 | Q30L100  |      100 |  7776826400 |  77768264 |
@@ -2823,15 +2822,12 @@ BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/Q20L70:Q20L70"
-        "2_illumina/Q20L80:Q20L80"
+ARRAY=( "2_illumina/Q20L80:Q20L80"
         "2_illumina/Q20L90:Q20L90"
         "2_illumina/Q20L100:Q20L100"
-        "2_illumina/Q25L70:Q25L70"
         "2_illumina/Q25L80:Q25L80"
         "2_illumina/Q25L90:Q25L90"
         "2_illumina/Q25L100:Q25L100"
-        "2_illumina/Q30L70:Q30L70"
         "2_illumina/Q30L80:Q30L80"
         "2_illumina/Q30L90:Q30L90"
         "2_illumina/Q30L100:Q30L100"
@@ -2866,9 +2862,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L70 Q20L80 Q20L90 Q20L100
-        Q25L70 Q25L80 Q25L90 Q25L100
-        Q30L70 Q30L80 Q30L90 Q30L100
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -2920,9 +2916,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L70 Q20L80 Q20L90 Q20L100
-        Q25L70 Q25L80 Q25L90 Q25L100
-        Q30L70 Q30L80 Q30L90 Q30L100
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -2958,9 +2954,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L70 Q20L80 Q20L90 Q20L100
-        Q25L70 Q25L80 Q25L90 Q25L100
-        Q30L70 Q30L80 Q30L90 Q30L100
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -2990,9 +2986,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L70 Q20L80 Q20L90 Q20L100
-        Q25L70 Q25L80 Q25L90 Q25L100
-        Q30L70 Q30L80 Q30L90 Q30L100
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
         }
         )
     {
@@ -3012,30 +3008,24 @@ cat stat2.md
 
 | Name    |  SumFq | CovFq | AvgRead | Kmer |  SumFa | Discard% |   RealG |    EstG | Est/Real |   SumKU | SumSR |   RunTime |
 |:--------|-------:|------:|--------:|-----:|-------:|---------:|--------:|--------:|---------:|--------:|------:|----------:|
-| Q20L70  | 13.23G | 110.5 |      98 |   71 | 10.94G |  17.284% | 119.67M | 282.25M |     2.36 | 401.66M |     0 | 2:41'44'' |
 | Q20L80  | 12.83G | 107.2 |      99 |   71 | 10.63G |  17.140% | 119.67M | 273.46M |     2.29 | 387.84M |     0 | 2:26'10'' |
 | Q20L90  | 12.28G | 102.6 |      99 |   71 |  10.2G |  16.936% | 119.67M | 261.13M |     2.18 | 367.93M |     0 | 2:17'59'' |
 | Q20L100 | 11.66G |  97.4 |     100 |   71 |   9.7G |  16.772% | 119.67M | 248.69M |     2.08 | 347.83M |     0 | 1:26'39'' |
-| Q25L70  | 12.01G | 100.4 |      98 |   71 | 10.06G |  16.220% | 119.67M | 257.59M |     2.15 | 358.32M |     0 | 1:34'55'' |
 | Q25L80  | 11.51G |  96.2 |      99 |   71 |  9.65G |  16.148% | 119.67M | 246.75M |     2.06 | 341.91M |     0 | 1:36'48'' |
 | Q25L90  | 10.88G |  90.9 |      99 |   71 |  9.13G |  16.032% | 119.67M |  232.8M |     1.95 | 320.24M |     0 | 1:30'00'' |
 | Q25L100 | 10.31G |  86.1 |     100 |   71 |  8.66G |  15.965% | 119.67M | 221.73M |     1.85 | 302.79M |     0 | 1:23'25'' |
-| Q30L70  |    10G |  83.5 |      97 |   71 |   8.5G |  15.023% | 119.67M | 215.18M |     1.80 | 288.37M |     0 | 1:45'38'' |
 | Q30L80  |  9.28G |  77.6 |      98 |   71 |  7.89G |  14.958% | 119.67M | 201.06M |     1.68 | 267.67M |     0 | 1:56'52'' |
 | Q30L90  |  8.45G |  70.6 |      99 |   71 |   7.2G |  14.862% | 119.67M |  185.4M |     1.55 | 244.24M |     0 | 1:24'40'' |
 | Q30L100 |  7.78G |  65.0 |     100 |   71 |  6.63G |  14.729% | 119.67M | 174.61M |     1.46 | 227.55M |     0 | 1:14'12'' |
 
 | Name    | N50SRclean |     Sum |       # | N50Anchor |     Sum |     # | N50Anchor2 | Sum | # | N50Others |     Sum |       # |   RunTime |
 |:--------|-----------:|--------:|--------:|----------:|--------:|------:|-----------:|----:|--:|----------:|--------:|--------:|----------:|
-| Q20L70  |        135 | 401.66M | 2627085 |      9219 | 105.53M | 18397 |          0 |   0 | 0 |       107 | 296.13M | 2608688 | 1:29'05'' |
 | Q20L80  |        137 | 387.84M | 2498917 |      9643 | 105.43M | 17798 |          0 |   0 | 0 |       107 | 282.42M | 2481119 | 1:25'29'' |
 | Q20L90  |        140 | 367.93M | 2322890 |     10087 | 105.24M | 17085 |          0 |   0 | 0 |       108 | 262.69M | 2305805 | 1:22'07'' |
 | Q20L100 |        141 | 347.83M | 2153029 |     10355 | 104.98M | 16747 |          0 |   0 | 0 |       108 | 242.85M | 2136282 | 1:15'54'' |
-| Q25L70  |        139 | 358.32M | 2260702 |     10167 | 105.08M | 17010 |          0 |   0 | 0 |       106 | 253.24M | 2243692 | 1:00'14'' |
 | Q25L80  |        141 | 341.91M | 2108999 |     10329 | 104.95M | 16814 |          0 |   0 | 0 |       107 | 236.95M | 2092185 | 1:07'04'' |
 | Q25L90  |        144 | 320.24M | 1918340 |     10130 |  104.7M | 16918 |          0 |   0 | 0 |       107 | 215.55M | 1901422 | 1:00'35'' |
 | Q25L100 |        149 | 302.79M | 1769463 |      9817 | 104.41M | 17286 |          0 |   0 | 0 |       107 | 198.37M | 1752177 | 0:55'34'' |
-| Q30L70  |        149 | 288.37M | 1679588 |      8068 | 103.51M | 19669 |          0 |   0 | 0 |       104 | 184.86M | 1659919 | 0:44'25'' |
 | Q30L80  |        163 | 267.67M | 1482050 |      7745 |  103.1M | 20165 |          0 |   0 | 0 |       105 | 164.57M | 1461885 | 0:55'56'' |
 | Q30L90  |        193 | 244.24M | 1269314 |      7056 | 102.22M | 21349 |          0 |   0 | 0 |       106 | 142.02M | 1247965 | 0:53'02'' |
 | Q30L100 |        262 | 227.55M | 1121332 |      6335 | 101.11M | 22760 |          0 |   0 | 0 |       107 | 126.44M | 1098572 | 0:43'15'' |
@@ -3049,15 +3039,12 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
-    Q20L70/anchor/pe.anchor.fa \
     Q20L80/anchor/pe.anchor.fa \
     Q20L90/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
-    Q25L70/anchor/pe.anchor.fa \
     Q25L80/anchor/pe.anchor.fa \
     Q25L90/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q30L70/anchor/pe.anchor.fa \
     Q30L80/anchor/pe.anchor.fa \
     Q30L90/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
@@ -3086,21 +3073,18 @@ mv anchor.sort.png merge/
 rm -fr 9_qa
 quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
-    Q20L70/anchor/pe.anchor.fa \
     Q20L80/anchor/pe.anchor.fa \
     Q20L90/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
-    Q25L70/anchor/pe.anchor.fa \
     Q25L80/anchor/pe.anchor.fa \
     Q25L90/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q30L70/anchor/pe.anchor.fa \
     Q30L80/anchor/pe.anchor.fa \
     Q30L90/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L70,Q20L80,Q20L90,Q20L100,Q25L70,Q25L80,Q25L90,Q25L100,Q30L70,Q30L80,Q30L90,Q30L100,merge,paralogs" \
+    --label "Q20L80,Q20L90,Q20L100,Q25L80,Q25L90,Q25L100,Q30L80,Q30L90,Q30L100,merge,paralogs" \
     -o 9_qa
 
 ```
