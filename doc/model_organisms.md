@@ -1921,6 +1921,14 @@ find fasta -type f -name "*.subreads.fasta.gz" \
     | sort \
     | xargs zcat \
     | faops filter -l 0 stdin pacbio.fasta
+
+cd ~/data/anchr/n2
+head -n 740000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 1480000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
 ```
 
 ## Cele: combinations of different quality values and read lengths
@@ -2302,11 +2310,16 @@ canu \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=100.3m \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
+    
+canu \
+    -p n2 -d canu-raw-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=100.3m \
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
 
-faops n50 -S -C canu-raw-40x/n2.correctedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/n2.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/n2.trimmedReads.fasta.gz
 
 ```
 
