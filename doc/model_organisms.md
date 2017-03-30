@@ -2525,8 +2525,9 @@ quast --no-check --threads 24 \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/n2.contigs.fasta \
+    canu-raw-80x/n2.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
     -o 9_qa_contig
 
 ```
