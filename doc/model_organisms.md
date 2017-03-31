@@ -2707,21 +2707,29 @@ e04a7d96ba91ebb11772c019981ea9eb        SRR3405266
 a9bbee29c3d507760c4c33fbbe436fa6        SRR3405273
 EOF
 
+md5sum --check sra_md5.txt
+
 for sra in SRR34052{42,43,44,46,48,50,52,53,54,55,56,57,58,59,45,47,49,51,60,63,65,67,69,71,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,61,62,64,66,68,70,72,73}; do
     echo ${sra}
     fastq-dump ./${sra}
 done
 
-cat SRR61{1086,6966}_1.fastq > R1.fq
-cat SRR61{1086,6966}_2.fastq > R2.fq
+cat SRR34052{42,43,44,46,48,50,52,53,54,55,56,57,58,59,45,47,49,51,60,63,65,67,69,71,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,61,62,64,66,68,70,72,73}.fastq \
+    > pacbio.fq
 
 find . -name "*.fq" | parallel -j 2 pigz -p 8
 rm *.fastq
 
-cd ~/data/anchr/col_0
-cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
-```
+faops filter -l 0 pacbio.fq.gz pacbio.fasta
 
+cd ~/data/anchr/col_0
+head -n 2600000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 5200000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
 
 ## Atha: combinations of different quality values and read lengths
 
@@ -2804,7 +2812,7 @@ cat stat.md
 | Genome   | 23459830 |   119667750 |         7 |
 | Paralogs |     2007 |    16447809 |      8055 |
 | Illumina |      100 | 14948629000 | 149486290 |
-| PacBio   |          |             |           |
+| PacBio   |    44636 | 18768526777 |   5721958 |
 | scythe   |      100 | 14859828281 | 149486290 |
 | Q20L80   |      100 | 12829458794 | 129008212 |
 | Q20L90   |      100 | 12277500278 | 122999098 |
@@ -3087,5 +3095,154 @@ quast --no-check --threads 24 \
     1_genome/paralogs.fas \
     --label "Q20L80,Q20L90,Q20L100,Q25L80,Q25L90,Q25L100,Q30L80,Q30L90,Q30L100,merge,paralogs" \
     -o 9_qa
+
+```
+
+## Atha: 3GS
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+canu \
+    -p col_0 -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=119.7m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+    
+canu \
+    -p col_0 -d canu-raw-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=119.7m \
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+
+
+faops n50 -S -C canu-raw-40x/col_0.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/col_0.trimmedReads.fasta.gz
+
+```
+
+## Atha: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 50 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/col_0.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+faops n50 -S -C merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/col_0.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 50 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+faops n50 -S -C anchorLong/group/*.contig.fasta
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
+
+faops n50 -S -C anchorLong/contig.fasta
 
 ```
