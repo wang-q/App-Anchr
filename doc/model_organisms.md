@@ -1,6 +1,7 @@
 # Assemble genomes of model organisms by ANCHR
 
 [TOC levels=1-3]: # " "
+
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
@@ -40,6 +41,8 @@
     - [Atha: create anchors](#atha-create-anchors)
     - [Atha: results](#atha-results)
     - [Atha: merge anchors from different groups of reads](#atha-merge-anchors-from-different-groups-of-reads)
+    - [Atha: 3GS](#atha-3gs)
+    - [Atha: expand anchors](#atha-expand-anchors)
 
 
 # *Saccharomyces cerevisiae* S288c
@@ -3244,5 +3247,87 @@ cat \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
 
 faops n50 -S -C anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/col_0.contigs.fasta \
+    -d contigTrim \
+    -b 50 --len 1000 --idt 0.98 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1 --png
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 --all \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+faops n50 -S -C contigTrim/group/*.contig.fasta
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+faops n50 -S -C contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 24 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/col_0.contigs.fasta \
+    canu-raw-80x/col_0.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    -o 9_qa_contig
 
 ```
