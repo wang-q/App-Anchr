@@ -839,7 +839,7 @@ mv anchor.sort.png merge/
 
 # quast
 rm -fr 9_qa
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     Q20L100_6000000/anchor/pe.anchor.fa \
     Q20L110_6000000/anchor/pe.anchor.fa \
@@ -1096,7 +1096,7 @@ BASE_DIR=$HOME/data/anchr/s288c
 cd ${BASE_DIR}
 
 rm -fr 9_qa_contig
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/anchor.cover.fasta \
@@ -1588,7 +1588,7 @@ mv anchor.sort.png merge/
 
 # quast
 rm -fr 9_qa
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     Q20L80/anchor/pe.anchor.fa \
     Q20L90/anchor/pe.anchor.fa \
@@ -1823,7 +1823,7 @@ BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
 rm -fr 9_qa_contig
-quast --no-check --threads 24 \
+quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/anchor.cover.fasta \
