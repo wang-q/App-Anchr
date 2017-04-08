@@ -34,6 +34,8 @@ brew install homebrew/science/mummer        # mummer need gnuplot4
 brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
 
+brew install wang-q/tap/reaper              # tally for deduplication
+
 # canu requires gnuplot 5 while mummer requires gnuplot 4
 brew install canu
 
@@ -218,12 +220,24 @@ faops n50 -S -C pacbio.80x.fasta
 ```bash
 BASE_DIR=$HOME/data/anchr/e_coli
 
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
 # get the default adapter file
 # anchr trim --help
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 2 "
     scythe \
-        2_illumina/{}.fq.gz \
+        2_illumina/{}.uniq.fq.gz \
         -q sanger \
         -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
         --quiet \
