@@ -1,7 +1,6 @@
 # Assemble genomes of model organisms by ANCHR
 
 [TOC levels=1-3]: # " "
-
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
@@ -1585,7 +1584,7 @@ quast --no-check --threads 16 \
 * Clear QxxLxxx.
 
 ```bash
-BASE_DIR=$HOME/data/dna-seq/chara/iso_1
+BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
 rm -fr 2_illumina/Q{20,25,30}L*
