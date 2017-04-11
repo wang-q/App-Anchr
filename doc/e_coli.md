@@ -854,6 +854,47 @@ anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
 
 faops n50 -S -C merge/anchor.merge.fasta
 
+# merge anchor2 and others
+anchr contained \
+    Q20L100_1600000/anchor/pe.anchor2.fa \
+    Q20L110_1600000/anchor/pe.anchor2.fa \
+    Q20L120_1600000/anchor/pe.anchor2.fa \
+    Q20L130_1600000/anchor/pe.anchor2.fa \
+    Q20L140_1600000/anchor/pe.anchor2.fa \
+    Q20L150_1600000/anchor/pe.anchor2.fa \
+    Q25L100_2800000/anchor/pe.anchor2.fa \
+    Q25L110_2800000/anchor/pe.anchor2.fa \
+    Q25L120_2400000/anchor/pe.anchor2.fa \
+    Q25L130_2000000/anchor/pe.anchor2.fa \
+    Q25L140_1200000/anchor/pe.anchor2.fa \
+    Q25L150_1200000/anchor/pe.anchor2.fa \
+    Q30L100_2400000/anchor/pe.anchor2.fa \
+    Q30L110_2000000/anchor/pe.anchor2.fa \
+    Q30L120_1200000/anchor/pe.anchor2.fa \
+    Q20L100_1600000/anchor/pe.others.fa \
+    Q20L110_1600000/anchor/pe.others.fa \
+    Q20L120_1600000/anchor/pe.others.fa \
+    Q20L130_1600000/anchor/pe.others.fa \
+    Q20L140_1600000/anchor/pe.others.fa \
+    Q20L150_1600000/anchor/pe.others.fa \
+    Q25L100_2800000/anchor/pe.others.fa \
+    Q25L110_2800000/anchor/pe.others.fa \
+    Q25L120_2400000/anchor/pe.others.fa \
+    Q25L130_2000000/anchor/pe.others.fa \
+    Q25L140_1200000/anchor/pe.others.fa \
+    Q25L150_1200000/anchor/pe.others.fa \
+    Q30L100_2400000/anchor/pe.others.fa \
+    Q30L110_2000000/anchor/pe.others.fa \
+    Q30L120_1200000/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
+
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
@@ -886,8 +927,9 @@ quast --no-check --threads 24 \
     Q30L110_2000000/anchor/pe.anchor.fa \
     Q30L120_1200000/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,merge,paralogs" \
+    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,merge,others,paralogs" \
     -o 9_qa
 ```
 
@@ -1135,3 +1177,41 @@ quast --no-check --threads 16 \
 
 ```
 
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 4641652 | 4641652 |   1 |
+| Paralogs     |    1934 |  195673 | 106 |
+| anchor.merge |   23668 | 4559138 | 328 |
+| others.merge |    1008 |   57863 |  56 |
+| anchor.cover |   23668 | 4555277 | 325 |
+| anchorLong   |   95547 | 4519161 | 101 |
+| contigTrim   | 4594609 | 4635986 |   2 |
