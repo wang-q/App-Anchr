@@ -677,6 +677,53 @@ anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
 
 faops n50 -S -C merge/anchor.merge.fasta
 
+# merge anchor2 and others
+anchr contained \
+    Q20L100_6000000/anchor/pe.anchor2.fa \
+    Q20L110_6000000/anchor/pe.anchor2.fa \
+    Q20L120_6000000/anchor/pe.anchor2.fa \
+    Q20L130_6000000/anchor/pe.anchor2.fa \
+    Q20L140_6000000/anchor/pe.anchor2.fa \
+    Q20L150_6000000/anchor/pe.anchor2.fa \
+    Q25L100_6000000/anchor/pe.anchor2.fa \
+    Q25L110_6000000/anchor/pe.anchor2.fa \
+    Q25L120_6000000/anchor/pe.anchor2.fa \
+    Q25L130_6000000/anchor/pe.anchor2.fa \
+    Q25L140_6000000/anchor/pe.anchor2.fa \
+    Q25L150_6000000/anchor/pe.anchor2.fa \
+    Q30L100_6000000/anchor/pe.anchor2.fa \
+    Q30L110_6000000/anchor/pe.anchor2.fa \
+    Q30L120_6000000/anchor/pe.anchor2.fa \
+    Q30L130_6000000/anchor/pe.anchor2.fa \
+    Q30L140_6000000/anchor/pe.anchor2.fa \
+    Q30L150_6000000/anchor/pe.anchor2.fa \
+    Q20L100_6000000/anchor/pe.others.fa \
+    Q20L110_6000000/anchor/pe.others.fa \
+    Q20L120_6000000/anchor/pe.others.fa \
+    Q20L130_6000000/anchor/pe.others.fa \
+    Q20L140_6000000/anchor/pe.others.fa \
+    Q20L150_6000000/anchor/pe.others.fa \
+    Q25L100_6000000/anchor/pe.others.fa \
+    Q25L110_6000000/anchor/pe.others.fa \
+    Q25L120_6000000/anchor/pe.others.fa \
+    Q25L130_6000000/anchor/pe.others.fa \
+    Q25L140_6000000/anchor/pe.others.fa \
+    Q25L150_6000000/anchor/pe.others.fa \
+    Q30L100_6000000/anchor/pe.others.fa \
+    Q30L110_6000000/anchor/pe.others.fa \
+    Q30L120_6000000/anchor/pe.others.fa \
+    Q30L130_6000000/anchor/pe.others.fa \
+    Q30L140_6000000/anchor/pe.others.fa \
+    Q30L150_6000000/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
+
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
@@ -712,9 +759,11 @@ quast --no-check --threads 16 \
     Q30L140_6000000/anchor/pe.anchor.fa \
     Q30L150_6000000/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,paralogs" \
+    --label "Q20L100,Q20L110,Q20L120,Q20L130,Q20L140,Q20L150,Q25L100,Q25L110,Q25L120,Q25L130,Q25L140,Q25L150,Q30L100,Q30L110,Q30L120,Q30L130,Q30L140,Q30L150,merge,others,paralogs" \
     -o 9_qa
+
 ```
 
 ## Scer: 3GS
