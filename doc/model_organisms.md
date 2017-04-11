@@ -918,14 +918,10 @@ cat anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-faops n50 -S -C anchorLong/group/*.contig.fasta
-
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
-
-faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
@@ -980,13 +976,10 @@ cat group/groups.txt \
     '
 popd
 
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
 cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
@@ -1736,14 +1729,10 @@ cat anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-faops n50 -S -C anchorLong/group/*.contig.fasta
-
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
-
-faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
@@ -1799,13 +1788,10 @@ cat group/groups.txt \
     '
 popd
 
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
 cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
@@ -1828,6 +1814,45 @@ quast --no-check --threads 16 \
     -o 9_qa_contig
 
 ```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/iso_1
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |      N50 |       Sum |     # |
+|:-------------|---------:|----------:|------:|
+| Genome       | 25286936 | 137567477 |     8 |
+| Paralogs     |     4031 |  13665900 |  4492 |
+| anchor.merge |    15168 | 116892943 | 14045 |
+| others.merge |     1005 |    227615 |   226 |
+| anchor.cover |    14906 | 114934945 | 13913 |
+| anchorLong   |    46861 | 112592740 |  5137 |
+| contigTrim   |  1524607 | 121878786 |   471 |
 
 # *Caenorhabditis elegans* N2
 

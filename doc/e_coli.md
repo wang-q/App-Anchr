@@ -1083,14 +1083,10 @@ cat anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-faops n50 -S -C anchorLong/group/*.contig.fasta
-
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
-
-faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
@@ -1146,13 +1142,10 @@ cat group/groups.txt \
     '
 popd
 
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
 cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
