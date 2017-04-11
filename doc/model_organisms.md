@@ -1011,6 +1011,45 @@ quast --no-check --threads 16 \
 
 ```
 
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/s288c
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |    N50 |      Sum |    # |
+|:-------------|-------:|---------:|-----:|
+| Genome       | 924431 | 12157105 |   17 |
+| Paralogs     |   3851 |  1059148 |  366 |
+| anchor.merge |  18000 | 11400204 | 1088 |
+| others.merge |   1016 |    27362 |   26 |
+| anchor.cover |  18000 | 11343071 | 1061 |
+| anchorLong   |  42533 | 11227195 |  391 |
+| contigTrim   | 539698 | 11574003 |   37 |
+
 # *Drosophila melanogaster* iso-1
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Drosophila_melanogaster/Info/Index)
