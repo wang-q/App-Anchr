@@ -1849,9 +1849,9 @@ cat stat3.md
 | Paralogs     |     4031 |  13665900 |  4492 |
 | anchor.merge |    15168 | 116892943 | 14045 |
 | others.merge |     1005 |    227615 |   226 |
-| anchor.cover |    14906 | 114934945 | 13913 |
-| anchorLong   |    46861 | 112592740 |  5137 |
-| contigTrim   |  1524607 | 121878786 |   471 |
+| anchor.cover |    15089 | 114942142 | 13840 |
+| anchorLong   |    46963 | 112614778 |  5123 |
+| contigTrim   |  1806806 | 121709471 |   465 |
 
 # *Caenorhabditis elegans* N2
 
