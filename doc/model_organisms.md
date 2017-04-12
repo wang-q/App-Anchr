@@ -674,8 +674,6 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-faops n50 -S -C merge/anchor.merge.fasta
-
 # merge anchor2 and others
 anchr contained \
     Q20L100_6000000/anchor/pe.anchor2.fa \
@@ -720,8 +718,6 @@ anchr contained \
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
 
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -818,7 +814,6 @@ anchr cover \
     merge/anchor.merge.fasta \
     canu-raw-40x/s288c.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
-faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -1517,8 +1512,6 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-faops n50 -S -C merge/anchor.merge.fasta
-
 # merge anchor2 and others
 anchr contained \
     Q20L80/anchor/pe.anchor2.fa \
@@ -1545,8 +1538,6 @@ anchr contained \
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
 
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -1629,7 +1620,6 @@ anchr cover \
     merge/anchor.merge.fasta \
     canu-raw-40x/iso_1.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
-faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -2299,8 +2289,6 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-faops n50 -S -C merge/anchor.merge.fasta
-
 # merge anchor2 and others
 anchr contained \
     Q20L80/anchor/pe.anchor2.fa \
@@ -2327,8 +2315,6 @@ anchr contained \
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
 
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -2380,7 +2366,6 @@ canu \
     genomeSize=100.3m \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
-
 faops n50 -S -C canu-raw-40x/n2.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/n2.trimmedReads.fasta.gz
 
@@ -2401,7 +2386,6 @@ anchr cover \
     merge/anchor.merge.fasta \
     canu-raw-40x/n2.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
-faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -3157,8 +3141,6 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-faops n50 -S -C merge/anchor.merge.fasta
-
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
@@ -3209,7 +3191,6 @@ canu \
     genomeSize=119.7m \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
-
 faops n50 -S -C canu-raw-40x/col_0.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/col_0.trimmedReads.fasta.gz
 
@@ -3230,7 +3211,6 @@ anchr cover \
     merge/anchor.merge.fasta \
     canu-raw-40x/col_0.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
-faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -3329,14 +3309,10 @@ cat anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-faops n50 -S -C anchorLong/group/*.contig.fasta
-
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
-
-faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
@@ -3391,13 +3367,10 @@ cat group/groups.txt \
     '
 popd
 
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
 cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
