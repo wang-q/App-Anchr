@@ -1,6 +1,7 @@
 # Assemble genomes of model organisms by ANCHR
 
 [TOC levels=1-3]: # " "
+
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
@@ -2346,6 +2347,16 @@ quast --no-check --threads 16 \
     --label "Q20L80,Q20L90,Q20L100,Q25L80,Q25L90,Q25L100,Q30L80,Q30L90,Q30L100,merge,paralogs" \
     -o 9_qa
 
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
 ```
 
 ## Cele: 3GS
