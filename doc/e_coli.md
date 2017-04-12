@@ -832,18 +832,40 @@ cd ${BASE_DIR}
 mkdir -p merge
 anchr contained \
     Q20L100_1600000/anchor/pe.anchor.fa \
+    Q20L100_2000000/anchor/pe.anchor.fa \
+    Q20L100_2400000/anchor/pe.anchor.fa \
     Q20L110_1600000/anchor/pe.anchor.fa \
+    Q20L110_2000000/anchor/pe.anchor.fa \
+    Q20L110_2400000/anchor/pe.anchor.fa \
     Q20L120_1600000/anchor/pe.anchor.fa \
+    Q20L120_2000000/anchor/pe.anchor.fa \
+    Q20L120_2400000/anchor/pe.anchor.fa \
     Q20L130_1600000/anchor/pe.anchor.fa \
+    Q20L130_2000000/anchor/pe.anchor.fa \
+    Q20L130_2400000/anchor/pe.anchor.fa \
     Q20L140_1600000/anchor/pe.anchor.fa \
+    Q20L140_2000000/anchor/pe.anchor.fa \
+    Q20L140_2400000/anchor/pe.anchor.fa \
     Q20L150_1600000/anchor/pe.anchor.fa \
-    Q25L100_2800000/anchor/pe.anchor.fa \
-    Q25L110_2800000/anchor/pe.anchor.fa \
+    Q20L150_2000000/anchor/pe.anchor.fa \
+    Q20L150_2400000/anchor/pe.anchor.fa \
+    Q25L100_1600000/anchor/pe.anchor.fa \
+    Q25L100_2000000/anchor/pe.anchor.fa \
+    Q25L100_2400000/anchor/pe.anchor.fa \
+    Q25L110_1600000/anchor/pe.anchor.fa \
+    Q25L110_2000000/anchor/pe.anchor.fa \
+    Q25L110_2400000/anchor/pe.anchor.fa \
+    Q25L120_1600000/anchor/pe.anchor.fa \
+    Q25L120_2000000/anchor/pe.anchor.fa \
     Q25L120_2400000/anchor/pe.anchor.fa \
+    Q25L130_1600000/anchor/pe.anchor.fa \
     Q25L130_2000000/anchor/pe.anchor.fa \
     Q25L140_1200000/anchor/pe.anchor.fa \
     Q25L150_1200000/anchor/pe.anchor.fa \
+    Q30L100_1600000/anchor/pe.anchor.fa \
+    Q30L100_2000000/anchor/pe.anchor.fa \
     Q30L100_2400000/anchor/pe.anchor.fa \
+    Q30L110_1600000/anchor/pe.anchor.fa \
     Q30L110_2000000/anchor/pe.anchor.fa \
     Q30L120_1200000/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
@@ -852,8 +874,6 @@ anchr contained \
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-faops n50 -S -C merge/anchor.merge.fasta
 
 # merge anchor2 and others
 anchr contained \
@@ -893,8 +913,6 @@ anchr contained \
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
 
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -985,7 +1003,6 @@ anchr cover \
     merge/anchor.merge.fasta \
     canu-raw-40x/ecoli.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
-faops n50 -S -C merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -1204,8 +1221,8 @@ cat stat3.md
 |:-------------|--------:|--------:|----:|
 | Genome       | 4641652 | 4641652 |   1 |
 | Paralogs     |    1934 |  195673 | 106 |
-| anchor.merge |   23668 | 4559138 | 328 |
+| anchor.merge |   27850 | 4557206 | 283 |
 | others.merge |    1008 |   57863 |  56 |
-| anchor.cover |   23668 | 4555277 | 325 |
-| anchorLong   |   95547 | 4519161 | 101 |
-| contigTrim   | 4594609 | 4635986 |   2 |
+| anchor.cover |   27850 | 4551754 | 279 |
+| anchorLong   |   95547 | 4525513 |  95 |
+| contigTrim   | 4641600 | 4641600 |   1 |
