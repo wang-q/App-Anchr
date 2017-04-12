@@ -1961,12 +1961,22 @@ faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 ```bash
 BASE_DIR=$HOME/data/anchr/n2
 
-# get the default adapter file
-# anchr trim --help
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 2 "
     scythe \
-        2_illumina/{}.fq.gz \
+        2_illumina/{}.uniq.fq.gz \
         -q sanger \
         -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
         --quiet \
@@ -2013,6 +2023,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
@@ -2240,27 +2252,27 @@ cat stat2.md
 
 | Name    |  SumFq | CovFq | AvgRead | Kmer | SumFa | Discard% |   RealG |   EstG | Est/Real |   SumKU | SumSR |   RunTime |
 |:--------|-------:|------:|--------:|-----:|------:|---------:|--------:|-------:|---------:|--------:|------:|----------:|
-| Q20L80  | 10.38G | 103.5 |      99 |   71 | 6.28G |  39.478% | 100.29M | 98.92M |     0.99 | 115.01M |     0 | 4:54'43'' |
-| Q20L90  |  10.2G | 101.7 |      99 |   71 | 6.17G |  39.478% | 100.29M | 98.85M |     0.99 | 114.67M |     0 | 4:55'12'' |
-| Q20L100 |  9.93G |  99.0 |     100 |   71 | 6.01G |  39.466% | 100.29M | 98.77M |     0.98 | 114.31M |     0 | 4:54'11'' |
-| Q25L80  |  8.95G |  89.3 |      99 |   71 | 5.56G |  37.921% | 100.29M | 98.62M |     0.98 | 113.74M |     0 | 3:05'23'' |
-| Q25L90  |  8.79G |  87.6 |      99 |   71 | 5.45G |  38.021% | 100.29M | 98.56M |     0.98 | 113.55M |     0 | 2:29'06'' |
-| Q25L100 |  8.58G |  85.6 |     100 |   71 | 5.31G |  38.091% | 100.29M |  98.5M |     0.98 | 113.36M |     0 | 2:31'54'' |
-| Q30L80  |  4.53G |  45.2 |      99 |   71 | 3.29G |  27.383% | 100.29M | 97.42M |     0.97 | 113.02M |     0 | 0:36'46'' |
-| Q30L90  |   4.4G |  43.8 |      99 |   71 | 3.17G |  27.820% | 100.29M | 97.28M |     0.97 | 112.84M |     0 | 0:28'19'' |
-| Q30L100 |  4.26G |  42.5 |     100 |   71 | 3.06G |  28.115% | 100.29M | 97.14M |     0.97 | 112.75M |     0 | 0:27'34'' |
+| Q20L80  | 10.22G | 101.9 |      99 |   71 | 6.19G |  39.415% | 100.29M | 98.88M |     0.99 | 114.91M |     0 | 1:28'36'' |
+| Q20L90  | 10.04G | 100.1 |      99 |   71 | 6.08G |  39.414% | 100.29M | 98.82M |     0.99 | 114.58M |     0 | 1:22'42'' |
+| Q20L100 |  9.77G |  97.5 |     100 |   71 | 5.92G |  39.402% | 100.29M | 98.74M |     0.98 | 114.23M |     0 | 1:27'15'' |
+| Q25L80  |  8.82G |  88.0 |      99 |   71 | 5.48G |  37.849% | 100.29M | 98.59M |     0.98 | 113.66M |     0 | 1:10'40'' |
+| Q25L90  |  8.66G |  86.3 |      99 |   71 | 5.37G |  37.949% | 100.29M | 98.53M |     0.98 | 113.47M |     0 | 1:05'15'' |
+| Q25L100 |  8.46G |  84.3 |     100 |   71 | 5.24G |  38.019% | 100.29M | 98.47M |     0.98 | 113.28M |     0 | 1:03'37'' |
+| Q30L80  |  4.49G |  44.7 |      99 |   71 | 3.26G |  27.327% | 100.29M |  97.4M |     0.97 | 112.96M |     0 | 0:30'56'' |
+| Q30L90  |  4.35G |  43.4 |      99 |   71 | 3.14G |  27.762% | 100.29M | 97.26M |     0.97 | 112.77M |     0 | 0:31'50'' |
+| Q30L100 |  4.22G |  42.0 |     100 |   71 | 3.03G |  28.057% | 100.29M | 97.12M |     0.97 | 112.68M |     0 | 0:30'08'' |
 
 | Name    | N50SRclean |     Sum |      # | N50Anchor |    Sum |     # | N50Anchor2 |   Sum | # | N50Others |    Sum |      # |   RunTime |
 |:--------|-----------:|--------:|-------:|----------:|-------:|------:|-----------:|------:|--:|----------:|-------:|-------:|----------:|
-| Q20L80  |       6111 | 115.01M | 197836 |      8863 | 90.58M | 17020 |          0 |     0 | 0 |       141 | 24.43M | 180816 | 0:50'56'' |
-| Q20L90  |       6301 | 114.67M | 194172 |      9087 | 90.57M | 16791 |          0 |     0 | 0 |       141 |  24.1M | 177381 | 0:53'49'' |
-| Q20L100 |       6450 | 114.31M | 190397 |      9349 |  90.5M | 16537 |          0 |     0 | 0 |       141 | 23.81M | 173860 | 0:52'13'' |
-| Q25L80  |       6766 | 113.74M | 185763 |      9869 | 90.08M | 16071 |          0 |     0 | 0 |       141 | 23.66M | 169692 | 0:24'46'' |
-| Q25L90  |       6874 | 113.55M | 184068 |     10058 | 89.96M | 15960 |       1073 | 1.07K | 1 |       141 | 23.59M | 168107 | 0:33'04'' |
-| Q25L100 |       6874 | 113.36M | 182581 |     10064 | 89.82M | 15932 |       1073 | 1.07K | 1 |       141 | 23.54M | 166648 | 0:30'58'' |
-| Q30L80  |       3337 | 113.02M | 210193 |      5616 | 81.62M | 21134 |          0 |     0 | 0 |       203 |  31.4M | 189059 | 0:49'49'' |
-| Q30L90  |       3148 | 112.84M | 211688 |      5349 | 80.79M | 21580 |          0 |     0 | 0 |       210 | 32.06M | 190108 | 0:33'40'' |
-| Q30L100 |       2916 | 112.75M | 214570 |      5040 | 79.72M | 22141 |          0 |     0 | 0 |       218 | 33.03M | 192429 | 0:27'31'' |
+| Q20L80  |       6147 | 114.91M | 196835 |      8890 | 90.58M | 16942 |          0 |     0 | 0 |       141 | 24.34M | 179893 | 0:56'08'' |
+| Q20L90  |       6328 | 114.58M | 193181 |      9194 | 90.58M | 16739 |          0 |     0 | 0 |       141 |    24M | 176442 | 0:55'05'' |
+| Q20L100 |       6443 | 114.23M | 189520 |      9352 | 90.51M | 16555 |          0 |     0 | 0 |       141 | 23.71M | 172965 | 0:53'17'' |
+| Q25L80  |       6823 | 113.66M | 184909 |      9891 | 90.09M | 16035 |          0 |     0 | 0 |       141 | 23.57M | 168874 | 0:30'55'' |
+| Q25L90  |       6847 | 113.47M | 183244 |      9987 | 89.97M | 15946 |       1073 | 1.07K | 1 |       141 | 23.49M | 167297 | 0:25'00'' |
+| Q25L100 |       6922 | 113.28M | 181797 |     10086 | 89.83M | 15898 |       1073 | 1.07K | 1 |       141 | 23.45M | 165898 | 0:20'50'' |
+| Q30L80  |       3350 | 112.96M | 209556 |      5643 | 81.64M | 21085 |          0 |     0 | 0 |       204 | 31.32M | 188471 | 0:17'03'' |
+| Q30L90  |       3159 | 112.77M | 210993 |      5359 | 80.82M | 21536 |          0 |     0 | 0 |       210 | 31.95M | 189457 | 0:17'24'' |
+| Q30L100 |       2941 | 112.68M | 213884 |      5081 | 79.76M | 22085 |          0 |     0 | 0 |       218 | 32.92M | 191799 | 0:16'56'' |
 
 ## Cele: merge anchors from different groups of reads
 
@@ -2288,6 +2300,35 @@ anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 faops n50 -S -C merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L80/anchor/pe.anchor2.fa \
+    Q20L90/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q25L80/anchor/pe.anchor2.fa \
+    Q25L90/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q30L80/anchor/pe.anchor2.fa \
+    Q30L90/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q20L80/anchor/pe.others.fa \
+    Q20L90/anchor/pe.others.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q25L80/anchor/pe.others.fa \
+    Q25L90/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q30L80/anchor/pe.others.fa \
+    Q30L90/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    
+faops n50 -S -C merge/others.merge.fasta
 
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -2459,14 +2500,10 @@ cat anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-faops n50 -S -C anchorLong/group/*.contig.fasta
-
 cat \
    anchorLong/group/non_grouped.fasta\
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 2000 stdin anchorLong/contig.fasta
-
-faops n50 -S -C anchorLong/contig.fasta
 
 ```
 
@@ -2521,13 +2558,10 @@ cat group/groups.txt \
     '
 popd
 
-faops n50 -S -C contigTrim/group/*.contig.fasta
-
 cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
-faops n50 -S -C contigTrim/contig.fasta
 
 ```
 
@@ -2551,6 +2585,45 @@ quast --no-check --threads 16 \
     -o 9_qa_contig
 
 ```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/n2
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |      N50 |       Sum |     # |
+|:-------------|---------:|----------:|------:|
+| Genome       | 17493829 | 100286401 |     7 |
+| Paralogs     |     2013 |   5313653 |  2637 |
+| anchor.merge |    12279 |  91350626 | 14333 |
+| others.merge |          |           |       |
+| anchor.cover |    11899 |  89851676 | 14244 |
+| anchorLong   |    20445 |  85720529 |  7279 |
+| contigTrim   |   899344 |  98640587 |   431 |
 
 # *Arabidopsis thaliana* Col-0
 
