@@ -650,23 +650,46 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
+    Q20L100_4000000/anchor/pe.anchor.fa \
     Q20L100_6000000/anchor/pe.anchor.fa \
+    Q20L100_8000000/anchor/pe.anchor.fa \
+    Q20L110_4000000/anchor/pe.anchor.fa \
     Q20L110_6000000/anchor/pe.anchor.fa \
+    Q20L110_8000000/anchor/pe.anchor.fa \
+    Q20L120_4000000/anchor/pe.anchor.fa \
     Q20L120_6000000/anchor/pe.anchor.fa \
+    Q20L120_8000000/anchor/pe.anchor.fa \
+    Q20L130_4000000/anchor/pe.anchor.fa \
     Q20L130_6000000/anchor/pe.anchor.fa \
+    Q20L130_8000000/anchor/pe.anchor.fa \
+    Q20L140_4000000/anchor/pe.anchor.fa \
     Q20L140_6000000/anchor/pe.anchor.fa \
+    Q20L140_8000000/anchor/pe.anchor.fa \
+    Q20L150_4000000/anchor/pe.anchor.fa \
     Q20L150_6000000/anchor/pe.anchor.fa \
+    Q25L100_4000000/anchor/pe.anchor.fa \
     Q25L100_6000000/anchor/pe.anchor.fa \
+    Q25L110_4000000/anchor/pe.anchor.fa \
     Q25L110_6000000/anchor/pe.anchor.fa \
+    Q25L120_4000000/anchor/pe.anchor.fa \
     Q25L120_6000000/anchor/pe.anchor.fa \
+    Q25L130_4000000/anchor/pe.anchor.fa \
     Q25L130_6000000/anchor/pe.anchor.fa \
+    Q25L140_4000000/anchor/pe.anchor.fa \
     Q25L140_6000000/anchor/pe.anchor.fa \
+    Q25L150_4000000/anchor/pe.anchor.fa \
     Q25L150_6000000/anchor/pe.anchor.fa \
+    Q30L100_4000000/anchor/pe.anchor.fa \
     Q30L100_6000000/anchor/pe.anchor.fa \
+    Q30L110_4000000/anchor/pe.anchor.fa \
     Q30L110_6000000/anchor/pe.anchor.fa \
+    Q30L120_4000000/anchor/pe.anchor.fa \
     Q30L120_6000000/anchor/pe.anchor.fa \
+    Q30L130_4000000/anchor/pe.anchor.fa \
     Q30L130_6000000/anchor/pe.anchor.fa \
+    Q30L140_4000000/anchor/pe.anchor.fa \
     Q30L140_6000000/anchor/pe.anchor.fa \
+    Q30L150_4000000/anchor/pe.anchor.fa \
     Q30L150_6000000/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -1028,15 +1051,15 @@ printf "| %s | %s | %s | %s |\n" \
 cat stat3.md
 ```
 
-| Name         |    N50 |      Sum |    # |
-|:-------------|-------:|---------:|-----:|
-| Genome       | 924431 | 12157105 |   17 |
-| Paralogs     |   3851 |  1059148 |  366 |
-| anchor.merge |  18000 | 11400204 | 1088 |
-| others.merge |   1016 |    27362 |   26 |
-| anchor.cover |  18000 | 11343071 | 1061 |
-| anchorLong   |  42533 | 11227195 |  391 |
-| contigTrim   | 539698 | 11574003 |   37 |
+| Name         |    N50 |      Sum |   # |
+|:-------------|-------:|---------:|----:|
+| Genome       | 924431 | 12157105 |  17 |
+| Paralogs     |   3851 |  1059148 | 366 |
+| anchor.merge |  21082 | 11416401 | 932 |
+| others.merge |   1016 |    27362 |  26 |
+| anchor.cover |  21082 | 11352556 | 909 |
+| anchorLong   |  49295 | 11246261 | 350 |
+| contigTrim   | 539702 | 11568437 |  37 |
 
 # *Drosophila melanogaster* iso-1
 
@@ -1993,6 +2016,24 @@ parallel --no-run-if-empty -j 4 "
         | bash
     " ::: 20 25 30 ::: 80 90 100
 
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}O
+    cd 2_illumina/Q{1}L{2}O
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.fq.gz ../R2.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
+
 ```
 
 * Stats
@@ -2018,6 +2059,16 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}O"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
 
 for qual in 20 25 30; do
     for len in 80 90 100; do
@@ -2056,16 +2107,26 @@ BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/Q20L80:Q20L80"
-        "2_illumina/Q20L90:Q20L90"
-        "2_illumina/Q20L100:Q20L100"
-        "2_illumina/Q25L80:Q25L80"
-        "2_illumina/Q25L90:Q25L90"
-        "2_illumina/Q25L100:Q25L100"
-        "2_illumina/Q30L80:Q30L80"
-        "2_illumina/Q30L90:Q30L90"
-        "2_illumina/Q30L100:Q30L100"
-        )
+ARRAY=( 
+    "2_illumina/Q20L80O:Q20L80O"
+    "2_illumina/Q20L90O:Q20L90O"
+    "2_illumina/Q20L100O:Q20L100O"
+    "2_illumina/Q25L80O:Q25L80O"
+    "2_illumina/Q25L90O:Q25L90O"
+    "2_illumina/Q25L100O:Q25L100O"
+    "2_illumina/Q30L80O:Q30L80O"
+    "2_illumina/Q30L90O:Q30L90O"
+    "2_illumina/Q30L100O:Q30L100O"
+    "2_illumina/Q20L80:Q20L80"
+    "2_illumina/Q20L90:Q20L90"
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q25L80:Q25L80"
+    "2_illumina/Q25L90:Q25L90"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q30L80:Q30L80"
+    "2_illumina/Q30L90:Q30L90"
+    "2_illumina/Q30L100:Q30L100"
+)
 
 for group in "${ARRAY[@]}" ; do
     
@@ -2097,6 +2158,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -2151,6 +2215,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -2189,6 +2256,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -2221,6 +2291,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -2274,6 +2347,15 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
+    Q20L80O/anchor/pe.anchor.fa \
+    Q20L90O/anchor/pe.anchor.fa \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q25L80O/anchor/pe.anchor.fa \
+    Q25L90O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q30L80O/anchor/pe.anchor.fa \
+    Q30L90O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
     Q20L80/anchor/pe.anchor.fa \
     Q20L90/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
@@ -2333,18 +2415,15 @@ mv anchor.sort.png merge/
 rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
-    Q20L80/anchor/pe.anchor.fa \
-    Q20L90/anchor/pe.anchor.fa \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
-    Q25L80/anchor/pe.anchor.fa \
-    Q25L90/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q30L80/anchor/pe.anchor.fa \
-    Q30L90/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L80,Q20L90,Q20L100,Q25L80,Q25L90,Q25L100,Q30L80,Q30L90,Q30L100,merge,paralogs" \
+    --label "Q20L100O,Q25L100O,Q30L100O,Q20L100,Q25L100,Q25L100,Q30L100,merge,paralogs" \
     -o 9_qa
 
 ```
@@ -2614,11 +2693,11 @@ cat stat3.md
 |:-------------|---------:|----------:|------:|
 | Genome       | 17493829 | 100286401 |     7 |
 | Paralogs     |     2013 |   5313653 |  2637 |
-| anchor.merge |    12279 |  91350626 | 14333 |
-| others.merge |          |           |       |
-| anchor.cover |    11899 |  89851676 | 14244 |
-| anchorLong   |    20445 |  85720529 |  7279 |
-| contigTrim   |   899344 |  98640587 |   431 |
+| anchor.merge |    12300 |  91350822 | 14317 |
+| others.merge |     1008 |    435339 |   431 |
+| anchor.cover |    11869 |  89803084 | 14271 |
+| anchorLong   |    20216 |  85613598 |  7341 |
+| contigTrim   |   948597 |  98533579 |   429 |
 
 # *Arabidopsis thaliana* Col-0
 
