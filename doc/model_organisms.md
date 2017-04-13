@@ -2933,12 +2933,22 @@ faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 ```bash
 BASE_DIR=$HOME/data/anchr/col_0
 
-# get the default adapter file
-# anchr trim --help
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 2 "
     scythe \
-        2_illumina/{}.fq.gz \
+        2_illumina/{}.uniq.fq.gz \
         -q sanger \
         -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
         --quiet \
@@ -2960,6 +2970,24 @@ parallel --no-run-if-empty -j 4 "
         --noscythe \
         -q {1} -l {2} \
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}O
+    cd 2_illumina/Q{1}L{2}O
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.fq.gz ../R2.fq.gz \
         -o stdout \
         | bash
     " ::: 20 25 30 ::: 80 90 100
@@ -3025,16 +3053,26 @@ BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
 # works on bash 3
-ARRAY=( "2_illumina/Q20L80:Q20L80"
-        "2_illumina/Q20L90:Q20L90"
-        "2_illumina/Q20L100:Q20L100"
-        "2_illumina/Q25L80:Q25L80"
-        "2_illumina/Q25L90:Q25L90"
-        "2_illumina/Q25L100:Q25L100"
-        "2_illumina/Q30L80:Q30L80"
-        "2_illumina/Q30L90:Q30L90"
-        "2_illumina/Q30L100:Q30L100"
-        )
+ARRAY=( 
+    "2_illumina/Q20L80O:Q20L80O"
+    "2_illumina/Q20L90O:Q20L90O"
+    "2_illumina/Q20L100O:Q20L100O"
+    "2_illumina/Q25L80O:Q25L80O"
+    "2_illumina/Q25L90O:Q25L90O"
+    "2_illumina/Q25L100O:Q25L100O"
+    "2_illumina/Q30L80O:Q30L80O"
+    "2_illumina/Q30L90O:Q30L90O"
+    "2_illumina/Q30L100O:Q30L100O"
+    "2_illumina/Q20L80:Q20L80"
+    "2_illumina/Q20L90:Q20L90"
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q25L80:Q25L80"
+    "2_illumina/Q25L90:Q25L90"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q30L80:Q30L80"
+    "2_illumina/Q30L90:Q30L90"
+    "2_illumina/Q30L100:Q30L100"
+)
 
 for group in "${ARRAY[@]}" ; do
     
@@ -3054,6 +3092,7 @@ for group in "${ARRAY[@]}" ; do
     ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
 
 done
+
 ```
 
 ## Atha: generate super-reads
@@ -3065,6 +3104,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -3119,6 +3161,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -3157,6 +3202,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -3189,6 +3237,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
+        Q20L80O Q20L90O Q20L100O
+        Q25L80O Q25L90O Q25L100O
+        Q30L80O Q30L90O Q30L100O
         Q20L80 Q20L90 Q20L100
         Q25L80 Q25L90 Q25L100
         Q30L80 Q30L90 Q30L100
@@ -3242,6 +3293,15 @@ cd ${BASE_DIR}
 # merge anchors
 mkdir -p merge
 anchr contained \
+    Q20L80O/anchor/pe.anchor.fa \
+    Q20L90O/anchor/pe.anchor.fa \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q25L80O/anchor/pe.anchor.fa \
+    Q25L90O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q30L80O/anchor/pe.anchor.fa \
+    Q30L90O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
     Q20L80/anchor/pe.anchor.fa \
     Q20L90/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
@@ -3258,6 +3318,33 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
+# merge anchor2 and others
+anchr contained \
+    Q20L80/anchor/pe.anchor2.fa \
+    Q20L90/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q25L80/anchor/pe.anchor2.fa \
+    Q25L90/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q30L80/anchor/pe.anchor2.fa \
+    Q30L90/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q20L80/anchor/pe.others.fa \
+    Q20L90/anchor/pe.others.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q25L80/anchor/pe.others.fa \
+    Q25L90/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q30L80/anchor/pe.others.fa \
+    Q30L90/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
 # sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
@@ -3271,21 +3358,18 @@ rm *.gp
 mv anchor.sort.png merge/
 
 # quast
-rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
-    Q20L80/anchor/pe.anchor.fa \
-    Q20L90/anchor/pe.anchor.fa \
+    Q20L100O/anchor/pe.anchor.fa \
+    Q25L100O/anchor/pe.anchor.fa \
+    Q30L100O/anchor/pe.anchor.fa \
     Q20L100/anchor/pe.anchor.fa \
-    Q25L80/anchor/pe.anchor.fa \
-    Q25L90/anchor/pe.anchor.fa \
     Q25L100/anchor/pe.anchor.fa \
-    Q30L80/anchor/pe.anchor.fa \
-    Q30L90/anchor/pe.anchor.fa \
     Q30L100/anchor/pe.anchor.fa \
     merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L80,Q20L90,Q20L100,Q25L80,Q25L90,Q25L100,Q30L80,Q30L90,Q30L100,merge,paralogs" \
+    --label "Q20L100O,Q25L100O,Q30L100O,Q20L100,Q25L100,Q30L100,merge,others,paralogs" \
     -o 9_qa
 
 ```
@@ -3511,3 +3595,42 @@ quast --no-check --threads 16 \
     -o 9_qa_contig
 
 ```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/col_0
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |      N50 |       Sum |     # |
+|:-------------|---------:|----------:|------:|
+| Genome       | 23459830 | 119667750 |     7 |
+| Paralogs     |     2007 |  16447809 |  8055 |
+| anchor.merge |    12449 | 106226308 | 15232 |
+| others.merge |          |           |       |
+| anchor.cover |     9847 |  97282885 | 16164 |
+| anchorLong   |    15602 |  92930190 |  9035 |
+| contigTrim   |    48846 |  99530076 |  3845 |
