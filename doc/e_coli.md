@@ -1,7 +1,6 @@
 # Tuning parameters for the dataset of *E. coli*
 
 [TOC level=1-3]: # " "
-
 - [Tuning parameters for the dataset of *E. coli*](#tuning-parameters-for-the-dataset-of-e-coli)
 - [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
     - [Extra external executables](#extra-external-executables)
@@ -29,22 +28,22 @@ brew install aria2 curl                     # downloading tools
 brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
 
 brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
-brew reinstall --build-from-source homebrew/versions/gnuplot4 
+brew reinstall --build-from-source gnuplot@4
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
+brew install python
+pip install matplotlib
 brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
-
-brew install wang-q/tap/reaper              # tally for deduplication
 
 # canu requires gnuplot 5 while mummer requires gnuplot 4
 brew install canu
 
-brew unlink gnuplot4
+brew unlink gnuplot@4
 brew install gnuplot
 brew unlink gnuplot
 
-brew link gnuplot4
+brew link gnuplot@4
 ```
 
 ## PacBio specific tools
