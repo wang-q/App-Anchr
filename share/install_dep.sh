@@ -18,12 +18,12 @@ do
     check_install ${package}
 done
 
-for package in bbtools bedtools fastqc jellyfish picard-tools poa samtools sickle;
+for package in bbtools bedtools fastqc jellyfish picard-tools poa samtools seqtk sickle;
 do
     check_install homebrew/science/${package};
 done
 
-for package in faops jrunlist scythe sparsemem dazz_db@20161112 daligner@20170203 quorum@1.1.1;
+for package in faops jrunlist reaper scythe sparsemem dazz_db@20161112 daligner@20170203 quorum@1.1.1;
 do
     check_install wang-q/tap/${package};
 done
