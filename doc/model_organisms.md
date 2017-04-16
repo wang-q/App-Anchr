@@ -1,7 +1,6 @@
 # Assemble genomes of model organisms by ANCHR
 
 [TOC levels=1-3]: # " "
-
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [Scer: download](#scer-download)
@@ -1205,7 +1204,7 @@ tally \
     -p 2_illumina/R2.uniq.fq
 
 parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
+    pigz -p 4 2_illumina/{}.uniq.fq
     " ::: R1 R2
 
 cd ${BASE_DIR}
@@ -2017,7 +2016,7 @@ find . -type f -name "*.fasta" | parallel -j 2 pigz -p 8
 cd ~/data/anchr/n2/3_pacbio
 find fasta -type f -name "*.subreads.fasta.gz" \
     | sort \
-    | xargs zcat \
+    | xargs gzip -d -c \
     | faops filter -l 0 stdin pacbio.fasta
 
 cd ~/data/anchr/n2
