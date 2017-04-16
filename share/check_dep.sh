@@ -17,6 +17,12 @@ hash fastqc 2>/dev/null || {
     exit 1;
 }
 
+hash tally 2>/dev/null || {
+    echo >&2 "tally is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install wang-q/tap/reaper";
+    exit 1;
+}
+
 hash sickle 2>/dev/null || {
     echo >&2 "sickle is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/sickle";
