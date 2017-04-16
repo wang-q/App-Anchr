@@ -441,7 +441,7 @@ perl -e '
         }
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -476,7 +476,7 @@ perl -e '
         }
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -1312,6 +1312,15 @@ cat stat.md
 | PacBio   |    41580 |  5620710497 |    630193 |
 | uniq     |      101 | 17595866904 | 174216504 |
 | scythe   |      101 | 17137458539 | 174216504 |
+| Q20L80O  |      101 | 15659512079 | 155519576 |
+| Q20L90O  |      101 | 15332017368 | 151973402 |
+| Q20L100O |      101 | 14843503055 | 146968274 |
+| Q25L80O  |      101 | 14423874150 | 143363196 |
+| Q25L90O  |      101 | 14038086186 | 139184282 |
+| Q25L100O |      101 | 13363364931 | 132313286 |
+| Q30L80O  |      101 | 11932169895 | 118925678 |
+| Q30L90O  |      101 | 11367769818 | 112806096 |
+| Q30L100O |      101 | 10541551918 | 104378132 |
 | Q20L80   |      101 | 15130877350 | 150361714 |
 | Q20L90   |      101 | 14804113792 | 146804390 |
 | Q20L100  |      101 | 14202454005 | 140621110 |
@@ -1489,7 +1498,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -1524,7 +1533,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -2331,7 +2340,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -2366,7 +2375,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -3287,7 +3296,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 4 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -3322,7 +3331,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
