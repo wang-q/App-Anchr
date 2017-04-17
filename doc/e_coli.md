@@ -43,7 +43,7 @@ brew unlink gnuplot@4
 brew install gnuplot
 brew unlink gnuplot
 
-brew link gnuplot@4
+brew link gnuplot@4 --force
 ```
 
 ## PacBio specific tools

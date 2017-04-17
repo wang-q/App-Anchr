@@ -1456,7 +1456,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 4 "
+    | parallel --no-run-if-empty -j 3 "
         echo '==> Group {}'
 
         if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
