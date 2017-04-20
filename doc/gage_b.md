@@ -14,6 +14,34 @@
 
 ## Rsph: download
 
+* Reference genome
+
+    * Taxid: [272943](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272943)
+    * RefSeq assembly accession: [GCF_000012905.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+
+```bash
+mkdir -p ~/data/anchr/Rsph/1_genome
+cd ~/data/anchr/Rsph/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/012/905/GCF_000012905.2_ASM1290v2/GCF_000012905.2_ASM1290v2_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_007493.2${TAB}1
+NC_007494.2${TAB}2
+NC_009007.1${TAB}A
+NC_007488.2${TAB}B
+NC_007489.1${TAB}C
+NC_007490.2${TAB}D
+NC_009008.1${TAB}E
+EOF
+
+faops replace GCF_000012905.2_ASM1290v2_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/Rsph/Rsph.multi.fas paralogs.fas
+
+```
+
 * Illumina
 
     SRX160386, SRR522246
@@ -44,6 +72,32 @@ ln -s SRR522246_2.fastq.gz R2.fq.gz
 # *Mycobacterium abscessus* 6G-0125-R
 
 ## Mabs: download
+
+* Reference genome
+
+    * *Mycobacterium abscessus* ATCC 19977
+        * Taxid: [561007](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
+        * RefSeq assembly accession: [GCF_000069185.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+    * *Mycobacterium abscessus* 6G-0125-R
+        * RefSeq assembly accession: GCF_000270985.1
+
+```bash
+mkdir -p ~/data/anchr/Mabs/1_genome
+cd ~/data/anchr/Mabs/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/069/185/GCF_000069185.1_ASM6918v1/GCF_000069185.1_ASM6918v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_010397.1${TAB}1
+NC_010394.1${TAB}unnamed
+EOF
+
+faops replace GCF_000069185.1_ASM6918v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/Mabs/Mabs.multi.fas paralogs.fas
+
+```
 
 * Illumina
 
@@ -76,6 +130,32 @@ ln -s SRR768269_2.fastq.gz R2.fq.gz
 # *Vibrio cholerae* CP1032(5)
 
 ## Vcho: download
+
+* Reference genome
+
+    * *Vibrio cholerae* O1 biovar El Tor str. N16961
+        * Taxid: [243277](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
+        * RefSeq assembly accession: [GCF_000006745.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+    * *Vibrio cholerae* CP1032(5)
+        * RefSeq assembly accession: GCF_000279305.1
+
+```bash
+mkdir -p ~/data/anchr/Vcho/1_genome
+cd ~/data/anchr/Vcho/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_002505.1${TAB}I
+NC_002506.1${TAB}II
+EOF
+
+faops replace GCF_000006745.1_ASM674v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/Vcho/Vcho.multi.fas paralogs.fas
+
+```
 
 * Illumina
 
