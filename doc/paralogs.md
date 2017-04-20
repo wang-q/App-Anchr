@@ -52,9 +52,6 @@ perl ~/Scripts/egaz/self_batch.pl \
     --norm \
     --name model \
     -t e_coli \
-    -q Rsph \
-    -q Mabs \
-    -q Vcho \
     -q s288c \
     -q iso_1 \
     -q n2 \
@@ -65,6 +62,27 @@ bash model/1_real_chr.sh
 bash model/3_self_cmd.sh
 bash model/4_proc_cmd.sh
 bash model/5_circos_cmd.sh
+```
+
+```bash
+cd ~/data/anchr/paralogs
+
+perl ~/Scripts/egaz/self_batch.pl \
+    --working_dir ~/data/anchr/paralogs \
+    --seq_dir ~/data/anchr/paralogs/genomes \
+    -c ~/data/anchr/paralogs/taxon.csv \
+    --length 1000 \
+    --name gage \
+    -t Rsph \
+    -q Mabs \
+    -q Vcho \
+    --parallel 16
+
+bash gage/1_real_chr.sh
+bash gage/2_file_rm.sh
+bash gage/3_self_cmd.sh
+bash gage/4_proc_cmd.sh
+bash gage/5_circos_cmd.sh
 ```
 
 All done.
