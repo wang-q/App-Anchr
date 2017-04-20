@@ -16,6 +16,9 @@ cd ~/data/anchr/paralogs
 
 perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    511145 --name 511145=e_coli \
+    --id    272943 --name 272943=Rsph   \
+    --id    561007 --name 1001740=Mabs  \
+    --id    243277 --name 991923=Vcho   \
     --id    559292 --name 559292=s288c  \
     --id    7227   --name 7227=iso_1    \
     --id    6239   --name 6239=n2       \
@@ -30,7 +33,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli s288c iso_1 n2 col_0; do
+for strain in e_coli Rsph Mabs Vcho s288c iso_1 n2 col_0; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -49,6 +52,9 @@ perl ~/Scripts/egaz/self_batch.pl \
     --norm \
     --name model \
     -t e_coli \
+    -q Rsph \
+    -q Mabs \
+    -q Vcho \
     -q s288c \
     -q iso_1 \
     -q n2 \
