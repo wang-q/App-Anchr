@@ -44,7 +44,7 @@ EOF
 
 faops replace GCF_000012905.2_ASM1290v2_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/Rsph/Rsph.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Rsph/Rsph.multi.fas paralogs.fas
 
 ```
 
@@ -73,6 +73,21 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s SRR522246_1.fastq.gz R1.fq.gz
 ln -s SRR522246_2.fastq.gz R2.fq.gz
+```
+
+* GAGE-B assemblies
+
+```bash
+mkdir -p ~/data/anchr/Rsph/8_competitor
+cd ~/data/anchr/Rsph/8_competitor
+
+aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/R_sphaeroides_MiSeq.tar.gz
+
+tar xvfz R_sphaeroides_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz soap_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz spades_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz velvet_ctg.fasta
+
 ```
 
 ## Rsph: combinations of different quality values and read lengths
@@ -190,23 +205,14 @@ cd ${BASE_DIR}
 # works on bash 3
 ARRAY=(
     "2_illumina/Q20L100:Q20L100"
-    "2_illumina/Q20L110:Q20L110"
     "2_illumina/Q20L120:Q20L120"
-    "2_illumina/Q20L130:Q20L130"
     "2_illumina/Q20L140:Q20L140"
-    "2_illumina/Q20L150:Q20L150"
     "2_illumina/Q25L100:Q25L100"
-    "2_illumina/Q25L110:Q25L110"
     "2_illumina/Q25L120:Q25L120"
-    "2_illumina/Q25L130:Q25L130"
     "2_illumina/Q25L140:Q25L140"
-    "2_illumina/Q25L150:Q25L150"
     "2_illumina/Q30L100:Q30L100"
-    "2_illumina/Q30L110:Q30L110"
     "2_illumina/Q30L120:Q30L120"
-    "2_illumina/Q30L130:Q30L130"
     "2_illumina/Q30L140:Q30L140"
-    "2_illumina/Q30L150:Q30L150"
 )
 
 for group in "${ARRAY[@]}" ; do
@@ -322,7 +328,7 @@ perl -e '
 BASE_DIR=$HOME/data/anchr/Rsph
 cd ${BASE_DIR}
 
-REAL_G=100000000
+REAL_G=4602977
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
@@ -371,7 +377,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 16 "
+    | parallel -k --no-run-if-empty -j 8 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -381,6 +387,30 @@ perl -e '
 
 cat stat2.md
 ```
+
+| Name    |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
+|:--------|--------:|------:|--------:|-----:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
+| Q20L100 |   1.29G | 279.7 |     145 |   41 |   1.15G |  10.833% |  4.6M | 4.73M |     1.03 | 5.48M |     0 | 0:22'03'' |
+| Q20L120 | 909.47M | 197.6 |     153 |   45 | 806.21M |  11.354% |  4.6M | 4.62M |     1.00 | 5.02M |     0 | 0:15'20'' |
+| Q20L140 | 426.01M |  92.6 |     163 |   49 | 372.31M |  12.605% |  4.6M | 4.44M |     0.97 | 4.62M |     0 | 0:07'40'' |
+| Q25L100 | 952.17M | 206.9 |     137 |   39 |  908.2M |   4.618% |  4.6M | 4.56M |     0.99 | 4.68M |     0 | 0:17'32'' |
+| Q25L120 | 544.77M | 118.4 |     146 |   43 | 518.14M |   4.888% |  4.6M | 4.51M |     0.98 | 4.61M |     0 | 0:10'47'' |
+| Q25L140 | 165.14M |  35.9 |     158 |   49 | 155.77M |   5.670% |  4.6M | 3.94M |     0.86 | 4.11M |     0 | 0:03'48'' |
+| Q30L100 | 458.55M |  99.6 |     125 |   37 | 447.45M |   2.421% |  4.6M | 4.51M |     0.98 | 4.61M |     0 | 0:06'44'' |
+| Q30L120 | 140.86M |  30.6 |     136 |   41 | 136.89M |   2.815% |  4.6M | 4.05M |     0.88 | 4.22M |     0 | 0:02'45'' |
+| Q30L140 |  15.15M |   3.3 |     152 |   71 |  13.21M |  12.783% |  4.6M | 1.23M |     0.27 | 1.37M |     0 | 0:00'50'' |
+
+| Name    | N50SRclean |   Sum |     # | N50Anchor |     Sum |    # | N50Anchor2 |    Sum |  # | N50Others |     Sum |     # |   RunTime |
+|:--------|-----------:|------:|------:|----------:|--------:|-----:|-----------:|-------:|---:|----------:|--------:|------:|----------:|
+| Q20L100 |       1330 | 5.48M | 17757 |      2250 |    3.2M | 1525 |          0 |      0 |  0 |       252 |   2.28M | 16232 | 0:05'32'' |
+| Q20L120 |       3068 | 5.02M |  8630 |      3972 |   3.95M | 1261 |       1195 |   1.2K |  1 |       227 |   1.07M |  7368 | 0:04'42'' |
+| Q20L140 |       4138 | 4.62M |  3906 |      4782 |   4.01M | 1136 |       1257 |  9.78K |  8 |       404 | 602.26K |  2762 | 0:03'30'' |
+| Q25L100 |       9779 | 4.68M |  3114 |     10320 |   4.36M |  635 |          0 |      0 |  0 |       182 | 318.08K |  2479 | 0:04'08'' |
+| Q25L120 |       6836 | 4.61M |  2520 |      7338 |   4.32M |  828 |          0 |      0 |  0 |       307 | 297.38K |  1692 | 0:03'28'' |
+| Q25L140 |       1821 | 4.11M |  4522 |      2663 |    2.9M | 1207 |       1379 |  49.7K | 37 |       559 |   1.16M |  3278 | 0:01'25'' |
+| Q30L100 |       7166 | 4.61M |  2776 |      7451 |   4.32M |  832 |          0 |      0 |  0 |       274 |  295.1K |  1944 | 0:03'49'' |
+| Q30L120 |       1980 | 4.22M |  4933 |      2717 |   3.06M | 1260 |       1291 | 28.68K | 22 |       528 |   1.13M |  3651 | 0:01'56'' |
+| Q30L140 |        337 | 1.37M |  4344 |      2154 | 214.55K |  103 |       1216 | 10.93K |  9 |       280 |   1.14M |  4232 | 0:00'48'' |
 
 ## Rsph: merge anchors
 
@@ -406,8 +436,6 @@ anchr contained \
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-faops n50 -S -C merge/anchor.merge.fasta
 
 # merge anchor2 and others
 anchr contained \
@@ -435,18 +463,31 @@ anchr contained \
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
 anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-    
-faops n50 -S -C merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
 
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
-    Q20L100/anchor/pe.anchor.fa \
-    Q25L100/anchor/pe.anchor.fa \
-    Q30L100/anchor/pe.anchor.fa \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "Q20L100,Q25L100,Q30L100,merge,others" \
+    1_genome/paralogs.fas \
+    --label "abyss,soap,spades,velvet,merge,others,paralogs" \
     -o 9_qa
 
 ```
@@ -473,12 +514,23 @@ printf "| %s | %s | %s | %s |\n" \
 printf "|:--|--:|--:|--:|\n" >> stat3.md
 
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 
 cat stat3.md
 ```
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 3188524 | 4602977 |   7 |
+| Paralogs     |    2337 |  147155 |  66 |
+| anchor.merge |   20406 | 4550050 | 375 |
+| others.merge |    1106 |  173689 | 149 |
 
 # *Mycobacterium abscessus* 6G-0125-R
 
