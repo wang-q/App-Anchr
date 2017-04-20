@@ -335,23 +335,25 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-ARRAY=( "2_illumina:original:4000000"
-        "2_illumina/Q20L100:Q20L100:4000000"
-        "2_illumina/Q20L110:Q20L110:4000000"
-        "2_illumina/Q20L120:Q20L120:4000000"
-        "2_illumina/Q20L130:Q20L130:3200000"
-        "2_illumina/Q20L140:Q20L140:2400000"
-        "2_illumina/Q20L150:Q20L150:2400000"
-        "2_illumina/Q25L100:Q25L100:4000000"
-        "2_illumina/Q25L110:Q25L110:3200000"
-        "2_illumina/Q25L120:Q25L120:2800000"
-        "2_illumina/Q25L130:Q25L130:2000000"
-        "2_illumina/Q25L140:Q25L140:1200000"
-        "2_illumina/Q25L150:Q25L150:1200000"
-        "2_illumina/Q30L100:Q30L100:2400000"
-        "2_illumina/Q30L110:Q30L110:2000000"
-        "2_illumina/Q30L120:Q30L120:1200000"
-        "2_illumina/Q30L130:Q30L130:400000")
+ARRAY=( 
+    "2_illumina:original:4000000"
+    "2_illumina/Q20L100:Q20L100:4000000"
+    "2_illumina/Q20L110:Q20L110:4000000"
+    "2_illumina/Q20L120:Q20L120:4000000"
+    "2_illumina/Q20L130:Q20L130:3200000"
+    "2_illumina/Q20L140:Q20L140:2400000"
+    "2_illumina/Q20L150:Q20L150:2400000"
+    "2_illumina/Q25L100:Q25L100:4000000"
+    "2_illumina/Q25L110:Q25L110:3200000"
+    "2_illumina/Q25L120:Q25L120:2800000"
+    "2_illumina/Q25L130:Q25L130:2000000"
+    "2_illumina/Q25L140:Q25L140:1200000"
+    "2_illumina/Q25L150:Q25L150:1200000"
+    "2_illumina/Q30L100:Q30L100:2400000"
+    "2_illumina/Q30L110:Q30L110:2000000"
+    "2_illumina/Q30L120:Q30L120:1200000"
+    "2_illumina/Q30L130:Q30L130:400000"
+)
 
 for group in "${ARRAY[@]}" ; do
     
