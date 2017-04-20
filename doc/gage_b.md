@@ -12,6 +12,12 @@
     - [Rsph: merge anchors](#rsph-merge-anchors)
 - [*Mycobacterium abscessus* 6G-0125-R](#mycobacterium-abscessus-6g-0125-r)
     - [Mabs: download](#mabs-download)
+    - [Mabs: combinations of different quality values and read lengths](#mabs-combinations-of-different-quality-values-and-read-lengths)
+    - [Mabs: down sampling](#mabs-down-sampling)
+    - [Mabs: generate super-reads](#mabs-generate-super-reads)
+    - [Mabs: create anchors](#mabs-create-anchors)
+    - [Mabs: results](#mabs-results)
+    - [Mabs: merge anchors](#mabs-merge-anchors)
 - [*Vibrio cholerae* CP1032(5)](#vibrio-cholerae-cp10325)
     - [Vcho: download](#vcho-download)
 
@@ -558,7 +564,7 @@ EOF
 
 faops replace GCF_000069185.1_ASM6918v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/Mabs/Mabs.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Mabs/Mabs.multi.fas paralogs.fas
 
 ```
 
@@ -587,6 +593,432 @@ find . -name "*.fastq" | parallel -j 2 pigz -p 8
 
 ln -s SRR768269_1.fastq.gz R1.fq.gz
 ln -s SRR768269_2.fastq.gz R2.fq.gz
+```
+
+* GAGE-B assemblies
+
+```bash
+mkdir -p ~/data/anchr/Mabs/8_competitor
+cd ~/data/anchr/Mabs/8_competitor
+
+aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/M_abscessus_MiSeq.tar.gz
+
+tar xvfz M_abscessus_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz soap_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz spades_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz velvet_ctg.fasta
+
+```
+
+## Mabs: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 100, 120, and 140
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.uniq.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 6 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 100 120 140
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 100 120 140; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
+```
+
+| Name     |     N50 |        Sum |       # |
+|:---------|--------:|-----------:|--------:|
+| Genome   | 5067172 |    5090491 |       2 |
+| Paralogs |    1580 |      83364 |      53 |
+| Illumina |     251 | 2194026140 | 8741140 |
+| PacBio   |         |            |         |
+| uniq     |     251 | 2191831898 | 8732398 |
+| scythe   |     194 | 1580945973 | 8732398 |
+| Q20L100  |     182 | 1116526651 | 6381972 |
+| Q20L120  |     184 | 1022588693 | 5688032 |
+| Q20L140  |     188 |  880254750 | 4716680 |
+| Q25L100  |     177 |  926043102 | 5426906 |
+| Q25L120  |     180 |  824293152 | 4678024 |
+| Q25L140  |     184 |  680187695 | 3704988 |
+| Q30L100  |     170 |  663451172 | 4046430 |
+| Q30L120  |     174 |  556341951 | 3257720 |
+| Q30L140  |     179 |  421267610 | 2353262 |
+
+## Mabs: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+# works on bash 3
+ARRAY=(
+    "2_illumina/Q20L100:Q20L100"
+    "2_illumina/Q20L120:Q20L120"
+    "2_illumina/Q20L140:Q20L140"
+    "2_illumina/Q25L100:Q25L100"
+    "2_illumina/Q25L120:Q25L120"
+    "2_illumina/Q25L140:Q25L140"
+    "2_illumina/Q30L100:Q30L100"
+    "2_illumina/Q30L120:Q30L120"
+    "2_illumina/Q30L140:Q30L140"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
+
+    echo "==> Group ${GROUP_ID}"
+    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
+    mkdir -p ${DIR_COUNT}
+    
+    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
+        continue     
+    fi
+    
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+
+done
+```
+
+## Mabs: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## Mabs: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## Mabs: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+REAL_G=5090491
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 4 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L100 Q20L120 Q20L140
+        Q25L100 Q25L120 Q25L140
+        Q30L100 Q30L120 Q30L140
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+## Mabs: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L100/anchor/pe.anchor.fa \
+    Q20L120/anchor/pe.anchor.fa \
+    Q20L140/anchor/pe.anchor.fa \
+    Q25L100/anchor/pe.anchor.fa \
+    Q25L120/anchor/pe.anchor.fa \
+    Q25L140/anchor/pe.anchor.fa \
+    Q30L100/anchor/pe.anchor.fa \
+    Q30L120/anchor/pe.anchor.fa \
+    Q30L140/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L100/anchor/pe.anchor2.fa \
+    Q20L120/anchor/pe.anchor2.fa \
+    Q20L140/anchor/pe.anchor2.fa \
+    Q25L100/anchor/pe.anchor2.fa \
+    Q25L120/anchor/pe.anchor2.fa \
+    Q25L140/anchor/pe.anchor2.fa \
+    Q30L100/anchor/pe.anchor2.fa \
+    Q30L120/anchor/pe.anchor2.fa \
+    Q30L140/anchor/pe.anchor2.fa \
+    Q20L100/anchor/pe.others.fa \
+    Q20L120/anchor/pe.others.fa \
+    Q20L140/anchor/pe.others.fa \
+    Q25L100/anchor/pe.others.fa \
+    Q25L120/anchor/pe.others.fa \
+    Q25L140/anchor/pe.others.fa \
+    Q30L100/anchor/pe.others.fa \
+    Q30L120/anchor/pe.others.fa \
+    Q30L140/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Mabs
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+
+cat stat3.md
 ```
 
 # *Vibrio cholerae* CP1032(5)
