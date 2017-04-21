@@ -20,6 +20,12 @@
     - [Mabs: merge anchors](#mabs-merge-anchors)
 - [*Vibrio cholerae* CP1032(5)](#vibrio-cholerae-cp10325)
     - [Vcho: download](#vcho-download)
+    - [Vcho: combinations of different quality values and read lengths](#vcho-combinations-of-different-quality-values-and-read-lengths)
+    - [Vcho: down sampling](#vcho-down-sampling)
+    - [Vcho: generate super-reads](#vcho-generate-super-reads)
+    - [Vcho: create anchors](#vcho-create-anchors)
+    - [Vcho: results](#vcho-results)
+    - [Vcho: merge anchors](#vcho-merge-anchors)
 
 
 # *Rhodobacter sphaeroides* 2.4.1
