@@ -737,9 +737,7 @@ ARRAY=(
     "2_illumina/Q20L140:Q20L140:1000000"
     "2_illumina/Q25L100:Q25L100:2500000"
     "2_illumina/Q25L120:Q25L120:1500000"
-    "2_illumina/Q25L140:Q25L140:500000"
     "2_illumina/Q30L100:Q30L100:1500000"
-    "2_illumina/Q30L120:Q30L120:500000"
 )
 
 for group in "${ARRAY[@]}" ; do
