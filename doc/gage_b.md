@@ -1905,34 +1905,33 @@ ARRAY=(
 
 for group in "${ARRAY[@]}" ; do
     
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    GROUP_DIR=$(perl -e "@p = split q{:}, q{${group}}; print \$p[0];")
+    GROUP_ID=$( perl -e "@p = split q{:}, q{${group}}; print \$p[1];")
+    GROUP_MAX=$(perl -e "@p = split q{:}, q{${group}}; print \$p[2];")
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    for count in $(perl -e 'print 500000 * $_, q{ } for 1 .. 5');
-    do
-        if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue;
+    parallel --no-run-if-empty -j 3 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
         fi
+
+        echo '    Group ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
         
-        echo "==> Group ${GROUP_ID}_${count}"
-        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
-        mkdir -p ${DIR_COUNT}
-        
-        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue;
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
         fi
-        
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R1.fq.gz
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R2.fq.gz
-    done
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    " ::: $(perl -e 'print 500000 * $_, q{ } for 1 .. 5')
 
 done
+
 ```
 
 ## Vcho: generate super-reads
