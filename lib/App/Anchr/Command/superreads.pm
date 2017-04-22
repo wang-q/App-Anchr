@@ -127,21 +127,26 @@ echo '[% opt.prefix %] [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.
 
 rename_filter_fastq \
     '[% opt.prefix %]' \
-    <(exec expand_fastq '[% args.0 %]' | awk '{if(length($0>200)) print substr($0,1,200); else print $0;}') \
-    <(exec expand_fastq '[% args.1 %]' | awk '{if(length($0>200)) print substr($0,1,200); else print $0;}') \
+    <(exec expand_fastq '[% args.0 %]' ) \
+    <(exec expand_fastq '[% args.1 %]' ) \
     > '[% opt.prefix %].renamed.fastq'
 
 #----------------------------#
 # Stats of PE and counting kmer
 #----------------------------#
-head -q -n 40000 [% opt.prefix %].renamed.fastq | grep --text -v '^+' | grep --text -v '^@' > pe_data.tmp
-export PE_AVG_READ_LENGTH=`awk '{if(length($1)>31){n+=length($1);m++;}}END{print int(n/m)}' pe_data.tmp`
+head -n 80000 [% opt.prefix %].renamed.fastq > pe_data.tmp
+export PE_AVG_READ_LENGTH=$(
+    head -n 40000 pe_data.tmp \
+    | grep --text -v '^+' \
+    | grep --text -v '^@' \
+    | awk '{if(length($1)>31){n+=length($1);m++;}}END{print int(n/m)}'
+)
 save PE_AVG_READ_LENGTH
 echo "Average PE read length $PE_AVG_READ_LENGTH"
 
 [% IF opt.kmer == 'auto' -%]
-KMER=$( head -n 80000 [% opt.prefix %].renamed.fastq \
-    | tail -n 40000 \
+KMER=$(
+    tail -n 40000 pe_data.tmp \
     | perl -e '
         my @lines;
         while ( my $line = <STDIN> ) {
@@ -190,8 +195,8 @@ echo "You set kmer size of $KMER for the graph"
 #----------------------------#
 # Jellyfish
 #----------------------------#
-MIN_Q_CHAR=$( cat [% opt.prefix %].renamed.fastq \
-    | head -n 40000 \
+MIN_Q_CHAR=$(
+    head -n 40000 pe_data.tmp \
     | awk 'BEGIN{flag=0}{if($0 ~ /^\+/){flag=1}else if(flag==1){print $0;flag=0}}' \
     | perl -ne '
         BEGIN { $q0_char = "@"; }
@@ -215,7 +220,7 @@ JF_SIZE=$( ls -l *.fastq \
 save JF_SIZE
 perl -e '
     if(int('$JF_SIZE') > [% opt.jf %]) {
-        print "WARNING: JF_SIZE set too low, increasing JF_SIZE to at least '$JF_SIZE', this automatic increase may be not enough!\n";
+        print "WARNING: JF_SIZE set too low, increasing JF_SIZE to at least '$JF_SIZE'.\n";
     }
     '
 
