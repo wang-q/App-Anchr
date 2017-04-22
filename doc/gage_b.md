@@ -103,7 +103,7 @@ BASE_DIR=$HOME/data/anchr/Bcer
 
 cd ${BASE_DIR}
 tally \
-    --pair-by-offset --with-quality --nozip \
+    --pair-by-offset --with-quality --nozip --unsorted \
     -i 2_illumina/R1.fq.gz \
     -j 2_illumina/R2.fq.gz \
     -o 2_illumina/R1.uniq.fq \
@@ -619,7 +619,7 @@ BASE_DIR=$HOME/data/anchr/Rsph
 
 cd ${BASE_DIR}
 tally \
-    --pair-by-offset --with-quality --nozip \
+    --pair-by-offset --with-quality --nozip --unsorted \
     -i 2_illumina/R1.fq.gz \
     -j 2_illumina/R2.fq.gz \
     -o 2_illumina/R1.uniq.fq \
@@ -1182,7 +1182,7 @@ BASE_DIR=$HOME/data/anchr/Mabs
 
 cd ${BASE_DIR}
 tally \
-    --pair-by-offset --with-quality --nozip \
+    --pair-by-offset --with-quality --nozip --unsorted \
     -i 2_illumina/R1.fq.gz \
     -j 2_illumina/R2.fq.gz \
     -o 2_illumina/R1.uniq.fq \
@@ -1776,7 +1776,7 @@ BASE_DIR=$HOME/data/anchr/Vcho
 
 cd ${BASE_DIR}
 tally \
-    --pair-by-offset --with-quality --nozip \
+    --pair-by-offset --with-quality --nozip --unsorted \
     -i 2_illumina/R1.fq.gz \
     -j 2_illumina/R2.fq.gz \
     -o 2_illumina/R1.uniq.fq \
