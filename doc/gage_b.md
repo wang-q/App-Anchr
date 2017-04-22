@@ -2,6 +2,14 @@
 
 [TOC levels=1-3]: # " "
 - [Assemble three genomes from GAGE-B data sets by ANCHR](#assemble-three-genomes-from-gage-b-data-sets-by-anchr)
+- [*Bacillus cereus* ATCC 10987](#bacillus-cereus-atcc-10987)
+    - [Bcer: download](#bcer-download)
+    - [Bcer: combinations of different quality values and read lengths](#bcer-combinations-of-different-quality-values-and-read-lengths)
+    - [Bcer: down sampling](#bcer-down-sampling)
+    - [Bcer: generate super-reads](#bcer-generate-super-reads)
+    - [Bcer: create anchors](#bcer-create-anchors)
+    - [Bcer: results](#bcer-results)
+    - [Bcer: merge anchors](#bcer-merge-anchors)
 - [*Rhodobacter sphaeroides* 2.4.1](#rhodobacter-sphaeroides-241)
     - [Rsph: download](#rsph-download)
     - [Rsph: combinations of different quality values and read lengths](#rsph-combinations-of-different-quality-values-and-read-lengths)
@@ -27,6 +35,7 @@
     - [Vcho: results](#vcho-results)
     - [Vcho: merge anchors](#vcho-merge-anchors)
 
+
 # *Bacillus cereus* ATCC 10987
 
 ## Bcer: download
@@ -34,7 +43,8 @@
 * Reference genome
 
     * Taxid: [222523](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=222523)
-    * RefSeq assembly accession: [GCF_000008005.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_assembly_report.txt)
+    * RefSeq assembly accession:
+      [GCF_000008005.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_assembly_report.txt)
 
 ```bash
 mkdir -p ~/data/anchr/Bcer/1_genome
@@ -205,7 +215,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/Bcer
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=(
     "2_illumina/Q20L100:Q20L100"
     "2_illumina/Q20L120:Q20L120"
@@ -393,27 +402,27 @@ cat stat2.md
 
 | Name    |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
 |:--------|--------:|------:|--------:|-----:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
-| Q20L100 | 393.34M |  72.4 |     191 |  127 | 290.45M |  26.158% | 5.43M | 5.35M |     0.98 | 5.48M |     0 | 0:04'00'' |
-| Q20L120 | 379.81M |  69.9 |     193 |  127 | 280.58M |  26.127% | 5.43M | 5.34M |     0.98 | 5.47M |     0 | 0:04'04'' |
-| Q20L140 | 363.98M |  67.0 |     196 |  127 | 269.09M |  26.070% | 5.43M | 5.34M |     0.98 | 5.46M |     0 | 0:03'43'' |
-| Q25L100 | 360.85M |  66.4 |     190 |  127 | 278.57M |  22.802% | 5.43M | 5.34M |     0.98 | 5.43M |     0 | 0:03'59'' |
-| Q25L120 | 346.62M |  63.8 |     192 |  127 | 267.17M |  22.921% | 5.43M | 5.34M |     0.98 | 5.43M |     0 | 0:03'33'' |
-| Q25L140 | 329.43M |  60.6 |     195 |  127 | 253.34M |  23.097% | 5.43M | 5.34M |     0.98 | 5.43M |     0 | 0:03'25'' |
-| Q30L100 | 310.66M |  57.2 |     187 |  127 | 250.44M |  19.386% | 5.43M | 5.34M |     0.98 | 5.42M |     0 | 0:03'26'' |
-| Q30L120 | 295.47M |  54.4 |     190 |  127 | 237.38M |  19.660% | 5.43M | 5.33M |     0.98 | 5.43M |     0 | 0:03'06'' |
-| Q30L140 |  275.6M |  50.7 |     193 |  127 | 220.27M |  20.077% | 5.43M | 5.33M |     0.98 | 5.43M |     0 | 0:03'11'' |
+| Q20L100 | 393.34M |  72.4 |     230 |  127 | 334.79M |  14.884% | 5.43M | 5.35M |     0.98 | 5.55M |     0 | 0:05'07'' |
+| Q20L120 | 379.81M |  69.9 |     233 |  127 | 323.97M |  14.702% | 5.43M | 5.35M |     0.98 | 5.54M |     0 | 0:05'08'' |
+| Q20L140 | 363.98M |  67.0 |     237 |  127 | 311.42M |  14.441% | 5.43M | 5.34M |     0.98 | 5.52M |     0 | 0:04'34'' |
+| Q25L100 | 360.85M |  66.4 |     225 |  127 | 324.86M |   9.974% | 5.43M | 5.34M |     0.98 | 5.45M |     0 | 0:04'35'' |
+| Q25L120 | 346.62M |  63.8 |     229 |  127 | 312.31M |   9.897% | 5.43M | 5.34M |     0.98 | 5.44M |     0 | 0:04'43'' |
+| Q25L140 | 329.43M |  60.6 |     234 |  127 | 297.14M |   9.803% | 5.43M | 5.34M |     0.98 | 5.43M |     0 | 0:04'36'' |
+| Q30L100 | 310.66M |  57.2 |     218 |  127 | 291.08M |   6.302% | 5.43M | 5.34M |     0.98 | 5.42M |     0 | 0:04'12'' |
+| Q30L120 | 295.47M |  54.4 |     222 |  127 | 276.77M |   6.329% | 5.43M | 5.33M |     0.98 | 5.41M |     0 | 0:04'04'' |
+| Q30L140 |  275.6M |  50.7 |     227 |  127 | 258.02M |   6.377% | 5.43M | 5.33M |     0.98 | 5.41M |     0 | 0:03'49'' |
 
-| Name    | N50SRclean |   Sum |    # | N50Anchor |   Sum |   # | N50Anchor2 | Sum | # | N50Others |     Sum |   # |   RunTime |
-|:--------|-----------:|------:|-----:|----------:|------:|----:|-----------:|----:|--:|----------:|--------:|----:|----------:|
-| Q20L100 |      16434 | 5.48M | 1099 |     16595 | 5.35M | 509 |          0 |   0 | 0 |       216 | 130.69K | 590 | 0:01'19'' |
-| Q20L120 |      15776 | 5.47M | 1058 |     16365 | 5.35M | 518 |          0 |   0 | 0 |       231 | 122.41K | 540 | 0:01'16'' |
-| Q20L140 |      14977 | 5.46M |  999 |     15479 | 5.34M | 525 |          0 |   0 | 0 |       253 | 117.38K | 474 | 0:01'12'' |
-| Q25L100 |      16668 | 5.43M |  811 |     17410 | 5.34M | 482 |          0 |   0 | 0 |       286 |  88.94K | 329 | 0:01'04'' |
-| Q25L120 |      16307 | 5.43M |  816 |     16369 | 5.34M | 496 |          0 |   0 | 0 |       329 |  90.28K | 320 | 0:01'03'' |
-| Q25L140 |      15084 | 5.43M |  831 |     15247 | 5.34M | 524 |          0 |   0 | 0 |       383 |  92.35K | 307 | 0:01'04'' |
-| Q30L100 |      14933 | 5.42M |  819 |     15028 | 5.34M | 540 |          0 |   0 | 0 |       399 |  85.41K | 279 | 0:01'06'' |
-| Q30L120 |      13870 | 5.43M |  866 |     13955 | 5.33M | 576 |          0 |   0 | 0 |       426 |  94.42K | 290 | 0:01'05'' |
-| Q30L140 |      12756 | 5.43M |  922 |     12915 | 5.33M | 628 |          0 |   0 | 0 |       446 | 100.55K | 294 | 0:01'02'' |
+| Name    | N50SRclean |   Sum |    # | N50Anchor |   Sum |   # | N50Anchor2 |   Sum | # | N50Others |     Sum |    # |   RunTime |
+|:--------|-----------:|------:|-----:|----------:|------:|----:|-----------:|------:|--:|----------:|--------:|-----:|----------:|
+| Q20L100 |      14148 | 5.55M | 1576 |     15077 | 5.35M | 555 |          0 |     0 | 0 |       186 | 205.35K | 1021 | 0:01'26'' |
+| Q20L120 |      14479 | 5.54M | 1476 |     15077 | 5.35M | 549 |          0 |     0 | 0 |       188 | 188.13K |  927 | 0:01'23'' |
+| Q20L140 |      15074 | 5.52M | 1339 |     15661 | 5.35M | 539 |          0 |     0 | 0 |       202 | 167.32K |  800 | 0:01'17'' |
+| Q25L100 |      17999 | 5.45M |  871 |     18301 | 5.35M | 459 |          0 |     0 | 0 |       253 |  98.16K |  412 | 0:01'10'' |
+| Q25L120 |      17950 | 5.44M |  858 |     18144 | 5.34M | 464 |          0 |     0 | 0 |       253 |  97.31K |  394 | 0:01'16'' |
+| Q25L140 |      18177 | 5.43M |  817 |     18428 | 5.34M | 462 |          0 |     0 | 0 |       253 |   91.1K |  355 | 0:01'16'' |
+| Q30L100 |      17503 | 5.42M |  728 |     17743 | 5.34M | 469 |          0 |     0 | 0 |       359 |  74.11K |  259 | 0:01'15'' |
+| Q30L120 |      17079 | 5.41M |  730 |     17467 | 5.34M | 482 |          0 |     0 | 0 |       398 |  74.82K |  248 | 0:01'09'' |
+| Q30L140 |      15768 | 5.41M |  732 |     16128 | 5.34M | 499 |       1145 | 1.15K | 1 |       403 |  72.58K |  232 | 0:01'09'' |
 
 ## Bcer: merge anchors
 
@@ -532,8 +541,8 @@ cat stat3.md
 |:-------------|--------:|--------:|----:|
 | Genome       | 5224283 | 5432652 |   2 |
 | Paralogs     |    2295 |  223889 | 103 |
-| anchor.merge |   19530 | 5360781 | 423 |
-| others.merge |    1013 |    4049 |   4 |
+| anchor.merge |   20352 | 5353315 | 402 |
+| others.merge |    1145 |    1145 |   1 |
 
 # *Rhodobacter sphaeroides* 2.4.1
 
@@ -542,7 +551,8 @@ cat stat3.md
 * Reference genome
 
     * Taxid: [272943](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272943)
-    * RefSeq assembly accession: [GCF_000012905.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+    * RefSeq assembly accession:
+      [GCF_000012905.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
 
 ```bash
 mkdir -p ~/data/anchr/Rsph/1_genome
@@ -721,7 +731,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/Rsph
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=(
     "2_illumina/Q20L100:Q20L100:2500000"
     "2_illumina/Q20L120:Q20L120:2500000"
@@ -1108,7 +1117,8 @@ cat stat3.md
 
     * *Mycobacterium abscessus* ATCC 19977
         * Taxid: [561007](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
-        * RefSeq assembly accession: [GCF_000069185.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+        * RefSeq assembly accession:
+          [GCF_000069185.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
     * *Mycobacterium abscessus* 6G-0125-R
         * RefSeq assembly accession: GCF_000270985.1
 
@@ -1284,7 +1294,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/Mabs
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=(
     "2_illumina/Q20L100:Q20L100:2500000"
     "2_illumina/Q20L120:Q20L120:2500000"
@@ -1702,7 +1711,8 @@ cat stat3.md
 
     * *Vibrio cholerae* O1 biovar El Tor str. N16961
         * Taxid: [243277](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
-        * RefSeq assembly accession: [GCF_000006745.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+        * RefSeq assembly accession:
+          [GCF_000006745.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
     * *Vibrio cholerae* CP1032(5)
         * RefSeq assembly accession: GCF_000279305.1
 
@@ -1878,7 +1888,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/Vcho
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=(
     "2_illumina/Q20L100:Q20L100:2500000"
     "2_illumina/Q20L120:Q20L120:2500000"
