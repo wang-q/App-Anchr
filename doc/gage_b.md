@@ -1897,7 +1897,7 @@ ARRAY=(
     "2_illumina/Q20L140:Q20L140:2500000"
     "2_illumina/Q25L100:Q25L100:2500000"
     "2_illumina/Q25L120:Q25L120:2500000"
-    "2_illumina/Q25L140:Q25L140:2000000"
+    "2_illumina/Q25L140:Q25L140:2500000"
     "2_illumina/Q30L100:Q30L100:2500000"
     "2_illumina/Q30L120:Q30L120:2000000"
     "2_illumina/Q30L140:Q30L140:2000000"
@@ -1910,12 +1910,13 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(perl -e "@p = split q{:}, q{${group}}; print \$p[2];")
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    parallel --no-run-if-empty -j 3 "
+    perl -e 'print 500000 * $_, q{ } for 1 .. 5' \
+    | parallel --no-run-if-empty -j 3 "
         if [[ {} -gt '$GROUP_MAX' ]]; then
             exit;
         fi
 
-        echo '    Group ${GROUP_ID}_{}'
+        echo '    ${GROUP_ID}_{}'
         mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
         
         if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
@@ -1928,7 +1929,7 @@ for group in "${ARRAY[@]}" ; do
         seqtk sample -s{} \
             ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
             | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
-    " ::: $(perl -e 'print 500000 * $_, q{ } for 1 .. 5')
+    "
 
 done
 
