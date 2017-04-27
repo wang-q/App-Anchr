@@ -1299,7 +1299,6 @@ cat stat.md
 BASE_DIR=$HOME/data/anchr/iso_1
 cd ${BASE_DIR}
 
-# works on bash 3
 ARRAY=( 
     "2_illumina/Q20L80:Q20L80"
     "2_illumina/Q20L90:Q20L90"
@@ -1855,11 +1854,11 @@ cat stat3.md
 |:-------------|---------:|----------:|------:|
 | Genome       | 25286936 | 137567477 |     8 |
 | Paralogs     |     4031 |  13665900 |  4492 |
-| anchor.merge |    15258 | 116888889 | 13979 |
+| anchor.merge |    15168 | 116902455 | 14046 |
 | others.merge |     1005 |    227615 |   226 |
-| anchor.cover |    15164 | 114931886 | 13776 |
-| anchorLong   |    47088 | 112621595 |  5093 |
-| contigTrim   |  1613220 | 121369911 |   467 |
+| anchor.cover |    15081 | 114949677 | 13842 |
+| anchorLong   |    46865 | 112622237 |  5128 |
+| contigTrim   |  2105281 | 121308821 |   468 |
 
 # *Caenorhabditis elegans* N2
 
