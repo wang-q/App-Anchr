@@ -747,27 +747,26 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    for count in $(perl -e 'print 500000 * $_, q{ } for 1 .. 5');
-    do
-        if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue;
+    perl -e 'print 500000 * $_, qq{\n} for 1 .. 5' \
+    | parallel --no-run-if-empty -j 4 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
         fi
+
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
         
-        echo "==> Group ${GROUP_ID}_${count}"
-        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
-        mkdir -p ${DIR_COUNT}
-        
-        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue;
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
         fi
-        
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R1.fq.gz
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R2.fq.gz
-    done
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    "
 
 done
 ```
@@ -1309,27 +1308,26 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    for count in $(perl -e 'print 500000 * $_, q{ } for 1 .. 5');
-    do
-        if [[ "$count" -gt "$GROUP_MAX" ]]; then
-            continue;
+    perl -e 'print 500000 * $_, qq{\n} for 1 .. 5' \
+    | parallel --no-run-if-empty -j 4 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
         fi
+
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
         
-        echo "==> Group ${GROUP_ID}_${count}"
-        DIR_COUNT="${BASE_DIR}/${GROUP_ID}_${count}"
-        mkdir -p ${DIR_COUNT}
-        
-        if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-            continue;
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
         fi
-        
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R1.fq.gz
-        seqtk sample -s${count} \
-            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${count} \
-            | pigz > ${DIR_COUNT}/R2.fq.gz
-    done
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    "
 
 done
 ```
@@ -1911,7 +1909,7 @@ for group in "${ARRAY[@]}" ; do
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
     perl -e 'print 500000 * $_, qq{\n} for 1 .. 5' \
-    | parallel --no-run-if-empty -j 3 "
+    | parallel --no-run-if-empty -j 4 "
         if [[ {} -gt '$GROUP_MAX' ]]; then
             exit;
         fi
