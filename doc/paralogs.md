@@ -27,6 +27,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    198214 --name 198214=Sfle   \
     --id    223926 --name 223926=Vpar   \
     --id    169963 --name 169963=Lmon   \
+    --id    272624 --name 272624=Lpne   \
     --file  taxon.csv                   \
     --entrez
 ```
@@ -47,7 +48,7 @@ for strain in Bcer Rsph Mabs Vcho; do
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
 
-for strain in Sfle Vpar Lmon; do
+for strain in Sfle Vpar Lmon Lpne; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -113,6 +114,7 @@ perl ~/Scripts/egaz/self_batch.pl \
     -t Sfle \
     -q Vpar \
     -q Lmon \
+    -q Lpne \
     --parallel 16
 
 bash otherbac/1_real_chr.sh
