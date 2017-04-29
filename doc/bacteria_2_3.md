@@ -10,6 +10,16 @@
     - [Sfle: create anchors](#sfle-create-anchors)
     - [Sfle: results](#sfle-results)
     - [Sfle: merge anchors](#sfle-merge-anchors)
+- [Vibrio parahaemolyticus ATCC BAA-239](#vibrio-parahaemolyticus-atcc-baa-239)
+    - [Vpar: download](#vpar-download)
+- [Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1](#legionella-pneumophila-subsp-pneumophila-atcc-33152d-5-philadelphia-1)
+    - [Lpne: download](#lpne-download)
+- [Listeria monocytogenes FDAARGOS_351](#listeria-monocytogenes-fdaargos-351)
+    - [Lmon: download](#lmon-download)
+- [Clostridioides difficile 630](#clostridioides-difficile-630)
+    - [Cdif: download](#cdif-download)
+- [Campylobacter jejuni subsp. jejuni ATCC 700819](#campylobacter-jejuni-subsp-jejuni-atcc-700819)
+    - [Cjej: download](#cjej-download)
 
 
 # Shigella flexneri NCTC0001
@@ -41,7 +51,7 @@ EOF
 
 faops replace GCF_000006925.2_ASM692v2_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/gage/Results/Sfle/Sfle.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Sfle/Sfle.multi.fas paralogs.fas
 
 ```
 
@@ -53,19 +63,19 @@ cp ~/data/anchr/paralogs/gage/Results/Sfle/Sfle.multi.fas paralogs.fas
 mkdir -p ~/data/anchr/Sfle/2_illumina
 cd ~/data/anchr/Sfle/2_illumina
 
-cat << EOF > fq_ftp.txt
+cat << EOF > sra_ftp.txt
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR559/ERR559526/ERR559526_1.fastq.gz
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR559/ERR559526/ERR559526_2.fastq.gz
 EOF
 
-aria2c -x 9 -s 3 -c -i fq_ftp.txt
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
-cat << EOF > fq_md5.txt
+cat << EOF > sra_md5.txt
 b79fa3fd3b2fb0370e12b8eb910c0268    ERR559526_1.fastq.gz
 30c98d66d10d194c62ace652e757c0f3    ERR559526_2.fastq.gz
 EOF
 
-md5sum --check fq_md5.txt
+md5sum --check sra_md5.txt
 
 ln -s ERR559526_1.fastq.gz R1.fq.gz
 ln -s ERR559526_2.fastq.gz R2.fq.gz
@@ -564,3 +574,300 @@ cat stat3.md
 | Paralogs     |    1377 |  543111 | 334 |
 | anchor.merge |   28583 | 4133481 | 280 |
 | others.merge |    1005 |    1005 |   1 |
+
+# Vibrio parahaemolyticus ATCC BAA-239
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Vpar: download
+
+* Reference genome
+
+    * Strain: Vibrio parahaemolyticus RIMD 2210633
+    * Taxid: [223926](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=223926)
+    * RefSeq assembly accession:
+      [GCF_000196095.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/095/GCF_000196095.1_ASM19609v1/GCF_000196095.1_ASM19609v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Vpar/1_genome
+cd ~/data/anchr/Vpar/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/095/GCF_000196095.1_ASM19609v1/GCF_000196095.1_ASM19609v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_004603.1${TAB}1
+NC_004605.1${TAB}2
+EOF
+
+faops replace GCF_000196095.1_ASM19609v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Vpar/Vpar.multi.fas paralogs.fas
+
+```
+
+* Illumina
+
+    * [SRX2165170](https://www.ncbi.nlm.nih.gov/sra/SRX2165170)
+
+```bash
+mkdir -p ~/data/anchr/Vpar/2_illumina
+cd ~/data/anchr/Vpar/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR424/005/SRR4244665/SRR4244665_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR424/005/SRR4244665/SRR4244665_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+e18d81e9d1e6776e3af8a7c077ca68c8	SRR4244665_1.fastq.gz
+d1c22a57ff241fef3c8e98a2b1f51441	SRR4244665_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4244665_1.fastq.gz R1.fq.gz
+ln -s SRR4244665_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/Vpar/3_pacbio
+cd ~/data/anchr/Vpar/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4244666_SRR4244666_hdf5.tgz
+EOF
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/Vpar/3_pacbio/untar
+cd ~/data/anchr/Vpar/3_pacbio
+tar xvfz SRR4244666_SRR4244666_hdf5.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/Vpar/3_pacbio/bam
+cd ~/data/anchr/Vpar/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150412 m150415 m150417 m150421;
+do 
+    bax2bam ~/data/anchr/Vpar/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/Vpar/3_pacbio/fasta
+
+for movie in m150412 m150415 m150417 m150421;
+do
+    if [ ! -e ~/data/anchr/Vpar/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/Vpar/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/Vpar/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/Vpar
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+
+head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
+
+# Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Lpne: download
+
+* Reference genome
+
+    * Strain: Legionella pneumophila subsp. pneumophila str. Philadelphia 1
+    * Taxid: [272624](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=272624&lvl=3&lin=f&keep=1&srchmode=1&unlock)
+    * RefSeq assembly accession:
+      [GCF_000008485.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/485/GCF_000008485.1_ASM848v1/GCF_000008485.1_ASM848v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Lpne/1_genome
+cd ~/data/anchr/Lpne/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/485/GCF_000008485.1_ASM848v1/GCF_000008485.1_ASM848v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_002942.5${TAB}1
+EOF
+
+faops replace GCF_000008485.1_ASM848v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Lpne/Lpne.multi.fas paralogs.fas
+
+```
+
+* Illumina
+
+    * [SRX2179279](https://www.ncbi.nlm.nih.gov/sra/SRX2179279) SRR4272054
+
+```bash
+mkdir -p ~/data/anchr/Lpne/2_illumina
+cd ~/data/anchr/Lpne/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/004/SRR4272054/SRR4272054_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/004/SRR4272054/SRR4272054_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+6391a189c30acde364eb553e1f592a81	SRR4272054_1.fastq.gz
+67ec48fd2c37e09b35f232f262c46d15	SRR4272054_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4272054_1.fastq.gz R1.fq.gz
+ln -s SRR4272054_2.fastq.gz R2.fq.gz
+
+```
+
+
+
+# Listeria monocytogenes FDAARGOS_351
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Lmon: download
+
+* Reference genome
+
+    * Strain: Listeria monocytogenes EGD-e
+    * Taxid: [169963](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=169963)
+    * RefSeq assembly accession:
+      [GCF_000196035.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/035/GCF_000196035.1_ASM19603v1/GCF_000196035.1_ASM19603v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Lmon/1_genome
+cd ~/data/anchr/Lmon/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/035/GCF_000196035.1_ASM19603v1/GCF_000196035.1_ASM19603v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_003210.1${TAB}1
+EOF
+
+faops replace GCF_000196035.1_ASM19603v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Lmon/Lmon.multi.fas paralogs.fas
+
+```
+
+* Illumina
+
+    * [SRX2717967](https://www.ncbi.nlm.nih.gov/sra/SRX2717967)
+
+```bash
+mkdir -p ~/data/anchr/Vpar/2_illumina
+cd ~/data/anchr/Vpar/2_illumina
+
+cat << EOF > sra_ftp.txt
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4244665_1.fastq.gz R1.fq.gz
+ln -s SRR4244665_2.fastq.gz R2.fq.gz
+
+```
+
+# Clostridioides difficile 630
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Cdif: download
+
+* Reference genome
+
+    * Strain: Clostridioides difficile 630
+    * Taxid: [272563](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272563)
+    * RefSeq assembly accession:
+      [GCF_000009205.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/205/GCF_000009205.1_ASM920v1/GCF_000009205.1_ASM920v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Cdif/1_genome
+cd ~/data/anchr/Cdif/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/205/GCF_000009205.1_ASM920v1/GCF_000009205.1_ASM920v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_009089.1${TAB}1
+NC_008226.1${TAB}pCD630
+EOF
+
+faops replace GCF_000009205.1_ASM920v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Cdif/Cdif.multi.fas paralogs.fas
+
+```
+
+SRX2107163
+
+# Campylobacter jejuni subsp. jejuni ATCC 700819
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Cjej: download
+
+* Reference genome
+
+    * Strain: Campylobacter jejuni subsp. jejuni NCTC 11168 = ATCC 700819
+    * Taxid: [192222](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=192222&lvl=3&lin=f&keep=1&srchmode=1&unlock)
+    * RefSeq assembly accession:
+      [GCF_000009085.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/085/GCF_000009085.1_ASM908v1/GCF_000009085.1_ASM908v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Cjej/1_genome
+cd ~/data/anchr/Cjej/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/085/GCF_000009085.1_ASM908v1/GCF_000009085.1_ASM908v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_002163.1${TAB}1
+EOF
+
+faops replace GCF_000009085.1_ASM908v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Cjej/Cjej.multi.fas paralogs.fas
+
+```
+
+SRX2107012
