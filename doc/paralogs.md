@@ -30,6 +30,8 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    272624 --name 272624=Lpne   \
     --id    272563 --name 272563=Cdif   \
     --id    192222 --name 192222=Cjej   \
+    --id    242231 --name 242231=Ngon   \
+    --id    122586 --name 122586=Nmen   \
     --file  taxon.csv                   \
     --entrez
 ```
@@ -50,7 +52,7 @@ for strain in Bcer Rsph Mabs Vcho; do
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
 
-for strain in Sfle Vpar Lmon Lpne Cdif Cjej; do
+for strain in Sfle Vpar Lmon Lpne Cdif Cjej Ngon Nmen; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -119,6 +121,8 @@ perl ~/Scripts/egaz/self_batch.pl \
     -q Lpne \
     -q Cdif \
     -q Cjej \
+    -q Ngon \
+    -q Nmen \
     --parallel 16
 
 bash otherbac/1_real_chr.sh

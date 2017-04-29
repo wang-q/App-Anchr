@@ -1981,3 +1981,71 @@ cp ~/data/anchr/paralogs/otherbac/Results/Cjej/Cjej.multi.fas paralogs.fas
 ```
 
 SRX2107012
+
+# Neisseria gonorrhoeae FDAARGOS_207
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Ngon: download
+
+* Reference genome
+
+    * Strain: Neisseria gonorrhoeae FA 1090
+    * Taxid: [242231](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=242231)
+    * RefSeq assembly accession:
+      [GCF_000006845.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/845/GCF_000006845.1_ASM684v1/GCF_000006845.1_ASM684v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0546
+
+```bash
+mkdir -p ~/data/anchr/Ngon/1_genome
+cd ~/data/anchr/Ngon/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/845/GCF_000006845.1_ASM684v1/GCF_000006845.1_ASM684v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_002946.2${TAB}1
+EOF
+
+faops replace GCF_000006845.1_ASM684v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Ngon/Ngon.multi.fas paralogs.fas
+
+```
+
+SRX2179294 SRX2179295
+
+# Neisseria meningitidis FDAARGOS_209
+
+Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+## Nmen: download
+
+* Reference genome
+
+    * Strain: Neisseria meningitidis MC58
+    * Taxid: [122586](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=122586)
+    * RefSeq assembly accession:
+      [GCF_000008805.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/805/GCF_000008805.1_ASM880v1/GCF_000008805.1_ASM880v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0
+
+```bash
+mkdir -p ~/data/anchr/Nmen/1_genome
+cd ~/data/anchr/Nmen/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/805/GCF_000008805.1_ASM880v1/GCF_000008805.1_ASM880v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_003112.2{TAB}1
+EOF
+
+faops replace GCF_000008805.1_ASM880v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Nmen/Nmen.multi.fas paralogs.fas
+
+```
+
+SRX2179304 SRX2179305
