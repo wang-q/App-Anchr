@@ -20,6 +20,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    272943 --name 272943=Rsph   \
     --id    561007 --name 561007=Mabs   \
     --id    243277 --name 243277=Vcho   \
+    --id    198214 --name 198214=Sfle   \
     --id    559292 --name 559292=s288c  \
     --id    7227   --name 7227=iso_1    \
     --id    6239   --name 6239=n2       \
@@ -34,10 +35,16 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli Bcer Rsph Mabs Vcho s288c iso_1 n2 col_0; do
+for strain in e_coli s288c iso_1 n2 col_0; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
+
+for strain in Bcer Rsph Mabs Vcho Sfle; do
+    mkdir -p ~/data/anchr/paralogs/genomes/${strain}
+    faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
+done
+
 ```
 
 ## Self-alignments
@@ -78,6 +85,7 @@ perl ~/Scripts/egaz/self_batch.pl \
     -q Rsph \
     -q Mabs \
     -q Vcho \
+    -q Sfle \
     --parallel 16
 
 bash gage/1_real_chr.sh
