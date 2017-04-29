@@ -1910,7 +1910,7 @@ for group in "${ARRAY[@]}" ; do
     GROUP_MAX=$(perl -e "@p = split q{:}, q{${group}}; print \$p[2];")
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
-    perl -e 'print 500000 * $_, q{ } for 1 .. 5' \
+    perl -e 'print 500000 * $_, qq{\n} for 1 .. 5' \
     | parallel --no-run-if-empty -j 3 "
         if [[ {} -gt '$GROUP_MAX' ]]; then
             exit;
