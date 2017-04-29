@@ -588,7 +588,7 @@ Project
     * Taxid: [223926](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=223926)
     * RefSeq assembly accession:
       [GCF_000196095.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/095/GCF_000196095.1_ASM19609v1/GCF_000196095.1_ASM19609v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0870
+    * Proportion of paralogs (> 1000 bp): 0.0225
 
 ```bash
 mkdir -p ~/data/anchr/Vpar/1_genome
@@ -700,7 +700,7 @@ Project
     * Taxid: [272624](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=272624&lvl=3&lin=f&keep=1&srchmode=1&unlock)
     * RefSeq assembly accession:
       [GCF_000008485.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/485/GCF_000008485.1_ASM848v1/GCF_000008485.1_ASM848v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0870
+    * Proportion of paralogs (> 1000 bp): 0.0264
 
 ```bash
 mkdir -p ~/data/anchr/Lpne/1_genome
@@ -761,7 +761,7 @@ Project
     * Taxid: [169963](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=169963)
     * RefSeq assembly accession:
       [GCF_000196035.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/196/035/GCF_000196035.1_ASM19603v1/GCF_000196035.1_ASM19603v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0870
+    * Proportion of paralogs (> 1000 bp): 0.0133
 
 ```bash
 mkdir -p ~/data/anchr/Lmon/1_genome
@@ -816,7 +816,7 @@ Project
     * Taxid: [272563](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272563)
     * RefSeq assembly accession:
       [GCF_000009205.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/205/GCF_000009205.1_ASM920v1/GCF_000009205.1_ASM920v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0870
+    * Proportion of paralogs (> 1000 bp): 0.0661
 
 ```bash
 mkdir -p ~/data/anchr/Cdif/1_genome
@@ -851,7 +851,7 @@ Project
     * Taxid: [192222](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=192222&lvl=3&lin=f&keep=1&srchmode=1&unlock)
     * RefSeq assembly accession:
       [GCF_000009085.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/085/GCF_000009085.1_ASM908v1/GCF_000009085.1_ASM908v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0870
+    * Proportion of paralogs (> 1000 bp): 0.0196
 
 ```bash
 mkdir -p ~/data/anchr/Cjej/1_genome
