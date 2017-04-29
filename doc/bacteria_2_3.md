@@ -1290,6 +1290,60 @@ ln -s SRR4272054_2.fastq.gz R2.fq.gz
 
 ```
 
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/Lpne/3_pacbio
+cd ~/data/anchr/Lpne/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4272055_SRR4272055_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4272056_SRR4272056_hdf5.tgz
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4272057_SRR4272057_hdf5.tgz
+EOF
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/Lpne/3_pacbio/untar
+cd ~/data/anchr/Lpne/3_pacbio
+tar xvfz SRR4244666_SRR4244666_hdf5.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/Lpne/3_pacbio/bam
+cd ~/data/anchr/Lpne/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150412 m150415 m150417 m150421;
+do 
+    bax2bam ~/data/anchr/Lpne/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/Lpne/3_pacbio/fasta
+
+for movie in m150412 m150415 m150417 m150421;
+do
+    if [ ! -e ~/data/anchr/Lpne/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/Lpne/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/Lpne/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/Lpne
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+
+head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
+
 ## Lpne: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
