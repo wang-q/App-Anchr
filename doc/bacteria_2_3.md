@@ -4,6 +4,12 @@
 - [Bacteria 2+3](#bacteria-23)
 - [Shigella flexneri NCTC0001](#shigella-flexneri-nctc0001)
     - [Sfle: download](#sfle-download)
+    - [Sfle: combinations of different quality values and read lengths](#sfle-combinations-of-different-quality-values-and-read-lengths)
+    - [Sfle: down sampling](#sfle-down-sampling)
+    - [Sfle: generate super-reads](#sfle-generate-super-reads)
+    - [Sfle: create anchors](#sfle-create-anchors)
+    - [Sfle: results](#sfle-results)
+    - [Sfle: merge anchors](#sfle-merge-anchors)
 
 
 # Shigella flexneri NCTC0001
