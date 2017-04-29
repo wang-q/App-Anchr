@@ -16,15 +16,17 @@ cd ~/data/anchr/paralogs
 
 perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    511145 --name 511145=e_coli \
+    --id    559292 --name 559292=s288c  \
+    --id    7227   --name 7227=iso_1    \
+    --id    6239   --name 6239=n2       \
+    --id    3702   --name 3702=col_0    \
     --id    222523 --name 222523=Bcer   \
     --id    272943 --name 272943=Rsph   \
     --id    561007 --name 561007=Mabs   \
     --id    243277 --name 243277=Vcho   \
     --id    198214 --name 198214=Sfle   \
-    --id    559292 --name 559292=s288c  \
-    --id    7227   --name 7227=iso_1    \
-    --id    6239   --name 6239=n2       \
-    --id    3702   --name 3702=col_0    \
+    --id    223926 --name 223926=Vpar   \
+    --id    169963 --name 169963=Lmon   \
     --file  taxon.csv                   \
     --entrez
 ```
@@ -40,7 +42,12 @@ for strain in e_coli s288c iso_1 n2 col_0; do
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
 
-for strain in Bcer Rsph Mabs Vcho Sfle; do
+for strain in Bcer Rsph Mabs Vcho; do
+    mkdir -p ~/data/anchr/paralogs/genomes/${strain}
+    faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
+done
+
+for strain in Sfle Vpar Lmon; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -85,7 +92,6 @@ perl ~/Scripts/egaz/self_batch.pl \
     -q Rsph \
     -q Mabs \
     -q Vcho \
-    -q Sfle \
     --parallel 16
 
 bash gage/1_real_chr.sh
@@ -93,6 +99,27 @@ bash gage/2_file_rm.sh
 bash gage/3_self_cmd.sh
 bash gage/4_proc_cmd.sh
 bash gage/5_circos_cmd.sh
+```
+
+```bash
+cd ~/data/anchr/paralogs
+
+perl ~/Scripts/egaz/self_batch.pl \
+    --working_dir ~/data/anchr/paralogs \
+    --seq_dir ~/data/anchr/paralogs/genomes \
+    -c ~/data/anchr/paralogs/taxon.csv \
+    --length 1000 \
+    --name otherbac \
+    -t Sfle \
+    -q Vpar \
+    -q Lmon \
+    --parallel 16
+
+bash otherbac/1_real_chr.sh
+bash otherbac/2_file_rm.sh
+bash otherbac/3_self_cmd.sh
+bash otherbac/4_proc_cmd.sh
+bash otherbac/5_circos_cmd.sh
 ```
 
 All done.
