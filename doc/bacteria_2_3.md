@@ -13,6 +13,32 @@ Project
 
 ## Sfle: download
 
+* Reference genome
+
+    * Strain: Shigella flexneri 2a str. 301
+    * Taxid: [198214](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=198214)
+    * RefSeq assembly accession:
+      [GCF_000006925.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/925/GCF_000006925.2_ASM692v2/GCF_000006925.2_ASM692v2_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0870
+
+```bash
+mkdir -p ~/data/anchr/Sfle/1_genome
+cd ~/data/anchr/Sfle/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/925/GCF_000006925.2_ASM692v2/GCF_000006925.2_ASM692v2_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_004337.2${TAB}1
+NC_004851.1${TAB}pCP301
+EOF
+
+faops replace GCF_000006925.2_ASM692v2_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/gage/Results/Sfle/Sfle.multi.fas paralogs.fas
+
+```
+
 * Illumina
 
     * [ERX518562](https://www.ncbi.nlm.nih.gov/sra/ERX518562)
@@ -158,10 +184,10 @@ printf "| %s | %s | %s | %s |\n" \
     > stat.md
 printf "|:--|--:|--:|--:|\n" >> stat.md
 
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 #printf "| %s | %s | %s | %s |\n" \
@@ -184,20 +210,22 @@ done
 cat stat.md
 ```
 
-| Name     | N50 |       Sum |       # |
-|:---------|----:|----------:|--------:|
-| Illumina | 150 | 346446900 | 2309646 |
-| uniq     | 150 | 346176600 | 2307844 |
-| scythe   | 150 | 346111063 | 2307844 |
-| Q20L100  | 150 | 328666531 | 2197926 |
-| Q20L120  | 150 | 324837524 | 2168358 |
-| Q20L140  | 150 | 320968042 | 2140506 |
-| Q25L100  | 150 | 311022174 | 2081936 |
-| Q25L120  | 150 | 306051953 | 2043536 |
-| Q25L140  | 150 | 300829251 | 2006054 |
-| Q30L100  | 150 | 289788577 | 1942538 |
-| Q30L120  | 150 | 283729287 | 1895670 |
-| Q30L140  | 150 | 277115524 | 1848284 |
+| Name     |     N50 |       Sum |       # |
+|:---------|--------:|----------:|--------:|
+| Genome   | 4607202 |   4828820 |       2 |
+| Paralogs |    1377 |    543111 |     334 |
+| Illumina |     150 | 346446900 | 2309646 |
+| uniq     |     150 | 346176600 | 2307844 |
+| scythe   |     150 | 346111063 | 2307844 |
+| Q20L100  |     150 | 328666531 | 2197926 |
+| Q20L120  |     150 | 324837524 | 2168358 |
+| Q20L140  |     150 | 320968042 | 2140506 |
+| Q25L100  |     150 | 311022174 | 2081936 |
+| Q25L120  |     150 | 306051953 | 2043536 |
+| Q25L140  |     150 | 300829251 | 2006054 |
+| Q30L100  |     150 | 289788577 | 1942538 |
+| Q30L120  |     150 | 283729287 | 1895670 |
+| Q30L140  |     150 | 277115524 | 1848284 |
 
 ## Sfle: down sampling
 
@@ -331,7 +359,7 @@ perl -e '
 BASE_DIR=$HOME/data/anchr/Sfle
 cd ${BASE_DIR}
 
-REAL_G=4000000
+REAL_G=4607202
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > ${BASE_DIR}/stat1.md
@@ -482,9 +510,11 @@ mv anchor.sort.png merge/
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
-    --label "merge,others" \
+    1_genome/paralogs.fas \
+    --label "merge,others,paralogs" \
     -o 9_qa
 
 ```
@@ -511,6 +541,10 @@ printf "| %s | %s | %s | %s |\n" \
 printf "|:--|--:|--:|--:|\n" >> stat3.md
 
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
@@ -518,7 +552,9 @@ printf "| %s | %s | %s | %s |\n" \
 cat stat3.md
 ```
 
-| Name         |   N50 |     Sum |   # |
-|:-------------|------:|--------:|----:|
-| anchor.merge | 28583 | 4133481 | 280 |
-| others.merge |  1005 |    1005 |   1 |
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 4607202 | 4828820 |   2 |
+| Paralogs     |    1377 |  543111 | 334 |
+| anchor.merge |   28583 | 4133481 | 280 |
+| others.merge |    1005 |    1005 |   1 |
