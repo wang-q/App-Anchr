@@ -624,8 +624,8 @@ EOF
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-e18d81e9d1e6776e3af8a7c077ca68c8	SRR4244665_1.fastq.gz
-d1c22a57ff241fef3c8e98a2b1f51441	SRR4244665_2.fastq.gz
+e18d81e9d1e6776e3af8a7c077ca68c8 SRR4244665_1.fastq.gz
+d1c22a57ff241fef3c8e98a2b1f51441 SRR4244665_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
@@ -735,8 +735,8 @@ EOF
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-6391a189c30acde364eb553e1f592a81	SRR4272054_1.fastq.gz
-67ec48fd2c37e09b35f232f262c46d15	SRR4272054_2.fastq.gz
+6391a189c30acde364eb553e1f592a81 SRR4272054_1.fastq.gz
+67ec48fd2c37e09b35f232f262c46d15 SRR4272054_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
