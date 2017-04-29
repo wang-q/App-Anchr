@@ -693,6 +693,323 @@ faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 
 ```
 
+## Vpar: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 80, 90, and 100
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip --unsorted \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.uniq.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
+```
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 3288558 |    5165770 |        2 |
+| Paralogs |    1377 |     543111 |      334 |
+| Illumina |     101 | 1368727962 | 13551762 |
+| PacBio   |         |            |          |
+| uniq     |     101 | 1361783404 | 13483004 |
+| scythe   |     101 | 1346787728 | 13483004 |
+| Q20L80   |     101 | 1235056033 | 12260434 |
+| Q20L90   |     101 | 1214510165 | 12038126 |
+| Q20L100  |     101 | 1180316267 | 11686470 |
+| Q25L80   |     101 | 1156319125 | 11484046 |
+| Q25L90   |     101 | 1130877812 | 11208590 |
+| Q25L100  |     101 | 1099548984 | 10886782 |
+| Q30L80   |     101 | 1002432558 |  9976778 |
+| Q30L90   |     101 |  963917300 |  9559260 |
+| Q30L100  |     101 |  924641823 |  9155276 |
+
+## Vpar: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+ARRAY=(
+    "2_illumina/Q20L80:Q20L80:5000000"
+    "2_illumina/Q20L90:Q20L90:5000000"
+    "2_illumina/Q20L100:Q20L100:5000000"
+    "2_illumina/Q25L80:Q25L80:5000000"
+    "2_illumina/Q25L90:Q25L90:5000000"
+    "2_illumina/Q25L100:Q25L100:5000000"
+    "2_illumina/Q30L80:Q30L80:4000000"
+    "2_illumina/Q30L90:Q30L90:4000000"
+    "2_illumina/Q30L100:Q30L100:4000000"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    perl -e 'print 1000000 * $_, qq{\n} for 1 .. 5' \
+    | parallel --no-run-if-empty -j 4 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
+        fi
+
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
+        
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
+        fi
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    "
+
+done
+```
+
+## Vpar: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 5 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## Vpar: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 5 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## Vpar: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+REAL_G=5165770
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 5 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 4 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Vpar
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 5 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
 # Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
 
 Project
@@ -755,7 +1072,7 @@ ln -s SRR4272054_2.fastq.gz R2.fq.gz
 ## Lpne: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 100, 120, and 140
+* len: 80, 90, and 100
 
 ```bash
 BASE_DIR=$HOME/data/anchr/Lpne
