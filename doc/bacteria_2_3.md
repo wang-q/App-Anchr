@@ -128,7 +128,7 @@ mkdir -p ~/data/anchr/Sfle/3_pacbio/bam
 cd ~/data/anchr/Sfle/3_pacbio/bam
 
 source ~/share/pitchfork/deployment/setup-env.sh
-for movie in m150412 m150415 m150417 m150421;
+for movie in m140529;
 do 
     bax2bam ~/data/anchr/Sfle/3_pacbio/untar/${movie}*.bax.h5
 done
@@ -136,7 +136,7 @@ done
 # convert .subreads.bam to fasta
 mkdir -p ~/data/anchr/Sfle/3_pacbio/fasta
 
-for movie in m150412 m150415 m150417 m150421;
+for movie in m140529;
 do
     if [ ! -e ~/data/anchr/Sfle/3_pacbio/bam/${movie}*.subreads.bam ]; then
         continue
@@ -150,12 +150,7 @@ done
 cd ~/data/anchr/Sfle
 cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
-head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
-head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
-faops n50 -S -C 3_pacbio/pacbio.80x.fasta
-
+rm -fr ~/data/anchr/Sfle/3_pacbio/untar
 ```
 
 ## Sfle: combinations of different quality values and read lengths
@@ -226,8 +221,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -251,6 +246,7 @@ cat stat.md
 | Genome   | 4607202 |   4828820 |       2 |
 | Paralogs |    1377 |    543111 |     334 |
 | Illumina |     150 | 346446900 | 2309646 |
+| PacBio   |    3333 | 432566566 |  170957 |
 | uniq     |     150 | 346176600 | 2307844 |
 | scythe   |     150 | 346111063 | 2307844 |
 | Q20L100  |     150 | 328666531 | 2197926 |
@@ -299,6 +295,18 @@ for group in "${ARRAY[@]}" ; do
     ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
 
 done
+```
+
+```bash
+BASE_DIR=$HOME/data/anchr/Sfle
+cd ${BASE_DIR}
+
+head -n 160000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 320000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
 ```
 
 ## Sfle: generate super-reads
@@ -565,6 +573,228 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
+## Sfle: 3GS
+
+```bash
+BASE_DIR=$HOME/data/anchr/Sfle
+cd ${BASE_DIR}
+
+canu \
+    -p Sfle -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+canu \
+    -p Sfle -d canu-raw-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+
+faops n50 -S -C canu-raw-40x/Sfle.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/Sfle.trimmedReads.fasta.gz
+
+```
+
+## Sfle: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/Sfle
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 20 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/Sfle.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/Sfle.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 20 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/Sfle
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/Sfle.contigs.fasta \
+    -d contigTrim \
+    -b 20 --len 1000 --idt 0.98 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/Sfle
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/Sfle.contigs.fasta \
+    canu-raw-80x/Sfle.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    -o 9_qa_contig
+
+```
+
 * Stats
 
 ```bash
@@ -584,6 +814,12 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
 
 cat stat3.md
 ```
@@ -594,6 +830,9 @@ cat stat3.md
 | Paralogs     |    1377 |  543111 | 334 |
 | anchor.merge |   28583 | 4133481 | 280 |
 | others.merge |    1005 |    1005 |   1 |
+| anchor.cover |   20551 | 4023001 | 356 |
+| anchorLong   |   20671 | 4022270 | 344 |
+| contigTrim   |   56443 | 4263132 | 140 |
 
 # Vibrio parahaemolyticus ATCC BAA-239
 
@@ -870,7 +1109,6 @@ head -n 100000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
 faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 
 ```
-
 
 ## Vpar: generate super-reads
 
