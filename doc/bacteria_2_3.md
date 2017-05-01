@@ -2619,6 +2619,611 @@ cp ~/data/anchr/paralogs/otherbac/Results/Ngon/Ngon.multi.fas paralogs.fas
 
 SRX2179294 SRX2179295
 
+* Illumina
+
+    * [SRX2179294](https://www.ncbi.nlm.nih.gov/sra/SRX2179294) SRR4272072
+
+```bash
+mkdir -p ~/data/anchr/Ngon/2_illumina
+cd ~/data/anchr/Ngon/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/002/SRR4272072/SRR4272072_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/002/SRR4272072/SRR4272072_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+0e6b38963276a1fdc256eb1f843025bc SRR4272072_1.fastq.gz
+532bbf1672dec3316a868774f411d50e SRR4272072_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4272072_1.fastq.gz R1.fq.gz
+ln -s SRR4272072_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/Ngon/3_pacbio
+cd ~/data/anchr/Ngon/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4272071_SRR4272071_hdf5.tgz
+EOF
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/Ngon/3_pacbio/untar
+cd ~/data/anchr/Ngon/3_pacbio
+tar xvfz SRR4272071_SRR4272071_hdf5.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/Ngon/3_pacbio/bam
+cd ~/data/anchr/Ngon/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150115;
+do 
+    bax2bam ~/data/anchr/Ngon/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/Ngon/3_pacbio/fasta
+
+for movie in m150115;
+do
+    if [ ! -e ~/data/anchr/Ngon/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/Ngon/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/Ngon/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/Ngon
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+
+faops n50 3_pacbio/pacbio.fasta
+
+rm -fr ~/data/anchr/Ngon/3_pacbio/untar
+```
+
+## Ngon: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 80, 90, and 100
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip --unsorted \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.uniq.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
+```
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 2153922 |    2153922 |        1 |
+| Paralogs |    4318 |     142093 |       53 |
+| Illumina |     101 | 1491583958 | 14768158 |
+| PacBio   |       0 |          0 |        0 |
+| uniq     |     101 | 1485449016 | 14707416 |
+| scythe   |     101 | 1460356291 | 14707416 |
+| Q20L80   |     101 | 1156993843 | 11540782 |
+| Q20L90   |     101 | 1099857225 | 10921560 |
+| Q20L100  |     101 | 1018663400 | 10085908 |
+| Q25L80   |     101 |  944529104 |  9436736 |
+| Q25L90   |     101 |  880635570 |  8744142 |
+| Q25L100  |     101 |  815899053 |  8078308 |
+| Q30L80   |     101 |  566164368 |  5695484 |
+| Q30L90   |     101 |  496616122 |  4939738 |
+| Q30L100  |     101 |  441995355 |  4376350 |
+
+## Ngon: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+ARRAY=(
+    "2_illumina/Q20L80:Q20L80:4000000"
+    "2_illumina/Q20L90:Q20L90:4000000"
+    "2_illumina/Q20L100:Q20L100:4000000"
+    "2_illumina/Q25L80:Q25L80:4000000"
+    "2_illumina/Q25L90:Q25L90:4000000"
+    "2_illumina/Q25L100:Q25L100:4000000"
+    "2_illumina/Q30L80:Q30L80:2000000"
+    "2_illumina/Q30L90:Q30L90:2000000"
+    "2_illumina/Q30L100:Q30L100:2000000"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    perl -e 'print 1000000 * $_, qq{\n} for 1 .. 4' \
+    | parallel --no-run-if-empty -j 4 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
+        fi
+
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
+        
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
+        fi
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    "
+
+done
+```
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+head -n 50000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 100000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
+
+## Ngon: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## Ngon: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## Ngon: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+REAL_G=2153922
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 4 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
+| Q20L80_1000000  | 200.52M |  93.1 |     100 |   51 | 179.86M |  10.300% | 2.15M | 2.07M |     0.96 | 2.28M |     0 | 0:01'24'' |
+| Q20L80_2000000  |    401M | 186.2 |     100 |   51 | 360.04M |  10.216% | 2.15M |  2.1M |     0.97 | 2.49M |     0 | 0:02'50'' |
+| Q20L80_3000000  | 601.52M | 279.3 |     100 |   51 | 542.02M |   9.891% | 2.15M | 2.23M |     1.04 | 3.22M |     0 | 0:03'58'' |
+| Q20L80_4000000  | 802.03M | 372.4 |     100 |   51 | 723.99M |   9.730% | 2.15M | 2.35M |     1.09 | 3.86M |     0 | 0:05'05'' |
+| Q20L90_1000000  | 201.41M |  93.5 |     100 |   51 | 181.14M |  10.062% | 2.15M | 2.06M |     0.96 | 2.27M |     0 | 0:01'36'' |
+| Q20L90_2000000  | 402.82M | 187.0 |     100 |   51 | 362.71M |   9.958% | 2.15M | 2.09M |     0.97 | 2.45M |     0 | 0:02'39'' |
+| Q20L90_3000000  | 604.23M | 280.5 |     100 |   51 | 545.95M |   9.646% | 2.15M | 2.22M |     1.03 | 3.14M |     0 | 0:04'08'' |
+| Q20L90_4000000  | 805.64M | 374.0 |     100 |   51 | 729.16M |   9.493% | 2.15M | 2.33M |     1.08 | 3.73M |     0 | 0:05'11'' |
+| Q20L100_1000000 |    202M |  93.8 |     100 |   51 | 182.13M |   9.835% | 2.15M | 2.05M |     0.95 | 2.21M |     0 | 0:01'40'' |
+| Q20L100_2000000 | 403.99M | 187.6 |     100 |   51 |    365M |   9.652% | 2.15M | 2.09M |     0.97 | 2.42M |     0 | 0:02'49'' |
+| Q20L100_3000000 | 605.99M | 281.3 |     100 |   51 | 549.15M |   9.381% | 2.15M | 2.19M |     1.02 | 3.01M |     0 | 0:04'05'' |
+| Q20L100_4000000 | 807.99M | 375.1 |     100 |   51 | 733.35M |   9.237% | 2.15M |  2.3M |     1.07 | 3.57M |     0 | 0:05'14'' |
+| Q25L80_1000000  | 200.19M |  92.9 |     100 |   51 | 183.81M |   8.182% | 2.15M | 2.05M |     0.95 | 2.17M |     0 | 0:01'43'' |
+| Q25L80_2000000  | 400.36M | 185.9 |     100 |   51 | 367.89M |   8.112% | 2.15M | 2.06M |     0.96 | 2.24M |     0 | 0:03'01'' |
+| Q25L80_3000000  | 600.54M | 278.8 |     100 |   51 | 552.55M |   7.992% | 2.15M | 2.11M |     0.98 |  2.5M |     0 | 0:04'07'' |
+| Q25L80_4000000  | 800.72M | 371.8 |      99 |   51 | 737.27M |   7.924% | 2.15M | 2.16M |     1.00 | 2.76M |     0 | 0:05'20'' |
+| Q25L90_1000000  | 201.42M |  93.5 |     100 |   51 |  185.1M |   8.105% | 2.15M | 2.04M |     0.95 | 2.17M |     0 | 0:01'35'' |
+| Q25L90_2000000  | 402.85M | 187.0 |     100 |   51 | 370.44M |   8.045% | 2.15M | 2.06M |     0.96 | 2.23M |     0 | 0:02'56'' |
+| Q25L90_3000000  | 604.27M | 280.5 |     100 |   51 | 556.47M |   7.910% | 2.15M | 2.11M |     0.98 | 2.48M |     0 | 0:04'12'' |
+| Q25L90_4000000  | 805.69M | 374.1 |     100 |   51 |  742.5M |   7.843% | 2.15M | 2.16M |     1.00 | 2.73M |     0 | 0:05'06'' |
+| Q25L100_1000000 |    202M |  93.8 |     100 |   51 | 185.78M |   8.030% | 2.15M | 2.04M |     0.95 | 2.16M |     0 | 0:01'44'' |
+| Q25L100_2000000 |    404M | 187.6 |     100 |   51 | 371.83M |   7.961% | 2.15M | 2.06M |     0.95 | 2.23M |     0 | 0:02'48'' |
+| Q25L100_3000000 | 605.99M | 281.3 |     100 |   51 | 558.31M |   7.868% | 2.15M |  2.1M |     0.98 | 2.45M |     0 | 0:04'08'' |
+| Q25L100_4000000 | 807.99M | 375.1 |     100 |   51 |    745M |   7.796% | 2.15M | 2.15M |     1.00 | 2.69M |     0 | 0:05'27'' |
+| Q30L80_1000000  | 198.81M |  92.3 |      99 |   71 | 186.18M |   6.353% | 2.15M | 2.04M |     0.95 | 2.15M |     0 | 0:01'33'' |
+| Q30L80_2000000  | 397.63M | 184.6 |      99 |   71 | 372.43M |   6.337% | 2.15M | 2.05M |     0.95 | 2.17M |     0 | 0:02'40'' |
+| Q30L90_1000000  | 201.07M |  93.3 |     100 |   71 | 188.31M |   6.347% | 2.15M | 2.04M |     0.95 | 2.15M |     0 | 0:01'33'' |
+| Q30L90_2000000  | 402.14M | 186.7 |     100 |   71 |  376.7M |   6.325% | 2.15M | 2.05M |     0.95 | 2.17M |     0 | 0:02'38'' |
+| Q30L100_1000000 | 201.99M |  93.8 |     100 |   71 |  189.1M |   6.380% | 2.15M | 2.04M |     0.95 | 2.15M |     0 | 0:01'29'' |
+| Q30L100_2000000 | 403.99M | 187.6 |     100 |   71 | 378.43M |   6.326% | 2.15M | 2.05M |     0.95 | 2.17M |     0 | 0:02'39'' |
+
+| Name            | N50SRclean |   Sum |     # | N50Anchor |     Sum |   # | N50Anchor2 | Sum | # | N50Others |     Sum |     # |   RunTime |
+|:----------------|-----------:|------:|------:|----------:|--------:|----:|-----------:|----:|--:|----------:|--------:|------:|----------:|
+| Q20L80_1000000  |       3659 | 2.28M |  3936 |      4540 |   1.85M | 530 |          0 |   0 | 0 |       127 |  436.1K |  3406 | 0:04'41'' |
+| Q20L80_2000000  |       1545 | 2.49M |  7061 |      2627 |   1.59M | 701 |          0 |   0 | 0 |       189 | 902.08K |  6360 | 0:04'55'' |
+| Q20L80_3000000  |        369 | 3.22M | 18252 |      1344 | 577.16K | 412 |          0 |   0 | 0 |       229 |   2.64M | 17840 | 0:05'31'' |
+| Q20L80_4000000  |        159 | 3.86M | 27983 |      1295 | 222.01K | 168 |          0 |   0 | 0 |       131 |   3.64M | 27815 | 0:03'08'' |
+| Q20L90_1000000  |       3690 | 2.27M |  3750 |      4497 |   1.88M | 530 |          0 |   0 | 0 |       105 | 392.51K |  3220 | 0:01'44'' |
+| Q20L90_2000000  |       1799 | 2.45M |  6438 |      2603 |   1.66M | 708 |          0 |   0 | 0 |       150 | 788.91K |  5730 | 0:02'18'' |
+| Q20L90_3000000  |        407 | 3.14M | 16936 |      1423 | 670.06K | 457 |          0 |   0 | 0 |       234 |   2.47M | 16479 | 0:02'56'' |
+| Q20L90_4000000  |        188 | 3.73M | 25881 |      1254 | 282.56K | 219 |          0 |   0 | 0 |       143 |   3.44M | 25662 | 0:03'24'' |
+| Q20L100_1000000 |       6620 | 2.21M |  2765 |      7899 |   1.94M | 369 |          0 |   0 | 0 |       101 | 265.43K |  2396 | 0:01'51'' |
+| Q20L100_2000000 |       2143 | 2.42M |  5931 |      3122 |    1.7M | 643 |          0 |   0 | 0 |       140 | 716.06K |  5288 | 0:02'21'' |
+| Q20L100_3000000 |        500 | 3.01M | 15014 |      1478 | 791.85K | 531 |          0 |   0 | 0 |       259 |   2.22M | 14483 | 0:02'58'' |
+| Q20L100_4000000 |        229 | 3.57M | 23445 |      1248 |  350.5K | 269 |          0 |   0 | 0 |       167 |   3.22M | 23176 | 0:03'18'' |
+| Q25L80_1000000  |      10766 | 2.17M |  2126 |     12192 |   1.98M | 269 |          0 |   0 | 0 |       101 | 191.33K |  1857 | 0:01'55'' |
+| Q25L80_2000000  |       5477 | 2.24M |  3240 |      6325 |   1.93M | 425 |          0 |   0 | 0 |       101 | 313.37K |  2815 | 0:02'33'' |
+| Q25L80_3000000  |       1546 |  2.5M |  7272 |      2488 |   1.61M | 725 |          0 |   0 | 0 |       163 | 898.57K |  6547 | 0:03'14'' |
+| Q25L80_4000000  |        852 | 2.76M | 11054 |      1745 |   1.24M | 731 |          0 |   0 | 0 |       232 |   1.52M | 10323 | 0:03'22'' |
+| Q25L90_1000000  |      10376 | 2.17M |  2102 |     10956 |   1.98M | 260 |          0 |   0 | 0 |       101 | 189.84K |  1842 | 0:01'55'' |
+| Q25L90_2000000  |       5681 | 2.23M |  3117 |      7025 |   1.94M | 396 |          0 |   0 | 0 |       101 | 296.33K |  2721 | 0:02'22'' |
+| Q25L90_3000000  |       1646 | 2.48M |  6820 |      2635 |   1.64M | 719 |          0 |   0 | 0 |       154 | 840.02K |  6101 | 0:03'08'' |
+| Q25L90_4000000  |        909 | 2.73M | 10632 |      1823 |   1.27M | 718 |          0 |   0 | 0 |       231 |   1.46M |  9914 | 0:03'40'' |
+| Q25L100_1000000 |      10578 | 2.16M |  2053 |     11529 |   1.98M | 265 |          0 |   0 | 0 |       101 | 181.76K |  1788 | 0:02'03'' |
+| Q25L100_2000000 |       6989 | 2.23M |  3006 |      7844 |   1.94M | 367 |          0 |   0 | 0 |       101 | 287.29K |  2639 | 0:02'31'' |
+| Q25L100_3000000 |       1863 | 2.45M |  6428 |      2718 |    1.7M | 716 |          0 |   0 | 0 |       134 | 754.07K |  5712 | 0:02'59'' |
+| Q25L100_4000000 |       1023 | 2.69M |  9961 |      1903 |   1.37M | 745 |          0 |   0 | 0 |       198 |   1.32M |  9216 | 0:03'23'' |
+| Q30L80_1000000  |      11924 | 2.15M |  1290 |     13459 |   1.99M | 242 |          0 |   0 | 0 |       164 | 162.92K |  1048 | 0:01'57'' |
+| Q30L80_2000000  |      13036 | 2.17M |  1454 |     14151 |      2M | 240 |          0 |   0 | 0 |       141 | 170.68K |  1214 | 0:02'33'' |
+| Q30L90_1000000  |      11160 | 2.15M |  1289 |     13020 |   1.99M | 260 |          0 |   0 | 0 |       171 | 164.07K |  1029 | 0:02'00'' |
+| Q30L90_2000000  |      12381 | 2.17M |  1465 |     13417 |      2M | 246 |          0 |   0 | 0 |       141 |  172.4K |  1219 | 0:02'43'' |
+| Q30L100_1000000 |       9818 | 2.15M |  1316 |     10973 |   1.99M | 271 |          0 |   0 | 0 |       164 |  162.3K |  1045 | 0:01'49'' |
+| Q30L100_2000000 |      12276 | 2.17M |  1467 |     13938 |      2M | 247 |          0 |   0 | 0 |       141 | 173.47K |  1220 | 0:02'36'' |
+
+## Ngon: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L80_1000000/anchor/pe.anchor.fa \
+    Q20L80_2000000/anchor/pe.anchor.fa \
+    Q20L90_1000000/anchor/pe.anchor.fa \
+    Q20L90_2000000/anchor/pe.anchor.fa \
+    Q20L100_1000000/anchor/pe.anchor.fa \
+    Q20L100_2000000/anchor/pe.anchor.fa \
+    Q25L80_1000000/anchor/pe.anchor.fa \
+    Q25L80_2000000/anchor/pe.anchor.fa \
+    Q25L90_1000000/anchor/pe.anchor.fa \
+    Q25L90_2000000/anchor/pe.anchor.fa \
+    Q25L100_1000000/anchor/pe.anchor.fa \
+    Q25L100_2000000/anchor/pe.anchor.fa \
+    Q30L80_1000000/anchor/pe.anchor.fa \
+    Q30L80_2000000/anchor/pe.anchor.fa \
+    Q30L90_1000000/anchor/pe.anchor.fa \
+    Q30L90_2000000/anchor/pe.anchor.fa \
+    Q30L100_1000000/anchor/pe.anchor.fa \
+    Q30L100_2000000/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L80_2000000/anchor/pe.anchor2.fa \
+    Q20L90_2000000/anchor/pe.anchor2.fa \
+    Q20L100_2000000/anchor/pe.anchor2.fa \
+    Q25L80_2000000/anchor/pe.anchor2.fa \
+    Q25L90_2000000/anchor/pe.anchor2.fa \
+    Q25L100_2000000/anchor/pe.anchor2.fa \
+    Q30L80_2000000/anchor/pe.anchor2.fa \
+    Q30L90_2000000/anchor/pe.anchor2.fa \
+    Q30L100_2000000/anchor/pe.anchor2.fa \
+    Q20L80_2000000/anchor/pe.others.fa \
+    Q20L90_2000000/anchor/pe.others.fa \
+    Q20L100_2000000/anchor/pe.others.fa \
+    Q25L80_2000000/anchor/pe.others.fa \
+    Q25L90_2000000/anchor/pe.others.fa \
+    Q25L100_2000000/anchor/pe.others.fa \
+    Q30L80_2000000/anchor/pe.others.fa \
+    Q30L90_2000000/anchor/pe.others.fa \
+    Q30L100_2000000/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,others,paralogs" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 2153922 | 2153922 |   1 |
+| Paralogs     |    4318 |  142093 |  53 |
+| anchor.merge |   19941 | 2005051 | 172 |
+| others.merge |    1000 |    6004 |   6 |
+| anchor.cover |         |         |     |
+| anchorLong   |         |         |     |
+| contigTrim   |         |         |     |
+
 # Neisseria meningitidis FDAARGOS_209
 
 Project
@@ -2651,7 +3256,832 @@ cp ~/data/anchr/paralogs/otherbac/Results/Nmen/Nmen.multi.fas paralogs.fas
 
 ```
 
-SRX2179304 SRX2179305
+* Illumina
+
+    * [SRX2179304](https://www.ncbi.nlm.nih.gov/sra/SRX2179304) SRR4272082
+
+```bash
+mkdir -p ~/data/anchr/Nmen/2_illumina
+cd ~/data/anchr/Nmen/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/002/SRR4272082/SRR4272082_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/002/SRR4272082/SRR4272082_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+72eda37b3158f5668d6fe8ce62c6db7a SRR4272082_1.fastq.gz
+4db52e50a273945315af9aa4582c6dc2 SRR4272082_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4272082_1.fastq.gz R1.fq.gz
+ln -s SRR4272082_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/Nmen/3_pacbio
+cd ~/data/anchr/Nmen/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/SRR4272081_SRR4272081_hdf5.tgz
+EOF
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/Nmen/3_pacbio/untar
+cd ~/data/anchr/Nmen/3_pacbio
+tar xvfz SRR4272081_SRR4272081_hdf5.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/Nmen/3_pacbio/bam
+cd ~/data/anchr/Nmen/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150116;
+do 
+    bax2bam ~/data/anchr/Nmen/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/Nmen/3_pacbio/fasta
+
+for movie in m150116;
+do
+    if [ ! -e ~/data/anchr/Nmen/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/Nmen/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/Nmen/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/Nmen
+cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+
+faops n50 3_pacbio/pacbio.fasta
+
+rm -fr ~/data/anchr/Nmen/3_pacbio/untar
+```
+
+## Nmen: combinations of different quality values and read lengths
+
+* qual: 20, 25, and 30
+* len: 80, 90, and 100
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+
+cd ${BASE_DIR}
+tally \
+    --pair-by-offset --with-quality --nozip --unsorted \
+    -i 2_illumina/R1.fq.gz \
+    -j 2_illumina/R2.fq.gz \
+    -o 2_illumina/R1.uniq.fq \
+    -p 2_illumina/R2.uniq.fq
+
+parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 2 "
+    scythe \
+        2_illumina/{}.uniq.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina/{}.scythe.fq.gz
+    " ::: R1 R2
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 4 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 20 25 30 ::: 80 90 100
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+
+for qual in 20 25 30; do
+    for len in 80 90 100; do
+        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
+            >> stat.md
+    done
+done
+
+cat stat.md
+```
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 2272360 |    2272360 |        1 |
+| Paralogs |       0 |          0 |        0 |
+| Illumina |     101 | 1395253390 | 13814390 |
+| PacBio   |    9603 |  402166610 |    58711 |
+| uniq     |     101 | 1389594158 | 13758358 |
+| scythe   |     101 | 1367023234 | 13758358 |
+| Q20L80   |     101 | 1095084793 | 10919678 |
+| Q20L90   |     101 | 1043700895 | 10362764 |
+| Q20L100  |     101 |  969715031 |  9601274 |
+| Q25L80   |     101 |  901889081 |  9007120 |
+| Q25L90   |     101 |  843855772 |  8377980 |
+| Q25L100  |     101 |  784195025 |  7764412 |
+| Q30L80   |     101 |  555276055 |  5581780 |
+| Q30L90   |     101 |  490420370 |  4876952 |
+| Q30L100  |     101 |  439138961 |  4348086 |
+
+## Nmen: down sampling
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+ARRAY=(
+    "2_illumina/Q20L80:Q20L80:4000000"
+    "2_illumina/Q20L90:Q20L90:4000000"
+    "2_illumina/Q20L100:Q20L100:4000000"
+    "2_illumina/Q25L80:Q25L80:4000000"
+    "2_illumina/Q25L90:Q25L90:4000000"
+    "2_illumina/Q25L100:Q25L100:4000000"
+    "2_illumina/Q30L80:Q30L80:2000000"
+    "2_illumina/Q30L90:Q30L90:2000000"
+    "2_illumina/Q30L100:Q30L100:2000000"
+)
+
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
+    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
+    GROUP_MAX=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[2];')
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    perl -e 'print 1000000 * $_, qq{\n} for 1 .. 4' \
+    | parallel --no-run-if-empty -j 4 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
+            exit;
+        fi
+
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${BASE_DIR}/${GROUP_ID}_{}
+        
+        if [ -e ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz ]; then
+            exit;
+        fi
+
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R1.fq.gz
+        seqtk sample -s{} \
+            ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
+            | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+    "
+
+done
+```
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+head -n 25000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 50000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+```
+
+## Nmen: generate super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+        
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            echo '    directory not exists'
+            exit;
+        fi        
+
+        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
+            echo '    pe.cor.fa already presents'
+            exit;
+        fi
+
+        cd ${BASE_DIR}/{}
+        anchr superreads \
+            R1.fq.gz R2.fq.gz \
+            --nosr -p 8 \
+            -o superreads.sh
+        bash superreads.sh
+    "
+
+```
+
+Clear intermediate files.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+find . -type f -name "quorum_mer_db.jf"          | xargs rm
+find . -type f -name "k_u_hash_0"                | xargs rm
+find . -type f -name "readPositionsInSuperReads" | xargs rm
+find . -type f -name "*.tmp"                     | xargs rm
+find . -type f -name "pe.renamed.fastq"          | xargs rm
+find . -type f -name "pe.cor.sub.fa"             | xargs rm
+```
+
+## Nmen: create anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo '==> Group {}'
+
+        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr ${BASE_DIR}/{}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
+    "
+
+```
+
+## Nmen: results
+
+* Stats of super-reads
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+REAL_G=2272360
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/stat1.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 4 "
+        if [ ! -d ${BASE_DIR}/{} ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
+    " >> ${BASE_DIR}/stat1.md
+
+cat stat1.md
+```
+
+* Stats of anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/stat2.md
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L80 Q20L90 Q20L100
+        Q25L80 Q25L90 Q25L100
+        Q30L80 Q30L90 Q30L100
+        }
+        )
+    {
+        for my $i ( 1 .. 4 ) {
+            printf qq{%s_%d\n}, $n, ( 1000000 * $i );
+        }
+    }
+    ' \
+    | parallel -k --no-run-if-empty -j 8 "
+        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
+    " >> ${BASE_DIR}/stat2.md
+
+cat stat2.md
+```
+
+| Name            |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
+|:----------------|--------:|------:|--------:|-----:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
+| Q20L80_1000000  | 200.57M |  88.3 |     100 |   71 | 178.52M |  10.996% | 2.27M | 2.32M |     1.02 | 2.72M |     0 | 0:01'40'' |
+| Q20L80_2000000  | 401.13M | 176.5 |     100 |   71 | 360.65M |  10.091% | 2.27M | 3.09M |     1.36 | 4.06M |     0 | 0:02'55'' |
+| Q20L80_3000000  | 601.71M | 264.8 |     100 |   71 | 543.99M |   9.593% | 2.27M | 3.84M |     1.69 | 5.48M |     0 | 0:03'52'' |
+| Q20L80_4000000  | 802.28M | 353.1 |     100 |   71 | 727.37M |   9.338% | 2.27M | 4.33M |     1.91 | 6.65M |     0 | 0:04'52'' |
+| Q20L90_1000000  | 201.43M |  88.6 |     100 |   71 | 179.83M |  10.725% | 2.27M | 2.33M |     1.02 | 2.72M |     0 | 0:01'43'' |
+| Q20L90_2000000  | 402.86M | 177.3 |     100 |   71 | 363.29M |   9.822% | 2.27M | 3.12M |     1.37 | 4.05M |     0 | 0:02'40'' |
+| Q20L90_3000000  |  604.3M | 265.9 |     100 |   71 |    548M |   9.317% | 2.27M | 3.87M |     1.70 | 5.46M |     0 | 0:03'53'' |
+| Q20L90_4000000  | 805.73M | 354.6 |     100 |   71 | 732.53M |   9.085% | 2.27M | 4.34M |     1.91 | 6.56M |     0 | 0:05'08'' |
+| Q20L100_1000000 |    202M |  88.9 |     100 |   71 | 180.97M |  10.409% | 2.27M | 2.35M |     1.03 | 2.73M |     0 | 0:01'33'' |
+| Q20L100_2000000 | 403.99M | 177.8 |     100 |   71 | 365.68M |   9.484% | 2.27M | 3.18M |     1.40 | 4.09M |     0 | 0:02'49'' |
+| Q20L100_3000000 | 605.99M | 266.7 |     100 |   71 | 551.25M |   9.034% | 2.27M | 3.92M |     1.72 | 5.42M |     0 | 0:04'02'' |
+| Q20L100_4000000 | 807.99M | 355.6 |     100 |   71 | 736.73M |   8.819% | 2.27M | 4.34M |     1.91 | 6.42M |     0 | 0:05'17'' |
+| Q25L80_1000000  | 200.26M |  88.1 |     100 |   71 | 182.48M |   8.880% | 2.27M | 2.34M |     1.03 | 2.67M |     0 | 0:01'38'' |
+| Q25L80_2000000  | 400.52M | 176.3 |     100 |   71 | 368.26M |   8.053% | 2.27M | 3.16M |     1.39 | 3.81M |     0 | 0:02'49'' |
+| Q25L80_3000000  | 600.78M | 264.4 |     100 |   71 | 554.85M |   7.645% | 2.27M | 3.87M |     1.70 | 4.92M |     0 | 0:03'42'' |
+| Q25L80_4000000  | 801.05M | 352.5 |     100 |   71 | 740.88M |   7.512% | 2.27M | 4.23M |     1.86 | 5.57M |     0 | 0:05'00'' |
+| Q25L90_1000000  | 201.45M |  88.7 |     100 |   71 | 183.79M |   8.762% | 2.27M | 2.37M |     1.04 | 2.71M |     0 | 0:01'33'' |
+| Q25L90_2000000  | 402.89M | 177.3 |     100 |   71 | 370.95M |   7.928% | 2.27M | 3.23M |     1.42 | 3.89M |     0 | 0:02'39'' |
+| Q25L90_3000000  | 604.34M | 266.0 |     100 |   71 | 558.82M |   7.531% | 2.27M | 3.91M |     1.72 | 4.95M |     0 | 0:03'42'' |
+| Q25L90_4000000  | 805.78M | 354.6 |     100 |   71 | 746.01M |   7.418% | 2.27M | 4.25M |     1.87 | 5.56M |     0 | 0:05'05'' |
+| Q25L100_1000000 |    202M |  88.9 |     100 |   71 | 184.46M |   8.681% | 2.27M | 2.39M |     1.05 | 2.73M |     0 | 0:01'26'' |
+| Q25L100_2000000 | 403.99M | 177.8 |     100 |   71 | 372.41M |   7.818% | 2.27M | 3.28M |     1.44 | 3.94M |     0 | 0:02'32'' |
+| Q25L100_3000000 | 605.99M | 266.7 |     100 |   71 | 560.78M |   7.460% | 2.27M | 3.96M |     1.74 | 4.99M |     0 | 0:03'52'' |
+| Q25L100_4000000 |  784.2M | 345.1 |     100 |   71 | 726.49M |   7.359% | 2.27M | 4.25M |     1.87 | 5.49M |     0 | 0:04'39'' |
+| Q30L80_1000000  | 198.96M |  87.6 |      99 |   71 | 184.92M |   7.059% | 2.27M | 2.52M |     1.11 |  2.9M |     0 | 0:01'32'' |
+| Q30L80_2000000  | 397.92M | 175.1 |      99 |   71 | 373.47M |   6.144% | 2.27M |  3.5M |     1.54 | 4.19M |     0 | 0:02'41'' |
+| Q30L90_1000000  | 201.12M |  88.5 |     100 |   71 | 186.96M |   7.041% | 2.27M | 2.58M |     1.14 | 2.98M |     0 | 0:01'31'' |
+| Q30L90_2000000  | 402.24M | 177.0 |     100 |   71 |  377.8M |   6.075% | 2.27M | 3.61M |     1.59 | 4.32M |     0 | 0:02'41'' |
+| Q30L100_1000000 | 201.99M |  88.9 |     100 |   71 | 187.89M |   6.982% | 2.27M | 2.64M |     1.16 | 3.05M |     0 | 0:01'31'' |
+| Q30L100_2000000 | 403.98M | 177.8 |     100 |   71 | 379.59M |   6.038% | 2.27M | 3.68M |     1.62 | 4.41M |     0 | 0:02'33'' |
+
+| Name            | N50SRclean |   Sum |     # | N50Anchor |     Sum |   # | N50Anchor2 | Sum | # | N50Others |     Sum |     # |   RunTime |
+|:----------------|-----------:|------:|------:|----------:|--------:|----:|-----------:|----:|--:|----------:|--------:|------:|----------:|
+| Q20L80_1000000  |       3067 | 2.72M |  6623 |      4502 |   1.97M | 558 |          0 |   0 | 0 |       110 | 751.52K |  6065 | 0:02'11'' |
+| Q20L80_2000000  |        417 | 4.06M | 19476 |      2128 |   1.58M | 777 |          0 |   0 | 0 |       120 |   2.47M | 18699 | 0:02'30'' |
+| Q20L80_3000000  |        163 | 5.48M | 32037 |      1608 |   1.01M | 631 |          0 |   0 | 0 |       133 |   4.48M | 31406 | 0:03'20'' |
+| Q20L80_4000000  |        160 | 6.65M | 41390 |      1343 | 520.48K | 381 |          0 |   0 | 0 |       145 |   6.13M | 41009 | 0:03'52'' |
+| Q20L90_1000000  |       3333 | 2.72M |  6511 |      4983 |   1.98M | 527 |          0 |   0 | 0 |       111 | 735.96K |  5984 | 0:01'40'' |
+| Q20L90_2000000  |        450 | 4.05M | 19124 |      2279 |   1.64M | 791 |          0 |   0 | 0 |       120 |   2.41M | 18333 | 0:02'34'' |
+| Q20L90_3000000  |        169 | 5.46M | 31253 |      1557 |   1.04M | 664 |          0 |   0 | 0 |       137 |   4.42M | 30589 | 0:03'25'' |
+| Q20L90_4000000  |        169 | 6.56M | 39670 |      1354 | 580.91K | 420 |          0 |   0 | 0 |       150 |   5.98M | 39250 | 0:03'59'' |
+| Q20L100_1000000 |       3891 | 2.73M |  6556 |      6121 |   1.99M | 464 |          0 |   0 | 0 |       110 | 741.69K |  6092 | 0:01'49'' |
+| Q20L100_2000000 |        450 | 4.09M | 19217 |      2513 |   1.71M | 766 |          0 |   0 | 0 |       119 |   2.38M | 18451 | 0:02'36'' |
+| Q20L100_3000000 |        177 | 5.42M | 30090 |      1711 |   1.17M | 702 |          0 |   0 | 0 |       138 |   4.24M | 29388 | 0:03'25'' |
+| Q20L100_4000000 |        180 | 6.42M | 37272 |      1388 | 694.59K | 488 |          0 |   0 | 0 |       157 |   5.72M | 36784 | 0:03'58'' |
+| Q25L80_1000000  |       5557 | 2.67M |  5876 |      7895 |   2.01M | 370 |          0 |   0 | 0 |       108 | 654.31K |  5506 | 0:01'50'' |
+| Q25L80_2000000  |       1584 | 3.81M | 15828 |      6034 |      2M | 457 |          0 |   0 | 0 |       113 |   1.81M | 15371 | 0:02'47'' |
+| Q25L80_3000000  |        208 | 4.92M | 24132 |      3129 |   1.81M | 690 |          0 |   0 | 0 |       130 |    3.1M | 23442 | 0:03'24'' |
+| Q25L80_4000000  |        226 | 5.57M | 27332 |      2105 |   1.56M | 785 |          0 |   0 | 0 |       154 |      4M | 26547 | 0:04'01'' |
+| Q25L90_1000000  |       5568 | 2.71M |  6246 |      7444 |   2.02M | 373 |          0 |   0 | 0 |       108 | 687.74K |  5873 | 0:01'58'' |
+| Q25L90_2000000  |       1368 | 3.89M | 16227 |      6402 |      2M | 444 |          0 |   0 | 0 |       115 |   1.88M | 15783 | 0:02'43'' |
+| Q25L90_3000000  |        218 | 4.95M | 23789 |      3079 |   1.82M | 681 |          0 |   0 | 0 |       134 |   3.13M | 23108 | 0:03'21'' |
+| Q25L90_4000000  |        242 | 5.56M | 26444 |      2176 |   1.58M | 784 |          0 |   0 | 0 |       161 |   3.98M | 25660 | 0:03'45'' |
+| Q25L100_1000000 |       5540 | 2.73M |  6452 |      7669 |   2.03M | 380 |          0 |   0 | 0 |       107 | 707.24K |  6072 | 0:01'50'' |
+| Q25L100_2000000 |       1226 | 3.94M | 16537 |      6458 |      2M | 427 |          0 |   0 | 0 |       117 |   1.94M | 16110 | 0:02'44'' |
+| Q25L100_3000000 |        222 | 4.99M | 23637 |      3346 |   1.85M | 664 |          0 |   0 | 0 |       136 |   3.14M | 22973 | 0:03'25'' |
+| Q25L100_4000000 |        253 | 5.49M | 25349 |      2446 |   1.66M | 757 |          0 |   0 | 0 |       163 |   3.83M | 24592 | 0:03'42'' |
+| Q30L80_1000000  |       5028 |  2.9M |  7921 |      7790 |   2.01M | 380 |          0 |   0 | 0 |       108 | 881.01K |  7541 | 0:02'00'' |
+| Q30L80_2000000  |        410 | 4.19M | 17948 |      8006 |   2.03M | 359 |          0 |   0 | 0 |       120 |   2.16M | 17589 | 0:02'41'' |
+| Q30L90_1000000  |       4385 | 2.98M |  8567 |      7084 |   2.02M | 390 |          0 |   0 | 0 |       109 | 956.82K |  8177 | 0:01'58'' |
+| Q30L90_2000000  |        293 | 4.32M | 18562 |      8048 |   2.03M | 352 |          0 |   0 | 0 |       125 |   2.29M | 18210 | 0:02'39'' |
+| Q30L100_1000000 |       3879 | 3.05M |  9187 |      6983 |   2.01M | 410 |          0 |   0 | 0 |       111 |   1.03M |  8777 | 0:01'58'' |
+| Q30L100_2000000 |        278 | 4.41M | 18812 |      7802 |   2.02M | 361 |          0 |   0 | 0 |       128 |   2.38M | 18451 | 0:02'42'' |
+
+## Nmen: merge anchors
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L80_1000000/anchor/pe.anchor.fa \
+    Q20L80_2000000/anchor/pe.anchor.fa \
+    Q20L90_1000000/anchor/pe.anchor.fa \
+    Q20L90_2000000/anchor/pe.anchor.fa \
+    Q20L100_1000000/anchor/pe.anchor.fa \
+    Q20L100_2000000/anchor/pe.anchor.fa \
+    Q25L80_1000000/anchor/pe.anchor.fa \
+    Q25L80_2000000/anchor/pe.anchor.fa \
+    Q25L90_1000000/anchor/pe.anchor.fa \
+    Q25L90_2000000/anchor/pe.anchor.fa \
+    Q25L100_1000000/anchor/pe.anchor.fa \
+    Q25L100_2000000/anchor/pe.anchor.fa \
+    Q30L80_1000000/anchor/pe.anchor.fa \
+    Q30L80_2000000/anchor/pe.anchor.fa \
+    Q30L90_1000000/anchor/pe.anchor.fa \
+    Q30L90_2000000/anchor/pe.anchor.fa \
+    Q30L100_1000000/anchor/pe.anchor.fa \
+    Q30L100_2000000/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge anchor2 and others
+anchr contained \
+    Q20L80_2000000/anchor/pe.anchor2.fa \
+    Q20L90_2000000/anchor/pe.anchor2.fa \
+    Q20L100_2000000/anchor/pe.anchor2.fa \
+    Q25L80_2000000/anchor/pe.anchor2.fa \
+    Q25L90_2000000/anchor/pe.anchor2.fa \
+    Q25L100_2000000/anchor/pe.anchor2.fa \
+    Q30L80_2000000/anchor/pe.anchor2.fa \
+    Q30L90_2000000/anchor/pe.anchor2.fa \
+    Q30L100_2000000/anchor/pe.anchor2.fa \
+    Q20L80_2000000/anchor/pe.others.fa \
+    Q20L90_2000000/anchor/pe.others.fa \
+    Q20L100_2000000/anchor/pe.others.fa \
+    Q25L80_2000000/anchor/pe.others.fa \
+    Q25L90_2000000/anchor/pe.others.fa \
+    Q25L100_2000000/anchor/pe.others.fa \
+    Q30L80_2000000/anchor/pe.others.fa \
+    Q30L90_2000000/anchor/pe.others.fa \
+    Q30L100_2000000/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/others.merge.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,others,paralogs" \
+    -o 9_qa
+
+```
+
+* Clear QxxLxxx.
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+rm -fr 2_illumina/Q{20,25,30}L*
+rm -fr Q{20,25,30}L*
+```
+
+## Nmen: 3GS
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+canu \
+    -p Nmen -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=2.3m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+canu \
+    -p Nmen -d canu-raw-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=2.3m \
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+
+faops n50 -S -C canu-raw-40x/Nmen.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/Nmen.trimmedReads.fasta.gz
+
+```
+
+## Nmen: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 20 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/Nmen.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/Nmen.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 20 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/Nmen.contigs.fasta \
+    -d contigTrim \
+    -b 20 --len 1000 --idt 0.98 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/Nmen.contigs.fasta \
+    canu-raw-80x/Nmen.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    -o 9_qa_contig
+
+```
+
+* Stats
+
+```bash
+BASE_DIR=$HOME/data/anchr/Nmen
+cd ${BASE_DIR}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 2272360 | 2272360 |   1 |
+| Paralogs     |       0 |       0 |   0 |
+| anchor.merge |    8861 | 2054770 | 316 |
+| others.merge |    1001 |    8007 |   8 |
+| anchor.cover |         |         |     |
+| anchorLong   |         |         |     |
+| contigTrim   |         |         |     |
 
 # Listeria monocytogenes FDAARGOS_351
 
