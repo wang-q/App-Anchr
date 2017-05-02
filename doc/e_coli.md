@@ -13,6 +13,7 @@
     - [Create anchors](#create-anchors)
     - [Results](#results)
     - [With PE info and substitutions](#with-pe-info-and-substitutions)
+    - [Different K values](#different-k-values)
     - [Merge anchors from different groups of reads](#merge-anchors-from-different-groups-of-reads)
     - [3GS](#3gs)
     - [Expand anchors](#expand-anchors)
@@ -48,10 +49,11 @@ brew link gnuplot@4 --force
 
 ## PacBio specific tools
 
-PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
-public available PacBio data are still in formats of `.bax.h5` or `hdf5.tgz`. For dealing with these
-files, PacBio releases some tools which can be installed by another specific tool, named
-`pitchfork`.
+PacBio is switching its data format from `hdf5` to `bam`, but at now
+(early 2017) the majority of public available PacBio data are still in
+formats of `.bax.h5` or `hdf5.tgz`. For dealing with these files, PacBio
+releases some tools which can be installed by another specific tool,
+named `pitchfork`.
 
 Their tools *can* be compiled under macOS with Homebrew.
 
@@ -99,9 +101,10 @@ deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
 make bax2bam
 ```
 
-* Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
-  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`. This action would
-  also pollute your bash environment, if anything went wrong, restart your terminal.
+* Compiled binary files are in `~/share/pitchfork/deployment`. Run
+  `source ~/share/pitchfork/deployment/setup-env.sh` will bring this
+  path to your `$PATH`. This action would also pollute your bash
+  environment, if anything went wrong, restart your terminal.
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
@@ -109,8 +112,8 @@ source ~/share/pitchfork/deployment/setup-env.sh
 bax2bam --help
 ```
 
-* Data of P4C2 and older are not supported in the current version of PacBio softwares
-  (SMRTAnalysis). So install SMRTAnalysis_2.3.0.
+* Data of P4C2 and older are not supported in the current version of
+  PacBio softwares (SMRTAnalysis). So install SMRTAnalysis_2.3.0.
 
 ```bash
 mkdir -p ~/share/SMRTAnalysis_2.3.0
@@ -132,7 +135,8 @@ vagrant up --provider virtualbox
 
 # *Escherichia coli* str. K-12 substr. MG1655
 
-* Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
+* Genome: INSDC
+  [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
 * Taxonomy ID:
   [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145)
 * Proportion of paralogs (> 1000 bp): 0.0323
@@ -172,9 +176,9 @@ ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
 
 * PacBio
 
-    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly) PacBio
-    provides a 7 GB file for *E. coli* (20 kb library), which is gathered with RS II and the P6C4
-    reagent.
+    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly)
+    PacBio provides a 7 GB file for *E. coli* (20 kb library), which is
+    gathered with RS II and the P6C4 reagent.
 
 ```bash
 mkdir -p ~/data/anchr/e_coli/3_pacbio
@@ -729,6 +733,24 @@ cat stat2.md
 |:-------------------|-----------:|------:|----:|----------:|------:|----:|-----------:|------:|---:|----------:|------:|----:|----------:|
 | Q25L100_3000000_SR |      22529 | 5.46M | 694 |     21172 | 3.14M | 244 |      31882 | 1.23M | 68 |     24143 | 1.09M | 382 | 0:02'30'' |
 
+| Name       |   SumFq | CovFq | AvgRead | Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
+|:-----------|--------:|------:|--------:|-----:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
+| Q25L100K39 | 835.35M | 180.0 |     140 |   39 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.64M |     0 | 0:06'34'' |
+| Q25L100K49 | 835.35M | 180.0 |     140 |   49 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.64M |     0 | 0:06'11'' |
+| Q25L100K59 | 835.35M | 180.0 |     140 |   59 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.65M |     0 | 0:06'12'' |
+| Q25L100K69 | 835.35M | 180.0 |     140 |   69 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.66M |     0 | 0:05'51'' |
+| Q25L100K79 | 835.35M | 180.0 |     140 |   79 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.67M |     0 | 0:05'44'' |
+| Q25L100K89 | 835.35M | 180.0 |     140 |   89 | 786.18M |   5.885% | 4.64M | 4.56M |     0.98 | 4.68M |     0 | 0:05'57'' |
+
+| Name       | N50SRclean |   Sum |    # | N50Anchor |   Sum |   # | N50Anchor2 |   Sum | # | N50Others |     Sum |    # |   RunTime |
+|:-----------|-----------:|------:|-----:|----------:|------:|----:|-----------:|------:|--:|----------:|--------:|-----:|----------:|
+| Q25L100K39 |      17668 | 4.64M | 1965 |     18213 |  4.5M | 381 |          0 |     0 | 0 |        88 | 145.51K | 1584 | 0:04'09'' |
+| Q25L100K49 |      25459 | 4.64M | 1417 |     25621 | 4.52M | 293 |          0 |     0 | 0 |       103 | 123.56K | 1124 | 0:04'22'' |
+| Q25L100K59 |      24216 | 4.65M | 1277 |     24981 | 4.52M | 307 |          0 |     0 | 0 |       124 | 126.45K |  970 | 0:03'54'' |
+| Q25L100K69 |      23121 | 4.66M | 1210 |     23662 | 4.53M | 322 |          0 |     0 | 0 |       141 | 129.74K |  888 | 0:04'03'' |
+| Q25L100K79 |      19732 | 4.67M | 1189 |     20575 | 4.53M | 373 |       1210 | 1.21K | 1 |       162 | 135.84K |  815 | 0:03'59'' |
+| Q25L100K89 |      17660 | 4.68M | 1173 |     18372 | 4.53M | 420 |          0 |     0 | 0 |       193 |    145K |  753 | 0:04'09'' |
+
 ## With PE info and substitutions
 
 ```bash
@@ -750,6 +772,62 @@ rm -fr anchor
 bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 true
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 .
+
+```
+
+## Different K values
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+parallel -j 3 "
+    mkdir -p ${BASE_DIR}/Q25L100K{}
+    cd ${BASE_DIR}/Q25L100K{}
+    ln -s ../Q25L100_3000000/R1.fq.gz R1.fq.gz
+    ln -s ../Q25L100_3000000/R2.fq.gz R2.fq.gz
+
+    anchr superreads \
+        R1.fq.gz R2.fq.gz \
+        --nosr -p 8 \
+        --kmer {} \
+        -o superreads.sh
+    bash superreads.sh
+
+    rm -fr anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
+    " ::: 39 49 59 69 79 89
+
+REAL_G=4641652
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
+    > ${BASE_DIR}/statK1.md
+
+parallel -k --no-run-if-empty -j 4 "
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/Q25L100K{} ${REAL_G}
+    " ::: 39 49 59 69 79 89 \
+    >> ${BASE_DIR}/statK1.md
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > ${BASE_DIR}/statK2.md
+
+parallel -k --no-run-if-empty -j 4 "
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/Q25L100K{}
+    " ::: 39 49 59 69 79 89 \
+    >> ${BASE_DIR}/statK2.md
+
+rm -fr 9_qa_kmer
+quast --no-check --threads 24 \
+    -R 1_genome/genome.fa \
+    Q25L100K39/anchor/pe.anchor.fa \
+    Q25L100K49/anchor/pe.anchor.fa \
+    Q25L100K59/anchor/pe.anchor.fa \
+    Q25L100K69/anchor/pe.anchor.fa \
+    Q25L100K79/anchor/pe.anchor.fa \
+    Q25L100K89/anchor/pe.anchor.fa \
+    1_genome/paralogs.fas \
+    --label "Q25L100K39,Q25L100K49,Q25L100K59,Q25L100K69,Q25L100K79,Q25L100K89,paralogs" \
+    -o 9_qa_kmer
 
 ```
 
@@ -916,10 +994,12 @@ faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
 
 ## Expand anchors
 
-三代 reads 里有一个常见的错误, 即单一 ZMW 里的测序结果中, 接头序列部分的测序结果出现了较多的错误,
-因此并没有将接头序列去除干净, 形成的 subreads 里含有多份基因组上同一片段, 它们之间以接头序列为间隔. 二代 contigs
-有可能会与一条三代 reads 匹配多次, 对组装造成影响. `anchr group` 命令里提供了选项, 将这种三代的 reads 去除.
-此判断没有放到 `anchr cover` 里, 因为拆分出的的 anchors 里也可能会有匹配多次的情况.
+三代 reads 里有一个常见的错误, 即单一 ZMW 里的测序结果中,
+接头序列部分的测序结果出现了较多的错误, 因此并没有将接头序列去除干净, 形成的
+subreads 里含有多份基因组上同一片段, 它们之间以接头序列为间隔. 二代 contigs
+有可能会与一条三代 reads 匹配多次, 对组装造成影响. `anchr group`
+命令里提供了选项, 将这种三代的 reads 去除. 此判断没有放到 `anchr cover` 里,
+因为拆分出的的 anchors 里也可能会有匹配多次的情况.
 
 ```text
       ===
