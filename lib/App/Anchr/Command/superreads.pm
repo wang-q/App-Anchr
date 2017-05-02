@@ -346,7 +346,7 @@ END_TIME=$(date +%s)
 save END_TIME
 
 RUNTIME=$((END_TIME-START_TIME))
-save END_TIME
+save RUNTIME
 
 exit 0
 
