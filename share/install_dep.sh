@@ -13,7 +13,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     check_install wang-q/tap/superreads
 fi
 
-for package in graphviz parallel pigz;
+for package in graphviz jq parallel pigz;
 do
     check_install ${package}
 done

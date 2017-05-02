@@ -50,6 +50,12 @@ hash jellyfish 2>/dev/null || {
     exit 1;
 }
 
+hash jq 2>/dev/null || {
+    echo >&2 "jq is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install jq";
+    exit 1;
+}
+
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
     hash createSuperReadsForDirectory.perl 2>/dev/null || {
         echo >&2 "superreads is required but it's not installed.";
