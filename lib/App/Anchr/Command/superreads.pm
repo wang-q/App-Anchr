@@ -105,7 +105,20 @@ log_debug () {
 set +e
 # Set some paths and prime system to save environment variables
 save () {
-    (echo -n "$1=\""; eval "echo -n \"\$$1\""; echo '"') >> environment.sh
+    printf ". + {%s: \"%s\"}" $1 $(eval "echo -n \"\$$1\"") > jq.filter.txt
+
+    if [ -e environment.json ]; then
+        cat environment.json \
+            | jq -f jq.filter.txt \
+            > environment.json.new
+        rm environment.json
+    else
+        jq -f jq.filter.txt -n \
+            > environment.json.new
+    fi
+
+    mv environment.json.new environment.json
+    rm jq.filter.txt
 }
 
 signaled () {
@@ -114,7 +127,9 @@ signaled () {
 }
 trap signaled TERM QUIT INT
 
-rm -f environment.sh; touch environment.sh
+START_TIME=$(date +%s)
+save START_TIME
+
 NUM_THREADS=[% opt.parallel %]
 save NUM_THREADS
 
@@ -326,6 +341,12 @@ fi
 if [ ! -e super1.err ]; then
     touch super1.err
 fi
+
+END_TIME=$(date +%s)
+save END_TIME
+
+RUNTIME=$((END_TIME-START_TIME))
+save END_TIME
 
 exit 0
 
