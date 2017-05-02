@@ -10,6 +10,8 @@
     - [Sfle: create anchors](#sfle-create-anchors)
     - [Sfle: results](#sfle-results)
     - [Sfle: merge anchors](#sfle-merge-anchors)
+    - [Sfle: 3GS](#sfle-3gs)
+    - [Sfle: expand anchors](#sfle-expand-anchors)
 - [Vibrio parahaemolyticus ATCC BAA-239](#vibrio-parahaemolyticus-atcc-baa-239)
     - [Vpar: download](#vpar-download)
     - [Vpar: combinations of different quality values and read lengths](#vpar-combinations-of-different-quality-values-and-read-lengths)
@@ -32,8 +34,24 @@
     - [Lpne: expand anchors](#lpne-expand-anchors)
 - [Neisseria gonorrhoeae FDAARGOS_207](#neisseria-gonorrhoeae-fdaargos-207)
     - [Ngon: download](#ngon-download)
+    - [Ngon: combinations of different quality values and read lengths](#ngon-combinations-of-different-quality-values-and-read-lengths)
+    - [Ngon: down sampling](#ngon-down-sampling)
+    - [Ngon: generate super-reads](#ngon-generate-super-reads)
+    - [Ngon: create anchors](#ngon-create-anchors)
+    - [Ngon: results](#ngon-results)
+    - [Ngon: merge anchors](#ngon-merge-anchors)
+    - [Ngon: 3GS](#ngon-3gs)
+    - [Ngon: expand anchors](#ngon-expand-anchors)
 - [Neisseria meningitidis FDAARGOS_209](#neisseria-meningitidis-fdaargos-209)
     - [Nmen: download](#nmen-download)
+    - [Nmen: combinations of different quality values and read lengths](#nmen-combinations-of-different-quality-values-and-read-lengths)
+    - [Nmen: down sampling](#nmen-down-sampling)
+    - [Nmen: generate super-reads](#nmen-generate-super-reads)
+    - [Nmen: create anchors](#nmen-create-anchors)
+    - [Nmen: results](#nmen-results)
+    - [Nmen: merge anchors](#nmen-merge-anchors)
+    - [Nmen: 3GS](#nmen-3gs)
+    - [Nmen: expand anchors](#nmen-expand-anchors)
 - [Listeria monocytogenes FDAARGOS_351](#listeria-monocytogenes-fdaargos-351)
     - [Lmon: download](#lmon-download)
 - [Clostridioides difficile 630](#clostridioides-difficile-630)
@@ -2788,7 +2806,7 @@ cat stat.md
 | Genome   | 2153922 |    2153922 |        1 |
 | Paralogs |    4318 |     142093 |       53 |
 | Illumina |     101 | 1491583958 | 14768158 |
-| PacBio   |       0 |          0 |        0 |
+| PacBio   |   11808 | 1187845820 |   137516 |
 | uniq     |     101 | 1485449016 | 14707416 |
 | scythe   |     101 | 1460356291 | 14707416 |
 | Q20L80   |     101 | 1156993843 | 11540782 |
@@ -2854,10 +2872,10 @@ done
 BASE_DIR=$HOME/data/anchr/Ngon
 cd ${BASE_DIR}
 
-head -n 50000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+head -n 25000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
 faops n50 -S -C 3_pacbio/pacbio.40x.fasta
 
-head -n 100000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+head -n 50000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
 faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 
 ```
@@ -3185,6 +3203,228 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
+## Ngon: 3GS
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+canu \
+    -p Ngon -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=2.3m \
+    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+
+canu \
+    -p Ngon -d canu-raw-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=2.3m \
+    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+
+faops n50 -S -C canu-raw-40x/Ngon.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/Ngon.trimmedReads.fasta.gz
+
+```
+
+## Ngon: expand anchors
+
+* anchorLong
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+anchr cover \
+    --parallel 16 \
+    -c 2 -m 40 \
+    -b 20 --len 1000 --idt 0.9 \
+    merge/anchor.merge.fasta \
+    canu-raw-40x/Ngon.trimmedReads.fasta.gz \
+    -o merge/anchor.cover.fasta
+
+rm -fr anchorLong
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.cover.fasta \
+    canu-raw-40x/Ngon.trimmedReads.fasta.gz \
+    -d anchorLong \
+    -b 20 --len 1000 --idt 0.98
+
+anchr overlap \
+    merge/anchor.cover.fasta \
+    --serial --len 10 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchorLong/anchor.ovlp.tsv
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+rm -fr anchorLong/group
+anchr group \
+    anchorLong/anchorLong.db \
+    anchorLong/anchorLong.ovlp.tsv \
+    --oa anchorLong/anchor.ovlp.tsv \
+    --parallel 16 \
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+
+pushd ${BASE_DIR}/anchorLong
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 10 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.98 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            --png \
+            -o group/{}.contig.fasta
+    '
+popd
+
+# false strand
+cat anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+
+cat \
+   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/*.contig.fasta \
+   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
+
+```
+
+* contigTrim
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+rm -fr contigTrim
+anchr overlap2 \
+    --parallel 16 \
+    anchorLong/contig.fasta \
+    canu-raw-40x/Ngon.contigs.fasta \
+    -d contigTrim \
+    -b 20 --len 1000 --idt 0.98 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+echo ${CONTIG_COUNT}
+
+rm -fr contigTrim/group
+anchr group \
+    --parallel 16 \
+    --keep \
+    contigTrim/anchorLong.db \
+    contigTrim/anchorLong.ovlp.tsv \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+
+pushd ${BASE_DIR}/contigTrim
+cat group/groups.txt \
+    | parallel --no-run-if-empty -j 8 '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+popd
+
+cat \
+    contigTrim/group/non_grouped.fasta \
+    contigTrim/group/*.contig.fasta \
+    >  contigTrim/contig.fasta
+
+```
+
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/Ngon
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/Ngon.contigs.fasta \
+    canu-raw-80x/Ngon.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    -o 9_qa_contig
+
+```
+
 * Stats
 
 ```bash
@@ -3220,9 +3460,9 @@ cat stat3.md
 | Paralogs     |    4318 |  142093 |  53 |
 | anchor.merge |   19941 | 2005051 | 172 |
 | others.merge |    1000 |    6004 |   6 |
-| anchor.cover |         |         |     |
-| anchorLong   |         |         |     |
-| contigTrim   |         |         |     |
+| anchor.cover |   17994 | 1874483 | 181 |
+| anchorLong   |   23846 | 1872090 | 137 |
+| contigTrim   |  497733 | 1942945 |  17 |
 
 # Neisseria meningitidis FDAARGOS_209
 
@@ -4079,9 +4319,9 @@ cat stat3.md
 | Paralogs     |       0 |       0 |   0 |
 | anchor.merge |    8861 | 2054770 | 316 |
 | others.merge |    1001 |    8007 |   8 |
-| anchor.cover |         |         |     |
-| anchorLong   |         |         |     |
-| contigTrim   |         |         |     |
+| anchor.cover |    6446 | 1594011 | 333 |
+| anchorLong   |    6549 | 1592821 | 324 |
+| contigTrim   |   12169 | 1655270 | 231 |
 
 # Listeria monocytogenes FDAARGOS_351
 
