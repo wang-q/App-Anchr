@@ -68,9 +68,9 @@ if [ "${STAT_TASK}" = "1" ]; then
 
         SUM_FQ=$( faops n50 -H -N 0 -S R1.fq.gz R2.fq.gz )
         SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
-        EST_G=$( cat environment.json | jq ".ESTIMATED_GENOME_SIZE | tonumber" )
+        EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
         SUM_KU=$( faops n50 -H -N 0 -S k_unitigs.fasta)
-        SECS=$( cat environment.json | jq ".RUNTIME | tonumber" )
+        SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
         if [ -e work1/superReadSequences.fasta ]; then
             SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
         else
@@ -81,8 +81,8 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE};" ) \
-            $( cat environment.json | jq ".PE_AVG_READ_LENGTH | tonumber" ) \
-            $( cat environment.json | jq ".KMER | tonumber" ) \
+            $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
+            $( cat environment.json | jq '.KMER' ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FA}, base => 1000,);" ) \
             $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_FA} / ${SUM_FQ}) * 100;" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
