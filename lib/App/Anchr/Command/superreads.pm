@@ -56,6 +56,13 @@ sub validate_args {
             $self->usage_error("The adapter file [$opt->{adapter}] doesn't exist.");
         }
     }
+
+    if ( $opt->{kmer} ne 'auto' ) {
+        unless ( $opt->{kmer} =~ /^[\d,]+$/ ) {
+            $self->usage_error("Invalid k-mer [$opt->{kmer}].");
+        }
+        $opt->{kmer} = [ grep {defined} split ",", $opt->{kmer} ];
+    }
 }
 
 sub execute {
@@ -202,7 +209,7 @@ KMER=$(
 save KMER
 echo "Choosing kmer size of $KMER for the graph"
 [% ELSE -%]
-KMER=[% opt.kmer %]
+KMER=[% opt.kmer.join(',') %]
 save KMER
 echo "You set kmer size of $KMER for the graph"
 [% END -%]
@@ -302,6 +309,7 @@ echo "Estimated genome size: $ESTIMATED_GENOME_SIZE"
 # Build k-unitigs
 #----------------------------#
 if [ ! -e k_unitigs.fasta ]; then
+[% IF opt.kmer == 'auto' -%]
     log_info Creating k-unitigs with k=$KMER
     create_k_unitigs_large_k -c $(($KMER-1)) -t [% opt.parallel %] \
         -m $KMER -n $ESTIMATED_GENOME_SIZE -l $KMER -f 0.000001 pe.cor.fa \
@@ -318,6 +326,33 @@ if [ ! -e k_unitigs.fasta ]; then
             }
         ' \
         > k_unitigs.fasta
+[% ELSE -%]
+[% FOREACH kmer IN opt.kmer -%]
+    log_info Creating k-unitigs with k=[% kmer %]
+    create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
+        -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 pe.cor.fa \
+        | grep --text -v '^>' \
+        | perl -an -e '
+            $seq = $F[0];
+            $F[0] =~ tr/ACTGactg/TGACtgac/;
+            $revseq = reverse( $F[0] );
+            $h{ ( $seq ge $revseq ) ? $seq : $revseq } = 1;
+
+            END {
+                $n = 0;
+                foreach $k ( keys %h ) { print ">", $n++, " length:", length($k), "\n$k\n" }
+            }
+        ' \
+        > k_unitigs_K[% kmer %].fasta
+
+[% END -%]
+    anchr contained \
+[% FOREACH kmer IN opt.kmer -%]
+        k_unitigs_K[% kmer %].fasta \
+[% END -%]
+        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o k_unitigs.fasta
+[% END -%]
 fi
 
 [% IF opt.nosr -%]
