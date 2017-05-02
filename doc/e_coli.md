@@ -816,6 +816,23 @@ parallel -k --no-run-if-empty -j 4 "
     " ::: 39 49 59 69 79 89 \
     >> ${BASE_DIR}/statK2.md
 
+# merge anchors
+cd ${BASE_DIR}
+mkdir -p Q25L100merge
+anchr contained \
+    Q25L100K39/anchor/pe.anchor.fa \
+    Q25L100K49/anchor/pe.anchor.fa \
+    Q25L100K59/anchor/pe.anchor.fa \
+    Q25L100K69/anchor/pe.anchor.fa \
+    Q25L100K79/anchor/pe.anchor.fa \
+    Q25L100K89/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q25L100merge/anchor.contained.fasta
+anchr orient Q25L100merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q25L100merge/anchor.orient.fasta
+anchr merge Q25L100merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q25L100merge/anchor.merge.fasta
+
 rm -fr 9_qa_kmer
 quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
@@ -825,8 +842,9 @@ quast --no-check --threads 24 \
     Q25L100K69/anchor/pe.anchor.fa \
     Q25L100K79/anchor/pe.anchor.fa \
     Q25L100K89/anchor/pe.anchor.fa \
+    Q25L100merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q25L100K39,Q25L100K49,Q25L100K59,Q25L100K69,Q25L100K79,Q25L100K89,paralogs" \
+    --label "Q25L100K39,Q25L100K49,Q25L100K59,Q25L100K69,Q25L100K79,Q25L100K89,Q25L100merge,paralogs" \
     -o 9_qa_kmer
 
 ```
