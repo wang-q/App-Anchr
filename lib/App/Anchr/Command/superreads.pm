@@ -313,36 +313,17 @@ if [ ! -e k_unitigs.fasta ]; then
     log_info Creating k-unitigs with k=$KMER
     create_k_unitigs_large_k -c $(($KMER-1)) -t [% opt.parallel %] \
         -m $KMER -n $ESTIMATED_GENOME_SIZE -l $KMER -f 0.000001 pe.cor.fa \
-        | grep --text -v '^>' \
-        | perl -an -e '
-            $seq = $F[0];
-            $F[0] =~ tr/ACTGactg/TGACtgac/;
-            $revseq = reverse( $F[0] );
-            $h{ ( $seq ge $revseq ) ? $seq : $revseq } = 1;
+        > k_unitigs_K$KMER.fasta
 
-            END {
-                $n = 0;
-                foreach $k ( keys %h ) { print ">", $n++, " length:", length($k), "\n$k\n" }
-            }
-        ' \
-        > k_unitigs.fasta
+    anchr contained \
+        k_unitigs_K$KMER.fasta \
+        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o k_unitigs.fasta
 [% ELSE -%]
 [% FOREACH kmer IN opt.kmer -%]
     log_info Creating k-unitigs with k=[% kmer %]
     create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
         -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 pe.cor.fa \
-        | grep --text -v '^>' \
-        | perl -an -e '
-            $seq = $F[0];
-            $F[0] =~ tr/ACTGactg/TGACtgac/;
-            $revseq = reverse( $F[0] );
-            $h{ ( $seq ge $revseq ) ? $seq : $revseq } = 1;
-
-            END {
-                $n = 0;
-                foreach $k ( keys %h ) { print ">", $n++, " length:", length($k), "\n$k\n" }
-            }
-        ' \
         > k_unitigs_K[% kmer %].fasta
 
 [% END -%]
@@ -350,7 +331,7 @@ if [ ! -e k_unitigs.fasta ]; then
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
 [% END -%]
-        --len 500 --idt 0.995 --proportion 0.99999 --parallel [% opt.parallel %] \
+        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
         -o k_unitigs.fasta
 [% END -%]
 fi
