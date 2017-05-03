@@ -426,7 +426,8 @@ perl -e '
         cd ${BASE_DIR}/{}
         anchr superreads \
             R1.fq.gz R2.fq.gz \
-            --nosr -s 300 -d 30 -p 8 \
+            --nosr -p 8 \
+            --kmer 39,49,59,69,79,89
             -o superreads.sh
         bash superreads.sh
     "
@@ -798,6 +799,23 @@ parallel -j 3 "
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
     " ::: 39 49 59 69 79 89
 
+parallel -j 3 "
+    mkdir -p ${BASE_DIR}/Q25L120K{}
+    cd ${BASE_DIR}/Q25L120K{}
+    ln -s ../Q25L120_2500000/R1.fq.gz R1.fq.gz
+    ln -s ../Q25L120_2500000/R2.fq.gz R2.fq.gz
+
+    anchr superreads \
+        R1.fq.gz R2.fq.gz \
+        --nosr -p 8 \
+        --kmer {} \
+        -o superreads.sh
+    bash superreads.sh
+
+    rm -fr anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
+    " ::: 39 49 59 69 79 89 95 99
+
 REAL_G=4641652
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
@@ -808,12 +826,22 @@ parallel -k --no-run-if-empty -j 4 "
     " ::: 39 49 59 69 79 89 \
     >> ${BASE_DIR}/statK1.md
 
+parallel -k --no-run-if-empty -j 4 "
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/Q25L120K{} ${REAL_G}
+    " ::: 39 49 59 69 79 89 95 99 \
+    >> ${BASE_DIR}/statK1.md
+
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > ${BASE_DIR}/statK2.md
 
 parallel -k --no-run-if-empty -j 4 "
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/Q25L100K{}
     " ::: 39 49 59 69 79 89 \
+    >> ${BASE_DIR}/statK2.md
+
+parallel -k --no-run-if-empty -j 4 "
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/Q25L100K{}
+    " ::: 39 49 59 69 79 89 95 99 \
     >> ${BASE_DIR}/statK2.md
 
 # merge anchors
@@ -833,6 +861,24 @@ anchr orient Q25L100merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q25L10
 anchr merge Q25L100merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin Q25L100merge/anchor.merge.fasta
 
+cd ${BASE_DIR}
+mkdir -p Q25L120merge
+anchr contained \
+    Q25L120K39/anchor/pe.anchor.fa \
+    Q25L120K49/anchor/pe.anchor.fa \
+    Q25L120K59/anchor/pe.anchor.fa \
+    Q25L120K69/anchor/pe.anchor.fa \
+    Q25L120K79/anchor/pe.anchor.fa \
+    Q25L120K89/anchor/pe.anchor.fa \
+    Q25L120K95/anchor/pe.anchor.fa \
+    Q25L120K99/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q25L120merge/anchor.contained.fasta
+anchr orient Q25L120merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q25L120merge/anchor.orient.fasta
+anchr merge Q25L120merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q25L120merge/anchor.merge.fasta
+
 rm -fr 9_qa_kmer
 quast --no-check --threads 24 \
     -R 1_genome/genome.fa \
@@ -842,9 +888,18 @@ quast --no-check --threads 24 \
     Q25L100K69/anchor/pe.anchor.fa \
     Q25L100K79/anchor/pe.anchor.fa \
     Q25L100K89/anchor/pe.anchor.fa \
+    Q25L120K39/anchor/pe.anchor.fa \
+    Q25L120K49/anchor/pe.anchor.fa \
+    Q25L120K59/anchor/pe.anchor.fa \
+    Q25L120K69/anchor/pe.anchor.fa \
+    Q25L120K79/anchor/pe.anchor.fa \
+    Q25L120K89/anchor/pe.anchor.fa \
+    Q25L120K95/anchor/pe.anchor.fa \
+    Q25L120K99/anchor/pe.anchor.fa \
     Q25L100merge/anchor.merge.fasta \
+    Q25L120merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q25L100K39,Q25L100K49,Q25L100K59,Q25L100K69,Q25L100K79,Q25L100K89,Q25L100merge,paralogs" \
+    --label "Q25L100K39,Q25L100K49,Q25L100K59,Q25L100K69,Q25L100K79,Q25L100K89,Q25L120K39,Q25L120K49,Q25L120K59,Q25L120K69,Q25L120K79,Q25L120K89,Q25L120K95,Q25L120K99,Q25L100merge,Q25L120merge,paralogs" \
     -o 9_qa_kmer
 
 ```
