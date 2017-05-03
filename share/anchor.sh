@@ -59,12 +59,12 @@ cd ${RESULT_DIR}/anchor
 ln -s ../pe.cor.fa .
 
 if [ "${USE_SR}" = true ] ; then
-    anchr merge ../work1/superReadSequences.fasta --len 500 --idt 0.98 -o SR.clean.fasta
+    ln -s ../work1/superReadSequences.fasta SR.fasta
 else
-    anchr merge ../k_unitigs.fasta --len 500 --idt 0.98 -o SR.clean.fasta
+    ln -s ../k_unitigs.fasta SR.fasta
 fi
 
-faops size SR.clean.fasta > sr.chr.sizes
+faops size SR.fasta > sr.chr.sizes
 
 #----------------------------#
 # unambiguous
@@ -73,7 +73,7 @@ log_info "unambiguous regions"
 
 # index
 log_debug "bbmap index"
-bbmap.sh ref=SR.clean.fasta \
+bbmap.sh ref=SR.fasta \
     1>bbmap.err 2>&1
 
 log_debug "bbmap"
@@ -81,7 +81,7 @@ bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=${N_THREADS} \
     ambiguous=toss \
-    ref=SR.clean.fasta in=pe.cor.fa \
+    ref=SR.fasta in=pe.cor.fa \
     outm=unambiguous.sam outu=unmapped.sam \
     1>>bbmap.err 2>&1
 
@@ -126,7 +126,7 @@ cat unambiguous.cover.csv \
     > anchor.txt
 
 log_debug "pe.anchor.fa"
-faops some -l 0 SR.clean.fasta anchor.txt pe.anchor.fa
+faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
 
 rm unambiguous.cover.txt
 
@@ -163,9 +163,9 @@ cat unambiguous2.txt \
     ' \
     > anchor2.txt
 
-faops some -l 0 SR.clean.fasta anchor2.txt pe.anchor2.fa
+faops some -l 0 SR.fasta anchor2.txt pe.anchor2.fa
 
-faops some -l 0 -i SR.clean.fasta anchor.txt stdout \
+faops some -l 0 -i SR.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
 
 rm unambiguous2.*

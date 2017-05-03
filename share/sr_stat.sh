@@ -99,7 +99,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
-            "N50SRclean" "Sum" "#" \
+            "N50SR     " "Sum" "#" \
             "N50Anchor"  "Sum" "#" \
             "N50Anchor2" "Sum" "#" \
             "N50Others"  "Sum" "#" \
@@ -112,7 +112,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
         SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( dirname $(pwd) ) ) \
-            $( stat_format SR.clean.fasta ) \
+            $( stat_format SR.fasta ) \
             $( stat_format pe.anchor.fa )   \
             $( stat_format pe.anchor2.fa )  \
             $( stat_format pe.others.fa )   \
