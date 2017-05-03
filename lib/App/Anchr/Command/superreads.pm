@@ -13,10 +13,11 @@ sub opt_spec {
         [ "outfile|o=s", "output filename, [stdout] for screen", { default => "superreads.sh" }, ],
         [ 'size|s=i',    'fragment size',                        { default => 300, }, ],
         [ 'std|d=i',     'fragment size standard deviation',     { default => 30, }, ],
-        [ 'jf=i',        'jellyfish hash size',                  { default => 500_000_000, }, ],
-        [ 'kmer=s',      'kmer size to be used for super reads', { default => 'auto', }, ],
-        [ 'prefix|r=s',  'prefix for paired-reads',              { default => 'pe', }, ],
-        [ "nosr",        "skip the super-reads step", ],
+        [ 'min=i',  'minimal length of k-unitigs or super-reads', { default => 500, }, ],
+        [ 'jf=i',   'jellyfish hash size',                        { default => 500_000_000, }, ],
+        [ 'kmer=s', 'kmer size to be used for super reads',       { default => 'auto', }, ],
+        [ 'prefix|r=s', 'prefix for paired-reads', { default => 'pe', }, ],
+        [ "nosr",       "skip the super-reads step", ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'adapter.jf' ) },
         ],
@@ -317,8 +318,9 @@ if [ ! -e k_unitigs.fasta ]; then
 
     anchr contained \
         k_unitigs_K$KMER.fasta \
-        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-        -o k_unitigs.fasta
+        --len [% opt.min %] --idt 0.99 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o stdout \
+        | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
 [% ELSE -%]
 [% FOREACH kmer IN opt.kmer -%]
     log_info Creating k-unitigs with k=[% kmer %]
@@ -332,8 +334,11 @@ if [ ! -e k_unitigs.fasta ]; then
         k_unitigs_K[% kmer %].fasta \
 [% END -%]
         --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-        -o k_unitigs.fasta
+        -o stdout \
+        | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
 [% END -%]
+    anchr orient k_unitigs.contained.fasta --len [% opt.min %] --idt 0.99 -o k_unitigs.orient.fasta
+    anchr merge k_unitigs.orient.fasta --len [% opt.min %] --idt 0.999 -o k_unitigs.fasta
 fi
 
 [% IF opt.nosr -%]
