@@ -164,7 +164,7 @@ export PE_AVG_READ_LENGTH=$(
     | awk '{if(length($1)>31){n+=length($1);m++;}}END{print int(n/m)}'
 )
 save PE_AVG_READ_LENGTH
-echo "Average PE read length $PE_AVG_READ_LENGTH"
+log_debug "Average PE read length $PE_AVG_READ_LENGTH"
 
 [% IF opt.kmer == 'auto' -%]
 KMER=$(
@@ -207,11 +207,11 @@ KMER=$(
         print $kmer;
     ' )
 save KMER
-echo "Choosing kmer size of $KMER for the graph"
+log_debug "Choosing kmer size of $KMER for the graph"
 [% ELSE -%]
 KMER=[% opt.kmer.join(',') %]
 save KMER
-echo "You set kmer size of $KMER for the graph"
+log_debug "You set kmer size of $KMER for the graph"
 [% END -%]
 
 #----------------------------#
@@ -235,7 +235,7 @@ MIN_Q_CHAR=$(
         }
     ')
 save MIN_Q_CHAR
-echo MIN_Q_CHAR: $MIN_Q_CHAR
+log_debug "MIN_Q_CHAR: $MIN_Q_CHAR"
 
 JF_SIZE=$( ls -l *.fastq \
     | awk '{n+=$5} END{s=int(n/50); if(s>[% opt.jf %])print s;else print "[% opt.jf %]";}' )
@@ -289,7 +289,7 @@ if [ ! -e pe.cor.fa ]; then
     }
 fi
 
-echo "Discard any reads with subs"
+log_debug "Discard any reads with subs"
 mv pe.cor.fa pe.cor.sub.fa
 cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 
@@ -303,7 +303,7 @@ if [ ! -e k_u_hash_0 ]; then
 fi
 export ESTIMATED_GENOME_SIZE=$(jellyfish histo -t [% opt.parallel %] -h 1 k_u_hash_0 | tail -n 1 |awk '{print $2}')
 save ESTIMATED_GENOME_SIZE
-echo "Estimated genome size: $ESTIMATED_GENOME_SIZE"
+log_debug "Estimated genome size: $ESTIMATED_GENOME_SIZE"
 
 #----------------------------#
 # Build k-unitigs
@@ -350,7 +350,7 @@ if [ ! -e k_unitigs.fasta ]; then
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
 [% END -%]
-        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        --len 500 --idt 0.995 --proportion 0.99999 --parallel [% opt.parallel %] \
         -o k_unitigs.fasta
 [% END -%]
 fi
