@@ -40,9 +40,9 @@ N_THREADS=${2:-8}
 USE_SR=${3:-true}
 
 log_info "Parameters"
-log_debug "    RESULT_DIR=${RESULT_DIR}"
-log_debug "    N_THREADS=${N_THREADS}"
-log_debug "    USE_SR=${USE_SR}"
+log_debug "RESULT_DIR=${RESULT_DIR}"
+log_debug "N_THREADS=${N_THREADS}"
+log_debug "USE_SR=${USE_SR}"
 
 [ -e ${RESULT_DIR}/pe.cor.fa ] || {
     log_warn "Can't find pe.cor.fa in [${RESULT_DIR}].";
@@ -123,7 +123,7 @@ cat unambiguous.cover.csv \
     | sort -n \
     > anchor.txt
 
-rm unambiguous.cover.*
+rm unambiguous.cover.txt
 
 #----------------------------#
 # anchor2
