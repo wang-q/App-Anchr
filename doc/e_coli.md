@@ -418,8 +418,8 @@ perl -e '
             exit;
         fi        
 
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
+        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
             exit;
         fi
 
