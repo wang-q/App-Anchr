@@ -330,7 +330,7 @@ if [ ! -e k_unitigs.fasta ]; then
         > k_unitigs_K[% kmer %].fasta
 
 [% END -%]
-    log_info Merge k-unitigs
+    log_info Merging k-unitigs
     anchr contained \
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
