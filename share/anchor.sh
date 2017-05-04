@@ -29,7 +29,7 @@ log_info () {
 }
 
 log_debug () {
-    echo >&2 -e "==> $@"
+    echo >&2 -e "  * $@"
 }
 
 #----------------------------#
@@ -108,9 +108,7 @@ find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
 #----------------------------#
 # anchor
 #----------------------------#
-log_info "pe.anchor.fa"
-
-log_debug "unambiguous.cover"
+log_info "anchor - unambiguous"
 jrunlist cover unambiguous.cover.txt -o unambiguous.cover.yml
 jrunlist stat sr.chr.sizes unambiguous.cover.yml -o unambiguous.cover.csv
 
@@ -125,15 +123,12 @@ cat unambiguous.cover.csv \
     | sort -n \
     > anchor.txt
 
-log_debug "pe.anchor.fa"
-faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
-
-rm unambiguous.cover.txt
+rm unambiguous.cover.*
 
 #----------------------------#
 # anchor2
 #----------------------------#
-log_info "pe.anchor2.fa & pe.others.fa"
+log_info "anchor2 - unambiguous2"
 
 # contiguous unique region longer than 1000
 jrunlist span unambiguous.cover.yml --op excise -n 1000 -o unambiguous2.cover.yml
@@ -163,12 +158,18 @@ cat unambiguous2.txt \
     ' \
     > anchor2.txt
 
-faops some -l 0 SR.fasta anchor2.txt pe.anchor2.fa
+rm unambiguous2.*
+
+#----------------------------#
+# anchor2
+#----------------------------#
+log_info "pe.anchor.fa & pe.others.fa"
+faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
+
+faops some -l 0 SR.fasta anchor2.txt stdout >> pe.anchor.fa
 
 faops some -l 0 -i SR.fasta anchor.txt stdout \
     | faops some -l 0 -i stdin anchor2.txt pe.others.fa
-
-rm unambiguous2.*
 
 #----------------------------#
 # Done
