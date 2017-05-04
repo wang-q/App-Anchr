@@ -104,7 +104,7 @@ log_info () {
 }
 
 log_debug () {
-    echo >&2 -e "==> $@"
+    echo >&2 -e "  * $@"
 }
 
 #----------------------------#
@@ -148,11 +148,13 @@ log_info 'Processing pe library reads'
 rm -rf meanAndStdevByPrefix.pe.txt
 echo '[% opt.prefix %] [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
 
-rename_filter_fastq \
-    '[% opt.prefix %]' \
-    <(exec expand_fastq '[% args.0 %]' ) \
-    <(exec expand_fastq '[% args.1 %]' ) \
-    > '[% opt.prefix %].renamed.fastq'
+if [ ! -e [% opt.prefix %].renamed.fastq ]; then
+    rename_filter_fastq \
+        '[% opt.prefix %]' \
+        <(exec expand_fastq '[% args.0 %]' ) \
+        <(exec expand_fastq '[% args.1 %]' ) \
+        > '[% opt.prefix %].renamed.fastq'
+fi
 
 #----------------------------#
 # Stats of PE and counting kmer
@@ -288,11 +290,10 @@ if [ ! -e pe.cor.fa ]; then
         log_warn Error correction of PE reads failed. Check pe.cor.log.;
         exit 1;
     }
+    log_debug "Discard any reads with subs"
+    mv pe.cor.fa pe.cor.sub.fa
+    cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 fi
-
-log_debug "Discard any reads with subs"
-mv pe.cor.fa pe.cor.sub.fa
-cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 
 #----------------------------#
 # Estimating genome size.
@@ -329,6 +330,7 @@ if [ ! -e k_unitigs.fasta ]; then
         > k_unitigs_K[% kmer %].fasta
 
 [% END -%]
+    log_info Merge k-unitigs
     anchr contained \
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
@@ -358,10 +360,6 @@ if [[ ! -e work1/superReads.success ]]; then
     exit 1
 fi
 [% END -%]
-
-if [ ! -e super1.err ]; then
-    touch super1.err
-fi
 
 END_TIME=$(date +%s)
 save END_TIME
