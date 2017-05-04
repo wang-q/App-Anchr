@@ -97,24 +97,22 @@ if [ "${STAT_TASK}" = "1" ]; then
 
 elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
             "N50SR     " "Sum" "#" \
             "N50Anchor"  "Sum" "#" \
-            "N50Anchor2" "Sum" "#" \
             "N50Others"  "Sum" "#" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ -d "${RESULT_DIR}/anchor" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}/anchor"
 
         SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( dirname $(pwd) ) ) \
             $( stat_format SR.fasta ) \
             $( stat_format pe.anchor.fa )   \
-            $( stat_format pe.anchor2.fa )  \
             $( stat_format pe.others.fa )   \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
