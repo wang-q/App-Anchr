@@ -570,7 +570,7 @@ anchr contained merge/anchor0.merge.fasta --len 1000 --idt 0.98 --proportion 0.9
     -o merge/anchor.contained.fasta
 anchr merge merge/anchor.contained.fasta --len 1000 --idt 0.999 -o merge/anchor.merge.fasta
 
-# merge anchor2 and others
+# merge others
 anchr contained \
     Q20L100_6000000/anchor/pe.others.fa \
     Q20L120_6000000/anchor/pe.others.fa \
@@ -1214,6 +1214,7 @@ perl -e '
         anchr superreads \
             R1.fq.gz R2.fq.gz \
             --nosr -p 8 \
+            --kmer 31,51,71 \
             -o superreads.sh
         bash superreads.sh
     "
@@ -1381,17 +1382,8 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
-# merge anchor2 and others
+# merge others
 anchr contained \
-    Q20L80/anchor/pe.anchor2.fa \
-    Q20L90/anchor/pe.anchor2.fa \
-    Q20L100/anchor/pe.anchor2.fa \
-    Q25L80/anchor/pe.anchor2.fa \
-    Q25L90/anchor/pe.anchor2.fa \
-    Q25L100/anchor/pe.anchor2.fa \
-    Q30L80/anchor/pe.anchor2.fa \
-    Q30L90/anchor/pe.anchor2.fa \
-    Q30L100/anchor/pe.anchor2.fa \
     Q20L80/anchor/pe.others.fa \
     Q20L90/anchor/pe.others.fa \
     Q20L100/anchor/pe.others.fa \
