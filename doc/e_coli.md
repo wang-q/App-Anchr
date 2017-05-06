@@ -1319,11 +1319,11 @@ cat stat3.md
 |:-------------|--------:|--------:|----:|
 | Genome       | 4641652 | 4641652 |   1 |
 | Paralogs     |    1934 |  195673 | 106 |
-| anchor.merge |   67396 | 4563199 | 123 |
-| others.merge |    1026 |   21715 |  21 |
-| anchor.cover |   63607 | 4549406 | 122 |
-| anchorLong   |  112475 | 4538290 |  84 |
-| contigTrim   | 4600003 | 4641348 |   2 |
+| anchor.merge |   95579 | 4564714 | 103 |
+| others.merge |    1225 |    2242 |   2 |
+| anchor.cover |   94389 | 4552209 | 100 |
+| anchorLong   |  132686 | 4540198 |  62 |
+| contigTrim   | 4594649 | 4636507 |   2 |
 
 * Clear QxxLxxx.
 
