@@ -2,7 +2,7 @@
 
 [TOC levels=1-3]: # " "
 - [Bacteria 2+3](#bacteria-23)
-- [Shigella flexneri NCTC0001](#shigella-flexneri-nctc0001)
+- [Shigella flexneri NCTC0001, 福氏志贺氏菌](#shigella-flexneri-nctc0001-福氏志贺氏菌)
     - [Sfle: download](#sfle-download)
     - [Sfle: combinations of different quality values and read lengths](#sfle-combinations-of-different-quality-values-and-read-lengths)
     - [Sfle: down sampling](#sfle-down-sampling)
@@ -12,7 +12,7 @@
     - [Sfle: merge anchors](#sfle-merge-anchors)
     - [Sfle: 3GS](#sfle-3gs)
     - [Sfle: expand anchors](#sfle-expand-anchors)
-- [Vibrio parahaemolyticus ATCC BAA-239](#vibrio-parahaemolyticus-atcc-baa-239)
+- [Vibrio parahaemolyticus ATCC BAA-239, 副溶血弧菌](#vibrio-parahaemolyticus-atcc-baa-239-副溶血弧菌)
     - [Vpar: download](#vpar-download)
     - [Vpar: combinations of different quality values and read lengths](#vpar-combinations-of-different-quality-values-and-read-lengths)
     - [Vpar: down sampling](#vpar-down-sampling)
@@ -22,7 +22,7 @@
     - [Vpar: merge anchors](#vpar-merge-anchors)
     - [Vpar: 3GS](#vpar-3gs)
     - [Vpar: expand anchors](#vpar-expand-anchors)
-- [Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1](#legionella-pneumophila-subsp-pneumophila-atcc-33152d-5-philadelphia-1)
+- [Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1, 嗜肺军团菌](#legionella-pneumophila-subsp-pneumophila-atcc-33152d-5-philadelphia-1-嗜肺军团菌)
     - [Lpne: download](#lpne-download)
     - [Lpne: combinations of different quality values and read lengths](#lpne-combinations-of-different-quality-values-and-read-lengths)
     - [Lpne: down sampling](#lpne-down-sampling)
@@ -32,7 +32,7 @@
     - [Lpne: merge anchors](#lpne-merge-anchors)
     - [Lpne: 3GS](#lpne-3gs)
     - [Lpne: expand anchors](#lpne-expand-anchors)
-- [Neisseria gonorrhoeae FDAARGOS_207](#neisseria-gonorrhoeae-fdaargos-207)
+- [Neisseria gonorrhoeae FDAARGOS_207, 淋病奈瑟氏菌](#neisseria-gonorrhoeae-fdaargos-207-淋病奈瑟氏菌)
     - [Ngon: download](#ngon-download)
     - [Ngon: combinations of different quality values and read lengths](#ngon-combinations-of-different-quality-values-and-read-lengths)
     - [Ngon: down sampling](#ngon-down-sampling)
@@ -42,7 +42,7 @@
     - [Ngon: merge anchors](#ngon-merge-anchors)
     - [Ngon: 3GS](#ngon-3gs)
     - [Ngon: expand anchors](#ngon-expand-anchors)
-- [Neisseria meningitidis FDAARGOS_209](#neisseria-meningitidis-fdaargos-209)
+- [Neisseria meningitidis FDAARGOS_209, 脑膜炎奈瑟氏菌](#neisseria-meningitidis-fdaargos-209-脑膜炎奈瑟氏菌)
     - [Nmen: download](#nmen-download)
     - [Nmen: combinations of different quality values and read lengths](#nmen-combinations-of-different-quality-values-and-read-lengths)
     - [Nmen: down sampling](#nmen-down-sampling)
@@ -52,15 +52,17 @@
     - [Nmen: merge anchors](#nmen-merge-anchors)
     - [Nmen: 3GS](#nmen-3gs)
     - [Nmen: expand anchors](#nmen-expand-anchors)
-- [Listeria monocytogenes FDAARGOS_351](#listeria-monocytogenes-fdaargos-351)
+- [Bordetella pertussis FDAARGOS_195, 百日咳博德特氏杆菌](#bordetella-pertussis-fdaargos-195-百日咳博德特氏杆菌)
+    - [Bper: download](#bper-download)
+- [Listeria monocytogenes FDAARGOS_351, 单核细胞增生李斯特氏菌](#listeria-monocytogenes-fdaargos-351-单核细胞增生李斯特氏菌)
     - [Lmon: download](#lmon-download)
 - [Clostridioides difficile 630](#clostridioides-difficile-630)
     - [Cdif: download](#cdif-download)
-- [Campylobacter jejuni subsp. jejuni ATCC 700819](#campylobacter-jejuni-subsp-jejuni-atcc-700819)
+- [Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌](#campylobacter-jejuni-subsp-jejuni-atcc-700819-空肠弯曲杆菌)
     - [Cjej: download](#cjej-download)
 
 
-# Shigella flexneri NCTC0001
+# Shigella flexneri NCTC0001, 福氏志贺氏菌
 
 Project
 [ERP005470](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP005470)
@@ -830,7 +832,7 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
-# Vibrio parahaemolyticus ATCC BAA-239
+# Vibrio parahaemolyticus ATCC BAA-239, 副溶血弧菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -1631,7 +1633,7 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
-# Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1
+# Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1, 嗜肺军团菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -2428,7 +2430,7 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
-# Neisseria gonorrhoeae FDAARGOS_207
+# Neisseria gonorrhoeae FDAARGOS_207, 淋病奈瑟氏菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -3225,7 +3227,7 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
-# Neisseria meningitidis FDAARGOS_209
+# Neisseria meningitidis FDAARGOS_209, 脑膜炎奈瑟氏菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -4019,7 +4021,7 @@ rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 ```
 
-# Bordetella pertussis FDAARGOS_195
+# Bordetella pertussis FDAARGOS_195, 百日咳博德特氏杆菌
 
 * Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -4087,7 +4089,7 @@ md5sum --check sra_md5.txt
 
 ```
 
-# Listeria monocytogenes FDAARGOS_351
+# Listeria monocytogenes FDAARGOS_351, 单核细胞增生李斯特氏菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -4177,7 +4179,7 @@ cp ~/data/anchr/paralogs/otherbac/Results/Cdif/Cdif.multi.fas paralogs.fas
 
 SRX2107163
 
-# Campylobacter jejuni subsp. jejuni ATCC 700819
+# Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌
 
 Project
 [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
