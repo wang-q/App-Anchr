@@ -964,33 +964,37 @@ rm -fr ~/data/anchr/Vpar/3_pacbio/untar
 ## Vpar: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 80, 90, and 100
+* len: 60
 
 ```bash
 BASE_DIR=$HOME/data/anchr/Vpar
 
 cd ${BASE_DIR}
-tally \
-    --pair-by-offset --with-quality --nozip --unsorted \
-    -i 2_illumina/R1.fq.gz \
-    -j 2_illumina/R2.fq.gz \
-    -o 2_illumina/R1.uniq.fq \
-    -p 2_illumina/R2.uniq.fq
-
-parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-    " ::: R1 R2
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 4 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 2 "
-    scythe \
-        2_illumina/{}.uniq.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina/{}.scythe.fq.gz
-    " ::: R1 R2
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
 
 cd ${BASE_DIR}
 parallel --no-run-if-empty -j 4 "
@@ -1008,7 +1012,7 @@ parallel --no-run-if-empty -j 4 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 80 90 100
+    " ::: 20 25 30 ::: 60
 
 ```
 
@@ -1037,7 +1041,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 for qual in 20 25 30; do
-    for len in 80 90 100; do
+    for len in 60; do
         DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
 
         printf "| %s | %s | %s | %s |\n" \
@@ -1057,15 +1061,9 @@ cat stat.md
 | PacBio   |   11771 | 1228497092 |   143537 |
 | uniq     |     101 | 1361783404 | 13483004 |
 | scythe   |     101 | 1346787728 | 13483004 |
-| Q20L80   |     101 | 1235056033 | 12260434 |
-| Q20L90   |     101 | 1214510165 | 12038126 |
-| Q20L100  |     101 | 1180316267 | 11686470 |
-| Q25L80   |     101 | 1156319125 | 11484046 |
-| Q25L90   |     101 | 1130877812 | 11208590 |
-| Q25L100  |     101 | 1099548984 | 10886782 |
-| Q30L80   |     101 | 1002432558 |  9976778 |
-| Q30L90   |     101 |  963917300 |  9559260 |
-| Q30L100  |     101 |  924641823 |  9155276 |
+| Q20L60   |     101 | 1264469138 | 12611522 |
+| Q25L60   |     101 | 1200269501 | 12011552 |
+| Q30L60   |     101 | 1080002384 | 10917028 |
 
 ## Vpar: down sampling
 
@@ -1074,15 +1072,9 @@ BASE_DIR=$HOME/data/anchr/Vpar
 cd ${BASE_DIR}
 
 ARRAY=(
-    "2_illumina/Q20L80:Q20L80:5000000"
-    "2_illumina/Q20L90:Q20L90:5000000"
-    "2_illumina/Q20L100:Q20L100:5000000"
-    "2_illumina/Q25L80:Q25L80:5000000"
-    "2_illumina/Q25L90:Q25L90:5000000"
-    "2_illumina/Q25L100:Q25L100:5000000"
-    "2_illumina/Q30L80:Q30L80:4000000"
-    "2_illumina/Q30L90:Q30L90:4000000"
-    "2_illumina/Q30L100:Q30L100:4000000"
+    "2_illumina/Q20L60:Q20L60:5000000"
+    "2_illumina/Q25L60:Q25L60:5000000"
+    "2_illumina/Q30L60:Q30L60:5000000"
 )
 
 for group in "${ARRAY[@]}" ; do
@@ -1137,9 +1129,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
+        Q20L60
+        Q25L60
+        Q30L60
         }
         )
     {
@@ -1165,7 +1157,7 @@ perl -e '
         anchr superreads \
             R1.fq.gz R2.fq.gz \
             --nosr -p 8 \
-            --kmer 31,51,71 \
+            --kmer 41,61,81 \
             -o superreads.sh
         bash superreads.sh
     "
@@ -1195,9 +1187,9 @@ cd ${BASE_DIR}
 perl -e '
     for my $n (
         qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
+        Q20L60
+        Q25L60
+        Q30L60
         }
         )
     {
@@ -1235,9 +1227,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
 perl -e '
     for my $n (
         qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
+        Q20L60
+        Q25L60
+        Q30L60
         }
         )
     {
@@ -1269,9 +1261,9 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
 perl -e '
     for my $n (
         qw{
-        Q20L80 Q20L90 Q20L100
-        Q25L80 Q25L90 Q25L100
-        Q30L80 Q30L90 Q30L100
+        Q20L60
+        Q25L60
+        Q30L60
         }
         )
     {
