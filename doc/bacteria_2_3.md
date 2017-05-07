@@ -3248,7 +3248,7 @@ aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/805/GCF_0
 
 TAB=$'\t'
 cat <<EOF > replace.tsv
-NC_003112.2{TAB}1
+NC_003112.2${TAB}1
 EOF
 
 faops replace GCF_000008805.1_ASM880v1_genomic.fna.gz replace.tsv genome.fa
@@ -4017,6 +4017,74 @@ cd ${BASE_DIR}
 
 rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
+```
+
+# Bordetella pertussis FDAARGOS_195
+
+* Project
+[SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
+
+* Other name: ATCC BAA-589D-5; Tohama 1;
+
+* BioSample: [SAMN04875532](https://www.ncbi.nlm.nih.gov/biosample/SAMN04875532)
+
+## Bper: download
+
+* Reference genome
+
+    * Strain: Bordetella pertussis Tohama I
+    * Taxid: [257313](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=257313)
+    * RefSeq assembly accession:
+      [GCF_000195715.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/195/715/GCF_000195715.1_ASM19571v1/GCF_000195715.1_ASM19571v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0
+
+```bash
+mkdir -p ~/data/anchr/Bper/1_genome
+cd ~/data/anchr/Bper/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/195/715/GCF_000195715.1_ASM19571v1/GCF_000195715.1_ASM19571v1_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_002929.2${TAB}1
+EOF
+
+faops replace GCF_000195715.1_ASM19571v1_genomic.fna.gz replace.tsv genome.fa
+
+cp ~/data/anchr/paralogs/otherbac/Results/Bper/Bper.multi.fas paralogs.fas
+
+```
+
+* Illumina
+
+    * [SRX2179101](https://www.ncbi.nlm.nih.gov/sra/SRX2179101) SRR4271511
+    * [SRX2179104](https://www.ncbi.nlm.nih.gov/sra/SRX2179104) SRR4271510
+
+```bash
+mkdir -p ~/data/anchr/Bper/2_illumina
+cd ~/data/anchr/Bper/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/001/SRR4271511/SRR4271511_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/001/SRR4271511/SRR4271511_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/000/SRR4271510/SRR4271510_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR427/000/SRR4271510/SRR4271510_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+0177ba6d05bfbf8a77f47b56cceb7c2e SRR4271511_1.fastq.gz
+bf80b95eef4b86ad09cddec0c323415a SRR4271511_2.fastq.gz
+1e52042a69c78ad7e3cd4dde3cc36721 SRR4271510_1.fastq.gz
+b4d60d4ec59cc7c6dcd12e235981dfda SRR4271510_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+#ln -s SRR4272082_1.fastq.gz R1.fq.gz
+#ln -s SRR4272082_2.fastq.gz R2.fq.gz
+
 ```
 
 # Listeria monocytogenes FDAARGOS_351
