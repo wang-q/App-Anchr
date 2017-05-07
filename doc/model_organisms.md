@@ -150,7 +150,7 @@ faops n50 -S -C 3_pacbio/pacbio.80x.fasta
 ## Scer: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 60 and 100
+* len: 60 and 90
 
 ```bash
 BASE_DIR=$HOME/data/anchr/s288c
@@ -1208,8 +1208,8 @@ perl -e '
             exit;
         fi        
 
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
+        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
             exit;
         fi
 
@@ -1660,11 +1660,11 @@ cat stat3.md
 |:-------------|---------:|----------:|------:|
 | Genome       | 25286936 | 137567477 |     8 |
 | Paralogs     |     4031 |  13665900 |  4492 |
-| anchor.merge |    15168 | 116902455 | 14046 |
-| others.merge |     1005 |    227615 |   226 |
-| anchor.cover |    15081 | 114949677 | 13842 |
-| anchorLong   |    46865 | 112622237 |  5128 |
-| contigTrim   |  2105281 | 121308821 |   468 |
+| anchor.merge |    14126 | 117782908 | 14540 |
+| others.merge |     1133 |    383574 |   275 |
+| anchor.cover |    13951 | 115773049 | 14325 |
+| anchorLong   |    52346 | 113638401 |  4683 |
+| contigTrim   |  1852169 | 121664817 |   479 |
 
 * Clear QxxLxxx.
 
@@ -1946,8 +1946,8 @@ perl -e '
             exit;
         fi        
 
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
+        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
             exit;
         fi
 
@@ -2814,8 +2814,8 @@ perl -e '
             exit;
         fi        
 
-        if [ -e ${BASE_DIR}/{}/pe.cor.fa ]; then
-            echo '    pe.cor.fa already presents'
+        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
             exit;
         fi
 
