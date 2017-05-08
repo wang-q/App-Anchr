@@ -105,6 +105,10 @@ cd ~/data/anchr/Bcer/8_competitor
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/B_cereus_MiSeq.tar.gz
 
 tar xvfz B_cereus_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz B_cereus_MiSeq.tar.gz cabog_ctg.fasta
+tar xvfz B_cereus_MiSeq.tar.gz mira_ctg.fasta
+tar xvfz B_cereus_MiSeq.tar.gz msrca_ctg.fasta
+tar xvfz B_cereus_MiSeq.tar.gz sga_ctg.fasta
 tar xvfz B_cereus_MiSeq.tar.gz soap_ctg.fasta
 tar xvfz B_cereus_MiSeq.tar.gz spades_ctg.fasta
 tar xvfz B_cereus_MiSeq.tar.gz velvet_ctg.fasta
@@ -479,12 +483,16 @@ rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
     8_competitor/soap_ctg.fasta \
     8_competitor/spades_ctg.fasta \
     8_competitor/velvet_ctg.fasta \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "abyss,soap,spades,velvet,merge,paralogs" \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
     -o 9_qa
 
 ```
@@ -598,6 +606,10 @@ cd ~/data/anchr/Rsph/8_competitor
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/R_sphaeroides_MiSeq.tar.gz
 
 tar xvfz R_sphaeroides_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz cabog_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz mira_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz msrca_ctg.fasta
+tar xvfz R_sphaeroides_MiSeq.tar.gz sga_ctg.fasta
 tar xvfz R_sphaeroides_MiSeq.tar.gz soap_ctg.fasta
 tar xvfz R_sphaeroides_MiSeq.tar.gz spades_ctg.fasta
 tar xvfz R_sphaeroides_MiSeq.tar.gz velvet_ctg.fasta
@@ -1040,12 +1052,16 @@ rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
     8_competitor/soap_ctg.fasta \
     8_competitor/spades_ctg.fasta \
     8_competitor/velvet_ctg.fasta \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "abyss,soap,spades,velvet,merge,paralogs" \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
     -o 9_qa
 
 ```
@@ -1157,6 +1173,10 @@ cd ~/data/anchr/Mabs/8_competitor
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/M_abscessus_MiSeq.tar.gz
 
 tar xvfz M_abscessus_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz cabog_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz mira_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz msrca_ctg.fasta
+tar xvfz M_abscessus_MiSeq.tar.gz sga_ctg.fasta
 tar xvfz M_abscessus_MiSeq.tar.gz soap_ctg.fasta
 tar xvfz M_abscessus_MiSeq.tar.gz spades_ctg.fasta
 tar xvfz M_abscessus_MiSeq.tar.gz velvet_ctg.fasta
@@ -1575,12 +1595,16 @@ rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
     8_competitor/soap_ctg.fasta \
     8_competitor/spades_ctg.fasta \
     8_competitor/velvet_ctg.fasta \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "abyss,soap,spades,velvet,merge,paralogs" \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
     -o 9_qa
 
 ```
@@ -1699,6 +1723,9 @@ cd ~/data/anchr/Vcho/8_competitor
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/V_cholerae_MiSeq.tar.gz
 
 tar xvfz V_cholerae_MiSeq.tar.gz abyss_ctg.fasta
+tar xvfz V_cholerae_MiSeq.tar.gz cabog_ctg.fasta
+tar xvfz V_cholerae_MiSeq.tar.gz mira_ctg.fasta
+tar xvfz V_cholerae_MiSeq.tar.gz msrca_ctg.fasta
 tar xvfz V_cholerae_MiSeq.tar.gz sga_ctg.fasta
 tar xvfz V_cholerae_MiSeq.tar.gz soap_ctg.fasta
 tar xvfz V_cholerae_MiSeq.tar.gz spades_ctg.fasta
@@ -2119,13 +2146,16 @@ rm -fr 9_qa
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
     8_competitor/sga_ctg.fasta \
     8_competitor/soap_ctg.fasta \
     8_competitor/spades_ctg.fasta \
     8_competitor/velvet_ctg.fasta \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "abyss,sga,soap,spades,velvet,merge,paralogs" \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
     -o 9_qa
 
 ```
