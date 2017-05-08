@@ -16,8 +16,7 @@ sub opt_spec {
         [ 'min=i',  'minimal length of k-unitigs or super-reads', { default => 500, }, ],
         [ 'jf=i',   'jellyfish hash size',                        { default => 500_000_000, }, ],
         [ 'kmer=s', 'kmer size to be used for super reads',       { default => 'auto', }, ],
-        [ 'prefix|r=s', 'prefix for paired-reads', { default => 'pe', }, ],
-        [ "nosr",       "skip the super-reads step", ],
+        [ "nosr",   "skip the super-reads step", ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'adapter.jf' ) },
         ],
@@ -27,7 +26,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr superreads [options] <PE file1> <PE file2>";
+    return "anchr superreads [options] <PE file1> <PE file2> [SE file]";
 }
 
 sub description {
@@ -40,8 +39,8 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( @{$args} != 2 ) {
-        my $message = "This command need two input files.\n\tIt found";
+    if ( !( @{$args} == 2 or @{$args} == 3 ) ) {
+        my $message = "This command need two or three input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
         $self->usage_error($message);
@@ -144,22 +143,33 @@ save NUM_THREADS
 #----------------------------#
 # Renaming reads
 #----------------------------#
-log_info 'Processing pe library reads'
+log_info 'Processing pe and/or se library reads'
 rm -rf meanAndStdevByPrefix.pe.txt
-echo '[% opt.prefix %] [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
+echo 'pe [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
 
-if [ ! -e [% opt.prefix %].renamed.fastq ]; then
+if [ ! -e pe.renamed.fastq ]; then
     rename_filter_fastq \
-        '[% opt.prefix %]' \
+        'pe' \
         <(exec expand_fastq '[% args.0 %]' ) \
         <(exec expand_fastq '[% args.1 %]' ) \
-        > '[% opt.prefix %].renamed.fastq'
+        > 'pe.renamed.fastq'
 fi
+
+[% IF args.2 -%]
+echo 'se [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
+
+if [ ! -e se.renamed.fastq ]; then
+    rename_filter_fastq \
+        'se' \
+        <(exec expand_fastq '[% args.2 %]' ) \
+        > 'se.renamed.fastq'
+fi
+[% END -%]
 
 #----------------------------#
 # Stats of PE and counting kmer
 #----------------------------#
-head -n 80000 [% opt.prefix %].renamed.fastq > pe_data.tmp
+head -n 80000 pe.renamed.fastq > pe_data.tmp
 export PE_AVG_READ_LENGTH=$(
     head -n 40000 pe_data.tmp \
     | grep --text -v '^+' \
@@ -256,7 +266,7 @@ if [ ! -e quorum_mer_db.jf ]; then
         -t [% opt.parallel %] \
         -s $JF_SIZE -b 7 -m 24 -q $((MIN_Q_CHAR + 5)) \
         -o quorum_mer_db.jf.tmp \
-        [% opt.prefix %].renamed.fastq \
+        pe.renamed.fastq [% IF args.2 %]se.renamed.fastq [% END %]\
         && mv quorum_mer_db.jf.tmp quorum_mer_db.jf
     if [ $? -ne 0 ]; then
         log_warn Increase JF_SIZE by --jf, the recommendation value is genome_size*coverage/2
@@ -283,7 +293,7 @@ if [ ! -e pe.cor.fa ]; then
         --contaminant=[% opt.adapter %] \
         -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
-        [% opt.prefix %].renamed.fastq \
+        pe.renamed.fastq [% IF args.2 %]se.renamed.fastq [% END %]\
         -o pe.cor --verbose 1>quorum.err 2>&1 \
     || {
         mv pe.cor.fa pe.cor.fa.failed;
