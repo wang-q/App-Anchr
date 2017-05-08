@@ -162,6 +162,7 @@ if [ ! -e se.renamed.fastq ]; then
     rename_filter_fastq \
         'se' \
         <(exec expand_fastq '[% args.2 %]' ) \
+        '' \
         > 'se.renamed.fastq'
 fi
 [% END -%]
