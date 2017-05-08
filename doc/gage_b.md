@@ -118,7 +118,7 @@ tar xvfz B_cereus_MiSeq.tar.gz velvet_ctg.fasta
 ## Bcer: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
-* len: 60 and 100
+* len: 60 and 90
 
 ```bash
 BASE_DIR=$HOME/data/anchr/Bcer
@@ -151,7 +151,7 @@ if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
 fi
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 4 "
+parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -184,25 +184,25 @@ printf "|:--|--:|--:|--:|\n" >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
-for qual in 20 25 30; do
-    for len in 60 90; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( echo Q{1}L{2}; \
+            faops n50 -H -S -C \
+                ${BASE_DIR}/2_illumina/Q{1}L{2}/R1.fq.gz \
+                ${BASE_DIR}/2_illumina/Q{1}L{2}/R2.fq.gz;
+        )
+    " ::: 20 25 30 ::: 60 90 \
+    >> ${BASE_DIR}/stat.md
 
 cat stat.md
 ```
@@ -211,8 +211,8 @@ cat stat.md
 |:---------|--------:|----------:|--------:|
 | Genome   | 5224283 |   5432652 |       2 |
 | Paralogs |    2295 |    223889 |     103 |
-| Illumina |     251 | 481020311 | 2080000 |
 | PacBio   |         |           |         |
+| Illumina |     251 | 481020311 | 2080000 |
 | uniq     |     251 | 480993557 | 2079856 |
 | scythe   |     251 | 479499589 | 2079856 |
 | Q20L60   |     250 | 413488810 | 1820024 |
@@ -248,13 +248,16 @@ for group in "${ARRAY[@]}" ; do
     mkdir -p ${DIR_COUNT}
     
     if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
+        echo '    R1.fq.gz exists'        
+        continue;
     fi
     
     ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
     ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
+    ln -s ${BASE_DIR}/${GROUP_DIR}/Rs.fq.gz ${DIR_COUNT}/Rs.fq.gz
 
 done
+
 ```
 
 ## Bcer: generate super-reads
@@ -290,7 +293,7 @@ perl -e '
 
         cd ${BASE_DIR}/{}
         anchr superreads \
-            R1.fq.gz R2.fq.gz \
+            R1.fq.gz R2.fq.gz Rs.fq.gz\
             --nosr -p 8 \
             --kmer 41,61,81,101,121 \
             -o superreads.sh
@@ -368,7 +371,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 4 "
+    | parallel -k --no-run-if-empty -j 3 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -400,7 +403,7 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel -k --no-run-if-empty -j 8 "
+    | parallel -k --no-run-if-empty -j 6 "
         if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
             exit;
         fi
@@ -413,12 +416,21 @@ cat stat2.md
 
 | Name   |   SumFq | CovFq | AvgRead |               Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
 |:-------|--------:|------:|--------:|-------------------:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
-| Q20L60 | 413.49M |  76.1 |     224 | "41,61,81,101,121" |  351.4M |  15.015% | 5.43M | 5.36M |     0.99 | 5.37M |     0 | 0:07'15'' |
-| Q20L90 | 398.95M |  73.4 |     228 | "41,61,81,101,121" | 339.36M |  14.937% | 5.43M | 5.35M |     0.99 | 5.37M |     0 | 0:07'09'' |
-| Q25L60 |  381.7M |  70.3 |     218 | "41,61,81,101,121" | 343.46M |  10.018% | 5.43M | 5.34M |     0.98 | 5.36M |     0 | 0:06'54'' |
-| Q25L90 | 366.58M |  67.5 |     224 | "41,61,81,101,121" | 329.96M |   9.990% | 5.43M | 5.34M |     0.98 | 5.37M |     0 | 0:06'41'' |
-| Q30L60 | 331.98M |  61.1 |     210 | "41,61,81,101,121" | 311.18M |   6.264% | 5.43M | 5.34M |     0.98 | 5.37M |     0 | 0:06'24'' |
-| Q30L90 | 316.47M |  58.3 |     216 | "41,61,81,101,121" | 296.55M |   6.293% | 5.43M | 5.34M |     0.98 | 5.37M |     0 | 0:06'12'' |
+| Q20L60 | 413.49M |  76.1 |     224 | "41,61,81,101,121" | 372.43M |   9.929% | 5.43M | 5.36M |     0.99 | 5.37M |     0 | 0:11'21'' |
+| Q20L90 | 398.95M |  73.4 |     228 | "41,61,81,101,121" | 369.16M |   7.467% | 5.43M | 5.36M |     0.99 | 5.37M |     0 | 0:11'23'' |
+| Q25L60 |  381.7M |  70.3 |     218 | "41,61,81,101,121" | 372.17M |   2.499% | 5.43M | 5.34M |     0.98 | 5.36M |     0 | 0:10'56'' |
+| Q25L90 | 366.58M |  67.5 |     224 | "41,61,81,101,121" | 368.07M |  -0.406% | 5.43M | 5.34M |     0.98 | 5.36M |     0 | 0:10'56'' |
+| Q30L60 | 331.98M |  61.1 |     210 | "41,61,81,101,121" |  348.4M |  -4.947% | 5.43M | 5.34M |     0.98 | 5.38M |     0 | 0:10'39'' |
+| Q30L90 | 316.47M |  58.3 |     216 | "41,61,81,101,121" | 343.29M |  -8.477% | 5.43M | 5.34M |     0.98 | 5.38M |     0 | 0:10'38'' |
+
+| Name   | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |    Sum |  # |   RunTime |
+|:-------|------:|------:|----:|----------:|------:|----:|----------:|-------:|---:|----------:|
+| Q20L60 | 21877 | 5.37M | 432 |     21877 | 5.35M | 397 |       789 | 25.75K | 35 | 0:02'20'' |
+| Q20L90 | 22373 | 5.37M | 414 |     22636 | 5.35M | 382 |       789 | 23.53K | 32 | 0:02'18'' |
+| Q25L60 | 37680 | 5.36M | 266 |     37680 | 5.34M | 242 |       713 | 16.23K | 24 | 0:02'29'' |
+| Q25L90 | 37680 | 5.36M | 263 |     37680 | 5.35M | 244 |       666 | 12.42K | 19 | 0:02'13'' |
+| Q30L60 | 42824 | 5.38M | 246 |     42824 | 5.33M | 217 |     16158 | 51.49K | 29 | 0:02'09'' |
+| Q30L90 | 42241 | 5.38M | 246 |     42241 | 5.32M | 218 |     16144 | 50.94K | 28 | 0:02'12'' |
 
 | Name   | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |    Sum |  # |   RunTime |
 |:-------|------:|------:|----:|----------:|------:|----:|----------:|-------:|---:|----------:|
@@ -526,6 +538,13 @@ cat stat3.md
 | Paralogs     |    2295 |  223889 | 103 |
 | anchor.merge |   46191 | 5346983 | 206 |
 | others.merge |   16206 |   25554 |   4 |
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 5224283 | 5432652 |   2 |
+| Paralogs     |    2295 |  223889 | 103 |
+| anchor.merge |   46191 | 5348348 | 206 |
+| others.merge |   16206 |   18334 |   3 |
 
 * Clear QxxLxxx.
 
