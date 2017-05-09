@@ -45,6 +45,8 @@ brew install gnuplot
 brew unlink gnuplot
 
 brew link gnuplot@4 --force
+
+brew install kmergenie --with-maxkmer=200
 ```
 
 ## PacBio specific tools
