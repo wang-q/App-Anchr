@@ -50,9 +50,11 @@
 
 * Reference genome
 
+    * Strain: Bacillus cereus ATCC 10987
     * Taxid: [222523](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=222523)
     * RefSeq assembly accession:
       [GCF_000008005.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0797
 
 ```bash
 mkdir -p ~/data/anchr/Bcer/1_genome
@@ -570,9 +572,11 @@ rm -fr Q{20,25,30}L*
 
 * Reference genome
 
+    * Strain: Rhodobacter sphaeroides 2.4.1
     * Taxid: [272943](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272943)
     * RefSeq assembly accession:
       [GCF_000012905.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0286
 
 ```bash
 mkdir -p ~/data/anchr/Rsph/1_genome
@@ -1143,6 +1147,7 @@ rm -fr Q{20,25,30}L*
         * Taxid: [561007](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
         * RefSeq assembly accession:
           [GCF_000069185.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+        * Proportion of paralogs (> 1000 bp): 0.0168
     * *Mycobacterium abscessus* 6G-0125-R
         * RefSeq assembly accession: GCF_000270985.1
 
@@ -1693,6 +1698,7 @@ rm -fr Q{20,25,30}L*
         * Taxid: [243277](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
         * RefSeq assembly accession:
           [GCF_000006745.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
+        * Proportion of paralogs (> 1000 bp): 0.0210
     * *Vibrio cholerae* CP1032(5)
         * RefSeq assembly accession: GCF_000279305.1
 
