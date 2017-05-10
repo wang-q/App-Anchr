@@ -61,7 +61,7 @@ sub validate_args {
         unless ( $opt->{kmer} =~ /^[\d,]+$/ ) {
             $self->usage_error("Invalid k-mer [$opt->{kmer}].");
         }
-        $opt->{kmer} = [ grep {defined} split ",", $opt->{kmer} ];
+        $opt->{kmer} = [ sort { $a <=> $b } grep {defined} split ",", $opt->{kmer} ];
     }
 }
 
