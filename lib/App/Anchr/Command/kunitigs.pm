@@ -133,8 +133,12 @@ save NUM_THREADS
 # Read stats of PE reads
 #----------------------------#
 log_info Symlink/copy input files
-ln -s '[% args.0 %]' pe.cor.fa
-cp '[% args.1 %]' environment.json
+if [ ! -e pe.cor.fa ]; then
+    ln -s '[% args.0 %]' pe.cor.fa
+fi
+if [ ! -e environment.json ]; then
+    cp '[% args.1 %]' environment.json
+fi
 
 log_info Read stats of PE reads
 [% IF opt.kmer == 'auto' -%]
