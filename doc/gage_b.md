@@ -237,45 +237,47 @@ cat stat.md
 | Q30L60   |     250 | 331980264 | 1545604 |
 | Q30L90   |     250 | 316467938 | 1436324 |
 
-## Bcer: down sampling
+## Bcer: quorum
+
+```bash
+BASE_DIR=$HOME/data/anchr/Bcer
+
+cd ${BASE_DIR}
+parallel --no-run-if-empty -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo '==> Group Q{1}L{2} <=='
+
+    if [ ! -e R1.fq.gz ]; then
+        echo '    R1.fq.gz not exists'
+        exit;
+    fi
+
+    anchr quorum \
+        R1.fq.gz R2.fq.gz Rs.fq.gz \
+        -p 16 \
+        -o quorum.sh
+    bash quorum.sh
+    
+    echo
+    " ::: 20 25 30 ::: 60 90
+
+```
+
+Clear intermediate files.
 
 ```bash
 BASE_DIR=$HOME/data/anchr/Bcer
 cd ${BASE_DIR}
 
-ARRAY=(
-    "2_illumina/Q20L60:Q20L60"
-    "2_illumina/Q20L90:Q20L90"
-    "2_illumina/Q25L60:Q25L60"
-    "2_illumina/Q25L90:Q25L90"
-    "2_illumina/Q30L60:Q30L60"
-    "2_illumina/Q30L90:Q30L90"
-)
-
-for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        echo '    R1.fq.gz exists'        
-        continue;
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/Rs.fq.gz ${DIR_COUNT}/Rs.fq.gz
-
-done
-
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ```
 
-## Bcer: generate super-reads
+## Bcer: generate k-unitigs
 
 ```bash
 BASE_DIR=$HOME/data/anchr/Bcer
@@ -293,50 +295,27 @@ perl -e '
         printf qq{%s\n}, $n;
     }
     ' \
-    | parallel --no-run-if-empty -j 3 "
+    | parallel --no-run-if-empty -j 1 "
         echo '==> Group {}'
-        
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
 
         if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
             echo '    k_unitigs.fasta already presents'
             exit;
         fi
-
+        
+        mkdir -p ${BASE_DIR}/{}
         cd ${BASE_DIR}/{}
-        string='My long string'
-        if [[ {} == *'Q30'* ]]; then
-            anchr superreads \
-                R1.fq.gz R2.fq.gz Rs.fq.gz \
-                --nosr -p 8 \
-                --kmer 41,61,81,101,121,71,91 \
-                -o superreads.sh
-        else
-            anchr superreads \
-                R1.fq.gz R2.fq.gz \
-                --nosr -p 8 \
-                --kmer 41,61,81,101,121,71,91 \
-                -o superreads.sh
-        fi
-        bash superreads.sh
+
+        anchr kunitigs \
+            ${BASE_DIR}/2_illumina/{}/pe.cor.fa ${BASE_DIR}/2_illumina/{}/environment.json \
+            -p 16 \
+            --kmer 41,51,61,71,81,101,121,91 \
+            -o kunitigs.sh
+        bash kunitigs.sh
+        
+        echo
     "
 
-```
-
-Clear intermediate files.
-
-```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-
-find . -type f -name "quorum_mer_db.jf"          | xargs rm
-find . -type f -name "k_u_hash_0"                | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp"                     | xargs rm
-find . -type f -name "pe.renamed.fastq"          | xargs rm
-find . -type f -name "pe.cor.sub.fa"             | xargs rm
 ```
 
 ## Bcer: create anchors
@@ -852,7 +831,6 @@ perl -e '
         fi
 
         cd ${BASE_DIR}/{}
-        string='My long string'
         if [[ {} == *'Q30'* ]]; then
             anchr superreads \
                 R1.fq.gz R2.fq.gz Rs.fq.gz \
@@ -1455,7 +1433,6 @@ perl -e '
         fi
 
         cd ${BASE_DIR}/{}
-        string='My long string'
         if [[ {} == *'Q30'* ]]; then
             anchr superreads \
                 R1.fq.gz R2.fq.gz Rs.fq.gz \
@@ -2034,7 +2011,6 @@ perl -e '
         fi
 
         cd ${BASE_DIR}/{}
-        string='My long string'
         if [[ {} == *'Q30'* ]]; then
             anchr superreads \
                 R1.fq.gz R2.fq.gz Rs.fq.gz \
