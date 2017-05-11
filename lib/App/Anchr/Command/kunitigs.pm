@@ -21,7 +21,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr superreads [options] <pe.cor.fa> <environment.json>";
+    return "anchr kunitigs [options] <pe.cor.fa> <environment.json>";
 }
 
 sub description {
@@ -134,11 +134,9 @@ save NUM_THREADS
 #----------------------------#
 log_info Symlink/copy input files
 if [ ! -e pe.cor.fa ]; then
-    ln -s '[% args.0 %]' pe.cor.fa
+    ln -s [% args.0 %] pe.cor.fa
 fi
-if [ ! -e environment.json ]; then
-    cp '[% args.1 %]' environment.json
-fi
+cp [% args.1 %] environment.json
 
 log_info Read stats of PE reads
 
