@@ -51,14 +51,13 @@ stat_format () {
 
 if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
-            "SumFq" "CovFq" "AvgRead" "Kmer" \
-            "SumFa" "Discard%" \
+            "SumIn" "CovIn" "AvgRead" "Kmer" \
+            "SumOut" "CovOut" "Discard%" \
             "RealG" "EstG" "Est/Real" \
-            "SumKU" "SumSR" \
             "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
         exit 1;
@@ -66,30 +65,23 @@ if [ "${STAT_TASK}" = "1" ]; then
         log_debug "${RESULT_DIR}"
         cd "${RESULT_DIR}"
 
-        SUM_FQ=$( faops n50 -H -N 0 -S R1.fq.gz R2.fq.gz )
-        SUM_FA=$( faops n50 -H -N 0 -S pe.cor.fa )
+        SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
+        SUM_OUT=$( cat environment.json | jq '.SUM_OUT | tonumber' )
         EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
-        SUM_KU=$( faops n50 -H -N 0 -S k_unitigs.fasta)
         SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
-        if [ -e work1/superReadSequences.fasta ]; then
-            SUM_SR=$( faops n50 -H -N 0 -S work1/superReadSequences.fasta)
-        else
-            SUM_SR=0
-        fi
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FQ}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.1f}, ${SUM_FQ} / ${GENOME_SIZE};" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_IN}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_IN} / ${GENOME_SIZE};" ) \
             $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
             $( cat environment.json | jq '.KMER' ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_FA}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_FA} / ${SUM_FQ}) * 100;" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_OUT}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_OUT} / ${GENOME_SIZE};" ) \
+            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_KU}, base => 1000,);" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_SR}, base => 1000,);" ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR not exists"
