@@ -256,7 +256,7 @@ if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
 fi
 
 cd ${BASE_DIR}
-parallel --no-run-if-empty -j 4 "
+parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -272,6 +272,21 @@ parallel --no-run-if-empty -j 4 "
         -o stdout \
         | bash
     " ::: 20 25 30 ::: 60 90 120
+
+```
+
+* kmergenie
+
+```bash
+BASE_NAME=e_coli
+
+mkdir -p $HOME/data/anchr/${BASE_NAME}/2_illumina/kmergenie
+cd $HOME/data/anchr/${BASE_NAME}/2_illumina/kmergenie
+
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R1.fq.gz -o Q20L60R1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R2.fq.gz -o Q20L60R2
 
 ```
 
@@ -291,9 +306,9 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -316,8 +331,8 @@ cat stat.md
 |:---------|--------:|-----------:|---------:|
 | Genome   | 4641652 |    4641652 |        1 |
 | Paralogs |    1934 |     195673 |      106 |
-| Illumina |     151 | 1730299940 | 11458940 |
 | PacBio   |   13982 |  748508361 |    87225 |
+| Illumina |     151 | 1730299940 | 11458940 |
 | uniq     |     151 | 1727289000 | 11439000 |
 | scythe   |     151 | 1722450607 | 11439000 |
 | Q20L60   |     151 | 1468709458 | 10572422 |
@@ -357,7 +372,7 @@ for group in "${ARRAY[@]}" ; do
     printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
 
     perl -e 'print 500000 * $_, qq{\n} for 1 .. 8' \
-    | parallel --no-run-if-empty -j 4 "
+    | parallel --no-run-if-empty -j 3 "
         if [[ {} -gt '$GROUP_MAX' ]]; then
             exit;
         fi
@@ -375,8 +390,12 @@ for group in "${ARRAY[@]}" ; do
         seqtk sample -s{} \
             ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz {} \
             | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/R2.fq.gz
+        if [[ ${GROUP_ID} == *'Q30'* ]]; then
+            seqtk sample -s{} \
+                ${BASE_DIR}/${GROUP_DIR}/Rs.fq.gz {} \
+                | pigz -p 4 -c > ${BASE_DIR}/${GROUP_ID}_{}/Rs.fq.gz
+        fi
     "
-
 done
 
 ```
@@ -416,11 +435,20 @@ perl -e '
         fi
 
         cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 8 \
-            --kmer 41,61,81,101,121 \
-            -o superreads.sh
+        string='My long string'
+        if [[ {} == *'Q30'* ]]; then
+            anchr superreads \
+                R1.fq.gz R2.fq.gz Rs.fq.gz \
+                --nosr -p 8 \
+                --kmer 41,61,81,101,121,43,67 \
+                -o superreads.sh
+        else
+            anchr superreads \
+                R1.fq.gz R2.fq.gz \
+                --nosr -p 8 \
+                --kmer 41,61,81,101,121,43,67 \
+                -o superreads.sh
+        fi
         bash superreads.sh
     "
 
@@ -502,7 +530,7 @@ perl -e '
         }
     }
     ' \
-    | parallel -k --no-run-if-empty -j 4 "
+    | parallel -k --no-run-if-empty -j 3 "
         if [ ! -d ${BASE_DIR}/{} ]; then
             exit;
         fi
@@ -1376,7 +1404,7 @@ cat stat3.md
 BASE_DIR=$HOME/data/anchr/e_coli
 cd ${BASE_DIR}
 
-rm -fr 2_illumina/Q{20,25,30}L*
+#rm -fr 2_illumina/Q{20,25,30}L*
 rm -fr Q{20,25,30}L*
 rm -fr original_*
 ```
