@@ -132,9 +132,11 @@ save NUM_THREADS
 #----------------------------#
 # Read stats of PE reads
 #----------------------------#
+log_info Symlink/copy input files
 ln -s '[% args.0 %]' pe.cor.fa
 cp '[% args.1 %]' environment.json
 
+log_info Read stats of PE reads
 [% IF opt.kmer == 'auto' -%]
 KMER=$( cat environment.json | jq '.KMER' )
 log_debug "Choosing kmer size of $KMER for the graph"
@@ -164,8 +166,9 @@ log_debug "ESTIMATED_GENOME_SIZE: $ESTIMATED_GENOME_SIZE"
 # Build k-unitigs
 #----------------------------#
 if [ ! -e k_unitigs.fasta ]; then
+log_info Creating k-unitigs
 [% IF opt.kmer == 'auto' -%]
-    log_info Creating k-unitigs with k=$KMER
+    log_debug with k=$KMER
     create_k_unitigs_large_k -c $(($KMER-1)) -t [% opt.parallel %] \
         -m $KMER -n $ESTIMATED_GENOME_SIZE -l $KMER -f 0.000001 pe.cor.fa \
         > k_unitigs_K$KMER.fasta
@@ -177,7 +180,7 @@ if [ ! -e k_unitigs.fasta ]; then
         | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
 [% ELSE -%]
 [% FOREACH kmer IN opt.kmer -%]
-    log_info Creating k-unitigs with k=[% kmer %]
+    log_debug with k=[% kmer %]
     create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
         -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 pe.cor.fa \
         > k_unitigs_K[% kmer %].fasta
@@ -204,6 +207,8 @@ save END_TIME
 
 RUNTIME=$((END_TIME-START_TIME))
 save RUNTIME
+
+log_info Done.
 
 exit 0
 
