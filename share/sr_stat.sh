@@ -53,8 +53,9 @@ if [ "${STAT_TASK}" = "1" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
-            "SumIn" "CovIn" "AvgRead" "Kmer" \
+            "SumIn" "CovIn" \
             "SumOut" "CovOut" "Discard%" \
+            "AvgRead" "Kmer" \
             "RealG" "EstG" "Est/Real" \
             "RunTime"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
@@ -74,11 +75,11 @@ if [ "${STAT_TASK}" = "1" ]; then
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_IN}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_IN} / ${GENOME_SIZE};" ) \
-            $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
-            $( cat environment.json | jq '.KMER' ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_OUT}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_OUT} / ${GENOME_SIZE};" ) \
             $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
+            $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
+            $( cat environment.json | jq '.KMER' ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
             $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
@@ -89,23 +90,32 @@ if [ "${STAT_TASK}" = "1" ]; then
 
 elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
-            "N50SR     " "Sum" "#" \
-            "N50Anchor"  "Sum" "#" \
-            "N50Others"  "Sum" "#" \
-            "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+            "SumCor" "CovCor" \
+            "N50SR"     "Sum" "#" \
+            "N50Anchor" "Sum" "#" \
+            "N50Others" "Sum" "#" \
+            "Kmer" "RunTime"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+    elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
+        log_warn "Need a integer for GENOME_SIZE"
+        exit 1;
     elif [ -d "${RESULT_DIR}/anchor" ]; then
         log_debug "${RESULT_DIR}"
-        cd "${RESULT_DIR}/anchor"
+        cd "${RESULT_DIR}"
 
-        SECS=$(expr $(stat -c %Y anchor.success) - $(stat -c %Y pe.cor.fa))
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-            $( basename $( dirname $(pwd) ) ) \
-            $( stat_format SR.fasta ) \
-            $( stat_format pe.anchor.fa )   \
-            $( stat_format pe.others.fa )   \
+        SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
+        SECS=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/pe.cor.fa))
+
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+            $( basename $( pwd ) ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_COR} / ${GENOME_SIZE};" ) \
+            $( stat_format anchor/SR.fasta ) \
+            $( stat_format anchor/pe.anchor.fa ) \
+            $( stat_format anchor/pe.others.fa ) \
+            $( cat environment.json | jq '.KMER' ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
     else
         log_warn "RESULT_DIR/anchor not exists"

@@ -141,6 +141,10 @@ if [ ! -e environment.json ]; then
 fi
 
 log_info Read stats of PE reads
+
+SUM_COR=$( faops n50 -H -N 0 -S pe.cor.fa )
+save SUM_COR
+
 [% IF opt.kmer == 'auto' -%]
 KMER=$( cat environment.json | jq '.KMER' )
 log_debug "Choosing kmer size of $KMER for the graph"
