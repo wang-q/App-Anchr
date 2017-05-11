@@ -1,14 +1,13 @@
-# Assemble three genomes from GAGE-B data sets by ANCHR
+# Assemble four genomes from GAGE-B data sets by ANCHR
 
 [TOC levels=1-3]: # " "
-- [Assemble three genomes from GAGE-B data sets by ANCHR](#assemble-three-genomes-from-gage-b-data-sets-by-anchr)
+- [Assemble four genomes from GAGE-B data sets by ANCHR](#assemble-four-genomes-from-gage-b-data-sets-by-anchr)
 - [*Bacillus cereus* ATCC 10987](#bacillus-cereus-atcc-10987)
     - [Bcer: download](#bcer-download)
     - [Bcer: combinations of different quality values and read lengths](#bcer-combinations-of-different-quality-values-and-read-lengths)
-    - [Bcer: down sampling](#bcer-down-sampling)
-    - [Bcer: generate super-reads](#bcer-generate-super-reads)
+    - [Bcer: quorum](#bcer-quorum)
+    - [Bcer: generate k-unitigs](#bcer-generate-k-unitigs)
     - [Bcer: create anchors](#bcer-create-anchors)
-    - [Bcer: results](#bcer-results)
     - [Bcer: merge anchors](#bcer-merge-anchors)
 - [*Rhodobacter sphaeroides* 2.4.1](#rhodobacter-sphaeroides-241)
     - [Rsph: download](#rsph-download)
@@ -57,8 +56,11 @@
     * Proportion of paralogs (> 1000 bp): 0.0797
 
 ```bash
-mkdir -p ~/data/anchr/Bcer/1_genome
-cd ~/data/anchr/Bcer/1_genome
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 1_genome
+cd 1_genome
 
 aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_genomic.fna.gz
 
@@ -79,8 +81,11 @@ cp ~/data/anchr/paralogs/gage/Results/Bcer/Bcer.multi.fas paralogs.fas
     Download from GAGE-B site.
 
 ```bash
-mkdir -p ~/data/anchr/Bcer/2_illumina
-cd ~/data/anchr/Bcer/2_illumina
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
 
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/datasets/B_cereus_MiSeq.tar.gz
 
@@ -101,8 +106,11 @@ rm -fr raw
 * GAGE-B assemblies
 
 ```bash
-mkdir -p ~/data/anchr/Bcer/8_competitor
-cd ~/data/anchr/Bcer/8_competitor
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_competitor
+cd 8_competitor
 
 aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/genomeAssemblies/B_cereus_MiSeq.tar.gz
 
@@ -117,15 +125,30 @@ tar xvfz B_cereus_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
+* FastQC
+
+```bash
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/fastqc
+cd 2_illumina/fastqc
+
+fastqc -t 16 \
+    ../R1.fq.gz ../R2.fq.gz \
+    -o .
+
+```
+
 ## Bcer: combinations of different quality values and read lengths
 
 * qual: 20, 25, and 30
 * len: 60 and 90
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-cd ${BASE_DIR}
 if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
     tally \
         --pair-by-offset --with-quality --nozip --unsorted \
@@ -139,20 +162,6 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
-cd ${BASE_DIR}
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.uniq.fq.gz \
-            -q sanger \
-            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
-
-cd ${BASE_DIR}
 parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -165,31 +174,18 @@ parallel --no-run-if-empty -j 3 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
     " ::: 20 25 30 ::: 60 90
 
 ```
 
-* kmergenie
-
-```bash
-mkdir -p ~/data/anchr/Bcer/2_illumina/kmergenie
-cd ~/data/anchr/Bcer/2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 10 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 10 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 10 ../Q20L60/R1.fq.gz -o Q20L60R1
-kmergenie -l 21 -k 151 -s 10 -t 10 ../Q20L60/R2.fq.gz -o Q20L60R2
-
-```
-
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -206,18 +202,17 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 parallel -k --no-run-if-empty -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( echo Q{1}L{2}; \
             faops n50 -H -S -C \
-                ${BASE_DIR}/2_illumina/Q{1}L{2}/R1.fq.gz \
-                ${BASE_DIR}/2_illumina/Q{1}L{2}/R2.fq.gz;
+                2_illumina/Q{1}L{2}/R1.fq.gz \
+                2_illumina/Q{1}L{2}/R2.fq.gz \
+                2_illumina/Q{1}L{2}/Rs.fq.gz;
         )
     " ::: 20 25 30 ::: 60 90 \
-    >> ${BASE_DIR}/stat.md
+    >> stat.md
 
 cat stat.md
 ```
@@ -229,26 +224,30 @@ cat stat.md
 | PacBio   |         |           |         |
 | Illumina |     251 | 481020311 | 2080000 |
 | uniq     |     251 | 480993557 | 2079856 |
-| scythe   |     251 | 479499589 | 2079856 |
-| Q20L60   |     250 | 413488810 | 1820024 |
-| Q20L90   |     250 | 398946475 | 1722398 |
-| Q25L60   |     250 | 381704669 | 1713606 |
-| Q25L90   |     250 | 366583021 | 1609962 |
-| Q30L60   |     250 | 331980264 | 1545604 |
-| Q30L90   |     250 | 316467938 | 1436324 |
+| Q20L60   |     250 | 439991631 | 1943129 |
+| Q20L90   |     250 | 435656688 | 1884831 |
+| Q25L60   |     250 | 414752350 | 1875395 |
+| Q25L90   |     250 | 409896636 | 1810052 |
+| Q30L60   |     250 | 371873795 | 1752907 |
+| Q30L90   |     250 | 366362011 | 1678716 |
 
 ## Bcer: quorum
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-cd ${BASE_DIR}
 parallel --no-run-if-empty -j 1 "
     cd 2_illumina/Q{1}L{2}
-    echo '==> Group Q{1}L{2} <=='
+    echo >&2 '==> Group Q{1}L{2} <=='
 
     if [ ! -e R1.fq.gz ]; then
-        echo '    R1.fq.gz not exists'
+        echo >&2 '    R1.fq.gz not exists'
+        exit;
+    fi
+
+    if [ -e pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa exists'
         exit;
     fi
 
@@ -258,7 +257,7 @@ parallel --no-run-if-empty -j 1 "
         -o quorum.sh
     bash quorum.sh
     
-    echo
+    echo >&2
     " ::: 20 25 30 ::: 60 90
 
 ```
@@ -266,8 +265,8 @@ parallel --no-run-if-empty -j 1 "
 Clear intermediate files.
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+BASE_NAME=Bcer
+cd $HOME/data/anchr/${BASE_NAME}
 
 find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
 find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
@@ -277,92 +276,16 @@ find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ```
 
-## Bcer: generate k-unitigs
+* Stats of k-unitigs
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 1 "
-        echo '==> Group {} >&2'
-
-        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
-            echo '    k_unitigs.fasta already presents'
-            exit;
-        fi
-        
-        mkdir -p ${BASE_DIR}/{}
-        cd ${BASE_DIR}/{}
-
-        anchr kunitigs \
-            ${BASE_DIR}/2_illumina/{}/pe.cor.fa ${BASE_DIR}/2_illumina/{}/environment.json \
-            -p 16 \
-            --kmer 41,51,61,71,81,101,121,91 \
-            -o kunitigs.sh
-        bash kunitigs.sh
-        
-        echo >&2
-    "
-
-```
-
-## Bcer: create anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {} >&2'
-
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
-        
-        echo >&2
-    "
-
-```
-
-## Bcer: results
-
-* Stats of super-reads
-
-```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 REAL_G=5432652
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
+    > stat1.md
 
 perl -e '
     for my $n (
@@ -377,24 +300,123 @@ perl -e '
     }
     ' \
     | parallel -k --no-run-if-empty -j 3 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
+        if [ ! -d {} ]; then
             exit;
         fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/2_illumina/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/{} ${REAL_G}
+    " >> stat1.md
 
 cat stat1.md
+```
+
+| Name   |   SumIn | CovIn | AvgRead |  Kmer |  SumOut | CovOut | Discard% | RealG |  EstG | Est/Real |   RunTime |
+|:-------|--------:|------:|--------:|------:|--------:|-------:|---------:|------:|------:|---------:|----------:|
+| Q20L60 | 439.75M |  80.9 |     224 | "127" | 372.43M |   68.6 |  15.309% | 5.43M | 5.36M |     0.99 | 0:01'29'' |
+| Q20L90 | 435.74M |  80.2 |     228 | "127" | 369.16M |   68.0 |  15.281% | 5.43M | 5.36M |     0.99 | 0:01'24'' |
+| Q25L60 | 414.65M |  76.3 |     218 | "127" | 372.17M |   68.5 |  10.245% | 5.43M | 5.34M |     0.98 | 0:01'22'' |
+| Q25L90 | 410.06M |  75.5 |     224 | "127" | 368.07M |   67.8 |  10.239% | 5.43M | 5.34M |     0.98 | 0:01'18'' |
+| Q30L60 |  371.9M |  68.5 |     210 | "121" |  348.4M |   64.1 |   6.319% | 5.43M | 5.34M |     0.98 | 0:01'10'' |
+| Q30L90 | 366.58M |  67.5 |     216 | "127" | 343.29M |   63.2 |   6.353% | 5.43M | 5.34M |     0.98 | 0:01'13'' |
+
+* kmergenie
+
+```bash
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
+
+```
+
+## Bcer: generate k-unitigs
+
+```bash
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 1 "
+        echo >&2 '==> Group {} '
+
+        if [ -e {}/k_unitigs.fasta ]; then
+            echo '    k_unitigs.fasta already presents'
+            exit;
+        fi
+        
+        mkdir -p {}
+        cd {}
+
+        anchr kunitigs \
+            ${HOME}/data/anchr/${BASE_NAME}/2_illumina/{}/pe.cor.fa \
+            ${HOME}/data/anchr/${BASE_NAME}/2_illumina/{}/environment.json \
+            -p 16 \
+            --kmer 31,41,51,61,71,81,101,121,59,85,91 \
+            -o kunitigs.sh
+        bash kunitigs.sh
+        
+        echo >&2
+    "
+
+```
+
+## Bcer: create anchors
+
+```bash
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+perl -e '
+    for my $n (
+        qw{
+        Q20L60 Q20L90
+        Q25L60 Q25L90
+        Q30L60 Q30L90
+        }
+        )
+    {
+        printf qq{%s\n}, $n;
+    }
+    ' \
+    | parallel --no-run-if-empty -j 3 "
+        echo >&2 '==> Group {}'
+
+        if [ -e {}/anchor/pe.anchor.fa ]; then
+            exit;
+        fi
+
+        rm -fr {}/anchor
+        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh {} 8 false
+        
+        echo >&2
+    "
+
 ```
 
 * Stats of anchors
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
+    > stat2.md
 
 perl -e '
     for my $n (
@@ -409,39 +431,30 @@ perl -e '
     }
     ' \
     | parallel -k --no-run-if-empty -j 6 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+        if [ ! -e {}/anchor/pe.anchor.fa ]; then
             exit;
         fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
+        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 {}
+    " >> stat2.md
 
 cat stat2.md
 ```
 
-| Name   |   SumIn | CovIn | AvgRead |  Kmer |  SumOut | CovOut | Discard% | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|------:|--------:|-------:|---------:|------:|------:|---------:|----------:|
-| Q20L60 | 439.75M |  80.9 |     224 | "127" | 372.43M |   68.6 |  15.309% | 5.43M | 5.36M |     0.99 | 0:01'29'' |
-| Q20L90 | 435.74M |  80.2 |     228 | "127" | 369.16M |   68.0 |  15.281% | 5.43M | 5.36M |     0.99 | 0:01'24'' |
-| Q25L60 | 414.65M |  76.3 |     218 | "127" | 372.17M |   68.5 |  10.245% | 5.43M | 5.34M |     0.98 | 0:01'22'' |
-| Q25L90 | 410.06M |  75.5 |     224 | "127" | 368.07M |   67.8 |  10.239% | 5.43M | 5.34M |     0.98 | 0:01'18'' |
-| Q30L60 |  371.9M |  68.5 |     210 | "121" |  348.4M |   64.1 |   6.319% | 5.43M | 5.34M |     0.98 | 0:01'10'' |
-| Q30L90 | 366.58M |  67.5 |     216 | "127" | 343.29M |   63.2 |   6.353% | 5.43M | 5.34M |     0.98 | 0:01'13'' |
-
 | Name   | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |    Sum |  # |   RunTime |
 |:-------|------:|------:|----:|----------:|------:|----:|----------:|-------:|---:|----------:|
-| Q20L60 | 21877 | 5.37M | 430 |     22161 | 5.35M | 394 |       791 |  26.8K | 36 | 0:02'27'' |
-| Q20L90 | 22636 | 5.37M | 412 |     22686 | 5.34M | 380 |       789 | 23.54K | 32 | 0:02'22'' |
-| Q25L60 | 37680 | 5.36M | 265 |     37680 | 5.34M | 242 |       752 | 15.75K | 23 | 0:02'27'' |
-| Q25L90 | 37680 | 5.36M | 264 |     37680 | 5.34M | 243 |       735 | 14.55K | 21 | 0:02'27'' |
-| Q30L60 | 42824 | 5.38M | 247 |     42824 | 5.32M | 217 |     16158 | 52.06K | 30 | 0:02'26'' |
-| Q30L90 | 42241 | 5.38M | 246 |     42241 | 5.32M | 218 |     16144 | 50.98K | 28 | 0:02'23'' |
+| Q20L60 | 22987 | 5.37M | 395 |     23039 | 5.35M | 363 |       789 | 23.68K | 32 | 0:01'14'' |
+| Q20L90 | 23764 | 5.37M | 382 |     23783 | 5.35M | 351 |       783 | 22.96K | 31 | 0:01'13'' |
+| Q25L60 | 42085 | 5.36M | 237 |     42085 | 5.34M | 215 |       735 | 14.96K | 22 | 0:01'16'' |
+| Q25L90 | 41804 | 5.37M | 236 |     41804 | 5.33M | 213 |     27296 |    43K | 23 | 0:01'11'' |
+| Q30L60 | 47486 | 5.41M | 218 |     47578 | 5.33M | 188 |     16154 | 83.03K | 30 | 0:01'11'' |
+| Q30L90 | 45136 | 5.37M | 217 |     45136 | 5.33M | 191 |     16158 |  49.7K | 26 | 0:01'09'' |
 
 ## Bcer: merge anchors
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
@@ -532,8 +545,8 @@ cat stat3.md
 |:-------------|--------:|--------:|----:|
 | Genome       | 5224283 | 5432652 |   2 |
 | Paralogs     |    2295 |  223889 | 103 |
-| anchor.merge |   46184 | 5353003 | 204 |
-| others.merge |   16206 |   25564 |   4 |
+| anchor.merge |   53284 | 5356240 | 173 |
+| others.merge |   16204 |   64499 |   7 |
 
 * Clear QxxLxxx.
 
@@ -678,21 +691,6 @@ parallel --no-run-if-empty -j 3 "
         -o stdout \
         | bash
     " ::: 20 25 30 ::: 60 90
-
-```
-
-* kmergenie
-
-```bash
-BASE_NAME=Rsph
-
-mkdir -p $HOME/data/anchr/${BASE_NAME}/2_illumina/kmergenie
-cd $HOME/data/anchr/${BASE_NAME}/2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R1.fq.gz -o Q20L60R1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/R2.fq.gz -o Q20L60R2
 
 ```
 
