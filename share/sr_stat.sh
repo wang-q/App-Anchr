@@ -90,13 +90,13 @@ if [ "${STAT_TASK}" = "1" ]; then
 
 elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
             "SumCor" "CovCor" \
             "N50SR"     "Sum" "#" \
             "N50Anchor" "Sum" "#" \
             "N50Others" "Sum" "#" \
-            "Kmer" "RunTime"
+            "Kmer" "RunTimeKU" "RunTimeAN"
         printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
@@ -106,9 +106,10 @@ elif [ "${STAT_TASK}" = "2" ]; then
         cd "${RESULT_DIR}"
 
         SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
-        SECS=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/pe.cor.fa))
+        SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
+        SECS_AN=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/pe.cor.fa))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_COR} / ${GENOME_SIZE};" ) \
@@ -116,7 +117,8 @@ elif [ "${STAT_TASK}" = "2" ]; then
             $( stat_format anchor/pe.anchor.fa ) \
             $( stat_format anchor/pe.others.fa ) \
             $( cat environment.json | jq '.KMER' ) \
-            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
+            $( printf "%d:%02d'%02d''\n" $((${SECS_KU}/3600)) $((${SECS_KU}%3600/60)) $((${SECS_KU}%60)) ) \
+            $( printf "%d:%02d'%02d''\n" $((${SECS_AN}/3600)) $((${SECS_AN}%3600/60)) $((${SECS_AN}%60)) )
     else
         log_warn "RESULT_DIR/anchor not exists"
     fi
