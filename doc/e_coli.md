@@ -12,7 +12,7 @@
     - [Generate k-unitigs/super-reads](#generate-k-unitigssuper-reads)
     - [Create anchors](#create-anchors)
     - [Results](#results)
-    - [With PE info and substitutions](#with-pe-info-and-substitutions)
+    - [With PE info](#with-pe-info)
     - [Different K values](#different-k-values)
     - [Merge anchors from different groups of reads](#merge-anchors-from-different-groups-of-reads)
     - [3GS](#3gs)
@@ -46,6 +46,7 @@ brew unlink gnuplot
 
 brew link gnuplot@4 --force
 
+brew install r --without-tcltk --without-x11
 brew install kmergenie --with-maxkmer=200
 ```
 
