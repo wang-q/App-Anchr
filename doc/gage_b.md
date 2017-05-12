@@ -2410,98 +2410,49 @@ perl -e '
         bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
     " >> ${BASE_DIR}/stat2.md
 
-cat stat2.md
 ```
 
-| Name   |   SumFq | CovFq | AvgRead |             Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
-|:-------|--------:|------:|--------:|-----------------:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
-| Q30L60 | 362.53M |  89.9 |      99 | "41,51,61,71,81" | 228.59M |  36.946% | 4.03M | 4.05M |     1.00 | 3.87M |     0 | 0:04'09'' |
+# *Vibrio cholerae* CP1032(5) Full
 
-| Name   | N50SR |   Sum |    # | N50Anchor |   Sum |    # | N50Others |     Sum |    # |   RunTime |
-|:-------|------:|------:|-----:|----------:|------:|-----:|----------:|--------:|-----:|----------:|
-| Q30L60 |  1869 | 3.87M | 2582 |      2273 | 3.04M | 1450 |       761 | 827.95K | 1132 | 0:01'21'' |
+## VchoF: download
 
-## VchoH: merge anchors
+* Reference genome
 
 ```bash
-BASE_DIR=$HOME/data/anchr/VchoH
-cd ${BASE_DIR}
+BASE_NAME=VchoF
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-# merge anchors
-mkdir -p merge
-anchr contained \
-    Q30L60/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+mkdir -p 1_genome
+cd 1_genome
 
-# merge others
-anchr contained \
-    Q30L60/anchor/pe.others.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    8_competitor/abyss_ctg.fasta \
-    8_competitor/sga_ctg.fasta \
-    8_competitor/soap_ctg.fasta \
-    8_competitor/spades_ctg.fasta \
-    8_competitor/velvet_ctg.fasta \
-    merge/anchor.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "abyss,sga,soap,spades,velvet,merge,paralogs" \
-    -o 9_qa
+cp ~/data/anchr/Vcho/1_genome/genome.fa .
+cp ~/data/anchr/Vcho/1_genome/paralogs.fas .
 
 ```
 
-* Stats
+* Illumina
+
+    SRX247310, SRR769320
 
 ```bash
-BASE_DIR=$HOME/data/anchr/VchoH
-cd ${BASE_DIR}
+mkdir -p ~/data/anchr/Vcho/2_illumina
+cd ~/data/anchr/Vcho/2_illumina
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR769/SRR769320
+EOF
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
-cat stat3.md
+cat << EOF > sra_md5.txt
+28f49ca6ae9a00c3a7937e00e04e8512        SRR769320
+EOF
+
+md5sum --check sra_md5.txt
+
+fastq-dump --split-files ./SRR769320  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR769320_1.fastq.gz R1.fq.gz
+ln -s SRR769320_2.fastq.gz R2.fq.gz
 ```
-
-| Name         |     N50 |     Sum |    # |
-|:-------------|--------:|--------:|-----:|
-| Genome       | 2961149 | 4033464 |    2 |
-| Paralogs     |    3483 |  114707 |   48 |
-| anchor.merge |    2273 | 3042187 | 1450 |
-| others.merge |    1067 |   39645 |   35 |
