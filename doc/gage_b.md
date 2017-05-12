@@ -2168,7 +2168,7 @@ parallel --no-run-if-empty -j 3 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 60
+    " ::: 20 25 30 35 ::: 60
 
 ```
 
@@ -2198,7 +2198,7 @@ parallel -k --no-run-if-empty -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo Q{1}L{2};
-            if [[ {1} == '30' ]]; then
+            if [[ {1} -ge '30' ]]; then
                 faops n50 -H -S -C \
                     2_illumina/Q{1}L{2}/R1.fq.gz \
                     2_illumina/Q{1}L{2}/R2.fq.gz \
@@ -2209,7 +2209,7 @@ parallel -k --no-run-if-empty -j 3 "
                     2_illumina/Q{1}L{2}/R2.fq.gz;
             fi
         )
-    " ::: 20 25 30 ::: 60 \
+    " ::: 20 25 30 35 ::: 60 \
     >> stat.md
 
 cat stat.md
@@ -2225,6 +2225,7 @@ cat stat.md
 | Q20L60   |     180 | 1245989712 | 7468436 |
 | Q25L60   |     174 | 1072566099 | 6677852 |
 | Q30L60   |     164 |  945363704 | 6407592 |
+| Q35L60   |     135 |  510070322 | 4212150 |
 
 ## MabsF: quorum
 
@@ -2246,7 +2247,7 @@ parallel --no-run-if-empty -j 1 "
         exit;
     fi
 
-    if [[ {1} == '30' ]]; then
+    if [[ {1} -ge '30' ]]; then
         anchr quorum \
             R1.fq.gz R2.fq.gz Rs.fq.gz \
             -p 16 \
@@ -2261,7 +2262,7 @@ parallel --no-run-if-empty -j 1 "
     bash quorum.sh
     
     echo >&2
-    " ::: 20 25 30 ::: 60
+    " ::: 20 25 30 35 ::: 60
 
 ```
 
@@ -2296,7 +2297,7 @@ parallel -k --no-run-if-empty -j 3 "
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
+    " ::: 20 25 30 35 ::: 60 \
      >> stat1.md
 
 cat stat1.md
@@ -2307,6 +2308,7 @@ cat stat1.md
 | Q20L60 |   1.25G | 244.8 | 979.97M |  192.5 |  21.350% |     168 | "45" | 5.09M |  5.9M |     1.16 | 0:03'33'' |
 | Q25L60 |   1.07G | 210.7 | 895.75M |  176.0 |  16.486% |     162 | "43" | 5.09M | 5.49M |     1.08 | 0:03'08'' |
 | Q30L60 | 946.28M | 185.9 | 824.29M |  161.9 |  12.892% |     153 | "41" | 5.09M | 5.41M |     1.06 | 0:02'46'' |
+| Q35L60 | 511.26M | 100.4 | 475.89M |   93.5 |   6.919% |     128 | "31" | 5.09M | 5.28M |     1.04 | 0:02'15'' |
 
 * kmergenie
 
@@ -2331,7 +2333,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 REAL_G=5090491
 
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
     echo "==> ${QxxLxx}"
 
     if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
@@ -2339,8 +2341,10 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
         continue;
     fi
 
-    for X in 40; do
+    for X in 40 80 120 160; do
         printf "==> Coverage: %s\n" ${X}
+        
+        rm -fr 2_illumina/${QxxLxx}X${X}*
     
         faops split-about -l 0 \
             2_illumina/${QxxLxx}/pe.cor.fa \
@@ -2348,8 +2352,8 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
             "2_illumina/${QxxLxx}X${X}"
         
         MAX_SERIAL=$(
-            cat 2_illumina/Q20L60/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / 40 | floor | . - 1"
+            cat 2_illumina/${QxxLxx}/environment.json \
+                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
         )
         
         for i in $( seq 0 1 ${MAX_SERIAL} ); do
