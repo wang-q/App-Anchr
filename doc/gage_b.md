@@ -33,6 +33,9 @@
     - [Vcho: merge anchors](#vcho-merge-anchors)
 - [*Mycobacterium abscessus* 6G-0125-R Full](#mycobacterium-abscessus-6g-0125-r-full)
     - [MabsF: download](#mabsf-download)
+    - [MabsF: combinations of different quality values and read lengths](#mabsf-combinations-of-different-quality-values-and-read-lengths)
+    - [MabsF: quorum](#mabsf-quorum)
+    - [MabsF: down sampling](#mabsf-down-sampling)
 - [*Rhodobacter sphaeroides* 2.4.1 Full](#rhodobacter-sphaeroides-241-full)
     - [RsphF: download](#rsphf-download)
     - [RsphF: down sampling](#rsphf-down-sampling)
@@ -2320,32 +2323,48 @@ kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
 
 ```
 
-## VchoH: create anchors
+## MabsF: down sampling
 
 ```bash
-BASE_DIR=$HOME/data/anchr/VchoH
-cd ${BASE_DIR}
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-perl -e '
-    for my $n (
-        qw{
-        Q30L60
-        }
+REAL_G=5090491
+
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
+    echo "==> ${QxxLxx}"
+
+    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
+        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
+        continue;
+    fi
+
+    for X in 40; do
+        printf "==> Coverage: %s\n" ${X}
+    
+        faops split-about -l 0 \
+            2_illumina/${QxxLxx}/pe.cor.fa \
+            $(( ${REAL_G} * ${X} )) \
+            "2_illumina/${QxxLxx}X${X}"
+        
+        MAX_SERIAL=$(
+            cat 2_illumina/Q20L60/environment.json \
+                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / 40 | floor | . - 1"
         )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
-    "
+        
+        for i in $( seq 0 1 ${MAX_SERIAL} ); do
+            P=$( printf "%03d" ${i})
+            printf "  * Part: %s\n" ${P}
+            
+            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
+            
+            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
+                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
+            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
+    
+        done
+    done
+done
 
 ```
 
