@@ -36,6 +36,9 @@
     - [MabsF: combinations of different quality values and read lengths](#mabsf-combinations-of-different-quality-values-and-read-lengths)
     - [MabsF: quorum](#mabsf-quorum)
     - [MabsF: down sampling](#mabsf-down-sampling)
+    - [MabsF: generate k-unitigs (sampled)](#mabsf-generate-k-unitigs-sampled)
+    - [MabsF: create anchors (sampled)](#mabsf-create-anchors-sampled)
+    - [MabsF: merge anchors](#mabsf-merge-anchors)
 - [*Rhodobacter sphaeroides* 2.4.1 Full](#rhodobacter-sphaeroides-241-full)
     - [RsphF: download](#rsphf-download)
     - [RsphF: down sampling](#rsphf-down-sampling)
@@ -2051,6 +2054,7 @@ rm -fr Q{20,25,30}L*
 
 ```bash
 BASE_NAME=MabsF
+mkdir -p ${HOME}/data/anchr/${BASE_NAME}
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 1_genome
@@ -2371,6 +2375,254 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
 done
 
 ```
+
+## MabsF: generate k-unitigs (sampled)
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+parallel --no-run-if-empty -j 3 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
+        exit;
+    fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p Q{1}L{2}X{3}P{4}
+    cd Q{1}L{2}X{3}P{4}
+
+    anchr kunitigs \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
+        -p 8 \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: 20 25 30 35 ::: 60 ::: 40 80 120 160 ::: 000 001 002 003 004 005
+
+```
+
+## MabsF: create anchors (sampled)
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+parallel --no-run-if-empty -j 3 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        exit;
+    fi
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    
+    echo >&2
+    " ::: 20 25 30 ::: 60 ::: 40 80 120 160 ::: 000 001 002 003 004 005
+
+```
+
+* Stats of anchors
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+REAL_G=5090491
+
+bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
+    > stat2.md
+
+parallel -k --no-run-if-empty -j 6 "
+    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        exit;
+    fi
+
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
+    " ::: 20 25 30 ::: 60 ::: 40 80 120 160 ::: 000 001 002 003 004 005 \
+     >> stat2.md
+
+cat stat2.md
+```
+
+| Name           |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |     Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|--------:|-------:|------:|------:|-----:|----------:|--------:|-----:|----------:|--------:|-----:|--------------------:|----------:|:----------|
+| Q20L60X40P000  | 203.62M |   40.0 |  1850 | 5.03M | 3287 |      2195 |   4.03M | 1956 |       782 |  991.8K | 1331 | "31,41,51,61,71,81" | 0:02'11'' | 0:01'35'' |
+| Q20L60X40P001  | 203.62M |   40.0 |  1863 | 5.05M | 3349 |      2176 |   4.04M | 1988 |       770 |   1.01M | 1361 | "31,41,51,61,71,81" | 0:03'45'' | 0:01'35'' |
+| Q20L60X40P002  | 203.62M |   40.0 |  1871 | 5.04M | 3324 |      2189 |   4.03M | 1964 |       771 |   1.01M | 1360 | "31,41,51,61,71,81" | 0:03'42'' | 0:01'31'' |
+| Q20L60X40P003  | 203.62M |   40.0 |  2012 | 5.06M | 3174 |      2386 |   4.12M | 1908 |       776 | 940.88K | 1266 | "31,41,51,61,71,81" | 0:03'45'' | 0:01'32'' |
+| Q20L60X80P000  | 407.24M |   80.0 |  1118 | 4.39M | 4275 |      1543 |    2.5M | 1633 |       737 |   1.88M | 2642 | "31,41,51,61,71,81" | 0:05'54'' | 0:01'46'' |
+| Q20L60X80P001  | 407.24M |   80.0 |  1121 | 4.45M | 4301 |      1555 |   2.55M | 1631 |       733 |    1.9M | 2670 | "31,41,51,61,71,81" | 0:05'57'' | 0:01'55'' |
+| Q20L60X120P000 | 610.86M |  120.0 |   891 |  3.7M | 4280 |      1350 |   1.48M | 1075 |       702 |   2.21M | 3205 | "31,41,51,61,71,81" | 0:08'00'' | 0:02'05'' |
+| Q20L60X160P000 | 814.48M |  160.0 |   799 | 3.18M | 4009 |      1243 | 944.27K |  731 |       686 |   2.23M | 3278 | "31,41,51,61,71,81" | 0:10'21'' | 0:02'10'' |
+| Q25L60X40P000  | 203.62M |   40.0 |  6022 | 5.18M | 1261 |      6150 |   5.04M | 1074 |       762 | 138.46K |  187 | "31,41,51,61,71,81" | 0:03'41'' | 0:01'38'' |
+| Q25L60X40P001  | 203.62M |   40.0 |  6059 | 5.18M | 1270 |      6255 |   5.06M | 1096 |       771 | 127.49K |  174 | "31,41,51,61,71,81" | 0:03'41'' | 0:01'42'' |
+| Q25L60X40P002  | 203.62M |   40.0 |  6637 | 5.23M | 1223 |      6752 |   5.05M | 1043 |       884 | 181.45K |  180 | "31,41,51,61,71,81" | 0:03'43'' | 0:01'38'' |
+| Q25L60X40P003  | 203.62M |   40.0 |  6342 | 5.19M | 1226 |      6417 |   5.05M | 1046 |       776 | 135.18K |  180 | "31,41,51,61,71,81" | 0:03'44'' | 0:01'31'' |
+| Q25L60X80P000  | 407.24M |   80.0 |  3407 | 5.18M | 2115 |      3596 |    4.8M | 1612 |       775 | 379.82K |  503 | "31,41,51,61,71,81" | 0:05'51'' | 0:02'21'' |
+| Q25L60X80P001  | 407.24M |   80.0 |  3567 |  5.2M | 2083 |      3784 |   4.81M | 1588 |       789 | 383.95K |  495 | "31,41,51,61,71,81" | 0:05'54'' | 0:02'21'' |
+| Q25L60X120P000 | 610.86M |  120.0 |  2435 | 5.13M | 2743 |      2699 |   4.49M | 1876 |       772 | 640.81K |  867 | "31,41,51,61,71,81" | 0:08'02'' | 0:03'09'' |
+| Q25L60X160P000 | 814.48M |  160.0 |  1927 | 5.05M | 3222 |      2301 |   4.16M | 2005 |       764 | 889.27K | 1217 | "31,41,51,61,71,81" | 0:10'15'' | 0:03'31'' |
+| Q30L60X40P000  | 203.62M |   40.0 |  8107 | 5.17M |  964 |      8209 |   5.09M |  857 |       760 |  82.27K |  107 | "31,41,51,61,71,81" | 0:03'36'' | 0:01'45'' |
+| Q30L60X40P001  | 203.62M |   40.0 |  8083 |  5.2M |  972 |      8280 |   5.11M |  875 |       812 |  86.01K |   97 | "31,41,51,61,71,81" | 0:03'33'' | 0:01'47'' |
+| Q30L60X40P002  | 203.62M |   40.0 |  9175 | 5.17M |  918 |      9378 |   5.08M |  797 |       820 |  97.35K |  121 | "31,41,51,61,71,81" | 0:03'35'' | 0:01'43'' |
+| Q30L60X40P003  | 203.62M |   40.0 | 12018 | 5.17M |  647 |     12112 |   5.14M |  603 |       835 |  34.66K |   44 | "31,41,51,61,71,81" | 0:03'34'' | 0:01'52'' |
+| Q30L60X80P000  | 407.24M |   80.0 |  4691 | 5.21M | 1585 |      4908 |   4.98M | 1310 |       801 | 227.93K |  275 | "31,41,51,61,71,81" | 0:05'36'' | 0:02'28'' |
+| Q30L60X80P001  | 407.24M |   80.0 |  5929 | 5.19M | 1321 |      6049 |   5.05M | 1131 |       808 | 144.81K |  190 | "31,41,51,61,71,81" | 0:05'37'' | 0:02'54'' |
+| Q30L60X120P000 | 610.86M |  120.0 |  3448 | 5.18M | 2092 |      3706 |   4.81M | 1598 |       778 | 368.35K |  494 | "31,41,51,61,71,81" | 0:07'36'' | 0:03'26'' |
+| Q30L60X160P000 | 814.48M |  160.0 |  2965 | 5.16M | 2352 |      3278 |   4.71M | 1733 |       766 | 453.59K |  619 | "31,41,51,61,71,81" | 0:09'40'' | 0:03'47'' |
+
+## MabsF: merge anchors
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+# merge anchors
+mkdir -p merge
+anchr contained \
+    Q20L60X40P000/anchor/pe.anchor.fa \
+    Q20L60X40P001/anchor/pe.anchor.fa \
+    Q20L60X40P002/anchor/pe.anchor.fa \
+    Q20L60X40P003/anchor/pe.anchor.fa \
+    Q20L60X80P000/anchor/pe.anchor.fa \
+    Q20L60X80P001/anchor/pe.anchor.fa \
+    Q20L60X120P000/anchor/pe.anchor.fa \
+    Q20L60X160P000/anchor/pe.anchor.fa \
+    Q25L60X40P000/anchor/pe.anchor.fa \
+    Q25L60X40P001/anchor/pe.anchor.fa \
+    Q25L60X40P002/anchor/pe.anchor.fa \
+    Q25L60X40P003/anchor/pe.anchor.fa \
+    Q25L60X80P000/anchor/pe.anchor.fa \
+    Q25L60X80P001/anchor/pe.anchor.fa \
+    Q25L60X120P000/anchor/pe.anchor.fa \
+    Q25L60X160P000/anchor/pe.anchor.fa \
+    Q30L60X40P000/anchor/pe.anchor.fa \
+    Q30L60X40P001/anchor/pe.anchor.fa \
+    Q30L60X40P002/anchor/pe.anchor.fa \
+    Q30L60X40P003/anchor/pe.anchor.fa \
+    Q30L60X80P000/anchor/pe.anchor.fa \
+    Q30L60X80P001/anchor/pe.anchor.fa \
+    Q30L60X120P000/anchor/pe.anchor.fa \
+    Q30L60X160P000/anchor/pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
+anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+
+# merge others
+mkdir -p merge
+anchr contained \
+    Q20L60X40P000/anchor/pe.others.fa \
+    Q20L60X40P001/anchor/pe.others.fa \
+    Q20L60X40P002/anchor/pe.others.fa \
+    Q20L60X40P003/anchor/pe.others.fa \
+    Q20L60X80P000/anchor/pe.others.fa \
+    Q20L60X80P001/anchor/pe.others.fa \
+    Q20L60X120P000/anchor/pe.others.fa \
+    Q20L60X160P000/anchor/pe.others.fa \
+    Q25L60X40P000/anchor/pe.others.fa \
+    Q25L60X40P001/anchor/pe.others.fa \
+    Q25L60X40P002/anchor/pe.others.fa \
+    Q25L60X40P003/anchor/pe.others.fa \
+    Q25L60X80P000/anchor/pe.others.fa \
+    Q25L60X80P001/anchor/pe.others.fa \
+    Q25L60X120P000/anchor/pe.others.fa \
+    Q25L60X160P000/anchor/pe.others.fa \
+    Q30L60X40P000/anchor/pe.others.fa \
+    Q30L60X40P001/anchor/pe.others.fa \
+    Q30L60X40P002/anchor/pe.others.fa \
+    Q30L60X40P003/anchor/pe.others.fa \
+    Q30L60X80P000/anchor/pe.others.fa \
+    Q30L60X80P001/anchor/pe.others.fa \
+    Q30L60X120P000/anchor/pe.others.fa \
+    Q30L60X160P000/anchor/pe.others.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
+anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+
+# sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot -png out.delta -p anchor.sort --large
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+
+mv anchor.sort.png merge/
+
+# quast
+rm -fr 9_qa
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    merge/anchor.merge.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
+    -o 9_qa
+
+```
+
+* Stats
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 5067172 | 5090491 |   2 |
+| Paralogs     |    1580 |   83364 |  53 |
+| anchor.merge |   82806 | 5187407 | 121 |
+| others.merge |    1039 |  334654 | 220 |
+
+| Name         |     N50 |     Sum |   # |
+|:-------------|--------:|--------:|----:|
+| Genome       | 5067172 | 5090491 |   2 |
+| Paralogs     |    1580 |   83364 |  53 |
+| anchor.merge |   85867 | 5185603 | 119 |
+| others.merge |    1020 |  378757 | 297 |
 
 # *Rhodobacter sphaeroides* 2.4.1 Full
 
