@@ -2349,66 +2349,81 @@ perl -e '
 
 ```
 
-## VchoH: results
+# *Rhodobacter sphaeroides* 2.4.1 Full
 
-* Stats of super-reads
+## RsphF: download
+
+* Illumina
+
+    SRX160386, SRR522246
 
 ```bash
-BASE_DIR=$HOME/data/anchr/VchoH
-cd ${BASE_DIR}
+BASE_NAME=RsphF
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-REAL_G=4033464
+mkdir -p 2_illumina
+cd 2_illumina
 
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR522/SRR522246
+EOF
 
-perl -e '
-    for my $n (
-        qw{
-        Q30L60
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 4 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            exit;
-        fi
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
+cat << EOF > sra_md5.txt
+d3fb8d78abada2e481dd30f3b5f7293d        SRR522246
+EOF
 
-cat stat1.md
+md5sum --check sra_md5.txt
+
+fastq-dump --split-files ./SRR522246  
+find . -name "*.fastq" | parallel -j 2 pigz -p 8
+
+ln -s SRR522246_1.fastq.gz R1.fq.gz
+ln -s SRR522246_2.fastq.gz R2.fq.gz
 ```
 
-* Stats of anchors
+## RsphF: down sampling
 
 ```bash
-BASE_DIR=$HOME/data/anchr/VchoH
-cd ${BASE_DIR}
+BASE_NAME=RsphF
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
+ARRAY=(
+    "2_illumina/Q20L60:Q20L60:10000000"
+    "2_illumina/Q20L90:Q20L90:10000000"
+    "2_illumina/Q25L60:Q25L60:10000000"
+    "2_illumina/Q25L90:Q25L90:8000000"
+    "2_illumina/Q30L60:Q30L60:10000000"
+    "2_illumina/Q30L90:Q30L90:8000000"
+)
 
-perl -e '
-    for my $n (
-        qw{
-        Q30L60
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 8 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
+for group in "${ARRAY[@]}" ; do
+    
+    GROUP_DIR=$(perl -e "@p = split q{:}, q{${group}}; print \$p[0];")
+    GROUP_ID=$( perl -e "@p = split q{:}, q{${group}}; print \$p[1];")
+    GROUP_MAX=$(perl -e "@p = split q{:}, q{${group}}; print \$p[2];")
+    printf "==> %s \t %s \t %s\n" "$GROUP_DIR" "$GROUP_ID" "$GROUP_MAX"
+
+    perl -e 'print 2000000 * $_, qq{\n} for 1 .. 5' \
+    | parallel --no-run-if-empty -j 3 "
+        if [[ {} -gt '$GROUP_MAX' ]]; then
             exit;
         fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
+        echo '    ${GROUP_ID}_{}'
+        mkdir -p ${GROUP_ID}_{}
+        
+        if [ -e ${GROUP_ID}_{}/pe.cor.fa ]; then
+            exit;
+        fi
+
+        seqtk sample -s{} \
+            ${GROUP_DIR}/pe.cor.fa {} \
+            > ${GROUP_ID}_{}/pe.cor.fa
+        cp ${GROUP_DIR}/environment.json ${GROUP_ID}_{}/
+    "
+done
 
 ```
 
