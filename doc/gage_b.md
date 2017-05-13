@@ -2125,7 +2125,7 @@ fastqc -t 16 \
 
 ## MabsF: combinations of different quality values and read lengths
 
-* qual: 20, 25, and 30
+* qual: 20, 25, 30, and 35
 * len: 60
 
 ```bash
@@ -2609,13 +2609,6 @@ printf "| %s | %s | %s | %s |\n" \
 
 cat stat3.md
 ```
-
-| Name         |     N50 |     Sum |   # |
-|:-------------|--------:|--------:|----:|
-| Genome       | 5067172 | 5090491 |   2 |
-| Paralogs     |    1580 |   83364 |  53 |
-| anchor.merge |   82806 | 5187407 | 121 |
-| others.merge |    1039 |  334654 | 220 |
 
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
