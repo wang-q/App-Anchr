@@ -489,7 +489,7 @@ cd 2_illumina/kmergenie
 
 kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
 kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
+kmergenie -l 21 -k 151 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
 ```
 
@@ -1005,27 +1005,28 @@ bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 .
 ## Different K values
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+# oriR1: 67; oriR2: 43; Q30L60: 71
 
 parallel -j 3 "
-    mkdir -p ${BASE_DIR}/Q20L60K{}
-    cd ${BASE_DIR}/Q20L60K{}
-    ln -s ../Q20L60_1000000/R1.fq.gz R1.fq.gz
-    ln -s ../Q20L60_1000000/R2.fq.gz R2.fq.gz
+    mkdir -p Q20L60K{}
+    cd Q20L60K{}
 
-    anchr superreads \
-        R1.fq.gz R2.fq.gz \
-        --nosr -p 8 \
+    anchr kunitigs \
+        ../2_illumina/Q20L60X40P000/pe.cor.fa \
+        ../2_illumina/Q20L60X40P000/environment.json \
+        -p 8 \
         --kmer {} \
-        -o superreads.sh
-    bash superreads.sh
+        -o kunitigs.sh
+    bash kunitigs.sh
 
     rm -fr anchor
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
-    " ::: 21 31 41 51 61 71 81 91 101 111 121 auto
+    " ::: 21 31 41 51 61 71 81 91 101 111 121 67 43 
 
-mkdir -p Q20L60merge
+mkdir -p Q20L60Kmerge
 anchr contained \
     Q20L60K21/anchor/pe.anchor.fa \
     Q20L60K31/anchor/pe.anchor.fa \
@@ -1038,12 +1039,14 @@ anchr contained \
     Q20L60K101/anchor/pe.anchor.fa \
     Q20L60K111/anchor/pe.anchor.fa \
     Q20L60K121/anchor/pe.anchor.fa \
+    Q20L60K67/anchor/pe.anchor.fa \
+    Q20L60K43/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q20L60merge/anchor.contained.fasta
-anchr orient Q20L60merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q20L60merge/anchor.orient.fasta
-anchr merge Q20L60merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q20L60merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin Q20L60Kmerge/anchor.contained.fasta
+anchr orient Q20L60Kmerge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q20L60Kmerge/anchor.orient.fasta
+anchr merge Q20L60Kmerge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q20L60Kmerge/anchor.merge.fasta
 
 rm -fr 9_qa_kmer_Q20
 quast --no-check --threads 16 \
@@ -1059,30 +1062,31 @@ quast --no-check --threads 16 \
     Q20L60K101/anchor/pe.anchor.fa \
     Q20L60K111/anchor/pe.anchor.fa \
     Q20L60K121/anchor/pe.anchor.fa \
-    Q20L60merge/anchor.merge.fasta \
+    Q20L60K67/anchor/pe.anchor.fa \
+    Q20L60K43/anchor/pe.anchor.fa \
+    Q20L60X40P000/anchor/pe.anchor.fa \
+    Q20L60Kmerge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q20L60K21,Q20L60K31,Q20L60K41,Q20L60K51,Q20L60K61,Q20L60K71,Q20L60K81,Q20L60K91,Q20L60K101,Q20L60K111,Q20L60K121,Q20L60merge,paralogs" \
+    --label "Q20L60K21,Q20L60K31,Q20L60K41,Q20L60K51,Q20L60K61,Q20L60K71,Q20L60K81,Q20L60K91,Q20L60K101,Q20L60K111,Q20L60K121,Q20L60K67,Q20L60K43,Q20L60X40P000,Q20L60Kmerge,paralogs" \
     -o 9_qa_kmer_Q20
 
 parallel -j 3 "
-    mkdir -p ${BASE_DIR}/Q25L60K{}
-    cd ${BASE_DIR}/Q25L60K{}
-    ln -s ../Q25L60_2000000/R1.fq.gz R1.fq.gz
-    ln -s ../Q25L60_2000000/R2.fq.gz R2.fq.gz
+    mkdir -p Q25L60K{}
+    cd Q25L60K{}
 
-    anchr superreads \
-        R1.fq.gz R2.fq.gz \
-        --nosr -p 8 \
+    anchr kunitigs \
+        ../2_illumina/Q25L60X40P000/pe.cor.fa \
+        ../2_illumina/Q25L60X40P000/environment.json \
+        -p 8 \
         --kmer {} \
-        -o superreads.sh
-    bash superreads.sh
+        -o kunitigs.sh
+    bash kunitigs.sh
 
     rm -fr anchor
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
-    " ::: 21 31 41 51 61 71 81 91 101 111 121 auto
+    " ::: 21 31 41 51 61 71 81 91 101 111 121 67 43 
 
-cd ${BASE_DIR}
-mkdir -p Q25L60merge
+mkdir -p Q25L60Kmerge
 anchr contained \
     Q25L60K21/anchor/pe.anchor.fa \
     Q25L60K31/anchor/pe.anchor.fa \
@@ -1095,12 +1099,14 @@ anchr contained \
     Q25L60K101/anchor/pe.anchor.fa \
     Q25L60K111/anchor/pe.anchor.fa \
     Q25L60K121/anchor/pe.anchor.fa \
+    Q25L60K67/anchor/pe.anchor.fa \
+    Q25L60K43/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q25L60merge/anchor.contained.fasta
-anchr orient Q25L60merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q25L60merge/anchor.orient.fasta
-anchr merge Q25L60merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q25L60merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin Q25L60Kmerge/anchor.contained.fasta
+anchr orient Q25L60Kmerge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q25L60Kmerge/anchor.orient.fasta
+anchr merge Q25L60Kmerge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q25L60Kmerge/anchor.merge.fasta
 
 rm -fr 9_qa_kmer_Q25
 quast --no-check --threads 16 \
@@ -1116,30 +1122,31 @@ quast --no-check --threads 16 \
     Q25L60K101/anchor/pe.anchor.fa \
     Q25L60K111/anchor/pe.anchor.fa \
     Q25L60K121/anchor/pe.anchor.fa \
-    Q25L60merge/anchor.merge.fasta \
+    Q25L60K67/anchor/pe.anchor.fa \
+    Q25L60K43/anchor/pe.anchor.fa \
+    Q25L60X40P000/anchor/pe.anchor.fa \
+    Q25L60Kmerge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q25L60K21,Q25L60K31,Q25L60K41,Q25L60K51,Q25L60K61,Q25L60K71,Q25L60K81,Q25L60K91,Q25L60K101,Q25L60K111,Q25L60K121,Q25L60merge,paralogs" \
+    --label "Q25L60K21,Q25L60K31,Q25L60K41,Q25L60K51,Q25L60K61,Q25L60K71,Q25L60K81,Q25L60K91,Q25L60K101,Q25L60K111,Q25L60K121,Q25L60K67,Q25L60K43,Q25L60X40P000,Q25L60Kmerge,paralogs" \
     -o 9_qa_kmer_Q25
 
 parallel -j 3 "
-    mkdir -p ${BASE_DIR}/Q30L60K{}
-    cd ${BASE_DIR}/Q30L60K{}
-    ln -s ../Q30L60_2000000/R1.fq.gz R1.fq.gz
-    ln -s ../Q30L60_2000000/R2.fq.gz R2.fq.gz
+    mkdir -p Q30L60K{}
+    cd Q30L60K{}
 
-    anchr superreads \
-        R1.fq.gz R2.fq.gz \
-        --nosr -p 8 \
+    anchr kunitigs \
+        ../2_illumina/Q30L60X40P000/pe.cor.fa \
+        ../2_illumina/Q30L60X40P000/environment.json \
+        -p 8 \
         --kmer {} \
-        -o superreads.sh
-    bash superreads.sh
+        -o kunitigs.sh
+    bash kunitigs.sh
 
     rm -fr anchor
     bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 false
-    " ::: 21 31 41 51 61 71 81 91 101 111 121 auto
+    " ::: 21 31 41 51 61 71 81 91 101 111 121 67 43 
 
-cd ${BASE_DIR}
-mkdir -p Q30L60merge
+mkdir -p Q30L60Kmerge
 anchr contained \
     Q30L60K21/anchor/pe.anchor.fa \
     Q30L60K31/anchor/pe.anchor.fa \
@@ -1152,12 +1159,14 @@ anchr contained \
     Q30L60K101/anchor/pe.anchor.fa \
     Q30L60K111/anchor/pe.anchor.fa \
     Q30L60K121/anchor/pe.anchor.fa \
+    Q30L60K67/anchor/pe.anchor.fa \
+    Q30L60K43/anchor/pe.anchor.fa \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q30L60merge/anchor.contained.fasta
-anchr orient Q30L60merge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q30L60merge/anchor.orient.fasta
-anchr merge Q30L60merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin Q30L60merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin Q30L60Kmerge/anchor.contained.fasta
+anchr orient Q30L60Kmerge/anchor.contained.fasta --len 1000 --idt 0.98 -o Q30L60Kmerge/anchor.orient.fasta
+anchr merge Q30L60Kmerge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
+    | faops filter -a 1000 -l 0 stdin Q30L60Kmerge/anchor.merge.fasta
 
 rm -fr 9_qa_kmer_Q30
 quast --no-check --threads 16 \
@@ -1173,60 +1182,68 @@ quast --no-check --threads 16 \
     Q30L60K101/anchor/pe.anchor.fa \
     Q30L60K111/anchor/pe.anchor.fa \
     Q30L60K121/anchor/pe.anchor.fa \
-    Q30L60merge/anchor.merge.fasta \
+    Q30L60K67/anchor/pe.anchor.fa \
+    Q30L60K43/anchor/pe.anchor.fa \
+    Q30L60X40P000/anchor/pe.anchor.fa \
+    Q30L60Kmerge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "Q30L60K21,Q30L60K31,Q30L60K41,Q30L60K51,Q30L60K61,Q30L60K71,Q30L60K81,Q30L60K91,Q30L60K101,Q30L60K111,Q30L60K121,Q30L60merge,paralogs" \
+    --label "Q30L60K21,Q30L60K31,Q30L60K41,Q30L60K51,Q30L60K61,Q30L60K71,Q30L60K81,Q30L60K91,Q30L60K101,Q30L60K111,Q30L60K121,Q30L60K67,Q30L60K43,Q30L60X40P000,Q30L60Kmerge,paralogs" \
     -o 9_qa_kmer_Q30
 
 # stat2
+REAL_G=4641652
+
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/statK2.md
+    > statK2.md
 
 parallel -k --no-run-if-empty -j 6 "
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{2}K{1}
-    " ::: 21 31 41 51 61 71 81 91 101 111 121 auto ::: Q20L60 Q25L60 Q30L60 \
-    >> ${BASE_DIR}/statK2.md
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 {1}K{2} ${REAL_G}
+    " ::: Q20L60 Q25L60 Q30L60 ::: 21 31 41 51 61 71 81 91 101 111 121 67 43 \
+    >> statK2.md
 
 ```
 
-| Name        | N50SR |   Sum |    # | N50Anchor |   Sum |    # | N50Others |     Sum |    # |   RunTime |
-|:------------|------:|------:|-----:|----------:|------:|-----:|----------:|--------:|-----:|----------:|
-| Q20L60K21   |  6600 | 4.43M | 1050 |      6767 | 4.29M |  864 |       762 | 137.46K |  186 | 0:01'23'' |
-| Q25L60K21   |  7305 | 4.44M |  976 |      7495 | 4.32M |  810 |       745 | 121.92K |  166 | 0:02'36'' |
-| Q30L60K21   |  7750 | 4.44M |  938 |      7859 | 4.33M |  785 |       754 | 112.49K |  153 | 0:02'59'' |
-| Q20L60K31   | 13532 |  4.5M |  550 |     13649 | 4.46M |  499 |       782 |  37.68K |   51 | 0:01'36'' |
-| Q25L60K31   | 17049 | 4.51M |  442 |     17049 | 4.48M |  407 |       762 |  26.27K |   35 | 0:03'18'' |
-| Q30L60K31   | 17952 |  4.5M |  422 |     18163 | 4.48M |  388 |       762 |  25.21K |   34 | 0:02'41'' |
-| Q20L60K41   | 16520 | 4.52M |  455 |     16643 |  4.5M |  419 |       772 |  26.02K |   36 | 0:01'35'' |
-| Q25L60K41   | 23468 | 4.53M |  335 |     23912 | 4.51M |  314 |       714 |   14.6K |   21 | 0:03'14'' |
-| Q30L60K41   | 23915 | 4.53M |  342 |     23915 | 4.51M |  317 |       754 |  18.29K |   25 | 0:03'01'' |
-| Q20L60K51   | 20852 | 4.53M |  388 |     21100 | 4.51M |  359 |       706 |  20.19K |   29 | 0:01'22'' |
-| Q25L60K51   | 31276 | 4.53M |  273 |     31276 | 4.52M |  253 |       685 |  13.62K |   20 | 0:02'47'' |
-| Q30L60K51   | 30999 | 4.53M |  295 |     30999 | 4.51M |  271 |       782 |  17.71K |   24 | 0:02'44'' |
-| Q20L60K61   | 19899 | 4.54M |  390 |     19899 | 4.52M |  359 |       709 |  21.54K |   31 | 0:01'32'' |
-| Q25L60K61   | 33600 | 4.54M |  274 |     33600 | 4.52M |  249 |       613 |  16.29K |   25 | 0:02'44'' |
-| Q30L60K61   | 24524 | 4.54M |  330 |     24524 | 4.52M |  299 |       692 |  21.19K |   31 | 0:03'18'' |
-| Q20L60K71   | 18818 | 4.55M |  404 |     18818 | 4.53M |  371 |       754 |  23.56K |   33 | 0:01'16'' |
-| Q25L60K71   | 28548 | 4.55M |  292 |     28548 | 4.53M |  272 |       695 |  13.87K |   20 | 0:02'43'' |
-| Q30L60K71   | 20774 | 4.55M |  409 |     20774 | 4.53M |  379 |       739 |  21.17K |   30 | 0:03'08'' |
-| Q20L60K81   | 18970 | 4.56M |  419 |     19318 | 4.53M |  385 |       755 |  24.34K |   34 | 0:01'23'' |
-| Q25L60K81   | 23844 | 4.55M |  339 |     23848 | 4.53M |  312 |       769 |  19.34K |   27 | 0:02'47'' |
-| Q30L60K81   | 15201 | 4.55M |  541 |     15295 | 4.52M |  490 |       751 |  36.82K |   51 | 0:02'28'' |
-| Q20L60K91   | 17415 | 4.56M |  472 |     17782 | 4.53M |  426 |       731 |  32.29K |   46 | 0:01'30'' |
-| Q25L60K91   | 19299 | 4.56M |  415 |     19531 | 4.54M |  381 |       754 |  23.51K |   34 | 0:02'56'' |
-| Q30L60K91   |  9108 | 4.56M |  816 |      9246 | 4.48M |  704 |       779 |   83.2K |  112 | 0:02'29'' |
-| Q20L60K101  | 11814 | 4.58M |  653 |     11990 | 4.53M |  582 |       721 |   49.6K |   71 | 0:01'21'' |
-| Q25L60K101  | 14967 | 4.57M |  530 |     14990 | 4.54M |  480 |       754 |  35.01K |   50 | 0:02'54'' |
-| Q30L60K101  |  5527 | 4.55M | 1303 |      5777 | 4.35M | 1035 |       779 | 198.54K |  268 | 0:02'25'' |
-| Q20L60K111  |  6709 | 4.58M | 1073 |      6893 | 4.45M |  891 |       728 | 130.11K |  182 | 0:01'22'' |
-| Q25L60K111  |  8837 | 4.58M |  826 |      9057 | 4.49M |  711 |       798 |  86.49K |  115 | 0:02'52'' |
-| Q30L60K111  |  2889 | 4.41M | 2179 |      3196 | 3.85M | 1410 |       764 | 558.78K |  769 | 0:02'07'' |
-| Q20L60K121  |  3107 | 4.53M | 2131 |      3408 | 4.03M | 1439 |       745 | 498.75K |  692 | 0:01'13'' |
-| Q25L60K121  |  4864 | 4.57M | 1481 |      5198 | 4.32M | 1139 |       784 | 253.53K |  342 | 0:02'40'' |
-| Q30L60K121  |  1322 | 3.72M | 3165 |      1867 | 2.43M | 1319 |       723 |   1.29M | 1846 | 0:02'03'' |
-| Q20L60Kauto | 19831 | 4.55M |  402 |     19905 | 4.52M |  367 |       787 |   25.6K |   35 | 0:01'19'' |
-| Q25L60Kauto | 23005 | 4.56M |  353 |     23446 | 4.54M |  325 |       706 |  19.21K |   28 | 0:02'20'' |
-| Q30L60Kauto | 20774 | 4.55M |  409 |     20774 | 4.53M |  379 |       739 |  21.17K |   30 | 0:02'39'' |
+| Name       |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |     Sum |    # | N50Others |     Sum |    # |  Kmer | RunTimeKU | RunTimeAN |
+|:-----------|--------:|-------:|------:|------:|-----:|----------:|--------:|-----:|----------:|--------:|-----:|------:|----------:|:----------|
+| Q20L60K21  | 185.67M |   40.0 |  2693 | 4.28M | 2103 |      2973 |   3.83M | 1494 |       779 | 453.06K |  609 |  "21" | 0:01'01'' | 0:01'51'' |
+| Q20L60K31  | 185.67M |   40.0 |  3406 | 4.42M | 1788 |      3628 |   4.11M | 1379 |       786 | 305.16K |  409 |  "31" | 0:00'59'' | 0:01'40'' |
+| Q20L60K41  | 185.67M |   40.0 |  3630 | 4.48M | 1730 |      3869 |   4.19M | 1343 |       792 | 289.16K |  387 |  "41" | 0:01'00'' | 0:01'53'' |
+| Q20L60K51  | 185.67M |   40.0 |  3933 | 4.52M | 1644 |      4111 |   4.26M | 1305 |       791 | 252.67K |  339 |  "51" | 0:00'53'' | 0:01'41'' |
+| Q20L60K61  | 185.67M |   40.0 |  4159 | 4.55M | 1569 |      4322 |   4.32M | 1262 |       794 | 228.25K |  307 |  "61" | 0:00'52'' | 0:01'47'' |
+| Q20L60K71  | 185.67M |   40.0 |  4413 | 4.57M | 1486 |      4559 |   4.36M | 1212 |       800 | 205.59K |  274 |  "71" | 0:00'52'' | 0:01'53'' |
+| Q20L60K81  | 185.67M |   40.0 |  4606 | 4.59M | 1410 |      4791 |    4.4M | 1169 |       807 | 181.87K |  241 |  "81" | 0:00'47'' | 0:01'55'' |
+| Q20L60K91  | 185.67M |   40.0 |  4836 |  4.6M | 1375 |      4934 |   4.42M | 1132 |       795 | 181.56K |  243 |  "91" | 0:00'44'' | 0:01'44'' |
+| Q20L60K101 | 185.67M |   40.0 |  4593 |  4.6M | 1494 |      4800 |   4.37M | 1181 |       775 | 231.66K |  313 | "101" | 0:00'44'' | 0:01'43'' |
+| Q20L60K111 | 185.67M |   40.0 |  3262 | 4.56M | 1987 |      3612 |   4.15M | 1419 |       764 | 415.19K |  568 | "111" | 0:00'44'' | 0:01'55'' |
+| Q20L60K121 | 185.67M |   40.0 |  1632 | 4.28M | 3110 |      2117 |   3.22M | 1626 |       747 |   1.07M | 1484 | "121" | 0:00'41'' | 0:01'47'' |
+| Q20L60K67  | 185.67M |   40.0 |  4328 | 4.56M | 1516 |      4541 |   4.34M | 1224 |       803 | 218.74K |  292 |  "67" | 0:00'50'' | 0:01'54'' |
+| Q20L60K43  | 185.67M |   40.0 |  3714 | 4.49M | 1697 |      4006 |   4.21M | 1324 |       791 | 278.13K |  373 |  "43" | 0:00'50'' | 0:01'39'' |
+| Q25L60K21  | 185.67M |   40.0 |  7089 | 4.44M |  999 |      7305 |   4.31M |  828 |       759 | 125.91K |  171 |  "21" | 0:00'52'' | 0:01'06'' |
+| Q25L60K31  | 185.67M |   40.0 | 14206 |  4.5M |  500 |     14262 |   4.48M |  464 |       784 |  26.86K |   36 |  "31" | 0:00'52'' | 0:01'13'' |
+| Q25L60K41  | 185.67M |   40.0 | 18971 | 4.52M |  387 |     19351 |   4.51M |  364 |       759 |  16.37K |   23 |  "41" | 0:00'54'' | 0:01'20'' |
+| Q25L60K51  | 185.67M |   40.0 | 26192 | 4.53M |  335 |     26192 |   4.52M |  312 |       685 |  15.33K |   23 |  "51" | 0:00'49'' | 0:01'12'' |
+| Q25L60K61  | 185.67M |   40.0 | 23820 | 4.54M |  344 |     24492 |   4.52M |  321 |       628 |  15.07K |   23 |  "61" | 0:00'48'' | 0:01'14'' |
+| Q25L60K71  | 185.67M |   40.0 | 20891 | 4.55M |  403 |     20891 |   4.52M |  372 |       740 |  21.82K |   31 |  "71" | 0:00'46'' | 0:01'16'' |
+| Q25L60K81  | 185.67M |   40.0 | 15295 | 4.55M |  529 |     15393 |   4.52M |  478 |       754 |  36.95K |   51 |  "81" | 0:00'40'' | 0:00'58'' |
+| Q25L60K91  | 185.67M |   40.0 |  9179 | 4.56M |  818 |      9314 |   4.48M |  705 |       764 |  82.59K |  113 |  "91" | 0:00'38'' | 0:00'57'' |
+| Q25L60K101 | 185.67M |   40.0 |  5239 | 4.54M | 1393 |      5447 |   4.32M | 1083 |       763 | 225.22K |  310 | "101" | 0:00'37'' | 0:00'59'' |
+| Q25L60K111 | 185.67M |   40.0 |  2453 | 4.39M | 2417 |      2852 |   3.72M | 1496 |       754 |  665.2K |  921 | "111" | 0:00'34'' | 0:01'07'' |
+| Q25L60K121 | 185.67M |   40.0 |  1147 | 3.59M | 3366 |      1734 |   2.08M | 1218 |       724 |   1.51M | 2148 | "121" | 0:00'31'' | 0:01'08'' |
+| Q25L60K67  | 185.67M |   40.0 | 21564 | 4.54M |  387 |     21613 |   4.52M |  361 |       726 |  18.07K |   26 |  "67" | 0:00'44'' | 0:01'15'' |
+| Q25L60K43  | 185.67M |   40.0 | 21290 | 4.53M |  366 |     21290 |   4.51M |  345 |       712 |   14.7K |   21 |  "43" | 0:00'53'' | 0:00'54'' |
+| Q30L60K21  | 185.67M |   40.0 |  7464 | 4.44M |  948 |      7708 |   4.32M |  789 |       759 | 118.21K |  159 |  "21" | 0:01'11'' | 0:01'52'' |
+| Q30L60K31  | 185.67M |   40.0 | 15791 |  4.5M |  447 |     15800 |   4.48M |  414 |       784 |  24.93K |   33 |  "31" | 0:01'13'' | 0:01'57'' |
+| Q30L60K41  | 185.67M |   40.0 | 21978 | 4.52M |  378 |     22693 |    4.5M |  349 |       754 |  21.15K |   29 |  "41" | 0:01'13'' | 0:01'59'' |
+| Q30L60K51  | 185.67M |   40.0 | 21553 | 4.53M |  380 |     21581 |   4.51M |  348 |       740 |   23.4K |   32 |  "51" | 0:01'00'' | 0:01'41'' |
+| Q30L60K61  | 185.67M |   40.0 | 17816 | 4.54M |  477 |     17876 |    4.5M |  429 |       765 |  35.78K |   48 |  "61" | 0:00'57'' | 0:01'55'' |
+| Q30L60K71  | 185.67M |   40.0 | 10956 | 4.54M |  725 |     11268 |   4.48M |  641 |       747 |  60.67K |   84 |  "71" | 0:00'56'' | 0:01'55'' |
+| Q30L60K81  | 185.67M |   40.0 |  6773 | 4.53M | 1094 |      6982 |   4.39M |  908 |       755 | 135.84K |  186 |  "81" | 0:00'47'' | 0:01'44'' |
+| Q30L60K91  | 185.67M |   40.0 |  3702 | 4.45M | 1787 |      4018 |   4.09M | 1294 |       759 |  358.8K |  493 |  "91" | 0:00'43'' | 0:01'55'' |
+| Q30L60K101 | 185.67M |   40.0 |  1829 | 4.13M | 2788 |      2227 |   3.23M | 1529 |       744 | 904.82K | 1259 | "101" | 0:00'41'' | 0:01'52'' |
+| Q30L60K111 | 185.67M |   40.0 |  1027 | 3.11M | 3145 |      1636 |    1.6M |  966 |       710 |   1.51M | 2179 | "111" | 0:00'42'' | 0:01'26'' |
+| Q30L60K121 | 185.67M |   40.0 |   769 | 1.45M | 1820 |      1484 | 449.81K |  295 |       642 | 998.46K | 1525 | "121" | 0:00'34'' | 0:01'07'' |
+| Q30L60K67  | 185.67M |   40.0 | 13527 | 4.54M |  592 |     13936 |    4.5M |  532 |       757 |     44K |   60 |  "67" | 0:00'58'' | 0:01'36'' |
+| Q30L60K43  | 185.67M |   40.0 | 23150 | 4.53M |  371 |     23535 |    4.5M |  340 |       808 |  23.18K |   31 |  "43" | 0:00'53'' | 0:01'24'' |
 
 ## 3GS
 
