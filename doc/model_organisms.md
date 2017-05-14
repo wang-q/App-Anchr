@@ -468,7 +468,7 @@ parallel -k --no-run-if-empty -j 6 "
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
     " ::: 20 25 30 ::: 60 90 ::: 40 80 120 160 ::: 000 001 002 003 004 005 006 \
-     >> stat2.md
+    >> stat2.md
 
 cat stat2.md
 ```
@@ -903,8 +903,8 @@ quast --no-check --threads 16 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/s288c.contigs.fasta \
-    canu-raw-80x/s288c.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-raw-80x/${BASE_NAME}.contigs.fasta \
     1_genome/paralogs.fas \
     --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
     -o 9_qa_contig
@@ -944,30 +944,20 @@ cat stat3.md
 |:-------------|-------:|---------:|----:|
 | Genome       | 924431 | 12157105 |  17 |
 | Paralogs     |   3851 |  1059148 | 366 |
-| anchor.merge |  40230 | 11665763 | 511 |
-| others.merge |   4613 |    50604 |  20 |
-| anchor.cover |  39349 | 11583608 | 493 |
-| anchorLong   |  94997 | 11557613 | 266 |
-| contigTrim   | 450287 | 11303678 |  55 |
-
-| Name         |    N50 |      Sum |   # |
-|:-------------|-------:|---------:|----:|
-| Genome       | 924431 | 12157105 |  17 |
-| Paralogs     |   3851 |  1059148 | 366 |
 | anchor.merge |  29107 | 11462728 | 697 |
 | others.merge |   6008 |   222772 |  94 |
 | anchor.cover |  29017 | 11403066 | 669 |
 | anchorLong   |  66330 | 11362195 | 324 |
 | contigTrim   | 533508 | 11420219 |  43 |
 
-* Clear QxxLxxx.
+* Clear QxxLxxXxx.
 
 ```bash
-BASE_DIR=$HOME/data/anchr/s288c
-cd ${BASE_DIR}
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
+rm -fr Q{20,25,30}L{1,60,90,120}X*
 ```
 
 # *Drosophila melanogaster* iso-1
