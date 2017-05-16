@@ -1907,14 +1907,7 @@ parallel --no-run-if-empty -j 3 "
         | bash
     " ::: 20 25 30 ::: 60
 
-```
-
-* Stats
-
-```bash
-BASE_NAME=n2
-cd ${HOME}/data/anchr/${BASE_NAME}
-
+# Stats
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -2496,21 +2489,11 @@ cat stat3.md
 |:-------------|---------:|----------:|------:|
 | Genome       | 17493829 | 100286401 |     7 |
 | Paralogs     |     2013 |   5313653 |  2637 |
-| anchor.merge |    13799 |  94200061 | 13071 |
-| others.merge |     2402 |   1785990 |   851 |
-| anchor.cover |    13401 |  92637789 | 12998 |
-| anchorLong   |    22482 |  92245773 |  8868 |
-| contigTrim   |  1269169 | 100974497 |   430 |
-
-| Name         |      N50 |       Sum |     # |
-|:-------------|---------:|----------:|------:|
-| Genome       | 17493829 | 100286401 |     7 |
-| Paralogs     |     2013 |   5313653 |  2637 |
 | anchor.merge |    16007 |  95291617 | 12083 |
 | others.merge |     2548 |   6228897 |  2899 |
-| anchor.cover |    13401 |  92637789 | 12998 |
-| anchorLong   |    22482 |  92245773 |  8868 |
-| contigTrim   |  1269169 | 100974497 |   430 |
+| anchor.cover |    15405 |  93556439 | 12095 |
+| anchorLong   |    22563 |  93156929 |  8796 |
+| contigTrim   |  1275514 |  98130740 |   405 |
 
 * Clear QxxLxxx.
 
