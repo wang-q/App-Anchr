@@ -22,15 +22,14 @@
     - [iso_1: 3GS](#iso-1-3gs)
     - [iso_1: expand anchors](#iso-1-expand-anchors)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
-    - [Cele: download](#cele-download)
-    - [Cele: combinations of different quality values and read lengths](#cele-combinations-of-different-quality-values-and-read-lengths)
-    - [Cele: down sampling](#cele-down-sampling)
-    - [Cele: generate super-reads](#cele-generate-super-reads)
-    - [Cele: create anchors](#cele-create-anchors)
-    - [Cele: results](#cele-results)
-    - [Cele: merge anchors from different groups of reads](#cele-merge-anchors-from-different-groups-of-reads)
-    - [Cele: 3GS](#cele-3gs)
-    - [Cele: expand anchors](#cele-expand-anchors)
+    - [n2: download](#n2-download)
+    - [n2: combinations of different quality values and read lengths](#n2-combinations-of-different-quality-values-and-read-lengths)
+    - [n2: quorum](#n2-quorum)
+    - [n2: down sampling](#n2-down-sampling)
+    - [n2: k-unitigs and anchors (sampled)](#n2-k-unitigs-and-anchors-sampled)
+    - [n2: merge anchors](#n2-merge-anchors)
+    - [n2: 3GS](#n2-3gs)
+    - [n2: expand anchors](#n2-expand-anchors)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [Atha: download](#atha-download)
     - [Atha: combinations of different quality values and read lengths](#atha-combinations-of-different-quality-values-and-read-lengths)
@@ -1960,6 +1959,7 @@ cat stat.md
 
 ```bash
 BASE_NAME=n2
+REAL_G=100286401
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 parallel --no-run-if-empty -j 1 "
@@ -1994,8 +1994,6 @@ parallel --no-run-if-empty -j 1 "
     " ::: 20 25 30 ::: 60
 
 # Stats of processed reads
-REAL_G=100286401
-
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > stat1.md
 
@@ -2050,9 +2048,8 @@ kmergenie -l 21 -k 91 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
 ```bash
 BASE_NAME=n2
-cd ${HOME}/data/anchr/${BASE_NAME}
-
 REAL_G=100286401
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 25 30 ::: 60 ); do
     echo "==> ${QxxLxx}"
@@ -2237,23 +2234,24 @@ quast --no-check --threads 16 \
 ## n2: 3GS
 
 ```bash
-BASE_DIR=$HOME/data/anchr/n2
-cd ${BASE_DIR}
+BASE_NAME=n2
+REAL_G=100286401
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 canu \
-    -p n2 -d canu-raw-40x \
+    -p ${BASE_NAME} -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=100.3m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
     
 canu \
-    -p n2 -d canu-raw-80x \
+    -p ${BASE_NAME} -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=100.3m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
-faops n50 -S -C canu-raw-40x/n2.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/n2.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
 
 ```
 
@@ -2501,8 +2499,8 @@ cat stat3.md
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
+rm -fr Q{20,25,30}L{1,60,90,120}X*
 ```
 
 # *Arabidopsis thaliana* Col-0
