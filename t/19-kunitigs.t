@@ -17,6 +17,6 @@ like( $result->error, qr{doesn't exist}, 'infile not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(kunitigs t/R1.fq.gz t/environment.json -o stdout)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 50, 'line count' );
-like( $result->stdout, qr{masurca.+Build}s, 'bash contents' );
+like( $result->stdout, qr{Colors.+Build}s, 'bash contents' );
 
 done_testing();

@@ -6,7 +6,7 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "Create k-unitigs from corrected reads";
+use constant abstract => "create k-unitigs from corrected reads";
 
 sub opt_spec {
     return (
