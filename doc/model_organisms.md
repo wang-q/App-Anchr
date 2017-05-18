@@ -3148,29 +3148,6 @@ rm -fr canu-raw-80x/correction
 
 ```
 
-* quast
-
-```bash
-BASE_DIR=$HOME/data/anchr/col_0
-cd ${BASE_DIR}
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-raw-40x/col_0.contigs.fasta \
-    canu-raw-80x/col_0.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
-    -o 9_qa_contig
-
-```
-
 ## col_0: expand anchors
 
 * anchorLong
@@ -3403,11 +3380,11 @@ cat stat3.md
 |:-------------|---------:|----------:|------:|
 | Genome       | 23459830 | 119667750 |     7 |
 | Paralogs     |     2007 |  16447809 |  8055 |
-| anchor.merge |    11645 | 130998211 | 26612 |
-| others.merge |     1029 |   2667364 |  2317 |
-| anchor.cover |    11236 |  99297473 | 14876 |
-| anchorLong   |    16909 |  99006352 | 11058 |
-| contigTrim   |    48059 | 103917843 |  4907 |
+| anchor.merge |    28319 | 108822455 |  8852 |
+| others.merge |     2370 |   1322544 |   637 |
+| anchor.cover |    17073 | 100097443 | 11082 |
+| anchorLong   |    22420 |  99946654 |  8963 |
+| contigTrim   |    48313 | 104062185 |  4656 |
 
 * Clear QxxLxxx.
 
@@ -3415,6 +3392,6 @@ cat stat3.md
 BASE_DIR=$HOME/data/anchr/col_0
 cd ${BASE_DIR}
 
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
+rm -fr Q{20,25,30}L{1,60,90,120}X*
 ```
