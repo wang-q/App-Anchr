@@ -2077,6 +2077,20 @@ fastqc -t 16 \
 
 ```
 
+* kmergenie
+
+```bash
+BASE_NAME=MabsF
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
+kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
+
+```
+
 ## MabsF: combinations of different quality values and read lengths
 
 * qual: 20, 25, 30, and 35
@@ -2271,21 +2285,6 @@ find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ```
 
-* kmergenie
-
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
-
-```
-
 ## MabsF: down sampling
 
 ```bash
@@ -2375,8 +2374,15 @@ parallel --no-run-if-empty -j 3 "
         exit;
     fi
 
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    rm -fr Q{1}L{2}/anchor
+    mkdir -p Q{1}L{2}/anchor
+    cd Q{1}L{2}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
@@ -2910,8 +2916,15 @@ parallel --no-run-if-empty -j 3 "
         exit;
     fi
 
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    rm -fr Q{1}L{2}/anchor
+    mkdir -p Q{1}L{2}/anchor
+    cd Q{1}L{2}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
@@ -3429,8 +3442,15 @@ parallel --no-run-if-empty -j 3 "
         exit;
     fi
 
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    bash ~/Scripts/cpan/App-Anchr/share/anchor.sh Q{1}L{2}X{3}P{4} 8 false
+    rm -fr Q{1}L{2}/anchor
+    mkdir -p Q{1}L{2}/anchor
+    cd Q{1}L{2}/anchor
+    anchr anchors \
+        ../pe.cor.fa \
+        ../k_unitigs.fasta \
+        -p 8 \
+        -o anchors.sh
+    bash anchors.sh
     
     echo >&2
     " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
