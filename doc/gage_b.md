@@ -2370,13 +2370,19 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
 
-    rm -fr Q{1}L{2}/anchor
-    mkdir -p Q{1}L{2}/anchor
-    cd Q{1}L{2}/anchor
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
         ../pe.cor.fa \
         ../k_unitigs.fasta \
@@ -2912,13 +2918,20 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
 
-    rm -fr Q{1}L{2}/anchor
-    mkdir -p Q{1}L{2}/anchor
-    cd Q{1}L{2}/anchor
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
         ../pe.cor.fa \
         ../k_unitigs.fasta \
@@ -3438,13 +3451,20 @@ parallel --no-run-if-empty -j 1 "
 parallel --no-run-if-empty -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
 
-    rm -fr Q{1}L{2}/anchor
-    mkdir -p Q{1}L{2}/anchor
-    cd Q{1}L{2}/anchor
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
         ../pe.cor.fa \
         ../k_unitigs.fasta \
