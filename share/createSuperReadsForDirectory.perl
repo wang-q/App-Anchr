@@ -64,7 +64,7 @@ my $cwd    = cwd;
 
 my $maxNodes = 2000;
 
-my $merLen              = 31;
+my $merLen              = 81;
 my $numProcessors       = 16;
 my $minReadsInSuperRead = 2;
 my $seqDiffMax          = 0;
@@ -144,7 +144,7 @@ my $normalFileSizeMinimum = 1;
 # joinKUnitigs
 #
 $cmd
-    = "createKUnitigMaxOverlaps $$kUnitigsFile "
+    = "createKUnitigMaxOverlaps $kUnitigsFile "
     . "-kmervalue $merLen -largest-kunitig-number "
     . ( int($maxKUnitigNumber) + 1 )
     . " $prefixForOverlapsBetweenKUnitigs";

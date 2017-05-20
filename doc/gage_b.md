@@ -480,6 +480,32 @@ quast --no-check --threads 16 \
 
 ```
 
+```bash
+BASE_NAME=Bcer
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+rm -fr superreads
+mkdir -p superreads
+perl -MApp::Fasops::Common -e '
+        BEGIN { our $count = 0; }
+        
+        my $seq_of = App::Fasops::Common::read_fasta( q{merge/anchor.merge.fasta} );
+        
+        for my $key (keys %{$seq_of}) {
+            printf qq{>%s length:%d\n}, $count, length($seq_of->{$key});
+            printf qq{%s\n}, $seq_of->{$key};
+        }
+    ' \
+    > superreads/merged_kunitigs.fasta
+
+perl ~/Scripts/cpan/App-Anchr/share/createSuperReadsForDirectory.perl \
+    superreads \
+    superreads/merged_kunitigs.fasta \
+    2_illumina/Q30L60/pe.cor.fa \
+    2_illumina/Q30L60/meanAndStdevByPrefix.pe.txt
+ 
+```
+
 * Stats
 
 ```bash
