@@ -107,7 +107,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
 
         SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
         SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
-        SECS_AN=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/pe.cor.fa))
+        SECS_AN=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/anchors.sh))
 
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
