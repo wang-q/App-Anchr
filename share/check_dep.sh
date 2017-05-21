@@ -57,7 +57,7 @@ hash jq 2>/dev/null || {
 }
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    hash createSuperReadsForDirectory.perl 2>/dev/null || {
+    hash create_k_unitigs_large_k 2>/dev/null || {
         echo >&2 "superreads is required but it's not installed.";
         echo >&2 "Install with homebrew: brew install wang-q/tap/superreads";
         exit 1;
@@ -70,12 +70,6 @@ fi
 hash bbmap.sh 2>/dev/null || {
     echo >&2 "bbmap.sh is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/bbtools";
-    exit 1;
-}
-
-hash genomeCoverageBed 2>/dev/null || {
-    echo >&2 "genomeCoverageBed is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/bedtools";
     exit 1;
 }
 
