@@ -3095,7 +3095,6 @@ anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
-mkdir -p merge
 anchr contained \
     $(
         parallel -k --no-run-if-empty -j 6 "
