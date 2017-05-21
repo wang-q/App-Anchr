@@ -10,9 +10,10 @@ use constant abstract => "selete anchors from k-unitigs or superreads";
 
 sub opt_spec {
     return (
-        [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "anchors.sh" }, ],
-        [ 'min=i',        'minimal length of anchors',            { default => 1000, }, ],
-        [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
+        [ "outfile|o=s",  "output filename, [stdout] for screen",  { default => "anchors.sh" }, ],
+        [ 'min=i',        'minimal length of anchors',             { default => 1000, }, ],
+        [ 'unambi=i',     'minimal coverage of unambiguous reads', { default => 2, }, ],
+        [ 'parallel|p=i', 'number of threads',                     { default => 8, }, ],
         { show_defaults => 1, }
     );
 }
@@ -128,27 +129,71 @@ bbmap.sh \
     ambiguous=toss \
     ref=SR.fasta in=pe.cor.fa \
     outm=unambiguous.sam outu=unmapped.sam \
+    basecov=basecov.txt \
     1>>bbmap.err 2>&1
 
-log_debug "sort bam"
-picard SortSam \
-    INPUT=unambiguous.sam \
-    OUTPUT=unambiguous.sort.bam \
-    SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT \
-    1>>picard.err 2>&1
+# at least [% opt.unambi %] unambiguous reads covered
+# Pos is 0-based
+#RefName	Pos	Coverage
+log_debug "covered"
+cat basecov.txt \
+    | grep -v '^#' \
+    | perl -nla -e '
+        BEGIN { our $name; our @list; }
 
-log_debug "genomeCoverageBed"
-# at least two unambiguous reads covered
-genomeCoverageBed -bga -split -g sr.chr.sizes -ibam unambiguous.sort.bam \
-    | perl -nlae '
-        $F[3] == 0 and next;
-        $F[3] == 1 and next;
-        printf qq{%s:%s-%s\n}, $F[0], $F[1] + 1, $F[2];
+        sub list_to_ranges {
+            my @ranges;
+            my $count = scalar @list;
+            my $pos   = 0;
+            while ( $pos < $count ) {
+                my $end = $pos + 1;
+                $end++ while $end < $count && $list[$end] <= $list[ $end - 1 ] + 1;
+                push @ranges, ( $list[$pos], $list[ $end - 1 ] );
+                $pos = $end;
+            }
+
+            return @ranges;
+        }
+
+        $F[2] < 2 and next;
+
+        if ( !defined $name ) {
+            $name = $F[0];
+            @list = ( $F[1] );
+        }
+        elsif ( $name eq $F[0] ) {
+            push @list, $F[1];
+        }
+        else {
+            my @ranges = list_to_ranges();
+            for ( my $i = 0; $i < $#ranges; $i += 2 ) {
+                if ( $ranges[$i] == $ranges[ $i + 1 ] ) {
+                    printf qq{%s:%s\n}, $name, $ranges[$i] + 1;
+                }
+                else {
+                    printf qq{%s:%s-%s\n}, $name, $ranges[$i] + 1, $ranges[ $i + 1 ] + 1;
+                }
+            }
+
+            $name = $F[0];
+            @list = ( $F[1] );
+        }
+
+        END {
+            my @ranges = list_to_ranges();
+            for ( my $i = 0; $i < $#ranges; $i += 2 ) {
+                if ( $ranges[$i] == $ranges[ $i + 1 ] ) {
+                    printf qq{%s:%s\n}, $name, $ranges[$i] + 1;
+                }
+                else {
+                    printf qq{%s:%s-%s\n}, $name, $ranges[$i] + 1, $ranges[ $i + 1 ] + 1;
+                }
+            }
+        }
     ' \
     > unambiguous.cover.txt
 
-find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
+#find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
 
 #----------------------------#
 # anchor
