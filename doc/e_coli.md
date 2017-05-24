@@ -493,6 +493,28 @@ kmergenie -l 21 -k 151 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
 ```
 
+## Spades
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/R1.fq.gz \
+    -2 2_illumina/R2.fq.gz \
+    -o 8_spades
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades_Q25L60
+```
+
 ## Down sampling
 
 ```bash
@@ -982,10 +1004,11 @@ mv anchor.sort.png merge/
 rm -fr 9_qa_merge
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
+    8_spades/contigs.fasta \
+    8_spades_Q25L60/contigs.fasta \
     merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
     1_genome/paralogs.fas \
-    --label "merge,others,paralogs" \
+    --label "spades,spades_Q25L60,merge,paralogs" \
     -o 9_qa_merge
 
 ```
