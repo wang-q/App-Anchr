@@ -1623,6 +1623,6 @@ cat stat3.md
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-rm -fr 2_illumina/Q{1,20,25,30,35}L*
-rm -fr Q{20,25,30,35}L*
+rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
+rm -fr Q{20,25,30}L{1,60,90,120}X*
 ```
