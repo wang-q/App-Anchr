@@ -4,10 +4,13 @@
 - [Tuning parameters for the dataset of *E. coli*](#tuning-parameters-for-the-dataset-of-e-coli)
 - [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
     - [Extra external executables](#extra-external-executables)
+    - [Two of the leading assemblers](#two-of-the-leading-assemblers)
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [Download](#download)
     - [Combinations of different quality values and read lengths](#combinations-of-different-quality-values-and-read-lengths)
+    - [Spades](#spades)
+    - [Platanus](#platanus)
     - [Quorum](#quorum)
     - [Down sampling](#down-sampling)
     - [Generate k-unitigs (sampled)](#generate-k-unitigs-sampled)
@@ -34,6 +37,7 @@ brew reinstall --build-from-source gnuplot@4
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
 brew install python
+pip install --upgrade pip setuptools
 pip install matplotlib
 brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
@@ -49,6 +53,14 @@ brew link gnuplot@4 --force
 
 brew install r --without-tcltk --without-x11
 brew install kmergenie --with-maxkmer=200
+```
+
+## Two of the leading assemblers
+
+```bash
+brew install homebrew/science/spades
+brew install wang-q/tap/platanus
+
 ```
 
 ## PacBio specific tools
@@ -253,7 +265,7 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         -p 2_illumina/R2.uniq.fq
     
     parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
+        pigz -p 4 2_illumina/{}.uniq.fq
         " ::: R1 R2
 fi
 
@@ -279,7 +291,7 @@ if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
         out2=2_illumina/R2.shuffle.fq
     
     parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.shuffle.fq
+        pigz -p 8 2_illumina/{}.shuffle.fq
         " ::: R1 R2
 fi
 
@@ -378,6 +390,65 @@ cat stat.md
 | Q35L60   |      72 |  366922898 |  5062192 |
 | Q35L90   |      95 |   35259773 |   364046 |
 | Q35L120  |     124 |     647353 |     5169 |
+
+## Spades
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/R1.fq.gz \
+    -2 2_illumina/R2.fq.gz \
+    -o 8_spades
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades_Q25L60
+```
+
+## Platanus
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e R1.fa ]; then
+    parallel --no-run-if-empty -j 3 "
+        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
+        " ::: R1 R2 Rs
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f R1.fa R2.fa Rs.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -IP1 R1.fa R2.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```text
+#### PROCESS INFORMATION ####
+VmPeak:          65.317 GByte
+VmHWM:            7.030 GByte
+```
 
 ## Quorum
 
@@ -491,28 +562,6 @@ kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
 kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
 kmergenie -l 21 -k 151 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
 
-```
-
-## Spades
-
-```bash
-BASE_NAME=e_coli
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 --careful \
-    -1 2_illumina/R1.fq.gz \
-    -2 2_illumina/R2.fq.gz \
-    -o 8_spades
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 --careful \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades_Q25L60
 ```
 
 ## Down sampling
@@ -1004,13 +1053,14 @@ mv anchor.sort.png merge/
 rm -fr 9_qa_merge
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
-    8_spades/contigs.fasta \
     8_spades_Q25L60/contigs.fasta \
+    8_spades_Q25L60/scaffolds.fasta \
+    8_platanus/out_contig.fa \
+    8_platanus/out_gapClosed.fa \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "spades,spades_Q25L60,merge,paralogs" \
+    --label "spades.contig,spades.scaffold,platanus.contig,platanus.scaffold,merge,paralogs" \
     -o 9_qa_merge
-
 ```
 
 ## With PE info
