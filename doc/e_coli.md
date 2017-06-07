@@ -400,17 +400,18 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 spades.py \
     -t 16 \
     -k 21,33,55,77 --careful \
-    -1 2_illumina/R1.fq.gz \
-    -2 2_illumina/R2.fq.gz \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
     -o 8_spades
 
 spades.py \
     -t 16 \
     -k 21,33,55,77 --careful \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades_Q25L60
+    -1 2_illumina/Q30L60/R1.fq.gz \
+    -2 2_illumina/Q30L60/R2.fq.gz \
+    -s 2_illumina/Q30L60/Rs.fq.gz \
+    -o 8_spades_Q30L60
 ```
 
 ## Platanus
@@ -422,24 +423,65 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p 8_platanus
 cd 8_platanus
 
-if [ ! -e R1.fa ]; then
-    parallel --no-run-if-empty -j 3 "
-        faops filter -l 0 ../2_illumina/Q25L60/{}.fq.gz {}.fa
-        " ::: R1 R2 Rs
+if [ ! -e reads.fa ]; then
+    faops interleave \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > reads.fa
+    
+    faops interleave \
+        -s $(( $(tail -n2 reads.fa | grep ">" | sed "s/>read//") + 1)) \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        >> reads.fa
 fi
 
 platanus assemble -t 16 -m 100 \
-    -f R1.fa R2.fa Rs.fa \
+    -f reads.fa \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t 16 \
     -c out_contig.fa -b out_contigBubble.fa \
-    -IP1 R1.fa R2.fa \
+    -ip1 reads.fa \
     2>&1 | tee sca_log.txt
 
 platanus gap_close -t 16 \
     -c out_scaffold.fa \
-    -IP1 R1.fa R2.fa \
+    -ip1 reads.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus_Q30L60
+cd 8_platanus_Q30L60
+
+if [ ! -e reads.fa ]; then
+    faops interleave \
+        ../2_illumina/Q30L60/R1.fq.gz \
+        ../2_illumina/Q30L60/R2.fq.gz \
+        > reads.fa
+    
+    faops interleave \
+        -s $(( $(tail -n2 reads.fa | grep ">" | sed "s/>read//") + 1)) \
+        ../2_illumina/Q30L60/Rs.fq.gz \
+        >> reads.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f reads.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 reads.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 reads.fa \
     2>&1 | tee gap_log.txt
 
 ```
@@ -1049,42 +1091,32 @@ rm out.delta
 rm *.gp
 mv anchor.sort.png merge/
 
+# PE
+cd merge
+platanus scaffold -t 16 \
+    -c anchor.merge.fasta \
+    -IP1 ../8_platanus/R1.fa ../8_platanus/R2.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -IP1 ../8_platanus/R1.fa ../8_platanus/R2.fa \
+    2>&1 | tee gap_log.txt
+
 # quast
 rm -fr 9_qa_merge
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
-    8_spades_Q25L60/contigs.fasta \
-    8_spades_Q25L60/scaffolds.fasta \
+    8_spades/contigs.fasta \
+    8_spades/scaffolds.fasta \
+    8_spades_Q30L60/scaffolds.fasta \
     8_platanus/out_contig.fa \
     8_platanus/out_gapClosed.fa \
+    8_platanus_Q30L60/out_gapClosed.fa \
     merge/anchor.merge.fasta \
     1_genome/paralogs.fas \
-    --label "spades.contig,spades.scaffold,platanus.contig,platanus.scaffold,merge,paralogs" \
+    --label "spades.contig,spades.scaffold,spades_Q30L60,platanus.contig,platanus.scaffold,platanus_Q30L60,merge,paralogs" \
     -o 9_qa_merge
-```
-
-## With PE info
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-mkdir -p Q25L100_2500000_SR
-cd ${BASE_DIR}/Q25L100_2500000_SR
-ln -s ../Q25L100_2500000/R1.fq.gz R1.fq.gz
-ln -s ../Q25L100_2500000/R2.fq.gz R2.fq.gz
-
-anchr superreads \
-    R1.fq.gz R2.fq.gz \
-    -s 300 -d 30 -p 8 \
-    -o superreads.sh
-bash superreads.sh
-
-rm -fr anchor
-bash ~/Scripts/cpan/App-Anchr/share/anchor.sh . 8 true
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 .
-
 ```
 
 ## Different K values
@@ -1623,6 +1655,6 @@ cat stat3.md
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
+rm -fr 2_illumina/Q{1,20,25,30,35}L{1,60,90,120}X*
 rm -fr Q{20,25,30}L{1,60,90,120}X*
 ```
