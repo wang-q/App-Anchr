@@ -139,21 +139,22 @@ rm -rf meanAndStdevByPrefix.pe.txt
 echo 'pe [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
 
 if [ ! -e pe.renamed.fastq ]; then
-    faops interleave \
-        -p pe \
-        [% args.0 %] \
-        [% args.1 %] \
-        > pe.renamed.fastq
+    rename_filter_fastq \
+        'pe' \
+        <(exec expand_fastq '[% args.0 %]' ) \
+        <(exec expand_fastq '[% args.1 %]' ) \
+        > 'pe.renamed.fastq'
 fi
 
 [% IF args.2 -%]
 echo 'se [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
 
 if [ ! -e se.renamed.fastq ]; then
-    faops interleave \
-        -p se \
-        [% args.2 %] \
-        > se.renamed.fastq
+    rename_filter_fastq \
+        'se' \
+        <(exec expand_fastq '[% args.2 %]' ) \
+        '' \
+        > 'se.renamed.fastq'
 fi
 [% END -%]
 
@@ -272,7 +273,6 @@ if [ ! -e pe.cor.fa ]; then
     log_info Error correct PE.
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
-        --no-discard \
         --contaminant=[% opt.adapter %] \
         -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
