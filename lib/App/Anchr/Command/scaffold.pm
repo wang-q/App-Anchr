@@ -11,8 +11,6 @@ use constant abstract => "scaffold anchors (k-unitigs/contigs) using paired-end 
 sub opt_spec {
     return (
         [ "outfile|o=s",  "output filename, [stdout] for screen",  { default => "scaffold.sh" }, ],
-        [ 'min=i',        'minimal length of anchors',             { default => 1000, }, ],
-        [ 'unambi=i',     'minimal coverage of unambiguous reads', { default => 2, }, ],
         [ 'parallel|p=i', 'number of threads',                     { default => 8, }, ],
         { show_defaults => 1, }
     );
