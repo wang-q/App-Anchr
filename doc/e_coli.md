@@ -423,30 +423,62 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p 8_platanus
 cd 8_platanus
 
-if [ ! -e reads.fa ]; then
+if [ ! -e pe.fa ]; then
     faops interleave \
+        -p pe \
         ../2_illumina/Q25L60/R1.fq.gz \
         ../2_illumina/Q25L60/R2.fq.gz \
-        > reads.fa
+        > pe.fa
     
     faops interleave \
-        -s $(( $(tail -n2 reads.fa | grep ">" | sed "s/>read//") + 1)) \
+        -p se \
         ../2_illumina/Q25L60/Rs.fq.gz \
-        >> reads.fa
+        > se.fa
 fi
 
 platanus assemble -t 16 -m 100 \
-    -f reads.fa \
+    -f pe.fa se.fa \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t 16 \
     -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 reads.fa \
+    -ip1 pe.fa \
     2>&1 | tee sca_log.txt
 
 platanus gap_close -t 16 \
     -c out_scaffold.fa \
-    -ip1 reads.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus_quorum
+cd 8_platanus_quorum
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f ../2_illumina/Q25L60/pe.cor.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
     2>&1 | tee gap_log.txt
 
 ```
@@ -458,30 +490,31 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p 8_platanus_Q30L60
 cd 8_platanus_Q30L60
 
-if [ ! -e reads.fa ]; then
+if [ ! -e pe.fa ]; then
     faops interleave \
+        -p pe \
         ../2_illumina/Q30L60/R1.fq.gz \
         ../2_illumina/Q30L60/R2.fq.gz \
-        > reads.fa
+        > pe.fa
     
     faops interleave \
-        -s $(( $(tail -n2 reads.fa | grep ">" | sed "s/>read//") + 1)) \
+        -p se \
         ../2_illumina/Q30L60/Rs.fq.gz \
-        >> reads.fa
+        > se.fa
 fi
 
 platanus assemble -t 16 -m 100 \
-    -f reads.fa \
+    -f pe.fa se.fa \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t 16 \
     -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 reads.fa \
+    -ip1 pe.fa \
     2>&1 | tee sca_log.txt
 
 platanus gap_close -t 16 \
     -c out_scaffold.fa \
-    -ip1 reads.fa \
+    -ip1 pe.fa \
     2>&1 | tee gap_log.txt
 
 ```
@@ -1091,18 +1124,6 @@ rm out.delta
 rm *.gp
 mv anchor.sort.png merge/
 
-# PE
-cd merge
-platanus scaffold -t 16 \
-    -c anchor.merge.fasta \
-    -IP1 ../8_platanus/R1.fa ../8_platanus/R2.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -IP1 ../8_platanus/R1.fa ../8_platanus/R2.fa \
-    2>&1 | tee gap_log.txt
-
 # quast
 rm -fr 9_qa_merge
 quast --no-check --threads 16 \
@@ -1112,11 +1133,40 @@ quast --no-check --threads 16 \
     8_spades_Q30L60/scaffolds.fasta \
     8_platanus/out_contig.fa \
     8_platanus/out_gapClosed.fa \
+    8_platanus_quorum/out_gapClosed.fa \
     8_platanus_Q30L60/out_gapClosed.fa \
     merge/anchor.merge.fasta \
+    merge/scaffold/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "spades.contig,spades.scaffold,spades_Q30L60,platanus.contig,platanus.scaffold,platanus_Q30L60,merge,paralogs" \
+    --label "spades.contig,spades.scaffold,spades_Q30L60,platanus.contig,platanus.scaffold,platanus_quorum,platanus_Q30L60,merge,merge.scaffold,paralogs" \
     -o 9_qa_merge
+```
+
+## Scaffolding with PE
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+# PE
+mkdir -p merge/scaffold
+cd merge/scaffold
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../../2_illumina/Q30L90/R1.fq.gz \
+        ../../2_illumina/Q30L90/R2.fq.gz \
+        > pe.fa
+fi
+
+anchr scaffold \
+    ../anchor.merge.fasta \
+    pe.fa \
+    -p 8 \
+    -o scaffold.sh
+bash scaffold.sh
+
 ```
 
 ## Different K values
