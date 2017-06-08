@@ -17,10 +17,11 @@
     - [Create anchors (sampled)](#create-anchors-sampled)
     - [Merge anchors with Qxx, Lxx and QxxLxx](#merge-anchors-with-qxx-lxx-and-qxxlxx)
     - [Merge anchors](#merge-anchors)
-    - [With PE info](#with-pe-info)
+    - [Scaffolding with PE](#scaffolding-with-pe)
     - [Different K values](#different-k-values)
     - [3GS](#3gs)
     - [Expand anchors](#expand-anchors)
+    - [Final stats](#final-stats)
 
 
 # More tools on downloading and preprocessing data
@@ -1136,9 +1137,10 @@ quast --no-check --threads 16 \
     8_platanus_quorum/out_gapClosed.fa \
     8_platanus_Q30L60/out_gapClosed.fa \
     merge/anchor.merge.fasta \
+    merge/scaffold/out_scaffold.fa \
     merge/scaffold/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "spades.contig,spades.scaffold,spades_Q30L60,platanus.contig,platanus.scaffold,platanus_quorum,platanus_Q30L60,merge,merge.scaffold,paralogs" \
+    --label "spades.contig,spades.scaffold,spades_Q30L60,platanus.contig,platanus.scaffold,platanus_quorum,platanus_Q30L60,merge,merge.scaffold,merge.gapClosed,paralogs" \
     -o 9_qa_merge
 ```
 
@@ -1629,26 +1631,7 @@ cat \
 
 ```
 
-* quast
-
-```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-raw-40x/ecoli.contigs.fasta \
-    canu-raw-80x/ecoli.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
-    -o 9_qa_contig
-
-```
+## Final stats
 
 * Stats
 
@@ -1675,29 +1658,52 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name         |     N50 |     Sum |   # |
-|:-------------|--------:|--------:|----:|
-| Genome       | 4641652 | 4641652 |   1 |
-| Paralogs     |    1934 |  195673 | 106 |
-| anchor.merge |   95579 | 4564714 | 103 |
-| others.merge |    1225 |    2242 |   2 |
-| anchor.cover |   94389 | 4552209 | 100 |
-| anchorLong   |  132686 | 4540198 |  62 |
-| contigTrim   | 4594649 | 4636507 |   2 |
+| Name              |     N50 |     Sum |    # |
+|:------------------|--------:|--------:|-----:|
+| Genome            | 4641652 | 4641652 |    1 |
+| Paralogs          |    1934 |  195673 |  106 |
+| anchor.merge      |   73736 | 4541010 |  120 |
+| others.merge      |    2571 |    7797 |    4 |
+| anchor.cover      |   73736 | 4531274 |  116 |
+| anchorLong        |   97556 | 4530064 |   92 |
+| contigTrim        | 3692388 | 4432486 |    3 |
+| spades.contig     |  132662 | 4645193 |  311 |
+| spades.scaffold   |  133063 | 4645555 |  306 |
+| platanus.contig   |   15090 | 4683012 | 1069 |
+| platanus.scaffold |  133014 | 4575941 |  137 |
 
-| Name         |     N50 |     Sum |   # |
-|:-------------|--------:|--------:|----:|
-| Genome       | 4641652 | 4641652 |   1 |
-| Paralogs     |    1934 |  195673 | 106 |
-| anchor.merge |   73736 | 4541010 | 120 |
-| others.merge |    2571 |    7797 |   4 |
-| anchor.cover |   73736 | 4531274 | 116 |
-| anchorLong   |   97556 | 4530064 |  92 |
-| contigTrim   | 3692388 | 4432486 |   3 |
+* quast
+
+```bash
+BASE_DIR=$HOME/data/anchr/e_coli
+cd ${BASE_DIR}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/ecoli.contigs.fasta \
+    canu-raw-80x/ecoli.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    -o 9_qa_contig
+
+```
 
 * Clear QxxLxxx.
 
