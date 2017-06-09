@@ -248,15 +248,80 @@ cat unambiguous2.txt \
 rm unambiguous2.*
 
 #----------------------------#
+# basecov
+#----------------------------#
+log_info "basecov"
+cat basecov.txt \
+    | grep -v '^#' \
+    | perl -nla -MApp::Fasops::Common -e '
+        BEGIN { our $name; our @list; }
+
+        if ( !defined $name ) {
+            $name = $F[0];
+            @list = ( $F[2] );
+        }
+        elsif ( $name eq $F[0] ) {
+            push @list, $F[2];
+        }
+        else {
+            my $mean_cov = App::Fasops::Common::mean(@list);
+            printf qq{%s\t%d\n}, $name, int $mean_cov;
+
+            $name = $F[0];
+            @list = ( $F[2] );
+        }
+
+        END {
+            my $mean_cov = App::Fasops::Common::mean(@list);
+            printf qq{%s\t%d\n}, $name, int $mean_cov;
+        }
+    ' \
+    > unambiguous.coverage.tsv
+
+# How to best eliminate values in a list that are outliers
+# http://www.perlmonks.org/?node_id=1147296
+# http://exploringdatablog.blogspot.com/2013/02/finding-outliers-in-numerical-data.html
+cat unambiguous.coverage.tsv \
+    | perl -nla -MStatistics::Descriptive -e '
+        BEGIN {
+            our $stat   = Statistics::Descriptive::Full->new();
+            our %cov_of = ();
+        }
+
+        $cov_of{ $F[0] } = $F[1];
+        $stat->add_data( $F[1] );
+
+        END {
+            my $median       = $stat->median();
+            my @abs_res      = map { abs( $median - $_ ) } $stat->get_data();
+            my $abs_res_stat = Statistics::Descriptive::Full->new();
+            $abs_res_stat->add_data(@abs_res);
+            my $MAD = $abs_res_stat->median();
+            my $k   = 3;                         # the scale factor
+
+            my $lower_limit = ( $median - $k * $MAD ) / 2;
+            my $upper_limit = ( $median + $k * $MAD ) * 1.5;
+
+            for my $key ( keys %cov_of ) {
+                if ( $cov_of{$key} < $lower_limit or $cov_of{$key} > $upper_limit ) {
+                    print $key;
+                }
+            }
+        }
+    ' \
+    > outlier.txt
+
+cat anchor.txt anchor2.txt \
+    | grep -Fx -f outlier.txt -v \
+    > wanted.txt
+
+#----------------------------#
 # Split SR.fasta to anchor and others
 #----------------------------#
 log_info "pe.anchor.fa & pe.others.fa"
-faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
+faops some -l 0 SR.fasta wanted.txt pe.anchor.fa
 
-faops some -l 0 SR.fasta anchor2.txt stdout >> pe.anchor.fa
-
-faops some -l 0 -i SR.fasta anchor.txt stdout \
-    | faops some -l 0 -i stdin anchor2.txt pe.others.fa
+faops some -l 0 -i SR.fasta wanted.txt pe.others.fa
 
 #----------------------------#
 # Done.
