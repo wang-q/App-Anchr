@@ -117,10 +117,11 @@ bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
     ambiguous=toss \
-    ref=SR.fasta in=pe.fa nodisk \
+    nodisk \
+    ref=SR.fasta in=pe.fa \
     outm=unambiguous.sam outu=unmapped.sam \
     basecov=basecov.txt \
-    1>>bbmap.err 2>&1
+    1>bbmap.err 2>&1
 
 # Pos is 0-based
 #RefName	Pos	Coverage
