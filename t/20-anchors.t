@@ -15,7 +15,7 @@ like( $result->error, qr{need .+input file}, 'need infile' );
 $result = test_app( 'App::Anchr' => [qw(anchors t/not_exists t/not_exists)] );
 like( $result->error, qr{doesn't exist}, 'infile not exists' );
 
-$result = test_app( 'App::Anchr' => [qw(anchors t/R1.fq.gz t/merge.fasta -o stdout)] );
+$result = test_app( 'App::Anchr' => [qw(anchors t/merge.fasta t/R1.fq.gz -o stdout)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 50, 'line count' );
 like( $result->stdout, qr{Colors.+anchor2}s, 'bash contents' );
 

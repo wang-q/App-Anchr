@@ -19,7 +19,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr anchors [options] <pe.cor.fa> <k_unitigs.fasta>";
+    return "anchr anchors [options] <k_unitigs.fasta> <pe.cor.fa>";
 }
 
 sub description {
@@ -101,12 +101,13 @@ trap signaled TERM QUIT INT
 # Prepare SR
 #----------------------------#
 log_info Symlink/copy input files
-if [ ! -e pe.cor.fa ]; then
-    ln -s [% args.0 %] pe.cor.fa
-fi
 
 if [ ! -e SR.fasta ]; then
-    ln -s [% args.1 %] SR.fasta
+    ln -s [% args.0 %] SR.fasta
+fi
+
+if [ ! -e pe.cor.fa ]; then
+    ln -s [% args.1 %] pe.cor.fa
 fi
 
 log_debug "SR sizes"
@@ -191,7 +192,7 @@ cat basecov.txt \
             }
         }
     ' \
-    > unambiguous.cover.txt
+    > unambiguous.covered.txt
 
 #find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
 
@@ -199,10 +200,10 @@ cat basecov.txt \
 # anchor
 #----------------------------#
 log_info "anchor - unambiguous"
-jrunlist cover unambiguous.cover.txt -o unambiguous.cover.yml
-jrunlist stat sr.chr.sizes unambiguous.cover.yml -o unambiguous.cover.csv
+jrunlist cover unambiguous.covered.txt -o unambiguous.covered.yml
+jrunlist stat sr.chr.sizes unambiguous.covered.yml -o unambiguous.covered.csv
 
-cat unambiguous.cover.csv \
+cat unambiguous.covered.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
@@ -213,7 +214,7 @@ cat unambiguous.cover.csv \
     | sort -n \
     > anchor.txt
 
-rm unambiguous.cover.txt
+rm unambiguous.covered.txt
 
 #----------------------------#
 # anchor2
@@ -221,8 +222,8 @@ rm unambiguous.cover.txt
 log_info "anchor2 - unambiguous2"
 
 # contiguous unique region longer than [% opt.min %]
-jrunlist span unambiguous.cover.yml --op excise -n [% opt.min %] -o unambiguous2.cover.yml
-jrunlist stat sr.chr.sizes unambiguous2.cover.yml -o unambiguous2.cover.csv
+jrunlist span unambiguous.covered.yml --op excise -n [% opt.min %] -o unambiguous2.covered.yml
+jrunlist stat sr.chr.sizes unambiguous2.covered.yml -o unambiguous2.covered.csv
 
 cat unambiguous2.cover.csv \
     | perl -nla -F"," -e '
