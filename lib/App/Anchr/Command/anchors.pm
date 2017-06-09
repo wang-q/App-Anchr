@@ -118,20 +118,16 @@ faops size SR.fasta > sr.chr.sizes
 #----------------------------#
 log_info "Unambiguous regions"
 
-# index
-log_debug "bbmap index"
-bbmap.sh ref=SR.fasta \
-    1>bbmap.err 2>&1
-
 log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
     ambiguous=toss \
+    nodisk \
     ref=SR.fasta in=pe.cor.fa \
     outm=unambiguous.sam outu=unmapped.sam \
     basecov=basecov.txt \
-    1>>bbmap.err 2>&1
+    1>bbmap.err 2>&1
 
 # at least [% opt.unambi %] unambiguous reads covered
 # Pos is 0-based
