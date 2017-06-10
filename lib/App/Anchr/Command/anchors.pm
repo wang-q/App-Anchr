@@ -221,7 +221,7 @@ log_info "anchor2 - unambiguous2"
 jrunlist span unambiguous.covered.yml --op excise -n [% opt.min %] -o unambiguous2.covered.yml
 jrunlist stat sr.chr.sizes unambiguous2.covered.yml -o unambiguous2.covered.csv
 
-cat unambiguous2.cover.csv \
+cat unambiguous2.covered.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
