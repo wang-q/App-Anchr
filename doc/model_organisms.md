@@ -18,12 +18,15 @@
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
     - [iso_1: combinations of different quality values and read lengths](#iso-1-combinations-of-different-quality-values-and-read-lengths)
+    - [iso_1: spades](#iso-1-spades)
+    - [iso_1: platanus](#iso-1-platanus)
     - [iso_1: quorum](#iso-1-quorum)
     - [iso_1: down sampling](#iso-1-down-sampling)
     - [iso_1: k-unitigs and anchors (sampled)](#iso-1-k-unitigs-and-anchors-sampled)
     - [iso_1: merge anchors](#iso-1-merge-anchors)
     - [iso_1: 3GS](#iso-1-3gs)
     - [iso_1: expand anchors](#iso-1-expand-anchors)
+    - [iso_1: final stats](#iso-1-final-stats)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
     - [n2: combinations of different quality values and read lengths](#n2-combinations-of-different-quality-values-and-read-lengths)
@@ -512,8 +515,8 @@ parallel --no-run-if-empty -j 3 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -994,11 +997,10 @@ quast --no-check --threads 16 \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/${BASE_NAME}.contigs.fasta \
-    canu-raw-80x/${BASE_NAME}.contigs.fasta \
     8_spades/scaffolds.fasta \
     8_platanus/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,spades,platanus,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
@@ -1254,6 +1256,60 @@ cat stat.md
 | Q25L60   |      101 | 14657099109 | 147178220 |
 | Q30L60   |      101 | 13983733793 | 143634907 |
 
+## iso_1: spades
+
+```bash
+BASE_NAME=iso_1
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 --careful \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+
+```
+
+## iso_1: platanus
+
+```bash
+BASE_NAME=iso_1
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
 ## iso_1: quorum
 
 ```bash
@@ -1451,8 +1507,8 @@ parallel --no-run-if-empty -j 3 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -1477,13 +1533,13 @@ cat stat2.md
 ```
 
 | Name          | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |   Sum |    # |                      Kmer | RunTimeKU | RunTimeAN |
-|:--------------|:-------|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------------:|----------:|----------:|
-| Q25L60X40P000 | 5.5G   |   40.0 | 15071 | 120.38M | 17963 |     15493 | 116.86M | 13566 |       769 | 3.52M | 4397 | "31,41,43,45,51,61,71,81" | 1:45'28'' | 0:52'24'' |
-| Q25L60X40P001 | 5.5G   |   40.0 | 15024 | 120.26M | 18210 |     15523 | 116.89M | 13755 |       750 | 3.37M | 4455 | "31,41,43,45,51,61,71,81" | 2:00'10'' | 0:55'01'' |
-| Q25L60X80P000 | 11.01G |   80.0 | 11458 |  120.5M | 21155 |     11829 |  117.1M | 16510 |       743 | 3.39M | 4645 | "31,41,43,45,51,61,71,81" | 5:47'36'' | 1:20'54'' |
-| Q30L60X40P000 | 5.5G   |   40.0 | 14746 |  120.2M | 18852 |     15222 | 116.52M | 14062 |       755 | 3.68M | 4790 | "31,41,43,45,51,61,71,81" | 2:13'32'' | 0:35'51'' |
-| Q30L60X40P001 | 5.5G   |   40.0 | 14182 | 120.07M | 19485 |     14701 | 116.32M | 14505 |       746 | 3.75M | 4980 | "31,41,43,45,51,61,71,81" | 2:26'03'' | 0:38'37'' |
-| Q30L60X80P000 | 11.01G |   80.0 | 12544 | 120.36M | 20199 |     13047 | 116.95M | 15569 |       742 | 3.41M | 4630 | "31,41,43,45,51,61,71,81" | 3:15'41'' | 0:42'36'' |
+|:--------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------------:|----------:|:----------|
+| Q25L60X40P000 |   5.5G |   40.0 | 15071 |  120.4M | 17971 |     15570 | 115.59M | 13374 |       895 | 4.81M | 4597 | "31,41,43,45,51,61,71,81" | 1:49'30'' | 0:15'43'' |
+| Q25L60X40P001 |   5.5G |   40.0 | 15022 | 120.25M | 18206 |     15611 | 115.64M | 13570 |       867 | 4.61M | 4636 | "31,41,43,45,51,61,71,81" | 1:51'20'' | 0:13'54'' |
+| Q25L60X80P000 | 11.01G |   80.0 | 11442 | 120.49M | 21157 |     11891 | 115.59M | 16183 |       872 |  4.9M | 4974 | "31,41,43,45,51,61,71,81" | 2:29'52'' | 0:18'07'' |
+| Q30L60X40P000 |   5.5G |   40.0 | 14735 | 120.17M | 18849 |     15237 | 115.12M | 13892 |       878 | 5.05M | 4957 | "31,41,43,45,51,61,71,81" | 1:50'40'' | 0:10'07'' |
+| Q30L60X40P001 |   5.5G |   40.0 | 14182 |  120.1M | 19483 |     14723 | 114.97M | 14333 |       865 | 5.14M | 5150 | "31,41,43,45,51,61,71,81" | 1:50'22'' | 0:11'26'' |
+| Q30L60X80P000 | 11.01G |   80.0 | 12544 | 120.37M | 20203 |     13096 | 115.53M | 15333 |       867 | 4.84M | 4870 | "31,41,43,45,51,61,71,81" | 2:35'52'' | 0:13'13'' |
 
 ## iso_1: merge anchors
 
@@ -1746,6 +1802,59 @@ cat \
 
 ```
 
+## iso_1: final stats
+
+* Stats
+
+```bash
+BASE_NAME=iso_1
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name              |      N50 |       Sum |      # |
+|:------------------|---------:|----------:|-------:|
+| Genome            | 25286936 | 137567477 |      8 |
+| Paralogs          |     4031 |  13665900 |   4492 |
+| anchor.merge      |    26860 | 117041459 |   9566 |
+| others.merge      |     8732 |   3092289 |   1004 |
+| anchor.cover      |    26199 | 116199529 |   9576 |
+| anchorLong        |    69814 | 115806088 |   4924 |
+| contigTrim        |  1238480 | 123572499 |    603 |
+| spades.contig     |   108756 | 132705321 |  61620 |
+| spades.scaffold   |   142273 | 132725706 |  61182 |
+| platanus.contig   |    11503 | 156820565 | 359399 |
+| platanus.scaffold |   146404 | 129134232 |  71416 |
+
 * quast
 
 ```bash
@@ -1755,59 +1864,19 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
     --eukaryote \
-    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    8_spades/scaffolds.fasta \
+    8_platanus/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
-
-* Stats
-
-```bash
-BASE_NAME=iso_1
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-REAL_G=137567477
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N(G)50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";       faops n50 -H -S -C -g ${REAL_G} 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";     faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C -g ${REAL_G} merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.cover"; faops n50 -H -S -C -g ${REAL_G} merge/anchor.cover.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong";   faops n50 -H -S -C -g ${REAL_G} anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "contigTrim";   faops n50 -H -S -C -g ${REAL_G} contigTrim/contig.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
-| Name         |   N(G)50 |       Sum |    # |
-|:-------------|---------:|----------:|-----:|
-| Genome       | 25286936 | 137567477 |    8 |
-| Paralogs     |     4031 |  13665900 | 4492 |
-| anchor.merge |    21441 | 118628700 | 9728 |
-| others.merge |     1414 |   1463010 |  743 |
-| anchor.cover |    20245 | 116345073 | 9588 |
-| anchorLong   |    52633 | 115947988 | 4928 |
-| contigTrim   |   947641 | 122413072 |  603 |
 
 * Clear QxxLxxXxx.
 
