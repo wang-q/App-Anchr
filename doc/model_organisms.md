@@ -30,12 +30,15 @@
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
     - [n2: combinations of different quality values and read lengths](#n2-combinations-of-different-quality-values-and-read-lengths)
+    - [n2: spades](#n2-spades)
+    - [n2: platanus](#n2-platanus)
     - [n2: quorum](#n2-quorum)
     - [n2: down sampling](#n2-down-sampling)
     - [n2: k-unitigs and anchors (sampled)](#n2-k-unitigs-and-anchors-sampled)
     - [n2: merge anchors](#n2-merge-anchors)
     - [n2: 3GS](#n2-3gs)
     - [n2: expand anchors](#n2-expand-anchors)
+    - [n2: final stats](#n2-final-stats)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [col_0: download](#col-0-download)
     - [col_0: combinations of different quality values and read lengths](#col-0-combinations-of-different-quality-values-and-read-lengths)
@@ -1864,6 +1867,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
     --eukaryote \
+    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/anchor.cover.fasta \
@@ -2091,6 +2095,60 @@ cat stat.md
 | Q25L60   |      100 |  9883174284 | 101608118 |
 | Q30L60   |      100 |  8868221193 |  99371914 |
 
+## n2: spades
+
+```bash
+BASE_NAME=n2
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+
+```
+
+## n2: platanus
+
+```bash
+BASE_NAME=n2
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+```
+
 ## n2: quorum
 
 ```bash
@@ -2279,8 +2337,8 @@ parallel --no-run-if-empty -j 3 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -2581,33 +2639,13 @@ cat \
 
 ```
 
-* quast
-
-```bash
-BASE_NAME=n2
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
-    -o 9_qa_contig
-
-```
+## n2: final stats
 
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/anchr/n2
-cd ${BASE_DIR}
+BASE_NAME=n2
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -2628,19 +2666,55 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 
 cat stat3.md
 ```
 
-| Name         |      N50 |       Sum |     # |
-|:-------------|---------:|----------:|------:|
-| Genome       | 17493829 | 100286401 |     7 |
-| Paralogs     |     2013 |   5313653 |  2637 |
-| anchor.merge |    16007 |  95291617 | 12083 |
-| others.merge |     2548 |   6228897 |  2899 |
-| anchor.cover |    15405 |  93556439 | 12095 |
-| anchorLong   |    22563 |  93156929 |  8796 |
-| contigTrim   |  1275514 |  98130740 |   405 |
+| Name              |      N50 |       Sum |      # |
+|:------------------|---------:|----------:|-------:|
+| Genome            | 17493829 | 100286401 |      7 |
+| Paralogs          |     2013 |   5313653 |   2637 |
+| anchor.merge      |    16007 |  95291617 |  12083 |
+| others.merge      |     2548 |   6228897 |   2899 |
+| anchor.cover      |    15405 |  93556439 |  12095 |
+| anchorLong        |    22563 |  93156929 |   8796 |
+| contigTrim        |  1275514 |  98130740 |    405 |
+| spades.contig     |    34792 | 105621949 |  39732 |
+| spades.scaffold   |    39185 | 105667774 |  39154 |
+| platanus.contig   |     9540 | 108908253 | 143264 |
+| platanus.scaffold |    28158 |  99589056 |  35182 |
+
+* quast
+
+```bash
+BASE_NAME=n2
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+rm -fr 9_qa_contig
+quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
+    -R 1_genome/genome.fa \
+    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
+    anchorLong/contig.fasta \
+    contigTrim/contig.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    8_spades/scaffolds.fasta \
+    8_platanus/out_gapClosed.fa \
+    1_genome/paralogs.fas \
+    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
+    -o 9_qa_contig
+
+```
 
 * Clear QxxLxxx.
 
@@ -2648,8 +2722,8 @@ cat stat3.md
 BASE_DIR=$HOME/data/anchr/n2
 cd ${BASE_DIR}
 
-rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
-rm -fr Q{20,25,30}L{1,60,90,120}X*
+rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```
 
 # *Arabidopsis thaliana* Col-0
