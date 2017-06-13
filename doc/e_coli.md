@@ -1378,7 +1378,7 @@ cd ${BASE_DIR}
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
-    -b 10 --len 1000 --idt 0.9 \
+    -b 10 --len 1000 --idt 0.98 \
     merge/anchor.merge.fasta \
     canu-raw-40x/ecoli.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
@@ -1591,9 +1591,9 @@ cat stat3.md
 | Paralogs          |    1934 |  195673 |  106 |
 | anchor.merge      |   73736 | 4532566 |  117 |
 | others.merge      |    5923 |   21847 |    6 |
-| anchor.cover      |   73736 | 4531353 |  116 |
-| anchorLong        |   97556 | 4530075 |   91 |
-| contigTrim        | 4647479 | 4648639 |    2 |
+| anchor.cover      |   73736 | 4530193 |  115 |
+| anchorLong        |   97556 | 4528915 |   90 |
+| contigTrim        | 4647479 | 4647479 |    1 |
 | spades.contig     |  132662 | 4645193 |  311 |
 | spades.scaffold   |  133063 | 4645555 |  306 |
 | platanus.contig   |   15090 | 4683012 | 1069 |
