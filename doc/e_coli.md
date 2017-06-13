@@ -1299,9 +1299,11 @@ parallel -k --no-run-if-empty -j 6 "
 
 ## 3GS
 
+* Canu
+
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 canu \
     -p ecoli -d canu-raw-40x \
@@ -1319,6 +1321,36 @@ faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
 
 ```
+
+* miniasm
+
+    * `-S         skip self and dual mappings`
+    * `-w INT     minizer window size [{-k}*2/3]`
+    * `-L INT     min matching length [40]`
+    * `-m FLOAT   merge two chains if FLOAT fraction of minimizers are shared [0.50]`
+    * `-t INT     number of threads [3]`
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p miniasm
+
+minimap -Sw5 -L100 -m0 -t16 \
+    3_pacbio/pacbio.40x.fasta 3_pacbio/pacbio.40x.fasta \
+    > miniasm/pacbio.40x.paf
+
+miniasm miniasm/pacbio.40x.paf > miniasm/utg.noseq.gfa
+
+miniasm -f 3_pacbio/pacbio.40x.fasta miniasm/pacbio.40x.paf \
+    > miniasm/utg.gfa
+
+awk '/^S/{print ">"$2"\n"$3}' miniasm/utg.gfa > miniasm/utg.fa
+
+minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
+
+```
+
 
 ## Expand anchors
 
