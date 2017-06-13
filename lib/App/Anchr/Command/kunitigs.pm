@@ -201,8 +201,12 @@ log_info Creating k-unitigs
         -o stdout \
         | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
 [% END -%]
-    anchr orient k_unitigs.contained.fasta --len [% opt.min %] --idt 0.99 -o k_unitigs.orient.fasta
-    anchr merge k_unitigs.orient.fasta --len [% opt.min %] --idt 0.999 -o k_unitigs.fasta
+    anchr orient k_unitigs.contained.fasta \
+        --len [% opt.min %] --idt 0.99 --parallel [% opt.parallel %] \
+        -o k_unitigs.orient.fasta
+    anchr merge k_unitigs.orient.fasta \
+        --len [% opt.min %] --idt 0.999 --parallel [% opt.parallel %] \
+        -o k_unitigs.fasta
 fi
 
 #----------------------------#
