@@ -1055,14 +1055,17 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
 
 # anchor sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
 
 # mummerplot files
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot out.delta --png --large -p anchor.sort
 rm *.[fr]plot
 rm out.delta
 rm *.gp
 mv anchor.sort.png merge/
+
+# minidot
+minimap 1_genome/genome.fa merge/anchor.sort.fa | minidot - > merge/anchor.minidot.eps
 
 # quast
 rm -fr 9_qa_merge
