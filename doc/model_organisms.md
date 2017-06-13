@@ -3311,8 +3311,8 @@ parallel --no-run-if-empty -j 3 "
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
@@ -3338,12 +3338,12 @@ cat stat2.md
 
 | Name          | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |   Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------:|----------:|:----------|
-| Q25L60X30P000 |  3.59G |   30.0 | 18855 | 111.62M | 15804 |     19551 | 107.62M | 10744 |       765 |    4M | 5060 | "31,41,51,61,71,81" | 1:15'37'' | 0:09'25'' |
-| Q25L60X30P001 |  3.59G |   30.0 | 18881 | 111.55M | 15736 |     19640 | 107.78M | 10711 |       746 | 3.77M | 5025 | "31,41,51,61,71,81" | 1:18'21'' | 0:08'59'' |
-| Q25L60X60P000 |  7.18G |   60.0 | 14904 | 111.95M | 18287 |     15561 | 107.67M | 12623 |       747 | 4.28M | 5664 | "31,41,51,61,71,81" | 1:58'13'' | 0:15'45'' |
-| Q30L60X30P000 |  3.59G |   30.0 | 21153 | 111.84M | 15028 |     21936 | 107.99M | 10117 |       761 | 3.85M | 4911 | "31,41,51,61,71,81" | 0:57'52'' | 0:09'07'' |
-| Q30L60X30P001 |  3.59G |   30.0 | 21431 | 111.74M | 14923 |     22162 | 107.98M | 10052 |       756 | 3.76M | 4871 | "31,41,51,61,71,81" | 1:00'11'' | 0:09'29'' |
-| Q30L60X60P000 |  7.18G |   60.0 | 20903 | 112.14M | 15516 |     21839 | 108.13M | 10300 |       750 | 4.01M | 5216 | "31,41,51,61,71,81" | 1:34'23'' | 0:14'18'' |
+| Q25L60X30P000 |  3.59G |   30.0 | 18855 | 111.65M | 15804 |     19553 | 107.56M | 10704 |       772 | 4.09M | 5100 | "31,41,51,61,71,81" | 0:45'55'' | 0:08'21'' |
+| Q25L60X30P001 |  3.59G |   30.0 | 18866 | 111.54M | 15737 |     19640 | 107.63M | 10662 |       756 | 3.91M | 5075 | "31,41,51,61,71,81" | 0:47'00'' | 0:08'04'' |
+| Q25L60X60P000 |  7.18G |   60.0 | 14905 |    112M | 18291 |     15590 | 107.37M | 12497 |       774 | 4.63M | 5794 | "31,41,51,61,71,81" | 1:15'44'' | 0:09'01'' |
+| Q30L60X30P000 |  3.59G |   30.0 | 21148 | 111.75M | 15024 |     21979 | 107.66M |  9980 |       782 | 4.09M | 5044 | "31,41,51,61,71,81" | 0:46'32'' | 0:07'02'' |
+| Q30L60X30P001 |  3.59G |   30.0 | 21449 | 111.75M | 14927 |     22226 | 107.69M |  9894 |       784 | 4.06M | 5033 | "31,41,51,61,71,81" | 0:43'51'' | 0:07'02'' |
+| Q30L60X60P000 |  7.18G |   60.0 | 20909 | 112.14M | 15517 |     21888 | 107.76M | 10108 |       781 | 4.38M | 5409 | "31,41,51,61,71,81" | 1:14'33'' | 0:08'12'' |
 
 ## col_0: merge anchors
 
@@ -3364,10 +3364,14 @@ anchr contained \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
+anchr orient merge/anchor.contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o merge/anchor.orient.fasta
+anchr merge merge/anchor.orient.fasta \
+    --len 1000 --idt 0.999 --parallel 16 \
+    -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
@@ -3388,14 +3392,17 @@ anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
 
 # anchor sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
 
 # mummerplot files
+nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
+mummerplot out.delta --png --large -p anchor.sort
 rm *.[fr]plot
 rm out.delta
 rm *.gp
 mv anchor.sort.png merge/
+
+# minidot
+minimap 1_genome/genome.fa merge/anchor.sort.fa | minidot - > merge/anchor.minidot.eps
 
 # quast
 rm -fr 9_qa
@@ -3580,7 +3587,7 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 5000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
@@ -3654,29 +3661,19 @@ printf "| %s | %s | %s | %s |\n" \
 cat stat3.md
 ```
 
-| Name         |      N50 |       Sum |     # |
-|:-------------|---------:|----------:|------:|
-| Genome       | 23459830 | 119667750 |     7 |
-| Paralogs     |     2007 |  16447809 |  8055 |
-| anchor.merge |    28319 | 108822455 |  8852 |
-| others.merge |     2370 |   1322544 |   637 |
-| anchor.cover |    17073 | 100097443 | 11082 |
-| anchorLong   |    22420 |  99946654 |  8963 |
-| contigTrim   |    48313 | 104062185 |  4656 |
-
 | Name              |      N50 |       Sum |      # |
 |:------------------|---------:|----------:|-------:|
 | Genome            | 23459830 | 119667750 |      7 |
 | Paralogs          |     2007 |  16447809 |   8055 |
-| anchor.merge      |    28319 | 108822455 |   8852 |
-| others.merge      |     2370 |   1322544 |    637 |
-| anchor.cover      |    17073 | 100097443 |  11082 |
-| anchorLong        |    22420 |  99946654 |   8963 |
-| contigTrim        |    48313 | 104062185 |   4656 |
+| anchor.merge      |    28391 | 108282399 |   8601 |
+| others.merge      |     2939 |   2073808 |    882 |
+| anchor.cover      |    17099 |  99879823 |  10964 |
+| anchorLong        |    22525 |  99733759 |   8866 |
+| contigTrim        |    45518 | 102636913 |   4829 |
 | spades.contig     |    55516 | 154715185 | 115087 |
 | spades.scaffold   |    67856 | 154750615 | 114703 |
-| platanus.contig   |          |           |        |
-| platanus.scaffold |          |           |        |
+| platanus.contig   |    15019 | 139807772 | 106870 |
+| platanus.scaffold |   192019 | 128497152 |  67429 |
 
 * quast
 
