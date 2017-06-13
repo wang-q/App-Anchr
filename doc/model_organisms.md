@@ -676,6 +676,17 @@ anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
+# No need for this step
+#mkdir -p merge/anchor
+#pushd merge/anchor
+#anchr anchors \
+#    ../anchor.merge.fasta \
+#    ../../2_illumina/Q25L60/pe.cor.fa \
+#    -p 16 \
+#    -o anchors.sh
+#bash anchors.sh
+#popd
+
 # merge others
 mkdir -p merge
 anchr contained \
