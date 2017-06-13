@@ -2362,14 +2362,14 @@ parallel -k --no-run-if-empty -j 6 "
 cat stat2.md
 ```
 
-| Name          | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |   Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|------:|-----:|--------------------:|----------:|:----------|
-| Q25L60X30P000 |  3.01G |   30.0 | 11003 | 98.26M | 22246 |     12207 | 90.56M | 14068 |       875 |  7.7M | 8178 | "31,41,51,61,71,81" | 1:08'32'' | 0:14'29'' |
-| Q25L60X30P001 |  3.01G |   30.0 | 10420 | 97.95M | 23042 |     11675 | 90.03M | 14335 |       852 | 7.91M | 8707 | "31,41,51,61,71,81" | 1:33'13'' | 0:14'25'' |
-| Q25L60X60P000 |  6.02G |   60.0 | 11779 | 99.28M | 19544 |     12535 | 93.39M | 13570 |       893 | 5.89M | 5974 | "31,41,51,61,71,81" | 2:24'49'' | 0:23'51'' |
-| Q30L60X30P000 |  3.01G |   30.0 | 10918 | 97.86M | 22854 |     12287 | 90.03M | 14119 |       849 | 7.83M | 8735 | "31,41,51,61,71,81" | 1:26'36'' | 0:12'10'' |
-| Q30L60X30P001 |  3.01G |   30.0 | 10150 | 97.37M | 24051 |     11345 | 89.14M | 14597 |       827 | 8.23M | 9454 | "31,41,51,61,71,81" | 1:02'34'' | 0:12'49'' |
-| Q30L60X60P000 |  6.02G |   60.0 | 12468 | 99.32M | 19357 |     13285 | 93.05M | 13214 |       910 | 6.27M | 6143 | "31,41,51,61,71,81" | 1:24'00'' | 0:19'38'' |
+| Name          | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|-----:|--------------------:|----------:|:----------|
+| Q25L60X30P000 |  3.01G |   30.0 | 10992 | 98.21M | 22237 |     11789 | 85.96M | 13658 |      2311 | 12.25M | 8579 | "31,41,51,61,71,81" | 1:14'53'' | 0:07'05'' |
+| Q25L60X30P001 |  3.01G |   30.0 | 10433 | 97.91M | 23035 |     11351 | 85.44M | 13871 |      1562 | 12.47M | 9164 | "31,41,51,61,71,81" | 1:11'02'' | 0:07'05'' |
+| Q25L60X60P000 |  6.02G |   60.0 | 11787 | 99.24M | 19543 |     12467 | 88.53M | 12969 |      4629 | 10.71M | 6574 | "31,41,51,61,71,81" | 1:25'03'' | 0:08'23'' |
+| Q30L60X30P000 |  3.01G |   30.0 | 10914 | 97.81M | 22843 |     11752 | 85.35M | 13764 |      1510 | 12.46M | 9079 | "31,41,51,61,71,81" | 0:59'47'' | 0:07'06'' |
+| Q30L60X30P001 |  3.01G |   30.0 | 10160 | 97.39M | 24052 |     10924 | 84.51M | 14218 |      1255 | 12.87M | 9834 | "31,41,51,61,71,81" | 0:45'09'' | 0:07'05'' |
+| Q30L60X60P000 |  6.02G |   60.0 | 12462 |  99.3M | 19363 |     12943 | 88.29M | 12773 |      5901 | 11.01M | 6590 | "31,41,51,61,71,81" | 0:59'46'' | 0:08'02'' |
 
 ## n2: merge anchors
 
@@ -2575,7 +2575,7 @@ cat anchorLong/group/*.ovlp.tsv \
     | sort | uniq -c
 
 cat \
-   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/non_grouped.fasta \
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
 
@@ -2604,7 +2604,7 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 5000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
@@ -2682,11 +2682,11 @@ cat stat3.md
 |:------------------|---------:|----------:|-------:|
 | Genome            | 17493829 | 100286401 |      7 |
 | Paralogs          |     2013 |   5313653 |   2637 |
-| anchor.merge      |    16007 |  95291617 |  12083 |
-| others.merge      |     2548 |   6228897 |   2899 |
-| anchor.cover      |    15405 |  93556439 |  12095 |
-| anchorLong        |    22563 |  93156929 |   8796 |
-| contigTrim        |  1275514 |  98130740 |    405 |
+| anchor.merge      |    15525 |  90530693 |  11777 |
+| others.merge      |    10805 |  11087395 |   3278 |
+| anchor.cover      |    15486 |  90231476 |  11704 |
+| anchorLong        |    22963 |  89834518 |   8438 |
+| contigTrim        |   335060 |  95965683 |    607 |
 | spades.contig     |    34792 | 105621949 |  39732 |
 | spades.scaffold   |    39185 | 105667774 |  39154 |
 | platanus.contig   |     9540 | 108908253 | 143264 |
@@ -3070,6 +3070,60 @@ cat stat.md
 | Q20L60   |      301 | 13359936477 | 52318516 |
 | Q25L60   |      301 | 11821537855 | 49650904 |
 | Q30L60   |      301 | 10366980114 | 48122656 |
+
+## col_0: spades
+
+```bash
+BASE_NAME=col_0
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+
+```
+
+## col_0: platanus
+
+```bash
+BASE_NAME=col_0
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+```
 
 ## col_0: quorum
 
@@ -3561,6 +3615,69 @@ cat \
 
 ```
 
+## col_0: final stats
+
+* Stats
+
+```bash
+BASE_NAME=col_0
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3.md
+printf "|:--|--:|--:|--:|\n" >> stat3.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
+
+cat stat3.md
+```
+
+| Name         |      N50 |       Sum |     # |
+|:-------------|---------:|----------:|------:|
+| Genome       | 23459830 | 119667750 |     7 |
+| Paralogs     |     2007 |  16447809 |  8055 |
+| anchor.merge |    28319 | 108822455 |  8852 |
+| others.merge |     2370 |   1322544 |   637 |
+| anchor.cover |    17073 | 100097443 | 11082 |
+| anchorLong   |    22420 |  99946654 |  8963 |
+| contigTrim   |    48313 | 104062185 |  4656 |
+
+| Name              |      N50 |       Sum |      # |
+|:------------------|---------:|----------:|-------:|
+| Genome            | 23459830 | 119667750 |      7 |
+| Paralogs          |     2007 |  16447809 |   8055 |
+| anchor.merge      |    28319 | 108822455 |   8852 |
+| others.merge      |     2370 |   1322544 |    637 |
+| anchor.cover      |    17073 | 100097443 |  11082 |
+| anchorLong        |    22420 |  99946654 |   8963 |
+| contigTrim        |    48313 | 104062185 |   4656 |
+| spades.contig     |    55516 | 154715185 | 115087 |
+| spades.scaffold   |    67856 | 154750615 | 114703 |
+| platanus.contig   |          |           |        |
+| platanus.scaffold |          |           |        |
+
 * quast
 
 ```bash
@@ -3582,45 +3699,6 @@ quast --no-check --threads 16 \
     -o 9_qa_contig
 
 ```
-
-* Stats
-
-```bash
-BASE_DIR=$HOME/data/anchr/col_0
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
-| Name         |      N50 |       Sum |     # |
-|:-------------|---------:|----------:|------:|
-| Genome       | 23459830 | 119667750 |     7 |
-| Paralogs     |     2007 |  16447809 |  8055 |
-| anchor.merge |    28319 | 108822455 |  8852 |
-| others.merge |     2370 |   1322544 |   637 |
-| anchor.cover |    17073 | 100097443 | 11082 |
-| anchorLong   |    22420 |  99946654 |  8963 |
-| contigTrim   |    48313 | 104062185 |  4656 |
 
 * Clear QxxLxxx.
 
