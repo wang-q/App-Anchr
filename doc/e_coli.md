@@ -8,7 +8,9 @@
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [Download](#download)
-    - [Combinations of different quality values and read lengths](#combinations-of-different-quality-values-and-read-lengths)
+    - [Preprocess Illumina reads](#preprocess-illumina-reads)
+    - [Preprocess PacBio reads](#preprocess-pacbio-reads)
+    - [Reads stats](#reads-stats)
     - [Spades](#spades)
     - [Platanus](#platanus)
     - [Quorum](#quorum)
@@ -20,6 +22,7 @@
     - [Scaffolding with PE](#scaffolding-with-pe)
     - [Different K values](#different-k-values)
     - [3GS](#3gs)
+    - [Local corrections](#local-corrections)
     - [Expand anchors](#expand-anchors)
     - [Final stats](#final-stats)
 
@@ -225,12 +228,6 @@ samtools fasta \
 cd ~/data/anchr/e_coli/3_pacbio
 ln -s fasta/m141013.fasta pacbio.fasta
 
-head -n 46000 pacbio.fasta > pacbio.40x.fasta
-faops n50 -S -C pacbio.40x.fasta
-
-head -n 92000 pacbio.fasta > pacbio.80x.fasta
-faops n50 -S -C pacbio.80x.fasta
-
 ```
 
 * FastQC
@@ -248,7 +245,7 @@ fastqc -t 16 \
 
 ```
 
-## Combinations of different quality values and read lengths
+## Preprocess Illumina reads
 
 * qual: 20, 25, 30, and 35
 * len: 30, 60, 90, and 120
@@ -315,7 +312,22 @@ parallel --no-run-if-empty -j 3 "
 
 ```
 
-* Stats
+## Preprocess PacBio reads
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+head -n 92000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.40x.fasta \
+    -o 3_pacbio/pacbio.40x.trim.fasta
+
+```
+
+## Reads stats
 
 ```bash
 BASE_NAME=e_coli
@@ -330,8 +342,6 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -359,34 +369,43 @@ parallel -k --no-run-if-empty -j 3 "
     " ::: 20 25 30 35 ::: 30 60 90 120 \
     >> stat.md
 
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.40x";  faops n50 -H -S -C 3_pacbio/pacbio.40x.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.trim"; faops n50 -H -S -C 3_pacbio/pacbio.40x.trim.fasta;) >> stat.md
+
 cat stat.md
 ```
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 4641652 |    4641652 |        1 |
-| Paralogs |    1934 |     195673 |      106 |
-| PacBio   |   13982 |  748508361 |    87225 |
-| Illumina |     151 | 1730299940 | 11458940 |
-| uniq     |     151 | 1727289000 | 11439000 |
-| scythe   |     151 | 1722450607 | 11439000 |
-| shuffle  |     151 | 1722450607 | 11439000 |
-| Q20L30   |     151 | 1514584050 | 11126596 |
-| Q20L60   |     151 | 1468709458 | 10572422 |
-| Q20L90   |     151 | 1370119196 |  9617554 |
-| Q20L120  |     151 | 1135307713 |  7723784 |
-| Q25L30   |     151 | 1382782641 | 10841386 |
-| Q25L60   |     151 | 1317617346 |  9994728 |
-| Q25L90   |     151 | 1177142378 |  8586574 |
-| Q25L120  |     151 |  837111446 |  5805874 |
-| Q30L30   |     125 | 1192536117 | 10716954 |
-| Q30L60   |     127 | 1149107745 |  9783292 |
-| Q30L90   |     130 | 1021609911 |  8105773 |
-| Q30L120  |     139 |  693661043 |  5002158 |
-| Q35L30   |      64 |  588252718 |  9588363 |
-| Q35L60   |      72 |  366922898 |  5062192 |
-| Q35L90   |      95 |   35259773 |   364046 |
-| Q35L120  |     124 |     647353 |     5169 |
+| Name        |     N50 |        Sum |        # |
+|:------------|--------:|-----------:|---------:|
+| Genome      | 4641652 |    4641652 |        1 |
+| Paralogs    |    1934 |     195673 |      106 |
+| Illumina    |     151 | 1730299940 | 11458940 |
+| uniq        |     151 | 1727289000 | 11439000 |
+| scythe      |     151 | 1722450607 | 11439000 |
+| shuffle     |     151 | 1722450607 | 11439000 |
+| Q20L30      |     151 | 1514584050 | 11126596 |
+| Q20L60      |     151 | 1468709458 | 10572422 |
+| Q20L90      |     151 | 1370119196 |  9617554 |
+| Q20L120     |     151 | 1135307713 |  7723784 |
+| Q25L30      |     151 | 1382782641 | 10841386 |
+| Q25L60      |     151 | 1317617346 |  9994728 |
+| Q25L90      |     151 | 1177142378 |  8586574 |
+| Q25L120     |     151 |  837111446 |  5805874 |
+| Q30L30      |     125 | 1192536117 | 10716954 |
+| Q30L60      |     127 | 1149107745 |  9783292 |
+| Q30L90      |     130 | 1021609911 |  8105773 |
+| Q30L120     |     139 |  693661043 |  5002158 |
+| Q35L30      |      64 |  588252718 |  9588363 |
+| Q35L60      |      72 |  366922898 |  5062192 |
+| Q35L90      |      95 |   35259773 |   364046 |
+| Q35L120     |     124 |     647353 |     5169 |
+| PacBio      |   13982 |  748508361 |    87225 |
+| PacBio.40x  |   14052 |  191456434 |    23000 |
+| PacBio.trim |   13643 |  175812501 |    20492 |
 
 ## Spades
 
@@ -1317,8 +1336,15 @@ canu \
     genomeSize=4.8m \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
+canu \
+    -p ecoli -d canu-trim-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=4.8m \
+    -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
+
 faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/ecoli.trimmedReads.fasta.gz
 
 ```
 
@@ -1351,6 +1377,25 @@ minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
 
 ```
 
+## Local corrections
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+rm -fr localCor
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.fasta \
+    -d localCor \
+    -b 10 --len 1000 --idt 0.85 --all
+
+ANCHOR_COUNT=$(faops n50 -H -N 0 -C localCor/anchor.fasta)
+echo ${ANCHOR_COUNT}
+
+
+```
 
 ## Expand anchors
 
@@ -1372,24 +1417,25 @@ minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
 * anchorLong
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+OVLP_IDT=0.85
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
-    -b 10 --len 1000 --idt 0.98 \
+    -b 10 --len 1000 --idt ${OVLP_IDT} \
     merge/anchor.merge.fasta \
-    canu-raw-40x/ecoli.trimmedReads.fasta.gz \
+    3_pacbio/pacbio.40x.trim.fasta \
     -o merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.cover.fasta \
-    canu-raw-40x/ecoli.trimmedReads.fasta.gz \
+    3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
-    -b 10 --len 1000 --idt 0.98
+    -b 10 --len 1000 --idt ${OVLP_IDT}
 
 anchr overlap \
     merge/anchor.cover.fasta \
@@ -1432,20 +1478,20 @@ anchr group \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt ${OVLP_IDT} --max "-30" -c 4 --png
 
 pushd ${BASE_DIR}/anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.98 \
+            --len 1000 --idt 0.85 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.98 \
+        anchr overlap --len 1000 --idt 0.85 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1614,8 +1660,9 @@ quast --no-check --threads 16 \
     contigTrim/contig.fasta \
     canu-raw-40x/ecoli.contigs.fasta \
     canu-raw-80x/ecoli.contigs.fasta \
+    canu-trim-40x/ecoli.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,canu-trim,paralogs" \
     -o 9_qa_contig
 
 ```
