@@ -18,7 +18,7 @@ do
     check_install ${package}
 done
 
-for package in bbtools fastqc jellyfish poa samtools seqtk sickle;
+for package in bbtools fastqc jellyfish minimap miniasm poa samtools seqtk sickle;
 do
     check_install homebrew/science/${package};
 done
