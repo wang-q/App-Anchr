@@ -776,7 +776,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
-    -b 20 --len 1000 --idt 0.9 \
+    -b 20 --len 1000 --idt 0.98 \
     merge/anchor.merge.fasta \
     canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
