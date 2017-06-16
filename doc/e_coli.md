@@ -1387,7 +1387,7 @@ rm -fr localCor
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.merge.fasta \
-    3_pacbio/pacbio.40x.fasta \
+    3_pacbio/pacbio.40x.trim.fasta \
     -d localCor \
     -b 10 --len 1000 --idt 0.85 --all
 
@@ -1432,7 +1432,7 @@ anchr cover \
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    merge/anchor.cover.fasta \
+    merge/anchor.merge.fasta \
     3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
     -b 10 --len 1000 --idt ${OVLP_IDT}
