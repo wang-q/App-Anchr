@@ -3,13 +3,21 @@ use strict;
 use warnings;
 use autodie;
 
+use MCE;
+use MCE::Flow Sereal => 1;
+use MCE::Candy;
+
 use App::Anchr -command;
 use App::Anchr::Common;
 
 use constant abstract => 'minimap paf to ovelaps';
 
 sub opt_spec {
-    return ( [ "outfile|o=s", "output filename, [stdout] for screen" ], { show_defaults => 1, } );
+    return (
+        [ "outfile|o=s", "output filename, [stdout] for screen" ],
+        [ "parallel|p=i", "number of threads", { default => 8 }, ],
+        { show_defaults => 1, }
+    );
 }
 
 sub usage_desc {
@@ -52,7 +60,7 @@ sub execute {
         $in_fh = *STDIN{IO};
     }
     else {
-        open $in_fh, "<", $args->[0];
+        $in_fh = IO::Zlib->new( $args->[0], "rb" );
     }
 
     # A stream to 'stdout' or a standard file.
@@ -64,11 +72,22 @@ sub execute {
         open $out_fh, ">", $opt->{outfile};
     }
 
-    while ( my $line = <$in_fh> ) {
-        my $info = App::Anchr::Common::parse_paf_line($line);
+    my $worker = sub {
+        my ( $self, $chunk_ref, $chunk_id ) = @_;
 
-        printf $out_fh "%s\n", App::Anchr::Common::create_ovlp_line($info);
-    }
+        my $info = App::Anchr::Common::parse_paf_line( $chunk_ref->[0] );
+
+        # preserving output order
+        MCE->gather( $chunk_id, App::Anchr::Common::create_ovlp_line($info) . "\n" );
+    };
+
+    MCE::Flow::init {
+        chunk_size  => 1,
+        max_workers => $opt->{parallel},
+        gather      => MCE::Candy::out_iter_fh($out_fh),
+    };
+    MCE::Flow->run_file( $worker, $in_fh );
+    MCE::Flow::finish;
 
     close $in_fh;
     close $out_fh;
