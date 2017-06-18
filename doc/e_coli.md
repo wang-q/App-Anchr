@@ -1477,13 +1477,12 @@ echo ${ANCHOR_COUNT}
 
 ```bash
 BASE_NAME=e_coli
-OVLP_IDT=0.85
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 anchr cover \
     --parallel 16 \
     -c 2 -m 40 \
-    -b 10 --len 1000 --idt ${OVLP_IDT} \
+    -b 10 --len 1000 --idt 0.85 \
     merge/anchor.merge.fasta \
     3_pacbio/pacbio.40x.trim.fasta \
     -o merge/anchor.cover.fasta
@@ -1491,10 +1490,10 @@ anchr cover \
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    merge/anchor.merge.fasta \
+    merge/anchor.cover.fasta \
     3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
-    -b 10 --len 1000 --idt ${OVLP_IDT}
+    -b 10 --len 1000 --idt 0.85
 
 anchr overlap \
     merge/anchor.cover.fasta \
@@ -1537,9 +1536,9 @@ anchr group \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt ${OVLP_IDT} --max "-30" -c 4 --png
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max "-30" -c 2 --png
 
-pushd ${BASE_DIR}/anchorLong
+pushd anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
@@ -1595,14 +1594,14 @@ cat \
 * contigTrim
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr contigTrim
 anchr overlap2 \
     --parallel 16 \
     anchorLong/contig.fasta \
-    canu-raw-40x/ecoli.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
     -b 10 --len 1000 --idt 0.98 --all
 
@@ -1617,7 +1616,7 @@ anchr group \
     contigTrim/anchorLong.ovlp.tsv \
     --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1 --png
 
-pushd ${BASE_DIR}/contigTrim
+pushd contigTrim
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
@@ -1696,9 +1695,9 @@ cat stat3.md
 | Paralogs          |    1934 |  195673 |  106 |
 | anchor.merge      |   73736 | 4532566 |  117 |
 | others.merge      |    5923 |   21847 |    6 |
-| anchor.cover      |   73736 | 4530193 |  115 |
-| anchorLong        |   97556 | 4528915 |   90 |
-| contigTrim        | 4647479 | 4647479 |    1 |
+| anchor.cover      |   73736 | 4532566 |  117 |
+| anchorLong        |   88023 | 4531473 |  102 |
+| contigTrim        | 4535661 | 4647047 |    3 |
 | spades.contig     |  132662 | 4645193 |  311 |
 | spades.scaffold   |  133063 | 4645555 |  306 |
 | platanus.contig   |   15090 | 4683012 | 1069 |
@@ -1707,8 +1706,8 @@ cat stat3.md
 * quast
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
@@ -1717,11 +1716,11 @@ quast --no-check --threads 16 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/ecoli.contigs.fasta \
-    canu-raw-80x/ecoli.contigs.fasta \
-    canu-trim-40x/ecoli.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    8_spades/scaffolds.fasta \
+    8_platanus/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,canu-trim,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
@@ -1732,6 +1731,6 @@ quast --no-check --threads 16 \
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-rm -fr 2_illumina/Q{1,20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30}L{1,60,90,120}X*
+rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```
