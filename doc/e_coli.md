@@ -318,12 +318,21 @@ parallel --no-run-if-empty -j 3 "
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
+head -n 23000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.20x.fasta
 head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
 head -n 92000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
 
 anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.20x.fasta \
+    -o 3_pacbio/pacbio.20x.trim.fasta
+
+anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.40x.fasta \
     -o 3_pacbio/pacbio.40x.trim.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.80x.fasta \
+    -o 3_pacbio/pacbio.80x.trim.fasta
 
 ```
 
@@ -370,42 +379,53 @@ parallel -k --no-run-if-empty -j 3 "
     >> stat.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio.40x";  faops n50 -H -S -C 3_pacbio/pacbio.40x.fasta;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio.trim"; faops n50 -H -S -C 3_pacbio/pacbio.40x.trim.fasta;) >> stat.md
+    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo PacBio.{};
+            faops n50 -H -S -C \
+                3_pacbio/pacbio.{}.fasta;
+        )
+    " ::: 20x 20x.trim 40x 40x.trim 80x 80x.trim \
+    >> stat.md
 
 cat stat.md
+
 ```
 
-| Name        |     N50 |        Sum |        # |
-|:------------|--------:|-----------:|---------:|
-| Genome      | 4641652 |    4641652 |        1 |
-| Paralogs    |    1934 |     195673 |      106 |
-| Illumina    |     151 | 1730299940 | 11458940 |
-| uniq        |     151 | 1727289000 | 11439000 |
-| scythe      |     151 | 1722450607 | 11439000 |
-| shuffle     |     151 | 1722450607 | 11439000 |
-| Q20L30      |     151 | 1514584050 | 11126596 |
-| Q20L60      |     151 | 1468709458 | 10572422 |
-| Q20L90      |     151 | 1370119196 |  9617554 |
-| Q20L120     |     151 | 1135307713 |  7723784 |
-| Q25L30      |     151 | 1382782641 | 10841386 |
-| Q25L60      |     151 | 1317617346 |  9994728 |
-| Q25L90      |     151 | 1177142378 |  8586574 |
-| Q25L120     |     151 |  837111446 |  5805874 |
-| Q30L30      |     125 | 1192536117 | 10716954 |
-| Q30L60      |     127 | 1149107745 |  9783292 |
-| Q30L90      |     130 | 1021609911 |  8105773 |
-| Q30L120     |     139 |  693661043 |  5002158 |
-| Q35L30      |      64 |  588252718 |  9588363 |
-| Q35L60      |      72 |  366922898 |  5062192 |
-| Q35L90      |      95 |   35259773 |   364046 |
-| Q35L120     |     124 |     647353 |     5169 |
-| PacBio      |   13982 |  748508361 |    87225 |
-| PacBio.40x  |   14052 |  191456434 |    23000 |
-| PacBio.trim |   13643 |  175812501 |    20492 |
+| Name            |     N50 |        Sum |        # |
+|:----------------|--------:|-----------:|---------:|
+| Genome          | 4641652 |    4641652 |        1 |
+| Paralogs        |    1934 |     195673 |      106 |
+| Illumina        |     151 | 1730299940 | 11458940 |
+| uniq            |     151 | 1727289000 | 11439000 |
+| scythe          |     151 | 1722450607 | 11439000 |
+| shuffle         |     151 | 1722450607 | 11439000 |
+| Q20L30          |     151 | 1514584050 | 11126596 |
+| Q20L60          |     151 | 1468709458 | 10572422 |
+| Q20L90          |     151 | 1370119196 |  9617554 |
+| Q20L120         |     151 | 1135307713 |  7723784 |
+| Q25L30          |     151 | 1382782641 | 10841386 |
+| Q25L60          |     151 | 1317617346 |  9994728 |
+| Q25L90          |     151 | 1177142378 |  8586574 |
+| Q25L120         |     151 |  837111446 |  5805874 |
+| Q30L30          |     125 | 1192536117 | 10716954 |
+| Q30L60          |     127 | 1149107745 |  9783292 |
+| Q30L90          |     130 | 1021609911 |  8105773 |
+| Q30L120         |     139 |  693661043 |  5002158 |
+| Q35L30          |      64 |  588252718 |  9588363 |
+| Q35L60          |      72 |  366922898 |  5062192 |
+| Q35L90          |      95 |   35259773 |   364046 |
+| Q35L120         |     124 |     647353 |     5169 |
+| PacBio          |   13982 |  748508361 |    87225 |
+| PacBio.20x      |   14137 |   94386369 |    11500 |
+| PacBio.20x.trim |   13784 |   86038672 |    10137 |
+| PacBio.40x      |   14052 |  191456434 |    23000 |
+| PacBio.40x.trim |   13643 |  175812501 |    20492 |
+| PacBio.80x      |   13978 |  388663414 |    46000 |
+| PacBio.80x.trim |   13562 |  357826694 |    41309 |
 
 ## Spades
 
@@ -1322,29 +1342,68 @@ parallel -k --no-run-if-empty -j 6 "
 
 ```bash
 BASE_NAME=e_coli
+REAL_G=4641652
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 canu \
-    -p ecoli -d canu-raw-40x \
+    -p ${BASE_NAME} -d canu-raw-20x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.20x.fasta
+
+canu \
+    -p ${BASE_NAME} -d canu-raw-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
 canu \
-    -p ecoli -d canu-raw-80x \
+    -p ${BASE_NAME} -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
 canu \
-    -p ecoli -d canu-trim-40x \
+    -p ${BASE_NAME} -d canu-trim-20x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.20x.trim.fasta
+
+canu \
+    -p ${BASE_NAME} -d canu-trim-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
 
-faops n50 -S -C canu-raw-40x/ecoli.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/ecoli.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-40x/ecoli.trimmedReads.fasta.gz
+canu \
+    -p ${BASE_NAME} -d canu-trim-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
+
+faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
+
+# quast
+rm -fr 9_qa_canu
+quast --no-check --threads 16 \
+    --eukaryote \
+    -R 1_genome/genome.fa \
+    canu-raw-20x/${BASE_NAME}.contigs.fasta \
+    canu-trim-20x/${BASE_NAME}.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-40x/${BASE_NAME}.contigs.fasta \
+    canu-raw-80x/${BASE_NAME}.contigs.fasta \
+    canu-trim-80x/${BASE_NAME}.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
+    -o 9_qa_canu
+
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 
 ```
 
