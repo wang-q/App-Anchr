@@ -88,6 +88,7 @@ sub execute {
         my $cmd;
         $cmd .= "anchr paf2ovlp";
         $cmd .= " $basename.paf";
+        $cmd .= " --parallel $opt->{parallel}";
         $cmd .= " -o $basename.ovlp.tsv";
         App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
 
