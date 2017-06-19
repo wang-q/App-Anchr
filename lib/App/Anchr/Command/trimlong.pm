@@ -84,19 +84,6 @@ sub execute {
         }
     }
 
-    {    # paf2ovlp
-        my $cmd;
-        $cmd .= "anchr paf2ovlp";
-        $cmd .= " $basename.paf";
-        $cmd .= " --parallel $opt->{parallel}";
-        $cmd .= " -o $basename.ovlp.tsv";
-        App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
-
-        if ( !$tempdir->child("$basename.ovlp.tsv")->is_file ) {
-            Carp::croak "Failed: create $basename.ovlp.tsv\n";
-        }
-    }
-
     {    # paf to covered
         my $cmd;
         $cmd .= "jrange covered";
