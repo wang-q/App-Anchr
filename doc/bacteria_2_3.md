@@ -87,6 +87,166 @@
     - [Cjej: download](#cjej-download)
 
 
+# Escherichia virus Lambda
+
+Project
+[SRP055199](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP055199)
+
+## lambda: download
+
+* Reference genome
+
+    * Strain: Escherichia virus Lambda (viruses)
+    * Taxid: [10710](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=10710&lvl=3&lin=f&keep=1&srchmode=1&unlock)
+    * RefSeq assembly accession:
+      [GCF_000840245.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/840/245/GCF_000840245.1_ViralProj14204/GCF_000840245.1_ViralProj14204_assembly_report.txt)
+    * Proportion of paralogs (> 1000 bp): 0.0
+
+```bash
+mkdir -p ~/data/anchr/lambda/1_genome
+cd ~/data/anchr/lambda/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/840/245/GCF_000840245.1_ViralProj14204/GCF_000840245.1_ViralProj14204_genomic.fna.gz
+
+TAB=$'\t'
+cat <<EOF > replace.tsv
+NC_001416.1${TAB}1
+EOF
+
+faops replace GCF_000840245.1_ViralProj14204_genomic.fna.gz replace.tsv genome.fa
+
+#cp ~/data/anchr/paralogs/otherbac/Results/lambda/lambda.multi.fas paralogs.fas
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ~/data/anchr/lambda/3_pacbio
+cd ~/data/anchr/lambda/3_pacbio
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR179/005/SRR1796325/SRR1796325.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+2c663d7ea426eea0aaba9017e1a9168c SRR1796325.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+cd ~/data/anchr/lambda
+faops filter -l 0 3_pacbio/SRR1796325.fastq.gz 3_pacbio/pacbio.fasta
+
+```
+
+## lambda: preprocess PacBio reads
+
+```bash
+BASE_NAME=lambda
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+head -n 3000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.40x.fasta \
+    -o 3_pacbio/pacbio.40x.trim.fasta
+
+```
+
+## lambda: reads stats
+
+```bash
+BASE_NAME=lambda
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat.md
+printf "|:--|--:|--:|--:|\n" >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+#printf "| %s | %s | %s | %s |\n" \
+#    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+#
+#printf "| %s | %s | %s | %s |\n" \
+#    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+#printf "| %s | %s | %s | %s |\n" \
+#    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+#
+#parallel -k --no-run-if-empty -j 3 "
+#    printf \"| %s | %s | %s | %s |\n\" \
+#        \$( 
+#            echo Q{1}L{2};
+#            if [[ {1} -ge '30' ]]; then
+#                faops n50 -H -S -C \
+#                    2_illumina/Q{1}L{2}/R1.fq.gz \
+#                    2_illumina/Q{1}L{2}/R2.fq.gz \
+#                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+#            else
+#                faops n50 -H -S -C \
+#                    2_illumina/Q{1}L{2}/R1.fq.gz \
+#                    2_illumina/Q{1}L{2}/R2.fq.gz;
+#            fi
+#        )
+#    " ::: 20 25 30 35 ::: 60 \
+#    >> stat.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo PacBio.{};
+            faops n50 -H -S -C \
+                3_pacbio/pacbio.{}.fasta;
+        )
+    " ::: 40x 40x.trim \
+    >> stat.md
+
+cat stat.md
+
+```
+
+| Name            |   N50 |      Sum |    # |
+|:----------------|------:|---------:|-----:|
+| Genome          | 48502 |    48502 |    1 |
+| PacBio          |  1325 | 11945526 | 9796 |
+| PacBio.40x      |  1365 |  1896887 | 1500 |
+| PacBio.40x.trim |  1452 |  1509584 | 1054 |
+
+## lambda: 3GS
+
+* miniasm
+
+```bash
+BASE_NAME=lambda
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p miniasm
+
+minimap -Sw5 -L100 -m0 -t16 \
+    ~/data/anchr/e_coli/anchorLong/group/11_2.long.fasta ~/data/anchr/e_coli/anchorLong/group/11_2.long.fasta \
+    > miniasm/pacbio.40x.paf
+
+sftp://wangq@wq.nju.edu.cn
+
+miniasm miniasm/pacbio.40x.paf > miniasm/utg.noseq.gfa
+
+miniasm -f 3_pacbio/pacbio.40x.fasta miniasm/pacbio.40x.paf \
+    > miniasm/utg.gfa
+
+awk '/^S/{print ">"$2"\n"$3}' miniasm/utg.gfa > miniasm/utg.fa
+
+minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
+
+```
+
+
 # Shigella flexneri NCTC0001, 福氏志贺氏菌
 
 Project
