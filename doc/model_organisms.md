@@ -4,7 +4,9 @@
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
-    - [s288c: combinations of different quality values and read lengths](#s288c-combinations-of-different-quality-values-and-read-lengths)
+    - [s288c: preprocess Illumina reads](#s288c-preprocess-illumina-reads)
+    - [s288c: preprocess PacBio reads](#s288c-preprocess-pacbio-reads)
+    - [s288c: reads stats](#s288c-reads-stats)
     - [s288c: spades](#s288c-spades)
     - [s288c: platanus](#s288c-platanus)
     - [s288c: quorum](#s288c-quorum)
@@ -41,13 +43,18 @@
     - [n2: final stats](#n2-final-stats)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [col_0: download](#col-0-download)
-    - [col_0: combinations of different quality values and read lengths](#col-0-combinations-of-different-quality-values-and-read-lengths)
+    - [col_0: preprocess Illumina reads](#col-0-preprocess-illumina-reads)
+    - [col_0: preprocess PacBio reads](#col-0-preprocess-pacbio-reads)
+    - [col_0: reads stats](#col-0-reads-stats)
+    - [col_0: spades](#col-0-spades)
+    - [col_0: platanus](#col-0-platanus)
     - [col_0: quorum](#col-0-quorum)
     - [col_0: down sampling](#col-0-down-sampling)
     - [col_0: k-unitigs and anchors (sampled)](#col-0-k-unitigs-and-anchors-sampled)
     - [col_0: merge anchors](#col-0-merge-anchors)
     - [col_0: 3GS](#col-0-3gs)
     - [col_0: expand anchors](#col-0-expand-anchors)
+    - [col_0: final stats](#col-0-final-stats)
 
 
 # *Saccharomyces cerevisiae* S288c
@@ -145,12 +152,6 @@ done
 cd ~/data/anchr/s288c
 cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
-head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
-head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
-faops n50 -S -C 3_pacbio/pacbio.80x.fasta
-
 ```
 
 * FastQC
@@ -182,7 +183,7 @@ kmergenie -l 21 -k 121 -s 10 -t 8 ../R2.fq.gz -o oriR2
 
 ```
 
-## s288c: combinations of different quality values and read lengths
+## s288c: preprocess Illumina reads
 
 * qual: 20, 25, 30, and 35
 * len: 60
@@ -221,7 +222,38 @@ parallel --no-run-if-empty -j 3 "
         | bash
     " ::: 20 25 30 35 ::: 60
 
-# Stats
+```
+
+## s288c: preprocess PacBio reads
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+head -n 115000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.20x.fasta
+head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.20x.fasta \
+    -o 3_pacbio/pacbio.20x.trim.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.40x.fasta \
+    -o 3_pacbio/pacbio.40x.trim.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.80x.fasta \
+    -o 3_pacbio/pacbio.80x.trim.fasta
+
+```
+
+## s288c: reads stats
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -231,8 +263,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -256,20 +287,40 @@ parallel -k --no-run-if-empty -j 3 "
     " ::: 20 25 30 35 ::: 60 \
     >> stat.md
 
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo PacBio.{};
+            faops n50 -H -S -C \
+                3_pacbio/pacbio.{}.fasta;
+        )
+    " ::: 20x 20x.trim 40x 40x.trim 80x 80x.trim \
+    >> stat.md
+
 cat stat.md
+
 ```
 
-| Name     |    N50 |        Sum |        # |
-|:---------|-------:|-----------:|---------:|
-| Genome   | 924431 |   12157105 |       17 |
-| Paralogs |   3851 |    1059148 |      366 |
-| PacBio   |   8169 | 3529504618 |   846948 |
-| Illumina |    151 | 2939081214 | 19464114 |
-| uniq     |    151 | 2778772064 | 18402464 |
-| Q20L60   |    151 | 2666527231 | 17811724 |
-| Q25L60   |    151 | 2502621682 | 16817924 |
-| Q30L60   |    151 | 2442383221 | 16630313 |
-| Q35L60   |    151 | 2191498731 | 15196440 |
+| Name            |    N50 |        Sum |        # |
+|:----------------|-------:|-----------:|---------:|
+| Genome          | 924431 |   12157105 |       17 |
+| Paralogs        |   3851 |    1059148 |      366 |
+| Illumina        |    151 | 2939081214 | 19464114 |
+| uniq            |    151 | 2778772064 | 18402464 |
+| Q20L60          |    151 | 2666527231 | 17811724 |
+| Q25L60          |    151 | 2502621682 | 16817924 |
+| Q30L60          |    151 | 2442383221 | 16630313 |
+| Q35L60          |    151 | 2191498731 | 15196440 |
+| PacBio          |   8169 | 3529504618 |   846948 |
+| PacBio.20x      |   7996 |  237231974 |    57500 |
+| PacBio.20x.trim |   7687 |  211038592 |    37989 |
+| PacBio.40x      |   8008 |  466936778 |   115000 |
+| PacBio.40x.trim |   7790 |  417392531 |    74300 |
+| PacBio.80x      |   8116 |  951812614 |   230000 |
+| PacBio.80x.trim |   7875 |  840824870 |   148678 |
 
 ## s288c: spades
 
@@ -731,22 +782,66 @@ quast --no-check --threads 16 \
 
 ```bash
 BASE_NAME=s288c
+REAL_G=12157105
 cd ${HOME}/data/anchr/${BASE_NAME}
+
+canu \
+    -p ${BASE_NAME} -d canu-raw-20x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.20x.fasta
 
 canu \
     -p ${BASE_NAME} -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
 canu \
     -p ${BASE_NAME} -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=12.2m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
+canu \
+    -p ${BASE_NAME} -d canu-trim-20x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.20x.trim.fasta
+
+canu \
+    -p ${BASE_NAME} -d canu-trim-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
+
+canu \
+    -p ${BASE_NAME} -d canu-trim-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
+
+faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
+
+# quast
+rm -fr 9_qa_canu
+quast --no-check --threads 16 \
+    --eukaryote \
+    -R 1_genome/genome.fa \
+    canu-raw-20x/${BASE_NAME}.contigs.fasta \
+    canu-trim-20x/${BASE_NAME}.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-40x/${BASE_NAME}.contigs.fasta \
+    canu-raw-80x/${BASE_NAME}.contigs.fasta \
+    canu-trim-80x/${BASE_NAME}.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
+    -o 9_qa_canu
 
 ```
 
@@ -2755,7 +2850,7 @@ faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
     genome.fa
 ```
 
-* Illumina HiSeq ( 100 bp )
+* Illumina HiSeq (100 bp)
 
     [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246[accn])
 
@@ -2956,13 +3051,6 @@ rm *.fastq
 
 faops filter -l 0 pacbio.fq.gz pacbio.fasta
 
-cd ~/data/anchr/col_0
-head -n 2600000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
-head -n 5200000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
-faops n50 -S -C 3_pacbio/pacbio.80x.fasta
-
 ```
 
 * FastQC
@@ -2994,7 +3082,7 @@ kmergenie -l 21 -k 91 -s 10 -t 8 ../R2.fq.gz -o oriR2
 
 ```
 
-## col_0: combinations of different quality values and read lengths
+## col_0: preprocess Illumina reads
 
 * qual: 20, 25, and 30
 * len: 60
@@ -3033,7 +3121,36 @@ parallel --no-run-if-empty -j 3 "
         | bash
     " ::: 20 25 30 ::: 60
 
-# Stats
+```
+
+## col_0: preprocess PacBio reads
+
+```bash
+BASE_NAME=col_0
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+head -n 2600000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
+faops n50 -S -C 3_pacbio/pacbio.40x.fasta
+
+head -n 5200000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+faops n50 -S -C 3_pacbio/pacbio.80x.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.40x.fasta \
+    -o 3_pacbio/pacbio.40x.trim.fasta
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.80x.fasta \
+    -o 3_pacbio/pacbio.80x.trim.fasta
+
+```
+
+## col_0: reads stats
+
+```bash
+BASE_NAME=col_0
+cd ${HOME}/data/anchr/${BASE_NAME}
+
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -3043,8 +3160,6 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -3068,19 +3183,38 @@ parallel -k --no-run-if-empty -j 3 "
     " ::: 20 25 30 ::: 60 \
     >> stat.md
 
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";      faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.40x";  faops n50 -H -S -C 3_pacbio/pacbio.40x.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.40x.trim"; faops n50 -H -S -C 3_pacbio/pacbio.40x.trim.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.80x";  faops n50 -H -S -C 3_pacbio/pacbio.80x.fasta;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio.80x.trim"; faops n50 -H -S -C 3_pacbio/pacbio.80x.trim.fasta;) >> stat.md
+
 cat stat.md
+
 ```
 
-| Name     |      N50 |         Sum |        # |
-|:---------|---------:|------------:|---------:|
-| Genome   | 23459830 |   119667750 |        7 |
-| Paralogs |     2007 |    16447809 |     8055 |
-| PacBio   |    44636 | 18768526777 |  5721958 |
-| Illumina |      301 | 15529845059 | 53786130 |
-| uniq     |      301 | 15528150050 | 53779068 |
-| Q20L60   |      301 | 13359936477 | 52318516 |
-| Q25L60   |      301 | 11821537855 | 49650904 |
-| Q30L60   |      301 | 10366980114 | 48122656 |
+| Name            |      N50 |         Sum |        # |
+|:----------------|---------:|------------:|---------:|
+| Genome          | 23459830 |   119667750 |        7 |
+| Paralogs        |     2007 |    16447809 |     8055 |
+| Illumina        |      301 | 15529845059 | 53786130 |
+| uniq            |      301 | 15528150050 | 53779068 |
+| Q20L60          |      301 | 13359936477 | 52318516 |
+| Q25L60          |      301 | 11821537855 | 49650904 |
+| Q30L60          |      301 | 10366980114 | 48122656 |
+| PacBio          |     6754 | 18768526777 |  5721958 |
+| PacBio.40x      |     7830 |  4906030224 |  1300000 |
+| PacBio.trim     |     6904 |  2032710549 |   381134 |
+| PacBio          |     6754 | 18768526777 |  5721958 |
+| PacBio.40x      |     7830 |  4906030224 |  1300000 |
+| PacBio.40x.trim |     6904 |  2032710549 |   381134 |
+| PacBio.80x      |     7448 |  9473394614 |  2600000 |
+| PacBio.80x.trim |     6975 |  3942522483 |   729527 |
 
 ## col_0: spades
 
@@ -3441,18 +3575,26 @@ canu \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
-    
+
 canu \
     -p ${BASE_NAME} -d canu-raw-80x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
+canu \
+    -p ${BASE_NAME} -d canu-trim-80x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
+
 faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
 
 rm -fr canu-raw-40x/correction
 rm -fr canu-raw-80x/correction
+rm -fr canu-trim-80x/correction
 
 ```
 
@@ -3469,14 +3611,14 @@ anchr cover \
     -c 2 -m 40 \
     -b 50 --len 1000 --idt 0.9 \
     merge/anchor.merge.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
 
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.cover.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz \
     -d anchorLong \
     -b 50 --len 1000 --idt 0.98
 
@@ -3521,7 +3663,7 @@ anchr group \
     anchorLong/anchorLong.ovlp.tsv \
     --oa anchorLong/anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4
+    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-30" -c 4
 
 pushd anchorLong
 cat group/groups.txt \
@@ -3585,7 +3727,7 @@ rm -fr contigTrim
 anchr overlap2 \
     --parallel 16 \
     anchorLong/contig.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-80x/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
     -b 50 --len 1000 --idt 0.98 --all
 
@@ -3661,6 +3803,8 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "canu-trim"; faops n50 -H -S -C canu-trim-80x/${BASE_NAME}.contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
@@ -3678,9 +3822,10 @@ cat stat3.md
 | Paralogs          |     2007 |  16447809 |   8055 |
 | anchor.merge      |    28391 | 108282399 |   8601 |
 | others.merge      |     2939 |   2073808 |    882 |
-| anchor.cover      |    17099 |  99879823 |  10964 |
-| anchorLong        |    22525 |  99733759 |   8866 |
-| contigTrim        |    45518 | 102636913 |   4829 |
+| anchor.cover      |    28398 | 107735288 |   8339 |
+| anchorLong        |    45080 | 107528125 |   5622 |
+| contigTrim        |   694603 | 108985292 |    666 |
+| canu-trim         |  2880862 | 119217587 |    244 |
 | spades.contig     |    55516 | 154715185 | 115087 |
 | spades.scaffold   |    67856 | 154750615 | 114703 |
 | platanus.contig   |    15019 | 139807772 | 106870 |
@@ -3701,9 +3846,9 @@ quast --no-check --threads 16 \
     merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-80x/${BASE_NAME}.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,paralogs" \
+    --label "merge,cover,contig,contigTrim,canu-trim,paralogs" \
     -o 9_qa_contig
 
 ```
