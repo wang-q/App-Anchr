@@ -322,6 +322,14 @@ head -n 23000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.20x.fasta
 head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
 head -n 92000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
 
+# Perl version
+#real    0m53.741s
+#user    1m23.620s
+#sys     0m7.036s
+# jrange
+#real    0m8.328s
+#user    0m29.254s
+#sys     0m5.305s
 time anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.20x.fasta \
     -o 3_pacbio/pacbio.20x.trim.fasta
@@ -330,7 +338,11 @@ anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.40x.fasta \
     -o 3_pacbio/pacbio.40x.trim.fasta
 
-anchr trimlong --parallel 16 -v \
+# jrange
+#real    2m5.482s
+#user    3m15.824s
+#sys     11m57.699s
+time anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.80x.fasta \
     -o 3_pacbio/pacbio.80x.trim.fasta
 
