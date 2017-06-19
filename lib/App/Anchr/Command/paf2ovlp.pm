@@ -15,7 +15,7 @@ use constant abstract => 'minimap paf to ovelaps';
 sub opt_spec {
     return (
         [ "outfile|o=s", "output filename, [stdout] for screen" ],
-        [ "parallel|p=i", "number of threads", { default => 8 }, ],
+        [ "parallel|p=i", "number of threads", { default => 4 }, ],
         { show_defaults => 1, }
     );
 }
