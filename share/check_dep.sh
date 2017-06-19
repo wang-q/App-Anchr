@@ -109,6 +109,12 @@ hash daligner 2>/dev/null || {
     exit 1;
 }
 
+hash jrange 2>/dev/null || {
+    echo >&2 "jrange is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install wang-q/tap/jrange";
+    exit 1;
+}
+
 hash poa 2>/dev/null || {
     echo >&2 "poa is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/poa";
