@@ -1507,25 +1507,27 @@ echo ${ANCHOR_COUNT}
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-anchr cover \
-    --parallel 16 \
-    -c 2 -m 40 \
-    -b 10 --len 1000 --idt 0.85 \
-    merge/anchor.merge.fasta \
-    3_pacbio/pacbio.40x.trim.fasta \
-    -o merge/anchor.cover.fasta
-
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    merge/anchor.cover.fasta \
+    merge/anchor.merge.fasta \
     3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
-    -b 10 --len 1000 --idt 0.85
+    -b 10 --len 1000 --idt 0.85 --all
+
+pushd anchorLong
+
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+
+cat anchor.cover.json | jq "." > environment.json
 
 anchr overlap \
-    merge/anchor.cover.fasta \
-    --serial --len 10 --idt 0.9999 \
+    anchor.fasta \
+    --serial --len 30 --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -1553,20 +1555,17 @@ anchr overlap \
         }
     ' \
     | sort -k 1n,1n -k 2n,2n \
-    > anchorLong/anchor.ovlp.tsv
+    > anchor.ovlp.tsv
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr anchorLong/group
+rm -fr group
 anchr group \
-    anchorLong/anchorLong.db \
-    anchorLong/anchorLong.ovlp.tsv \
-    --oa anchorLong/anchor.ovlp.tsv \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --oa anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.85 --max "-30" -c 2 --png
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 --max "-30" -c 2 --png
 
-pushd anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
@@ -1700,8 +1699,6 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
@@ -1723,9 +1720,8 @@ cat stat3.md
 | Paralogs          |    1934 |  195673 |  106 |
 | anchor.merge      |   73736 | 4532566 |  117 |
 | others.merge      |    5923 |   21847 |    6 |
-| anchor.cover      |   73736 | 4532566 |  117 |
-| anchorLong        |   88023 | 4531473 |  102 |
-| contigTrim        | 4535661 | 4647047 |    3 |
+| anchorLong        |   80390 | 4531790 |  109 |
+| contigTrim        | 3790335 | 4616261 |    4 |
 | spades.contig     |  132662 | 4645193 |  311 |
 | spades.scaffold   |  133063 | 4645555 |  306 |
 | platanus.contig   |   15090 | 4683012 | 1069 |
@@ -1741,14 +1737,13 @@ rm -fr 9_qa_contig
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
     canu-raw-40x/${BASE_NAME}.contigs.fasta \
     8_spades/scaffolds.fasta \
     8_platanus/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
+    --label "merge,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
