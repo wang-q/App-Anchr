@@ -1588,7 +1588,7 @@ cat group/groups.txt \
             -o stdout \
             | perl -nla -e '\''
                 @F == 13 or next;
-                $F[3] > 0.98 or next;
+                $F[3] > 0.9999 or next;
                 $F[9] == 0 or next;
                 $F[5] > 0 and $F[6] == $F[7] or next;
                 /anchor.+anchor/ or next;
@@ -1682,8 +1682,8 @@ cat \
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/anchr/e_coli
-cd ${BASE_DIR}
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
