@@ -1096,8 +1096,13 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
 anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
+anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge1.fasta
+faops order merge/anchor.merge1.fasta \
+    <(faops size merge/anchor.merge1.fasta | sort -n -r -k2,2 | cut -f 1) \
+    merge/anchor.merge.fasta
 
 # merge others
 mkdir -p merge
