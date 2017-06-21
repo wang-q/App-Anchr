@@ -226,7 +226,8 @@ samtools fasta \
     > ~/data/anchr/e_coli/3_pacbio/fasta/m141013.fasta
 
 cd ~/data/anchr/e_coli/3_pacbio
-ln -s fasta/m141013.fasta pacbio.fasta
+cat fasta/m141013.fasta \
+    | faops dazz -l 0 -p long stdin pacbio.fasta
 
 ```
 
@@ -318,18 +319,29 @@ parallel --no-run-if-empty -j 3 "
 BASE_NAME=e_coli
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-head -n 23000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.20x.fasta
-head -n 46000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-head -n 92000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    11500 \
+    > 3_pacbio/pacbio.20x.fasta
+
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    23000 \
+    > 3_pacbio/pacbio.40x.fasta
+
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    46000 \
+    > 3_pacbio/pacbio.80x.fasta
 
 # Perl version
 #real    0m53.741s
 #user    1m23.620s
 #sys     0m7.036s
 # jrange
-#real    0m8.328s
-#user    0m29.254s
-#sys     0m5.305s
+#real    0m17.445s
+#user    0m30.919s
+#sys     0m27.316s
 time anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.20x.fasta \
     -o 3_pacbio/pacbio.20x.trim.fasta
@@ -339,9 +351,9 @@ anchr trimlong --parallel 16 -v \
     -o 3_pacbio/pacbio.40x.trim.fasta
 
 # jrange
-#real    2m5.482s
-#user    3m15.824s
-#sys     11m57.699s
+#real    1m38.334s
+#user    2m40.409s
+#sys     5m3.169s
 time anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.80x.fasta \
     -o 3_pacbio/pacbio.80x.trim.fasta
@@ -432,12 +444,12 @@ cat stat.md
 | Q35L90          |      95 |   35259773 |   364046 |
 | Q35L120         |     124 |     647353 |     5169 |
 | PacBio          |   13982 |  748508361 |    87225 |
-| PacBio.20x      |   14137 |   94386369 |    11500 |
-| PacBio.20x.trim |   13784 |   86038672 |    10137 |
-| PacBio.40x      |   14052 |  191456434 |    23000 |
-| PacBio.40x.trim |   13643 |  175812501 |    20492 |
-| PacBio.80x      |   13978 |  388663414 |    46000 |
-| PacBio.80x.trim |   13562 |  357826694 |    41309 |
+| PacBio.20x      |   13962 |   99252919 |    11500 |
+| PacBio.20x.trim |   13541 |   88697009 |     9980 |
+| PacBio.40x      |   13948 |  198650072 |    23000 |
+| PacBio.40x.trim |   13565 |  179462005 |    20137 |
+| PacBio.80x      |   13996 |  395094712 |    46000 |
+| PacBio.80x.trim |   13608 |  360190363 |    40682 |
 
 ## Spades
 
@@ -1116,7 +1128,8 @@ rm *.gp
 mv anchor.sort.png merge/
 
 # minidot
-minimap 1_genome/genome.fa merge/anchor.sort.fa | minidot - > merge/anchor.minidot.eps
+minimap merge/anchor.sort.fa 1_genome/genome.fa \
+    | minidot - > merge/anchor.minidot.eps
 
 # quast
 rm -fr 9_qa_merge
@@ -1478,9 +1491,17 @@ anchr overlap2 \
     -d localCor \
     -b 10 --len 1000 --idt 0.85 --all
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C localCor/anchor.fasta)
-echo ${ANCHOR_COUNT}
+pushd localCor
 
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+
+cat anchor.cover.json | jq "." > environment.json
+
+popd
 
 ```
 
@@ -1674,6 +1695,10 @@ cat \
     contigTrim/group/non_grouped.fasta \
     contigTrim/group/*.contig.fasta \
     >  contigTrim/contig.fasta
+
+# minidot
+minimap contigTrim/contig.fasta 1_genome/genome.fa \
+    | minidot - > contigTrim/contig.minidot.eps
 
 ```
 
