@@ -131,8 +131,8 @@ http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
 http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
 http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
 http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
-
 EOF
+
 aria2c -x 9 -s 3 -c -i hdf5.txt
 
 # untar
@@ -475,19 +475,6 @@ find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ```
 
-* kmergenie
-
-```bash
-BASE_NAME=s288c
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 121 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
-
-```
-
 ## s288c: down sampling
 
 ```bash
@@ -734,7 +721,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-            " ::: 25 30 ::: 60 ::: 40 80 120 160 200 ::: 000 001 002 003 004 005
+            " ::: 25 30 ::: 60 ::: 40 80 120 160 ::: 000 001 002 003 004 005
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -764,7 +751,7 @@ anchr contained \
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-            " ::: 25 30 ::: 60 ::: 40 80 120 160 200 ::: 000 001 002 003 004 005
+            " ::: 25 30 ::: 60 ::: 40 80 120 160 ::: 000 001 002 003 004 005
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -860,6 +847,13 @@ quast --no-check --threads 16 \
     1_genome/paralogs.fas \
     --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
     -o 9_qa_canu
+
+minimap 1_genome/genome.fa canu-raw-20x/${BASE_NAME}.contigs.fasta \
+    | minidot - > canu-raw-20x/minidot.eps
+
+minimap 1_genome/genome.fa canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    | minidot - > canu-raw-40x/minidot.eps
+
 
 ```
 
