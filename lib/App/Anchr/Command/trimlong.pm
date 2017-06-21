@@ -88,7 +88,7 @@ sub execute {
         my $cmd;
         $cmd .= "jrange covered";
         $cmd .= " $basename.paf";
-        $cmd .= " --longest --paf";
+        $cmd .= " --coverage $opt->{coverage} --len $opt->{len} --longest --paf";
         $cmd .= " -o $basename.covered.txt";
         App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
 
