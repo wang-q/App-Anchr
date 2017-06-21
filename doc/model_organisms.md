@@ -67,30 +67,48 @@
 * Reference genome
 
 ```bash
-mkdir -p ~/data/anchr/s288c/1_genome
-cd ~/data/anchr/s288c/1_genome
+BASE_NAME=s288c
+mkdir -p ${HOME}/data/anchr/${BASE_NAME}
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 1_genome
+cd 1_genome
 
 wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
 faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_genome/paralogs.fas
 ```
 
 * Illumina
 
-    ENA hasn't synced with SRA for PRJNA340312, download with prefetch from sratoolkit.
+    PRJNA340312, SRX2058864
 
 ```bash
-mkdir -p ~/data/anchr/s288c/2_illumina
-cd ~/data/anchr/s288c/2_illumina
-prefetch --progress 0.5 SRR4074255
-fastq-dump --split-files SRR4074255  
-find . -name "*.fastq" | parallel -j 2 pigz -p 8
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-ln -s SRR4074255_1.fastq.gz R1.fq.gz
-ln -s SRR4074255_2.fastq.gz R2.fq.gz
+mkdir -p 2_illumina
+cd 2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+7ba93499d73cdaeaf50dd506e2c8572d SRR4074255_1.fastq.gz
+aee9ec3f855796b6d30a3d191fc22345 SRR4074255_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR522246_1.fastq.gz R1.fq.gz
+ln -s SRR522246_2.fastq.gz R2.fq.gz
 ```
 
 * PacBio
@@ -100,7 +118,7 @@ ln -s SRR4074255_2.fastq.gz R2.fq.gz
     while the reference strain S288c is not provided. So we use the dataset from
     [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
     [study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949), and
-    [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878). This is gathered with RS
+    [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878). They're gathered with RS
     II and P6C4.
 
 ```bash
@@ -1192,8 +1210,7 @@ rm *.fastq
 
     PacBio provides a dataset of *D. melanogaster* strain
     [ISO1](https://github.com/PacificBiosciences/DevNet/wiki/Drosophila-sequence-and-assembly), the
-    same stock used in the official BDGP reference assemblies. This is gathered with RS II and
-    P5C3.
+    same stock used in the official BDGP reference assemblies. This is gathered with RS II and P5C3.
 
 ```bash
 mkdir -p ~/data/anchr/iso_1/3_pacbio
@@ -2918,7 +2935,8 @@ ln -s SRR5216995_2.fastq.gz R2.fq.gz
 
 * PacBio
 
-Chin, C.-S. *et al.* Phased diploid genome assembly with single-molecule real-time sequencing. *Nature Methods* (2016). doi:10.1038/nmeth.4035
+Chin, C.-S. *et al.* Phased diploid genome assembly with single-molecule real-time sequencing.
+*Nature Methods* (2016). doi:10.1038/nmeth.4035
 
 P4C2 is not supported in newer version of SMRTAnalysis.
 
@@ -3862,3 +3880,4 @@ cd ${BASE_DIR}
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```
+
