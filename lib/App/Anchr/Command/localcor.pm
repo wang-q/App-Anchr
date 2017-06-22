@@ -19,6 +19,7 @@ sub opt_spec {
         [ "idt|i=f",      "minimal identity of overlaps", { default  => 0.85 }, ],
         [ "parallel|p=i", "number of threads",            { default  => 4 }, ],
         [ "miniasm",      "estimate assembly sizes by miniasm", ],
+        [ "trim",         "also run canu -trim", ],
         [ "verbose|v",    "verbose mode", ],
         { show_defaults => 1, }
     );
@@ -173,7 +174,7 @@ sub execute {
     }
 
     #----------------------------#
-    # canu correct
+    # canu correct[-trim]
     #----------------------------#
     my $worker = sub {
         my ( $self, $chunk_ref, $chunk_id ) = @_;
@@ -216,6 +217,17 @@ sub execute {
             $cmd .= " maxThreads=4";
             $cmd .= " -pacbio-raw $prefix.fasta";
             App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
+
+            if ( $opt->{trim} ) {
+                $cmd = "";
+                $cmd .= "canu -trim";
+                $cmd .= " -p $prefix -d $prefix";
+                $cmd .= " genomeSize=$est_size";
+                $cmd .= " gnuplotTested=true";
+                $cmd .= " maxThreads=4";
+                $cmd .= " -pacbio-corrected $prefix/$prefix.correctedReads.fasta.gz";
+                App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
+            }
         }
 
         MCE->gather( $anchor_id, $est_size );
