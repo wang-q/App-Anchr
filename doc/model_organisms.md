@@ -979,25 +979,26 @@ find . -type d -name "correction" | xargs rm -fr
 BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-anchr cover \
-    --parallel 16 \
-    -c 2 -m 40 \
-    -b 20 --len 1000 --idt 0.98 \
-    merge/anchor.merge.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
-    -o merge/anchor.cover.fasta
-
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    merge/anchor.cover.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
-    -b 20 --len 1000 --idt 0.98
+    -b 20 --len 1000 --idt 0.85 --all
+
+pushd anchorLong
+
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+cat anchor.cover.json | jq "." > environment.json
 
 anchr overlap \
-    merge/anchor.cover.fasta \
-    --serial --len 10 --idt 0.9999 \
+    anchor.fasta \
+    --serial --len 30 --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -1025,43 +1026,40 @@ anchr overlap \
         }
     ' \
     | sort -k 1n,1n -k 2n,2n \
-    > anchorLong/anchor.ovlp.tsv
+    > anchor.ovlp.tsv
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr anchorLong/group
+rm -fr group
 anchr group \
-    anchorLong/anchorLong.db \
-    anchorLong/anchorLong.ovlp.tsv \
-    --oa anchorLong/anchor.ovlp.tsv \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --oa anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 --max "-30" -c 2 --png
 
-pushd anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.98 \
+            --len 1000 --idt 0.85 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.98 \
+        anchr overlap --len 1000 --idt 0.85 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 10 --idt 0.9999 \
+        anchr overlap --len 30 --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''
                 @F == 13 or next;
-                $F[3] > 0.98 or next;
+                $F[3] > 0.9999 or next;
                 $F[9] == 0 or next;
                 $F[5] > 0 and $F[6] == $F[7] or next;
                 /anchor.+anchor/ or next;
