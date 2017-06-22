@@ -118,7 +118,7 @@ ln -s SRR522246_2.fastq.gz R2.fq.gz
     while the reference strain S288c is not provided. So we use the dataset from
     [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
     [study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949), and
-    [sample SAMEA4461733](https://www.ncbi.nlm.nih.gov/biosample/5850878). They're gathered with RS
+    [sample SAMEA4461732](https://www.ncbi.nlm.nih.gov/biosample/SAMEA4461732). They're gathered with RS
     II and P6C4.
 
 ```bash
@@ -128,9 +128,6 @@ cd ~/data/anchr/s288c/3_pacbio
 # download from sra
 cat <<EOF > hdf5.txt
 http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655120_ERR1655120_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655122_ERR1655122_hdf5.tgz
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655124_ERR1655124_hdf5.tgz
 EOF
 
 aria2c -x 9 -s 3 -c -i hdf5.txt
@@ -139,16 +136,13 @@ aria2c -x 9 -s 3 -c -i hdf5.txt
 mkdir -p ~/data/anchr/s288c/3_pacbio/untar
 cd ~/data/anchr/s288c/3_pacbio
 tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
-tar xvfz ERR1655120_ERR1655120_hdf5.tgz --directory untar
-tar xvfz ERR1655122_ERR1655122_hdf5.tgz --directory untar
-tar xvfz ERR1655124_ERR1655124_hdf5.tgz --directory untar
 
 # convert .bax.h5 to .subreads.bam
 mkdir -p ~/data/anchr/s288c/3_pacbio/bam
 cd ~/data/anchr/s288c/3_pacbio/bam
 
 source ~/share/pitchfork/deployment/setup-env.sh
-for movie in m150412 m150415 m150417 m150421;
+for movie in m150412;
 do 
     bax2bam ~/data/anchr/s288c/3_pacbio/untar/${movie}*.bax.h5
 done
@@ -156,7 +150,7 @@ done
 # convert .subreads.bam to fasta
 mkdir -p ~/data/anchr/s288c/3_pacbio/fasta
 
-for movie in m150412 m150415 m150417 m150421;
+for movie in m150412;
 do
     if [ ! -e ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam ]; then
         continue
@@ -168,7 +162,8 @@ do
 done
 
 cd ~/data/anchr/s288c
-cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
+cat 3_pacbio/fasta/*.fasta \
+    | faops dazz -l 0 -p long stdin pacbio.fasta
 
 ```
 
