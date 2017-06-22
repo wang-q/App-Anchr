@@ -1543,8 +1543,6 @@ faops some -i -l 0 \
     group/overlapped.long.txt \
     independentLong.fasta
 
-find . -type d -name "correction" | xargs rm -fr
-
 # localCor
 gzip -d -c -f $(find group -type f -name "*.correctedReads.fasta.gz") \
     | faops filter -l 0 stdin stdout \
@@ -1608,6 +1606,8 @@ quast --no-check --threads 16 \
     1_genome/paralogs.fas \
     --label "anchor,localCor,localCorIndep,localTrim,globalTrim,40x,40x.trim,paralogs" \
     -o 9_qa_localCor
+
+find . -type d -name "correction" | xargs rm -fr
 
 ```
 

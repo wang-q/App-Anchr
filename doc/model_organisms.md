@@ -866,6 +866,9 @@ minimap 1_genome/genome.fa canu-raw-20x/${BASE_NAME}.contigs.fasta \
 minimap 1_genome/genome.fa canu-raw-40x/${BASE_NAME}.contigs.fasta \
     | minidot - > canu-raw-40x/minidot.eps
 
+minimap canu-raw-80x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
+    | minidot - > canu-raw-80x/minidot.eps
+
 ```
 
 ## s288c: local corrections
@@ -1099,7 +1102,7 @@ rm -fr contigTrim
 anchr overlap2 \
     --parallel 16 \
     anchorLong/contig.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-40x/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
     -b 20 --len 1000 --idt 0.98 --all
 
@@ -1169,8 +1172,6 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
@@ -1192,9 +1193,8 @@ cat stat3.md
 | Paralogs          |   3851 |  1059148 |  366 |
 | anchor.merge      |  29017 | 11359547 |  665 |
 | others.merge      |   2625 |   282212 |  127 |
-| anchor.cover      |  28868 | 11329333 |  656 |
-| anchorLong        |  67622 | 11289593 |  313 |
-| contigTrim        | 531342 | 11416903 |   41 |
+| anchorLong        |  37180 | 11270177 |  498 |
+| contigTrim        | 460243 | 11555370 |   37 |
 | spades.contig     |  89836 | 11731746 | 1189 |
 | spades.scaffold   |  98572 | 11732702 | 1167 |
 | platanus.contig   |   5983 | 12437850 | 7727 |
@@ -1211,14 +1211,13 @@ quast --no-check --threads 16 \
     --eukaryote \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-40x/${BASE_NAME}.contigs.fasta \
     8_spades/scaffolds.fasta \
     8_platanus/out_gapClosed.fa \
     1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
+    --label "merge,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
