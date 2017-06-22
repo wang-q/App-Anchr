@@ -1176,8 +1176,8 @@ cd merge/scaffold
 if [ ! -e pe.fa ]; then
     faops interleave \
         -p pe \
-        ../../2_illumina/Q30L90/R1.fq.gz \
-        ../../2_illumina/Q30L90/R2.fq.gz \
+        ../../2_illumina/Q25L60/R1.fq.gz \
+        ../../2_illumina/Q25L60/R2.fq.gz \
         > pe.fa
 fi
 
