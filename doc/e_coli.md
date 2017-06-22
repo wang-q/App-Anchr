@@ -47,7 +47,7 @@ brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
 
 # canu requires gnuplot 5 while mummer requires gnuplot 4
-brew install canu
+brew install --build-from-source canu
 
 brew unlink gnuplot@4
 brew install gnuplot
