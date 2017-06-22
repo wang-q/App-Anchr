@@ -15,6 +15,7 @@
     - [s288c: merge anchors with Qxx and QxxL60Xxx](#s288c-merge-anchors-with-qxx-and-qxxl60xxx)
     - [s288c: merge anchors](#s288c-merge-anchors)
     - [s288c: 3GS](#s288c-3gs)
+    - [s288c: local corrections](#s288c-local-corrections)
     - [s288c: expand anchors](#s288c-expand-anchors)
     - [s288c: final stats](#s288c-final-stats)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
@@ -865,6 +866,93 @@ minimap 1_genome/genome.fa canu-raw-20x/${BASE_NAME}.contigs.fasta \
 minimap 1_genome/genome.fa canu-raw-40x/${BASE_NAME}.contigs.fasta \
     | minidot - > canu-raw-40x/minidot.eps
 
+```
+
+## s288c: local corrections
+
+```bash
+BASE_NAME=s288c
+REAL_G=12157105
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+rm -fr localCor
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.trim.fasta \
+    -d localCor \
+    -b 20 --len 1000 --idt 0.85 --all
+
+pushd localCor
+
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+cat anchor.cover.json | jq "." > environment.json
+
+rm -fr group
+anchr localcor \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --parallel 16 \
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 -v
+
+faops some -i -l 0 \
+    long.fasta \
+    group/overlapped.long.txt \
+    independentLong.fasta
+
+find . -type d -name "correction" | xargs rm -fr
+
+# localCor
+gzip -d -c -f $(find group -type f -name "*.correctedReads.fasta.gz") \
+    | faops filter -l 0 stdin stdout \
+    | grep -E '^>long' -A 1 \
+    | sed '/^--$/d' \
+    | faops dazz -a -l 0 stdin stdout \
+    | pigz -c > localCor.fasta.gz
+
+canu \
+    -p ${BASE_NAME} -d localCor \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-corrected localCor.fasta.gz \
+    -pacbio-corrected anchor.fasta
+
+canu \
+    -p ${BASE_NAME} -d localCorRaw \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-raw localCor.fasta.gz \
+    -pacbio-raw anchor.fasta
+
+canu \
+    -p ${BASE_NAME} -d localCorIndep \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-raw localCor.fasta.gz \
+    -pacbio-raw anchor.fasta \
+    -pacbio-raw independentLong.fasta
+
+popd
+
+# quast
+rm -fr 9_qa_localCor
+quast --no-check --threads 16 \
+    --eukaryote \
+    -R 1_genome/genome.fa \
+    localCor/anchor.fasta \
+    localCor/localCor/${BASE_NAME}.contigs.fasta \
+    localCor/localCorRaw/${BASE_NAME}.contigs.fasta \
+    localCor/localCorIndep/${BASE_NAME}.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "anchor,localCor,localCorRaw,localCorIndep,paralogs" \
+    -o 9_qa_localCor
+
+find . -type d -name "correction" | xargs rm -fr
 
 ```
 
