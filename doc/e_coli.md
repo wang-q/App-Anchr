@@ -358,6 +358,13 @@ time anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.80x.fasta \
     -o 3_pacbio/pacbio.80x.trim.fasta
 
+#real    3m51.990s
+#user    10m18.770s
+#sys     14m50.692s
+time anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.fasta \
+    -o 3_pacbio/pacbio.trim.fasta
+
 ```
 
 ## Reads stats
@@ -412,7 +419,7 @@ parallel -k --no-run-if-empty -j 3 "
             faops n50 -H -S -C \
                 3_pacbio/pacbio.{}.fasta;
         )
-    " ::: 20x 20x.trim 40x 40x.trim 80x 80x.trim \
+    " ::: trim 20x 20x.trim 40x 40x.trim 80x 80x.trim \
     >> stat.md
 
 cat stat.md
@@ -444,6 +451,7 @@ cat stat.md
 | Q35L90          |      95 |   35259773 |   364046 |
 | Q35L120         |     124 |     647353 |     5169 |
 | PacBio          |   13982 |  748508361 |    87225 |
+| PacBio.trim     |   13630 |  688575670 |    77687 |
 | PacBio.20x      |   13962 |   99252919 |    11500 |
 | PacBio.20x.trim |   13541 |   88697009 |     9980 |
 | PacBio.40x      |   13948 |  198650072 |    23000 |
@@ -1394,6 +1402,12 @@ canu \
     -pacbio-raw 3_pacbio/pacbio.80x.fasta
 
 canu \
+    -p ${BASE_NAME} -d canu-raw \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.fasta
+
+canu \
     -p ${BASE_NAME} -d canu-trim-20x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
     genomeSize=${REAL_G} \
@@ -1411,12 +1425,11 @@ canu \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
 
-faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
+canu \
+    -p ${BASE_NAME} -d canu-trim \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.trim.fasta
 
 # quast
 rm -fr 9_qa_canu
@@ -1429,9 +1442,20 @@ quast --no-check --threads 16 \
     canu-trim-40x/${BASE_NAME}.contigs.fasta \
     canu-raw-80x/${BASE_NAME}.contigs.fasta \
     canu-trim-80x/${BASE_NAME}.contigs.fasta \
+    canu-raw/${BASE_NAME}.contigs.fasta \
+    canu-trim/${BASE_NAME}.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
+    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,raw,trim,paralogs" \
     -o 9_qa_canu
+
+faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim/${BASE_NAME}.trimmedReads.fasta.gz
 
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 
