@@ -163,7 +163,7 @@ done
 
 cd ~/data/anchr/s288c
 cat 3_pacbio/fasta/*.fasta \
-    | faops dazz -l 0 -p long stdin pacbio.fasta
+    | faops dazz -l 0 -p long stdin 3_pacbio/pacbio.fasta
 
 ```
 
@@ -243,9 +243,20 @@ parallel --no-run-if-empty -j 3 "
 BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-head -n 115000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.20x.fasta
-head -n 230000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-head -n 460000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    57500 \
+    > 3_pacbio/pacbio.20x.fasta
+
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    115000 \
+    > 3_pacbio/pacbio.40x.fasta
+
+seqtk sample \
+    3_pacbio/pacbio.fasta \
+    230000 \
+    > 3_pacbio/pacbio.80x.fasta
 
 anchr trimlong --parallel 16 -v \
     3_pacbio/pacbio.20x.fasta \
@@ -327,13 +338,13 @@ cat stat.md
 | Q25L60          |    151 | 2502621682 | 16817924 |
 | Q30L60          |    151 | 2442383221 | 16630313 |
 | Q35L60          |    151 | 2191498731 | 15196440 |
-| PacBio          |   8169 | 3529504618 |   846948 |
-| PacBio.20x      |   7996 |  237231974 |    57500 |
-| PacBio.20x.trim |   7687 |  211038592 |    37989 |
-| PacBio.40x      |   8008 |  466936778 |   115000 |
-| PacBio.40x.trim |   7790 |  417392531 |    74300 |
-| PacBio.80x      |   8116 |  951812614 |   230000 |
-| PacBio.80x.trim |   7875 |  840824870 |   148678 |
+| PacBio          |   8412 |  820962526 |   177100 |
+| PacBio.20x      |   8416 |  267616865 |    57500 |
+| PacBio.20x.trim |   7695 |  201067497 |    34839 |
+| PacBio.40x      |   8396 |  532547667 |   115000 |
+| PacBio.40x.trim |   7774 |  406775248 |    69600 |
+| PacBio.80x      |   8412 |  820962526 |   177100 |
+| PacBio.80x.trim |   7815 |  625275768 |   106371 |
 
 ## s288c: spades
 
@@ -725,7 +736,10 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
 anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge1.fasta
+faops order merge/anchor.merge1.fasta \
+    <(faops size merge/anchor.merge1.fasta | sort -n -r -k2,2 | cut -f 1) \
+    merge/anchor.merge.fasta
 
 # No need for this step
 #mkdir -p merge/anchor
@@ -821,13 +835,6 @@ canu \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
 
-faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
-
 # quast
 rm -fr 9_qa_canu
 quast --no-check --threads 16 \
@@ -842,6 +849,15 @@ quast --no-check --threads 16 \
     1_genome/paralogs.fas \
     --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
     -o 9_qa_canu
+
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+
+faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
 
 minimap 1_genome/genome.fa canu-raw-20x/${BASE_NAME}.contigs.fasta \
     | minidot - > canu-raw-20x/minidot.eps
