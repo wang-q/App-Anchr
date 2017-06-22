@@ -1510,6 +1510,7 @@ time jrange covered miniasm/pacbio.40x.paf --longest --paf -o miniasm/pacbio.40x
 
 ```bash
 BASE_NAME=e_coli
+REAL_G=4641652
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr localCor
@@ -1527,10 +1528,86 @@ anchr cover \
     --len 1000 --idt 0.85 -c 2 \
     anchorLong.ovlp.tsv \
     -o anchor.cover.json
-
 cat anchor.cover.json | jq "." > environment.json
 
+rm -fr group
+anchr localcor \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --parallel 16 \
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 --trim -v
+
+faops some -i -l 0 \
+    long.fasta \
+    group/overlapped.long.txt \
+    independentLong.fasta
+
+find . -type d -name "correction" | xargs rm -fr
+
+# localCor
+gzip -d -c -f $(find group -type f -name "*.correctedReads.fasta.gz") \
+    | faops filter -l 0 stdin stdout \
+    | grep -E '^>long' -A 1 \
+    | sed '/^--$/d' \
+    | faops dazz -a -l 0 stdin stdout \
+    | pigz -c > localCor.fasta.gz
+
+canu \
+    -p ${BASE_NAME} -d localCor \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-corrected localCor.fasta.gz \
+    -pacbio-corrected anchor.fasta
+
+canu \
+    -p ${BASE_NAME} -d localCorIndep \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-raw localCor.fasta.gz \
+    -pacbio-raw anchor.fasta \
+    -pacbio-raw independentLong.fasta
+
+# localTrim
+gzip -d -c -f $(find group -type f -name "*.trimmedReads.fasta.gz") \
+    | faops filter -l 0 stdin stdout \
+    | grep -E '^>long' -A 1 \
+    | sed '/^--$/d' \
+    | faops dazz -a -l 0 stdin stdout \
+    | pigz -c > localTrim.fasta.gz
+
+canu \
+    -p ${BASE_NAME} -d localTrim \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-corrected localCor.fasta.gz \
+    -pacbio-corrected anchor.fasta
+
+# globalTrim
+canu -assemble \
+    -p ${BASE_NAME} -d globalTrim \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-corrected ../canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    -pacbio-corrected anchor.fasta
+
 popd
+
+# quast
+rm -fr 9_qa_localCor
+quast --no-check --threads 16 \
+    --eukaryote \
+    -R 1_genome/genome.fa \
+    localCor/anchor.fasta \
+    localCor/localCor/${BASE_NAME}.contigs.fasta \
+    localCor/localCorIndep/${BASE_NAME}.contigs.fasta \
+    localCor/localTrim/${BASE_NAME}.contigs.fasta \
+    localCor/globalTrim/${BASE_NAME}.contigs.fasta \
+    canu-raw-40x/${BASE_NAME}.contigs.fasta \
+    canu-trim-40x/${BASE_NAME}.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "anchor,localCor,localCorIndep,localTrim,globalTrim,40x,40x.trim,paralogs" \
+    -o 9_qa_localCor
 
 ```
 
