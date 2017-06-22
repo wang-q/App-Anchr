@@ -249,12 +249,17 @@ sub execute {
     );
 
     {
-        my $cmd;
-        $cmd .= "DBshow -n $fn_dazz ";
-        $cmd .= join( " ", sort { $a <=> $b } keys %{$long_length_of} );
-        $cmd .= " | sed 's/^>//'";
-        $cmd .= " > overlapped.long.txt";
-        App::Anchr::Common::exec_cmd($cmd);
+        Path::Tiny::path("anchor.sizes.tsv")->remove;
+        my @long_ids = sort { $a <=> $b } keys %{$long_length_of};
+        while ( scalar @long_ids ) {
+            my @batching = splice @long_ids, 0, 100;
+            my $cmd;
+            $cmd .= "DBshow -n $fn_dazz ";
+            $cmd .= join( " ", @batching );
+            $cmd .= " | sed 's/^>//'";
+            $cmd .= " >> overlapped.long.txt";
+            App::Anchr::Common::exec_cmd($cmd);
+        }
     }
 }
 
