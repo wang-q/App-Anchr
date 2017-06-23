@@ -1001,7 +1001,7 @@ cat anchor.cover.json | jq "." > environment.json
 
 anchr overlap \
     anchor.fasta \
-    --serial --len 30 --idt 0.9999 \
+    --serial --len 20 --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -1038,7 +1038,7 @@ anchr group \
     --oa anchor.ovlp.tsv \
     --parallel 16 \
     --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.85 --max "-30" -c 2 --png
+    --len 1000 --idt 0.85 --max "-20" -c 2
 
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
@@ -1057,7 +1057,7 @@ cat group/groups.txt \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 30 --idt 0.9999 \
+        anchr overlap --len 20 --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''
@@ -1075,7 +1075,6 @@ cat group/groups.txt \
             group/{}.relation.tsv \
             group/{}.strand.fasta \
             --oa group/{}.anchor.ovlp.tsv \
-            --png \
             -o group/{}.contig.fasta
     '
 popd
@@ -1104,7 +1103,7 @@ anchr overlap2 \
     anchorLong/contig.fasta \
     canu-trim-40x/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
-    -b 20 --len 1000 --idt 0.98 --all
+    -b 20 --len 1000 --idt 0.99 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1115,20 +1114,20 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.99 --max 20000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.98 \
+            --len 1000 --idt 0.99 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.98 \
+        anchr overlap --len 1000 --idt 0.99 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1176,6 +1175,10 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
+    $(echo "canu-raw"; faops n50 -H -S -C canu-raw-40x/${BASE_NAME}.contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "canu-trim"; faops n50 -H -S -C canu-trim-40x/${BASE_NAME}.contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
@@ -1193,8 +1196,10 @@ cat stat3.md
 | Paralogs          |   3851 |  1059148 |  366 |
 | anchor.merge      |  29017 | 11359547 |  665 |
 | others.merge      |   2625 |   282212 |  127 |
-| anchorLong        |  37180 | 11270177 |  498 |
-| contigTrim        | 460243 | 11555370 |   37 |
+| anchorLong        |  38821 | 11269708 |  478 |
+| contigTrim        | 460244 | 11555366 |   37 |
+| canu-raw          | 475272 | 12333950 |   41 |
+| canu-trim         | 475066 | 12194521 |   36 |
 | spades.contig     |  89836 | 11731746 | 1189 |
 | spades.scaffold   |  98572 | 11732702 | 1167 |
 | platanus.contig   |   5983 | 12437850 | 7727 |
