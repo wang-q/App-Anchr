@@ -20,7 +20,9 @@
     - [s288c: final stats](#s288c-final-stats)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
-    - [iso_1: combinations of different quality values and read lengths](#iso-1-combinations-of-different-quality-values-and-read-lengths)
+    - [iso_1: preprocess Illumina reads](#iso-1-preprocess-illumina-reads)
+    - [iso_1: preprocess PacBio reads](#iso-1-preprocess-pacbio-reads)
+    - [iso_1: reads stats](#iso-1-reads-stats)
     - [iso_1: spades](#iso-1-spades)
     - [iso_1: platanus](#iso-1-platanus)
     - [iso_1: quorum](#iso-1-quorum)
@@ -860,10 +862,10 @@ faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
 faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
 faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
 
-minimap 1_genome/genome.fa canu-raw-20x/${BASE_NAME}.contigs.fasta \
+minimap canu-raw-20x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
     | minidot - > canu-raw-20x/minidot.eps
 
-minimap 1_genome/genome.fa canu-raw-40x/${BASE_NAME}.contigs.fasta \
+minimap canu-raw-40x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
     | minidot - > canu-raw-40x/minidot.eps
 
 minimap canu-raw-80x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
@@ -1382,7 +1384,7 @@ fastqc -t 16 \
 
 ```
 
-## iso_1: combinations of different quality values and read lengths
+## iso_1: preprocess Illumina reads
 
 * qual: 20, 25, and 30
 * len: 60
@@ -1423,7 +1425,19 @@ parallel --no-run-if-empty -j 3 "
 
 ```
 
-* Stats
+## iso_1: preprocess PacBio reads
+
+```bash
+BASE_NAME=iso_1
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+anchr trimlong --parallel 16 -v \
+    3_pacbio/pacbio.40x.fasta \
+    -o 3_pacbio/pacbio.40x.trim.fasta
+
+```
+
+## iso_1: reads stats
 
 ```bash
 BASE_NAME=iso_1
@@ -1438,8 +1452,6 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
@@ -1463,19 +1475,35 @@ parallel -k --no-run-if-empty -j 3 "
     " ::: 20 25 30 ::: 60 \
     >> stat.md
 
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo PacBio.{};
+            faops n50 -H -S -C \
+                3_pacbio/pacbio.{}.fasta;
+        )
+    " ::: 40x 40x.trim \
+    >> stat.md
+
 cat stat.md
+
 ```
 
-| Name     |      N50 |         Sum |         # |
-|:---------|---------:|------------:|----------:|
-| Genome   | 25286936 |   137567477 |         8 |
-| Paralogs |     4031 |    13665900 |      4492 |
-| PacBio   |    41580 |  5620710497 |    630193 |
-| Illumina |      101 | 18115734306 | 179363706 |
-| uniq     |      101 | 17595866904 | 174216504 |
-| Q20L60   |      101 | 15645516794 | 156403806 |
-| Q25L60   |      101 | 14657099109 | 147178220 |
-| Q30L60   |      101 | 13983733793 | 143634907 |
+| Name            |      N50 |         Sum |         # |
+|:----------------|---------:|------------:|----------:|
+| Genome          | 25286936 |   137567477 |         8 |
+| Paralogs        |     4031 |    13665900 |      4492 |
+| Illumina        |      101 | 18115734306 | 179363706 |
+| uniq            |      101 | 17595866904 | 174216504 |
+| Q20L60          |      101 | 15645516794 | 156403806 |
+| Q25L60          |      101 | 14657099109 | 147178220 |
+| Q30L60          |      101 | 13983733793 | 143634907 |
+| PacBio          |    13704 |  5620710497 |    630193 |
+| PacBio.40x      |    13704 |  5620710497 |    630193 |
+| PacBio.40x.trim |    13554 |  5213016859 |    541236 |
 
 ## iso_1: spades
 
@@ -1833,16 +1861,31 @@ quast --no-check --threads 16 \
 
 ```bash
 BASE_NAME=iso_1
+REAL_G=137567477
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 canu \
     -p ${BASE_NAME} -d canu-raw-40x \
     gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=137.6m \
+    genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.40x.fasta
 
-faops n50 -S -C canu-raw-40x/iso_1.correctedReads.fasta.gz
-faops n50 -S -C canu-raw-40x/iso_1.trimmedReads.fasta.gz
+canu \
+    -p ${BASE_NAME} -d canu-trim-40x \
+    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+    genomeSize=${REAL_G} \
+    -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
+
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+
+minimap canu-raw-40x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
+    | minidot - > canu-raw-40x/minidot.eps
+
+minimap canu-trim-40x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
+    | minidot - > canu-trim-40x/minidot.eps
+
+faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
+faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
 
 ```
 
@@ -1854,25 +1897,26 @@ faops n50 -S -C canu-raw-40x/iso_1.trimmedReads.fasta.gz
 BASE_NAME=iso_1
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-anchr cover \
-    --parallel 16 \
-    -c 2 -m 40 \
-    -b 50 --len 1000 --idt 0.9 \
-    merge/anchor.merge.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
-    -o merge/anchor.cover.fasta
-
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
-    merge/anchor.cover.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.trim.fasta \
     -d anchorLong \
-    -b 50 --len 1000 --idt 0.98
+    -b 20 --len 1000 --idt 0.85 --all
+
+pushd anchorLong
+
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+cat anchor.cover.json | jq "." > environment.json
 
 anchr overlap \
-    merge/anchor.cover.fasta \
-    --serial --len 10 --idt 0.9999 \
+    anchor.fasta \
+    --serial --len 20 --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -1900,43 +1944,40 @@ anchr overlap \
         }
     ' \
     | sort -k 1n,1n -k 2n,2n \
-    > anchorLong/anchor.ovlp.tsv
+    > anchor.ovlp.tsv
 
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr anchorLong/group
+rm -fr group
 anchr group \
-    anchorLong/anchorLong.db \
-    anchorLong/anchorLong.ovlp.tsv \
-    --oa anchorLong/anchor.ovlp.tsv \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --oa anchor.ovlp.tsv \
     --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 --max "-20" -c 2
 
-pushd anchorLong
 cat group/groups.txt \
     | parallel --no-run-if-empty -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.98 \
+            --len 1000 --idt 0.85 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.98 \
+        anchr overlap --len 1000 --idt 0.85 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 10 --idt 0.9999 \
+        anchr overlap --len 20 --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''
                 @F == 13 or next;
-                $F[3] > 0.98 or next;
+                $F[3] > 0.9999 or next;
                 $F[9] == 0 or next;
                 $F[5] > 0 and $F[6] == $F[7] or next;
                 /anchor.+anchor/ or next;
