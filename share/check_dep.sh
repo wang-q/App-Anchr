@@ -115,6 +115,18 @@ hash jrange 2>/dev/null || {
     exit 1;
 }
 
+hash minimap 2>/dev/null || {
+    echo >&2 "minimap is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/minimap";
+    exit 1;
+}
+
+hash miniasm 2>/dev/null || {
+    echo >&2 "miniasm is required but it's not installed.";
+    echo >&2 "Install with homebrew: brew install homebrew/science/miniasm";
+    exit 1;
+}
+
 hash poa 2>/dev/null || {
     echo >&2 "poa is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/poa";
