@@ -2,6 +2,11 @@
 
 [TOC levels=1-3]: # " "
 - [Bacteria 2+3](#bacteria-23)
+- [Escherichia virus Lambda](#escherichia-virus-lambda)
+    - [lambda: download](#lambda-download)
+    - [lambda: preprocess PacBio reads](#lambda-preprocess-pacbio-reads)
+    - [lambda: reads stats](#lambda-reads-stats)
+    - [lambda: 3GS](#lambda-3gs)
 - [Shigella flexneri NCTC0001, 福氏志贺氏菌](#shigella-flexneri-nctc0001-福氏志贺氏菌)
     - [Sfle: download](#sfle-download)
     - [Sfle: combinations of different quality values and read lengths](#sfle-combinations-of-different-quality-values-and-read-lengths)
