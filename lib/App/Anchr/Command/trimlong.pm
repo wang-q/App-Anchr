@@ -15,6 +15,9 @@ sub opt_spec {
         [ "len|l=i",      "minimal length of overlaps", { default => 1000 }, ],
         [ "parallel|p=i", "number of threads",          { default => 8 }, ],
         [ "verbose|v",    "verbose mode", ],
+        [   "jvm=s",
+            "jvm parameters for jrange, e.g. '-d64 -server -Xms1g -Xmx64g -XX:-UseGCOverheadLimit'",
+        ],
         { show_defaults => 1, }
     );
 }
@@ -86,8 +89,16 @@ sub execute {
 
     {    # paf to covered
         my $cmd;
-        $cmd .= "jrange covered";
-        $cmd .= " $basename.paf";
+        if ( $opt->{jvm} ) {
+            my $jrange_path = `jrange path`;
+            chomp $jrange_path;
+            $cmd .= sprintf "java -jar %s %s", $opt->{jvm}, $jrange_path;
+        }
+        else {
+            $cmd .= "jrange";
+        }
+
+        $cmd .= " covered $basename.paf";
         $cmd .= " --coverage $opt->{coverage} --len $opt->{len} --longest --paf";
         $cmd .= " -o $basename.covered.txt";
         App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
