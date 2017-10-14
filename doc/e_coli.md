@@ -40,6 +40,8 @@ brew reinstall --build-from-source --without-webp gd # broken, can't find libweb
 brew reinstall --build-from-source gnuplot@4
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
+brew install openblas                       # numpy
+
 brew install python
 pip install --upgrade pip setuptools
 pip install matplotlib
