@@ -92,7 +92,7 @@ sub execute {
         if ( $opt->{jvm} ) {
             my $jrange_path = `jrange path`;
             chomp $jrange_path;
-            $cmd .= sprintf "java -jar %s %s", $opt->{jvm}, $jrange_path;
+            $cmd .= sprintf "java %s -jar %s", $opt->{jvm}, $jrange_path;
         }
         else {
             $cmd .= "jrange";
