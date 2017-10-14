@@ -26,7 +26,7 @@ unlike( $result->stdout, qr{pac4745_7148:1}s, 'uncovered region' );
 $result = test_app(
     'App::Anchr' => [
         qw(trimlong t/1_4.pac.fasta -v -o stdout),
-        "--jvm '-d64 -server'"
+        "--jvm", "'-d64 -server'"
     ]
 );
 is( ( scalar grep {/^CMD/} grep {/\S/} split( /\n/, $result->stderr ) ), 3, 'stderr line count' );
