@@ -10,7 +10,6 @@ check_install () {
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
     check_install jdk
-    check_install wang-q/tap/superreads
 fi
 
 for package in graphviz jq parallel pigz;
@@ -18,14 +17,22 @@ do
     check_install ${package}
 done
 
-for package in bbtools fastqc jellyfish minimap miniasm poa samtools seqtk sickle;
+for package in bbtools fastqc minimap miniasm poa samtools seqtk sickle;
 do
     check_install homebrew/science/${package};
 done
 
-for package in faops jrange jrunlist reaper scythe sparsemem dazz_db@20161112 daligner@20170203 quorum@1.1.1;
+for package in faops jrange jrunlist reaper scythe sparsemem dazz_db@20161112 daligner@20170203;
 do
     check_install wang-q/tap/${package};
 done
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    brew unlink jellyfish
+    check_install wang-q/tap/jellyfish@2.2.4
+    brew unlink jellyfish@2.2.4 && brew link jellyfish@2.2.4
+    check_install wang-q/tap/quorum@1.1.1
+    check_install wang-q/tap/superreads
+fi
 
 exit 0
