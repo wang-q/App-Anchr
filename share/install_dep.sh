@@ -28,7 +28,9 @@ do
 done
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    brew unlink jellyfish
+    if brew list --versions jellyfish > /dev/null; then
+        brew unlink jellyfish
+    fi
     check_install wang-q/tap/jellyfish@2.2.4
     brew unlink jellyfish@2.2.4 && brew link jellyfish@2.2.4
     check_install wang-q/tap/quorum@1.1.1
