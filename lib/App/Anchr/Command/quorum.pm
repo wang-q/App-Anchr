@@ -37,8 +37,8 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( !( @{$args} == 2 or @{$args} == 3 ) ) {
-        my $message = "This command need two or three input files.\n\tIt found";
+    if ( !( @{$args} == 1 or  @{$args} == 2 or @{$args} == 3 ) ) {
+        my $message = "This command need one, two or three input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
         $self->usage_error($message);
@@ -135,9 +135,8 @@ save NUM_THREADS
 # Renaming reads
 #----------------------------#
 log_info 'Processing pe and/or se library reads'
-rm -rf meanAndStdevByPrefix.pe.txt
-echo 'pe [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
 
+[% IF args.size == 2 -%]
 if [ ! -e pe.renamed.fastq ]; then
     rename_filter_fastq \
         'pe' \
@@ -146,8 +145,14 @@ if [ ! -e pe.renamed.fastq ]; then
         > 'pe.renamed.fastq'
 fi
 
-[% IF args.2 -%]
-echo 'se [% opt.size %] [% opt.std %]' >> meanAndStdevByPrefix.pe.txt
+[% ELSIF args.size == 3 -%]
+if [ ! -e pe.renamed.fastq ]; then
+    rename_filter_fastq \
+        'pe' \
+        <(exec expand_fastq '[% args.0 %]' ) \
+        <(exec expand_fastq '[% args.1 %]' ) \
+        > 'pe.renamed.fastq'
+fi
 
 if [ ! -e se.renamed.fastq ]; then
     rename_filter_fastq \
@@ -156,6 +161,16 @@ if [ ! -e se.renamed.fastq ]; then
         '' \
         > 'se.renamed.fastq'
 fi
+
+[% ELSE -%]
+if [ ! -e pe.renamed.fastq ]; then
+    rename_filter_fastq \
+        'pe' \
+        <(exec expand_fastq '[% args.0 %]' ) \
+        '' \
+        > 'pe.renamed.fastq'
+fi
+
 [% END -%]
 
 #----------------------------#
@@ -252,7 +267,7 @@ if [ ! -e quorum_mer_db.jf ]; then
         -t [% opt.parallel %] \
         -s $JF_SIZE -b 7 -m 24 -q $((MIN_Q_CHAR + 5)) \
         -o quorum_mer_db.jf.tmp \
-        pe.renamed.fastq [% IF args.2 %]se.renamed.fastq [% END %]\
+        pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %]\
         && mv quorum_mer_db.jf.tmp quorum_mer_db.jf
     if [ $? -ne 0 ]; then
         log_warn Increase JF_SIZE by --jf, the recommendation value is genome_size*coverage/2
@@ -276,7 +291,7 @@ if [ ! -e pe.cor.fa ]; then
         --contaminant=[% opt.adapter %] \
         -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
-        pe.renamed.fastq [% IF args.2 %]se.renamed.fastq [% END %]\
+        pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %]\
         -o pe.cor --verbose 1>quorum.err 2>&1 \
     || {
         mv pe.cor.fa pe.cor.fa.failed;
@@ -288,7 +303,7 @@ if [ ! -e pe.cor.fa ]; then
     cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 fi
 
-SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.2 %]se.renamed.fastq [% END %])
+SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %])
 save SUM_IN
 SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
 save SUM_OUT
