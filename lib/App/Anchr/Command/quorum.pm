@@ -174,7 +174,7 @@ fi
 [% END -%]
 
 #----------------------------#
-# Stats of PE reads
+# Stats of reads
 #----------------------------#
 head -n 80000 pe.renamed.fastq > pe_data.tmp
 export PE_AVG_READ_LENGTH=$(
@@ -184,7 +184,7 @@ export PE_AVG_READ_LENGTH=$(
     | awk '{if(length($1)>31){n+=length($1);m++;}}END{print int(n/m)}'
 )
 save PE_AVG_READ_LENGTH
-log_debug "Average PE read length $PE_AVG_READ_LENGTH"
+log_debug "Average read length $PE_AVG_READ_LENGTH"
 
 KMER=$(
     tail -n 40000 pe_data.tmp \
@@ -249,7 +249,7 @@ save MIN_Q_CHAR
 log_debug "MIN_Q_CHAR: $MIN_Q_CHAR"
 
 #----------------------------#
-# Error correct PE
+# Error correct reads
 #----------------------------#
 JF_SIZE=$( ls -l *.fastq \
     | awk '{n+=$5} END{s=int(n / 50 * 1.1); if(s>[% opt.jf %])print s;else print "[% opt.jf %]";}' )
@@ -285,7 +285,7 @@ fi
 # And we only want most reliable parts of the genome other than the whole genome, so dropping rare
 # k-mers is totally OK for us. Raise `-m` from 1 to 3, `-g` from 1 to 3, and `-a` from 1 to 4.
 if [ ! -e pe.cor.fa ]; then
-    log_info Error correct PE.
+    log_info Error correct reads.
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
         --contaminant=[% opt.adapter %] \
@@ -295,7 +295,7 @@ if [ ! -e pe.cor.fa ]; then
         -o pe.cor --verbose 1>quorum.err 2>&1 \
     || {
         mv pe.cor.fa pe.cor.fa.failed;
-        log_warn Error correction of PE reads failed. Check pe.cor.log.;
+        log_warn Error correction of reads failed. Check pe.cor.log.;
         exit 1;
     }
     log_debug "Discard any reads with subs"
