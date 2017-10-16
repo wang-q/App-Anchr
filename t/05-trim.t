@@ -34,6 +34,12 @@ ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) < 70, 'line count' );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 40, 'line count' );
 like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
 unlike( $result->stdout, qr{# scythe}s, 'bash contents' );
+like( $result->stdout, qr{\spe\s}s, 'pe mode' );
+unlike( $result->stdout, qr{\sse\s}s, 'pe mode without se' );
+
+$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz -o stdout --noscythe)] );
+like( $result->stdout, qr{\sse\s}s, 'se mode' );
+unlike( $result->stdout, qr{\spe\s}s, 'se mode without pe' );
 
 {    # real run
     my $tempdir = Path::Tiny->tempdir;

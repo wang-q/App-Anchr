@@ -37,8 +37,8 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( @{$args} != 2 ) {
-        my $message = "This command need two input files.\n\tIt found";
+    if ( !( @{$args} == 1 or @{$args} == 2  )  ) {
+        my $message = "This command need one or two input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
         $self->usage_error($message);
@@ -117,6 +117,7 @@ scythe \
     | pigz -p [% opt.parallel %] -c \
     > R1.scythe.fq.gz
 
+[% IF args.1 -%]
 log_info "scythe [% args.1 %]"
 scythe \
     [% args.1 %] \
@@ -127,31 +128,39 @@ scythe \
     | pigz -p [% opt.parallel %] -c \
     > R2.scythe.fq.gz
 [% END -%]
+[% END -%]
 
 #----------------------------#
 # sickle
 #----------------------------#
 log_info "sickle [% args.0 %] [% args.1 %]"
-[% IF opt.noscythe -%]
+
+[% IF args.1 -%]
 sickle pe \
     -t sanger \
     -l [% opt.len %] \
     -q [% opt.qual %] \
+[% IF opt.noscythe -%]
     -f [% args.0 %] \
     -r [% args.1 %] \
+[% ELSE -%]
+    -f R1.scythe.fq.gz \
+    -r R2.scythe.fq.gz \
+[% END -%]
     -o R1.sickle.fq \
     -p R2.sickle.fq \
     -s single.sickle.fq
 [% ELSE -%]
-sickle pe \
+sickle se \
     -t sanger \
     -l [% opt.len %] \
     -q [% opt.qual %] \
+[% IF opt.noscythe -%]
+    -f [% args.0 %] \
+[% ELSE -%]
     -f R1.scythe.fq.gz \
-    -r R2.scythe.fq.gz \
-    -o R1.sickle.fq \
-    -p R2.sickle.fq \
-    -s single.sickle.fq
+[% END -%]
+    -o R1.sickle.fq
 [% END -%]
 
 find . -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
@@ -160,8 +169,10 @@ find . -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 # outputs
 #----------------------------#
 mv R1.sickle.fq.gz [% opt.basename %]1.fq.gz
+[% IF args.1 -%]
 mv R2.sickle.fq.gz [% opt.basename %]2.fq.gz
 mv single.sickle.fq.gz [% opt.basename %]s.fq.gz
+[% END -%]
 
 exit 0
 
