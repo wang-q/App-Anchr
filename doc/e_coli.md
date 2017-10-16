@@ -313,6 +313,70 @@ parallel --no-run-if-empty -j 3 "
 
 ```
 
+## Preprocess Illumina single end reads
+
+* qual: 20, 25, and 30
+* len: 60 and 90
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+# symlink R1.fq.gz
+mkdir -p 2_illumina_se
+cd 2_illumina_se
+ln -s ../2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
+
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+if [ ! -e 2_illumina_se/R1.uniq.fq.gz ]; then
+    tally \
+        --with-quality --nozip --unsorted \
+        -i 2_illumina_se/R1.fq.gz \
+        -o 2_illumina_se/R1.uniq.fq
+
+    pigz -p 8 2_illumina_se/R1.uniq.fq
+fi
+
+# get the default adapter file
+# anchr trim --help
+if [ ! -e 2_illumina_se/R1.scythe.fq.gz ]; then
+    scythe \
+        2_illumina_se/R1.uniq.fq.gz \
+        -q sanger \
+        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+        --quiet \
+        | pigz -p 4 -c \
+        > 2_illumina_se/R1.scythe.fq.gz
+fi
+
+if [ ! -e 2_illumina_se/R1.shuffle.fq.gz ]; then
+    shuffle.sh \
+        in=2_illumina_se/R1.scythe.fq.gz \
+        out=2_illumina_se/R1.shuffle.fq
+
+    pigz -p 8 2_illumina_se/R1.shuffle.fq
+fi
+
+parallel --no-run-if-empty -j 3 "
+    mkdir -p 2_illumina_se/Q{1}L{2}
+    cd 2_illumina_se/Q{1}L{2}
+
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.shuffle.fq.gz ../R2.shuffle.fq.gz \
+        -o stdout \
+        | bash
+    " ::: 25 30 ::: 60 90
+
+```
+
 ## Preprocess PacBio reads
 
 ```bash
