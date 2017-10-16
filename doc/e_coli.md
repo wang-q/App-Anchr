@@ -43,8 +43,6 @@ brew install homebrew/science/mummer        # mummer need gnuplot4
 brew install openblas                       # numpy
 
 brew install python
-pip install --upgrade pip setuptools
-pip install matplotlib
 brew install homebrew/science/quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
 

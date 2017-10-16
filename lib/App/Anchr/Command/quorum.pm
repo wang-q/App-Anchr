@@ -37,7 +37,7 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( !( @{$args} == 1 or  @{$args} == 2 or @{$args} == 3 ) ) {
+    if ( !( @{$args} == 1 or @{$args} == 2 or @{$args} == 3 ) ) {
         my $message = "This command need one, two or three input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
