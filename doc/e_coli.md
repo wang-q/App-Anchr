@@ -1720,6 +1720,8 @@ canu \
     genomeSize=${REAL_G} \
     -pacbio-raw 3_pacbio/pacbio.trim.fasta
 
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+
 # quast
 rm -fr 9_qa_canu
 quast --no-check --threads 16 \
@@ -1734,21 +1736,64 @@ quast --no-check --threads 16 \
     canu-raw/${BASE_NAME}.contigs.fasta \
     canu-trim/${BASE_NAME}.contigs.fasta \
     1_genome/paralogs.fas \
-    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,raw,trim,paralogs" \
+    --label "raw-20x,trim-20x,raw-40x,trim-40x,raw-80x,trim-80x,raw,trim,paralogs" \
     -o 9_qa_canu
 
-faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim/${BASE_NAME}.trimmedReads.fasta.gz
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statG2.md
+printf "|:--|--:|--:|--:|\n" >> statG2.md
 
-find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+parallel -k --no-run-if-empty -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo correctedReads.{};
+            faops n50 -H -S -C \
+                canu-{}/${BASE_NAME}.correctedReads.fasta.gz;
+        )
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo trimmedReads.{};
+            faops n50 -H -S -C \
+                canu-{}/${BASE_NAME}.trimmedReads.fasta.gz;
+        )
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo contigs.{};
+            faops n50 -H -S -C \
+                canu-{}/${BASE_NAME}.contigs.fasta;
+        )
+    " ::: raw-20x trim-20x raw-40x trim-40x raw-80x trim-80x raw trim \
+    >> statG2.md
 
 ```
+
+| Name                    |     N50 |       Sum |     # |
+|:------------------------|--------:|----------:|------:|
+| correctedReads.raw-20x  |   13115 |  81526128 |  9436 |
+| trimmedReads.raw-20x    |   12996 |  80498337 |  9394 |
+| contigs.raw-20x         |  921897 |   4612006 |     7 |
+| correctedReads.trim-20x |   13008 |  84197154 |  9847 |
+| trimmedReads.trim-20x   |   12989 |  79326458 |  9269 |
+| contigs.trim-20x        |  922900 |   4629595 |     6 |
+| correctedReads.raw-40x  |   13364 | 157056580 | 17325 |
+| trimmedReads.raw-40x    |   13272 | 155413849 | 17283 |
+| contigs.raw-40x         | 4657294 |   4686016 |     2 |
+| correctedReads.trim-40x |   13277 | 154611423 | 17167 |
+| trimmedReads.trim-40x   |   13233 | 153667617 | 17133 |
+| contigs.trim-40x        | 4632022 |   4632022 |     1 |
+| correctedReads.raw-80x  |   17333 | 173382369 | 10296 |
+| trimmedReads.raw-80x    |   17235 | 171847233 | 10293 |
+| contigs.raw-80x         | 4642839 |   4642839 |     1 |
+| correctedReads.trim-80x |   17127 | 175056455 | 10515 |
+| trimmedReads.trim-80x   |   17061 | 174101846 | 10515 |
+| contigs.trim-80x        | 4661644 |   4661644 |     1 |
+| correctedReads.raw      |   20324 | 171364906 |  8305 |
+| trimmedReads.raw        |   20236 | 170032034 |  8302 |
+| contigs.raw             | 4670127 |   4670127 |     1 |
+| correctedReads.trim     |   20139 | 174057839 |  8475 |
+| trimmedReads.trim       |   20080 | 173275048 |  8475 |
+| contigs.trim            | 4670246 |   4670246 |     1 |
 
 * miniasm
 
