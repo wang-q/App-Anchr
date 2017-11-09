@@ -9,6 +9,7 @@
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [Download](#download)
     - [Preprocess Illumina reads](#preprocess-illumina-reads)
+    - [Preprocess Illumina single end reads](#preprocess-illumina-single-end-reads)
     - [Preprocess PacBio reads](#preprocess-pacbio-reads)
     - [Reads stats](#reads-stats)
     - [Spades](#spades)
