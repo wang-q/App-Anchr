@@ -247,6 +247,21 @@ fastqc -t 16 \
 
 ```
 
+* kmergenie
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+parallel -j 2 "
+    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    " ::: R1 R2
+
+```
+
 ## Preprocess Illumina reads
 
 * qual: 20, 25, 30, and 35
@@ -823,21 +838,6 @@ cat stat1.md
 | Q25L90  | 581.79M | 125.3 | 535.83M |  115.4 |   7.899% |     142 |  "31" | 4.64M |  4.56M |     0.98 | 0:01'21'' |
 | Q30L60  |  524.4M | 113.0 | 503.41M |  108.5 |   4.003% |     128 |  "31" | 4.64M |  4.56M |     0.98 | 0:01'17'' |
 | Q30L90  | 483.18M | 104.1 | 463.81M |   99.9 |   4.009% |     135 |  "31" | 4.64M |  4.56M |     0.98 | 0:01'10'' |
-
-* kmergenie
-
-```bash
-BASE_NAME=e_coli
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q25L60/pe.cor.fa -o Q25L60
-
-```
 
 ## Down sampling
 
