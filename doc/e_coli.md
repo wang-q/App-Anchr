@@ -56,8 +56,10 @@ brew unlink gnuplot
 
 brew link gnuplot@4 --force
 
-brew install r --without-tcltk --without-x11
+brew install r
 brew install kmergenie --with-maxkmer=200
+
+brew install homebrew/science/kmc --HEAD
 ```
 
 ## Two of the leading assemblers
@@ -326,6 +328,61 @@ parallel --no-run-if-empty -j 3 "
         -o stdout \
         | bash
     " ::: 20 25 30 35 ::: 30 60 90 120
+
+```
+
+* kmc
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmc
+cd 2_illumina/kmc
+
+# raw
+cat <<EOF > list.tmp
+../R1.fq.gz
+../R2.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci3 @list.tmp raw . 
+kmc_tools transform raw histogram hist.raw.txt
+
+# uniq
+cat <<EOF > list.tmp
+../R1.uniq.fq.gz
+../R2.uniq.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci3 @list.tmp uniq . 
+kmc_tools transform uniq histogram hist.uniq.txt
+
+# Q25L60
+cat <<EOF > list.tmp
+../Q25L60/R1.fq.gz
+../Q25L60/R2.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci1 @list.tmp Q25L60 . 
+kmc_tools transform Q25L60 histogram hist.Q25L60.txt
+
+#kmc_tools transform Q25L60 dump dump.Q25L60.txt
+
+kmc_tools filter Q25L60 @list.tmp -ci3 filtered.fa -fa
+
+faops n50 -H -S -C \
+    ../Q25L60/R1.fq.gz \
+    ../Q25L60/R2.fq.gz;
+    
+faops n50 -H -S -C \
+    ../Q25L60/pe.cor.fa;
+
+faops n50 -H -S -C \
+    filtered.fa;
 
 ```
 
