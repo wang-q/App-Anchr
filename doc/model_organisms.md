@@ -2332,7 +2332,8 @@ rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 ```bash
 BASE_NAME=n2
 REAL_G=100286401
-COVERAGE="20 30 40 50 60"
+COVERAGE2="20 30 40 50 60"
+COVERAGE3="40 80"
 READ_QUAL="25 30"
 READ_LEN="60"
 
@@ -2492,26 +2493,28 @@ parallel --no-run-if-empty -j 3 "
 ## n2: preprocess PacBio reads
 
 ```bash
-BASE_NAME=n2
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-seqtk sample \
-    3_pacbio/pacbio.fasta \
-    370000 \
-    > 3_pacbio/pacbio.40x.fasta
+for X in ${COVERAGE3}; do
+    printf "==> Coverage: %s\n" ${X}
+    
+    faops split-about -m 1 -l 0 \
+        3_pacbio/pacbio.fasta \
+        $(( ${REAL_G} * ${X} )) \
+        3_pacbio
+        
+    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
 
-seqtk sample \
-    3_pacbio/pacbio.fasta \
-    740000 \
-    > 3_pacbio/pacbio.80x.fasta
+done
 
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.40x.fasta \
-    -o 3_pacbio/pacbio.40x.trim.fasta
+for X in ${COVERAGE3}; do
+    printf "==> Coverage: %s\n" ${X}
+    
+    anchr trimlong --parallel 16 -v \
+        "3_pacbio/pacbio.X${X}.raw.fasta" \
+        -o "3_pacbio/pacbio.X${X}.trim.fasta"
 
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.80x.fasta \
-    -o 3_pacbio/pacbio.80x.trim.fasta
+done
 
 ```
 
@@ -2558,31 +2561,31 @@ printf "| %s | %s | %s | %s |\n" \
 parallel -k --no-run-if-empty -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
-            echo PacBio.{};
+            echo X{1}.{2};
             faops n50 -H -S -C \
-                3_pacbio/pacbio.{}.fasta;
+                3_pacbio/pacbio.X{1}.{2}.fasta;
         )
-    " ::: 40x 40x.trim 80x 80x.trim \
+    " ::: ${COVERAGE3} ::: raw trim \
     >> stat.md
 
 cat stat.md
 
 ```
 
-| Name            |      N50 |         Sum |         # |
-|:----------------|---------:|------------:|----------:|
-| Genome          | 17493829 |   100286401 |         7 |
-| Paralogs        |     2013 |     5313653 |      2637 |
-| Illumina        |      100 | 11560892600 | 115608926 |
-| uniq            |      100 | 11388907200 | 113889072 |
-| Q20L60          |      100 | 10554820951 | 106430410 |
-| Q25L60          |      100 |  9883174284 | 101608118 |
-| Q30L60          |      100 |  8868221193 |  99371914 |
-| PacBio          |    16572 |  8117663505 |    740776 |
-| PacBio.40x      |    16591 |  4058932824 |    370000 |
-| PacBio.40x.trim |    16107 |  3774574145 |    334461 |
-| PacBio.80x      |    16572 |  8109154276 |    740000 |
-| PacBio.80x.trim |    16171 |  7627663450 |    673937 |
+| Name     |      N50 |         Sum |         # |
+|:---------|---------:|------------:|----------:|
+| Genome   | 17493829 |   100286401 |         7 |
+| Paralogs |     2013 |     5313653 |      2637 |
+| Illumina |      100 | 11560892600 | 115608926 |
+| uniq     |      100 | 11388907200 | 113889072 |
+| Q20L60   |      100 | 10554820951 | 106430410 |
+| Q25L60   |      100 |  9883174284 | 101608118 |
+| Q30L60   |      100 |  8868221193 |  99371914 |
+| PacBio   |    16572 |  8117663505 |    740776 |
+| X40.raw  |    16733 |  4011470192 |    360659 |
+| X40.trim |    16336 |  3764009640 |    325356 |
+| X80.raw  |    16578 |  8022917144 |    731704 |
+| X80.trim |    16240 |  7584684643 |    666119 |
 
 ## n2: spades
 
@@ -2921,29 +2924,25 @@ quast --no-check --threads 16 \
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-canu \
-    -p ${BASE_NAME} -d canu-raw-40x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.40x.fasta
-    
-canu \
-    -p ${BASE_NAME} -d canu-raw-80x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    echo >&2 '==> Group X{1}-{2}'
 
-canu \
-    -p ${BASE_NAME} -d canu-trim-40x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
-    
-canu \
-    -p ${BASE_NAME} -d canu-trim-80x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
+    if [ ! -e  3_pacbio/pacbio.X{1}.{2}.fasta ]; then
+        echo >&2 '    3_pacbio/pacbio.X{1}.{2}.fasta not exists'
+        exit;
+    fi
+
+    if [ -e canu-X{1}-{2}/*.contigs.fasta ]; then
+        echo >&2 '    contigs.fasta already presents'
+        exit;
+    fi
+
+    canu \
+        -p ${BASE_NAME} -d canu-X{1}-{2} \
+        gnuplot=\$(brew --prefix)/Cellar/\$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+        genomeSize=${REAL_G} \
+        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
+    " ::: ${COVERAGE3} ::: raw trim
 
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 
@@ -2972,7 +2971,7 @@ anchr cover \
     -c 2 -m 40 \
     -b 50 --len 1000 --idt 0.9 \
     merge/anchor.merge.fasta \
-    canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz \
+    canu-X40-trim/${BASE_NAME}.trimmedReads.fasta.gz \
     -o merge/anchor.cover.fasta
 
 rm -fr anchorLong
