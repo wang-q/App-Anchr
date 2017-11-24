@@ -2656,7 +2656,7 @@ anchr contained \
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-parallel --no-run-if-empty -j 1 "
+parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Group Q{1}L{2} <=='
 
@@ -2734,7 +2734,7 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); 
         continue;
     fi
 
-    for X in ${COVERAGE}; do
+    for X in ${COVERAGE2}; do
         printf "==> Coverage: %s\n" ${X}
         
         rm -fr 2_illumina/${QxxLxx}X${X}*
@@ -2772,7 +2772,7 @@ done
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 # k-unitigs (sampled)
-parallel --no-run-if-empty -j 2 "
+parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -2797,10 +2797,10 @@ parallel --no-run-if-empty -j 2 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE} ::: $(printf "%03d " {0..100})
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # anchors (sampled)
-parallel --no-run-if-empty -j 3 "
+parallel --no-run-if-empty --linebuffer -k -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -2824,32 +2824,42 @@ parallel --no-run-if-empty -j 3 "
     bash anchors.sh
     
     echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE} ::: $(printf "%03d " {0..100})
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # Stats of anchors
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > stat2.md
 
-parallel -k --no-run-if-empty -j 6 "
+parallel --no-run-if-empty -k -j 6 "
     if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
         exit;
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE} ::: $(printf "%03d " {0..100}) \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
     >> stat2.md
 
 cat stat2.md
 ```
 
-| Name          | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|-----:|--------------------:|----------:|:----------|
-| Q25L60X30P000 |  3.01G |   30.0 | 10992 | 98.21M | 22237 |     11789 | 85.96M | 13658 |      2311 | 12.25M | 8579 | "31,41,51,61,71,81" | 1:14'53'' | 0:07'05'' |
-| Q25L60X30P001 |  3.01G |   30.0 | 10433 | 97.91M | 23035 |     11351 | 85.44M | 13871 |      1562 | 12.47M | 9164 | "31,41,51,61,71,81" | 1:11'02'' | 0:07'05'' |
-| Q25L60X60P000 |  6.02G |   60.0 | 11787 | 99.24M | 19543 |     12467 | 88.53M | 12969 |      4629 | 10.71M | 6574 | "31,41,51,61,71,81" | 1:25'03'' | 0:08'23'' |
-| Q30L60X30P000 |  3.01G |   30.0 | 10914 | 97.81M | 22843 |     11752 | 85.35M | 13764 |      1510 | 12.46M | 9079 | "31,41,51,61,71,81" | 0:59'47'' | 0:07'06'' |
-| Q30L60X30P001 |  3.01G |   30.0 | 10160 | 97.39M | 24052 |     10924 | 84.51M | 14218 |      1255 | 12.87M | 9834 | "31,41,51,61,71,81" | 0:45'09'' | 0:07'05'' |
-| Q30L60X60P000 |  6.02G |   60.0 | 12462 |  99.3M | 19363 |     12943 | 88.29M | 12773 |      5901 | 11.01M | 6590 | "31,41,51,61,71,81" | 0:59'46'' | 0:08'02'' |
+| Name          | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |     # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|------:|--------------------:|----------:|:----------|
+| Q25L60X20P000 |  2.01G |   20.0 |  8944 | 96.15M | 25978 |      9730 | 82.52M | 15132 |      1098 | 13.63M | 10846 | "31,41,51,61,71,81" | 0:59'02'' | 0:12'14'' |
+| Q25L60X20P001 |  2.01G |   20.0 |  8737 | 95.87M | 26176 |      9433 | 82.47M | 15296 |      1060 | 13.41M | 10880 | "31,41,51,61,71,81" | 0:58'53'' | 0:11'40'' |
+| Q25L60X20P002 |  2.01G |   20.0 |  8153 | 95.51M | 27366 |      9006 | 81.51M | 15601 |      1013 | 14.01M | 11765 | "31,41,51,61,71,81" | 0:52'26'' | 0:12'02'' |
+| Q25L60X30P000 |  3.01G |   30.0 | 11004 | 98.24M | 22246 |     11789 |  85.9M | 13653 |      2402 | 12.34M |  8593 | "31,41,51,61,71,81" | 1:07'18'' | 0:15'28'' |
+| Q25L60X30P001 |  3.01G |   30.0 | 10433 | 97.91M | 23025 |     11345 | 85.41M | 13877 |      1607 |  12.5M |  9148 | "31,41,51,61,71,81" | 1:01'28'' | 0:15'26'' |
+| Q25L60X40P000 |  4.01G |   40.0 | 11692 | 98.77M | 20684 |     12466 | 87.36M | 13151 |      3423 | 11.41M |  7533 | "31,41,51,61,71,81" | 1:07'11'' | 0:17'46'' |
+| Q25L60X50P000 |  5.01G |   50.0 | 11870 | 99.08M | 19874 |     12539 | 88.24M | 13041 |      4403 | 10.84M |  6833 | "31,41,51,61,71,81" | 1:12'12'' | 0:17'15'' |
+| Q25L60X60P000 |  6.02G |   60.0 | 11787 | 99.28M | 19541 |     12470 | 88.54M | 12969 |      4657 | 10.74M |  6572 | "31,41,51,61,71,81" | 1:19'02'' | 0:19'23'' |
+| Q30L60X20P000 |  2.01G |   20.0 |  8639 | 95.64M | 27078 |      9445 | 81.58M | 15474 |      1020 | 14.06M | 11604 | "31,41,51,61,71,81" | 0:46'44'' | 0:14'12'' |
+| Q30L60X20P001 |  2.01G |   20.0 |  8200 | 95.28M | 27605 |      8992 | 81.22M | 15718 |      1005 | 14.06M | 11887 | "31,41,51,61,71,81" | 0:42'27'' | 0:13'30'' |
+| Q30L60X20P002 |  2.01G |   20.0 |  7417 | 94.54M | 29053 |      8307 | 80.02M | 16241 |       969 | 14.52M | 12812 | "31,41,51,61,71,81" | 0:42'12'' | 0:12'46'' |
+| Q30L60X30P000 |  3.01G |   30.0 | 10924 |  97.8M | 22846 |     11762 | 85.39M | 13766 |      1466 | 12.41M |  9080 | "31,41,51,61,71,81" | 0:58'19'' | 0:15'39'' |
+| Q30L60X30P001 |  3.01G |   30.0 | 10165 | 97.41M | 24053 |     10923 | 84.52M | 14218 |      1259 |  12.9M |  9835 | "31,41,51,61,71,81" | 1:01'01'' | 0:15'02'' |
+| Q30L60X40P000 |  4.01G |   40.0 | 11882 | 98.71M | 21159 |     12576 |  86.9M | 13233 |      3231 | 11.81M |  7926 | "31,41,51,61,71,81" | 1:48'03'' | 0:18'25'' |
+| Q30L60X50P000 |  5.01G |   50.0 | 12310 | 99.09M | 20025 |     12849 | 87.73M | 12946 |      4775 | 11.36M |  7079 | "31,41,51,61,71,81" | 2:15'59'' | 0:18'17'' |
+| Q30L60X60P000 |  6.02G |   60.0 | 12468 | 99.26M | 19356 |     12947 | 88.31M | 12776 |      5901 | 10.95M |  6580 | "31,41,51,61,71,81" | 1:32'14'' | 0:16'16'' |
 
 ## n2: merge anchors
 
@@ -2860,11 +2870,11 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
+        parallel --no-run-if-empty -k -j 6 "
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE} ::: $(printf "%03d " {0..100})
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -2879,11 +2889,11 @@ anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
 mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
+        parallel --no-run-if-empty -k -j 6 "
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE} ::: $(printf "%03d " {0..100})
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
