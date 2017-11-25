@@ -2096,8 +2096,8 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 
-rm -fr mergeL*
 rm -fr mergeQ*
+rm -fr mergeL*
 
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr

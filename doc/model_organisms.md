@@ -1359,6 +1359,9 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 
+rm -fr mergeQ*
+rm -fr mergeL*
+
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
 find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
@@ -2416,56 +2419,6 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 ## n2: platanus
 
 ## n2: quorum
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel --no-run-if-empty -k -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-     >> stat1.md
-
-cat stat1.md
-```
 
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|-------:|---------:|----------:|
