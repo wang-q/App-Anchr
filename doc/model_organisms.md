@@ -348,12 +348,11 @@ cat stat.md
 ## s288c: spades
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 spades.py \
     -t 16 \
-    -k 21,33,55,77 --careful \
+    -k 21,33,55,77 \
     -1 2_illumina/Q25L60/R1.fq.gz \
     -2 2_illumina/Q25L60/R2.fq.gz \
     -s 2_illumina/Q25L60/Rs.fq.gz \
@@ -370,7 +369,6 @@ anchr contained \
 ## s288c: platanus
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 8_platanus
@@ -420,11 +418,9 @@ VmHWM:            7.394 GByte
 ## s288c: quorum
 
 ```bash
-BASE_NAME=s288c
-REAL_G=12157105
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-parallel --no-run-if-empty -j 1 "
+parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Group Q{1}L{2} <=='
 
@@ -453,19 +449,19 @@ parallel --no-run-if-empty -j 1 "
     bash quorum.sh
     
     echo >&2
-    " ::: 20 25 30 35 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 # Stats of processed reads
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > stat1.md
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
     if [ ! -d 2_illumina/Q{1}L{2} ]; then
         exit;
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
      >> stat1.md
 
 cat stat1.md
@@ -473,15 +469,12 @@ cat stat1.md
 
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
-| Q20L60 | 2.67G | 219.3 |  2.28G |  187.9 |  14.327% |     149 | "105" | 12.16M | 12.66M |     1.04 | 0:07'19'' |
 | Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:06'55'' |
 | Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:06'49'' |
-| Q35L60 | 2.19G | 180.4 |  1.98G |  163.0 |   9.633% |     146 | "105" | 12.16M | 11.95M |     0.98 | 0:10'16'' |
 
 * Clear intermediate files.
 
 ```bash
-BASE_NAME=s288c
 cd $HOME/data/anchr/${BASE_NAME}
 
 find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
@@ -495,11 +488,9 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 ## s288c: down sampling
 
 ```bash
-BASE_NAME=s288c
-REAL_G=12157105
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
     echo "==> ${QxxLxx}"
 
     if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
@@ -507,7 +498,7 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
         continue;
     fi
 
-    for X in 10 20 30 40 60 80 120 160; do
+    for X in ${COVERAGE2}; do
         printf "==> Coverage: %s\n" ${X}
         
         rm -fr 2_illumina/${QxxLxx}X${X}*
@@ -541,12 +532,10 @@ done
 ## s288c: k-unitigs and anchors (sampled)
 
 ```bash
-BASE_NAME=s288c
-REAL_G=12157105
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 # k-unitigs (sampled)
-parallel --no-run-if-empty -j 2 "
+parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -571,10 +560,10 @@ parallel --no-run-if-empty -j 2 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 10 20 30 40 60 80 120 160 ::: $(printf "%03d " {0..100})
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # anchors (sampled)
-parallel --no-run-if-empty -j 3 "
+parallel --no-run-if-empty --linebuffer -k -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
     if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -583,7 +572,7 @@ parallel --no-run-if-empty -j 3 "
     fi
 
     if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    pe.anchor.fa already presents'
+        echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
@@ -598,19 +587,19 @@ parallel --no-run-if-empty -j 3 "
     bash anchors.sh
     
     echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 10 20 30 40 60 80 120 160 ::: $(printf "%03d " {0..100})
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # Stats of anchors
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > stat2.md
 
-parallel -k --no-run-if-empty -j 6 "
+parallel --no-run-if-empty -k -j 6 "
     if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
         exit;
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 ::: 10 20 30 40 60 80 120 160 ::: $(printf "%03d " {0..100}) \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
     >> stat2.md
 
 cat stat2.md
@@ -874,18 +863,17 @@ quast --no-check --threads 16 \
 ## s288c: merge anchors
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
+        parallel --no-run-if-empty -k -j 6 "
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-            " ::: 25 30 ::: 60 ::: 30 40 60 80 120 160 ::: $(printf "%03d " {0..100})
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -894,30 +882,17 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
 anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge1.fasta
-faops order merge/anchor.merge1.fasta \
-    <(faops size merge/anchor.merge1.fasta | sort -n -r -k2,2 | cut -f 1) \
-    merge/anchor.merge.fasta
-
-# No need for this step
-#mkdir -p merge/anchor
-#pushd merge/anchor
-#anchr anchors \
-#    ../anchor.merge.fasta \
-#    ../../2_illumina/Q25L60/pe.cor.fa \
-#    -p 16 \
-#    -o anchors.sh
-#bash anchors.sh
-#popd
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
+mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
+        parallel --no-run-if-empty -k -j 6 "
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-            " ::: 25 30 ::: 60 ::: 30 40 60 80 120 160 ::: $(printf "%03d " {0..100})
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -942,6 +917,8 @@ mv anchor.sort.png merge/
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    --eukaryote \
+    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
@@ -954,78 +931,65 @@ quast --no-check --threads 16 \
 ## s288c: 3GS
 
 ```bash
-BASE_NAME=s288c
-REAL_G=12157105
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-canu \
-    -p ${BASE_NAME} -d canu-raw-20x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.20x.fasta
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    echo >&2 '==> Group X{1}-{2}'
 
-canu \
-    -p ${BASE_NAME} -d canu-raw-40x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.40x.fasta
+    if [ ! -e  3_pacbio/pacbio.X{1}.{2}.fasta ]; then
+        echo >&2 '    3_pacbio/pacbio.X{1}.{2}.fasta not exists'
+        exit;
+    fi
 
-canu \
-    -p ${BASE_NAME} -d canu-raw-80x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.80x.fasta
+    if [ -e canu-X{1}-{2}/*.contigs.fasta ]; then
+        echo >&2 '    contigs.fasta already presents'
+        exit;
+    fi
 
-canu \
-    -p ${BASE_NAME} -d canu-trim-20x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.20x.trim.fasta
-
-canu \
-    -p ${BASE_NAME} -d canu-trim-40x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.40x.trim.fasta
-
-canu \
-    -p ${BASE_NAME} -d canu-trim-80x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=${REAL_G} \
-    -pacbio-raw 3_pacbio/pacbio.80x.trim.fasta
-
-# quast
-rm -fr 9_qa_canu
-quast --no-check --threads 16 \
-    --eukaryote \
-    -R 1_genome/genome.fa \
-    canu-raw-20x/${BASE_NAME}.contigs.fasta \
-    canu-trim-20x/${BASE_NAME}.contigs.fasta \
-    canu-raw-40x/${BASE_NAME}.contigs.fasta \
-    canu-trim-40x/${BASE_NAME}.contigs.fasta \
-    canu-raw-80x/${BASE_NAME}.contigs.fasta \
-    canu-trim-80x/${BASE_NAME}.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "20x,20x.trim,40x,40x.trim,80x,80x.trim,paralogs" \
-    -o 9_qa_canu
+    canu \
+        -p ${BASE_NAME} -d canu-X{1}-{2} \
+        gnuplot=\$(brew --prefix)/Cellar/\$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
+        genomeSize=${REAL_G} \
+        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
+    " ::: ${COVERAGE3} ::: raw trim
 
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 
-faops n50 -S -C canu-raw-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-20x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-40x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/${BASE_NAME}.trimmedReads.fasta.gz
-faops n50 -S -C canu-trim-80x/${BASE_NAME}.trimmedReads.fasta.gz
+# canu
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > stat3GS.md
+printf "|:--|--:|--:|--:|\n" >> stat3GS.md
 
-minimap canu-raw-20x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-raw-20x/minidot.eps
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3GS.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3GS.md
 
-minimap canu-raw-40x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-raw-40x/minidot.eps
+parallel --no-run-if-empty -k -j 3 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo X{1}.{2}.trimmedReads;
+            faops n50 -H -S -C \
+                canu-X{1}-{2}/${BASE_NAME}.trimmedReads.fasta.gz;
+        )
 
-minimap canu-raw-80x/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-raw-80x/minidot.eps
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$( 
+            echo X{1}.{2};
+            faops n50 -H -S -C \
+                canu-X{1}-{2}/${BASE_NAME}.contigs.fasta;
+        )
+
+    " ::: ${COVERAGE3} ::: raw trim \
+    >> stat3GS.md
+
+# minidot
+minimap canu-X40-raw/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
+    | minidot - > canu-X40-raw/minidot.eps
+
+minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
+    | minidot - > canu-X40-trim/minidot.eps
 
 ```
 
@@ -1137,16 +1101,15 @@ find . -type d -name "correction" | xargs rm -fr
 * anchorLong
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.merge.fasta \
-    3_pacbio/pacbio.40x.trim.fasta \
+    3_pacbio/pacbio.X40.trim.fasta \
     -d anchorLong \
-    -b 20 --len 1000 --idt 0.85 --all
+    -b 50 --len 1000 --idt 0.85 --all
 
 pushd anchorLong
 
@@ -1199,7 +1162,7 @@ anchr group \
     --len 1000 --idt 0.85 --max "-30" -c 2
 
 cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
+    | parallel --no-run-if-empty --linebuffer -k -j 8 '
         echo {};
         anchr orient \
             --len 1000 --idt 0.85 \
@@ -1215,7 +1178,7 @@ cat group/groups.txt \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 20 --idt 0.9999 \
+        anchr overlap --len 30 --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''
@@ -1243,7 +1206,7 @@ cat anchorLong/group/*.ovlp.tsv \
     | sort | uniq -c
 
 cat \
-   anchorLong/group/non_grouped.fasta\
+   anchorLong/group/non_grouped.fasta \
    anchorLong/group/*.contig.fasta \
    | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
 
@@ -1252,16 +1215,15 @@ cat \
 * contigTrim
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr contigTrim
 anchr overlap2 \
     --parallel 16 \
     anchorLong/contig.fasta \
-    canu-trim-40x/${BASE_NAME}.contigs.fasta \
+    canu-X40-trim/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
-    -b 20 --len 1000 --idt 0.99 --all
+    -b 50 --len 1000 --idt 0.98 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1272,20 +1234,20 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.99 --max 20000 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 5000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
+    | parallel --no-run-if-empty --linebuffer -k -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.99 \
+            --len 1000 --idt 0.98 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.99 \
+        anchr overlap --len 1000 --idt 0.98 --all \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1312,7 +1274,6 @@ cat \
 * Stats
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
@@ -1333,11 +1294,9 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-raw"; faops n50 -H -S -C canu-raw-40x/${BASE_NAME}.contigs.fasta;) >> stat3.md
+    $(echo "canu-X40-raw"; faops n50 -H -S -C canu-X40-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-trim"; faops n50 -H -S -C canu-trim-40x/${BASE_NAME}.contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
+    $(echo "canu-X40-trim"; faops n50 -H -S -C canu-X40-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
@@ -1372,21 +1331,22 @@ cat stat3.md
 * quast
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
     --eukaryote \
+    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-trim-40x/${BASE_NAME}.contigs.fasta \
+    canu-X40-raw/${BASE_NAME}.contigs.fasta \
+    canu-X40-trim/${BASE_NAME}.contigs.fasta \
     8_spades/contigs.non-contained.fasta \
     8_platanus/gapClosed.non-contained.fasta \
     1_genome/paralogs.fas \
-    --label "merge,contig,contigTrim,canu-40x,spades,platanus,paralogs" \
+    --label "merge,contig,contigTrim,canu-X40-raw,canu-X40-trim,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
@@ -1394,11 +1354,19 @@ quast --no-check --threads 16 \
 * Clear QxxLxxXxx.
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
+
+find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
+find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
+find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
+
+find . -type d -path "*8_spades/*" | xargs rm -fr
+
+find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
+
 ```
 
 # *Drosophila melanogaster* iso-1
@@ -2445,67 +2413,7 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 ## n2: spades
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
-
-```
-
 ## n2: platanus
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e pe.fa ]; then
-    faops interleave \
-        -p pe \
-        ../2_illumina/Q25L60/R1.fq.gz \
-        ../2_illumina/Q25L60/R2.fq.gz \
-        > pe.fa
-    
-    faops interleave \
-        -p se \
-        ../2_illumina/Q25L60/Rs.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f pe.fa se.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 pe.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -ip1 pe.fa \
-    2>&1 | tee gap_log.txt
-
-anchr contained \
-    out_gapClosed.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
-
-```
 
 ## n2: quorum
 
@@ -2566,137 +2474,9 @@ cat stat1.md
 
 * Clear intermediate files.
 
-```bash
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
 ## n2: down sampling
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in ${COVERAGE2}; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-
-```
-
 ## n2: k-unitigs and anchors (sampled)
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# anchors (sampled)
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel --no-run-if-empty -k -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
-    >> stat2.md
-
-cat stat2.md
-```
 
 | Name          | SumCor | CovCor | N50SR |    Sum |     # | N50Anchor |    Sum |     # | N50Others |    Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|-------:|------:|----------:|-------:|------:|----------:|-------:|-----:|--------------------:|----------:|:----------|
@@ -2713,351 +2493,17 @@ cat stat2.md
 
 ## n2: merge anchors
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel --no-run-if-empty -k -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel --no-run-if-empty -k -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o merge/others.merge0.fasta
-anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,others,paralogs" \
-    -o 9_qa
-
-```
-
 ## n2: 3GS
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    echo >&2 '==> Group X{1}-{2}'
-
-    if [ ! -e  3_pacbio/pacbio.X{1}.{2}.fasta ]; then
-        echo >&2 '    3_pacbio/pacbio.X{1}.{2}.fasta not exists'
-        exit;
-    fi
-
-    if [ -e canu-X{1}-{2}/*.contigs.fasta ]; then
-        echo >&2 '    contigs.fasta already presents'
-        exit;
-    fi
-
-    canu \
-        -p ${BASE_NAME} -d canu-X{1}-{2} \
-        gnuplot=\$(brew --prefix)/Cellar/\$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-        genomeSize=${REAL_G} \
-        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
-    " ::: ${COVERAGE3} ::: raw trim
-
-find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
-
-# minidot
-minimap canu-X40-raw/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-X40-raw/minidot.eps
-
-minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-X40-trim/minidot.eps
-
-# canu
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3GS.md
-printf "|:--|--:|--:|--:|\n" >> stat3GS.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3GS.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3GS.md
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo X{1}.{2}.trimmedReads;
-            faops n50 -H -S -C \
-                canu-X{1}-{2}/${BASE_NAME}.trimmedReads.fasta.gz;
-        )
-
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo X{1}.{2};
-            faops n50 -H -S -C \
-                canu-X{1}-{2}/${BASE_NAME}.contigs.fasta;
-        )
-
-    " ::: ${COVERAGE3} ::: raw trim \
-    >> stat3GS.md
-
-```
 
 ## n2: expand anchors
 
 * anchorLong
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr anchorLong
-anchr overlap2 \
-    --parallel 16 \
-    merge/anchor.merge.fasta \
-    3_pacbio/pacbio.X40.trim.fasta \
-    -d anchorLong \
-    -b 50 --len 1000 --idt 0.85 --all
-
-pushd anchorLong
-
-anchr cover \
-    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
-    --len 1000 --idt 0.85 -c 2 \
-    anchorLong.ovlp.tsv \
-    -o anchor.cover.json
-cat anchor.cover.json | jq "." > environment.json
-
-anchr overlap \
-    anchor.fasta \
-    --serial --len 30 --idt 0.9999 \
-    -o stdout \
-    | perl -nla -e '
-        BEGIN {
-            our %seen;
-            our %count_of;
-        }
-
-        @F == 13 or next;
-        $F[3] > 0.9999 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        $count_of{ $F[0] }++;
-        $count_of{ $F[1] }++;
-
-        END {
-            for my $pair ( keys %seen ) {
-                my ($f_id, $g_id) = split "-", $pair;
-                next if $count_of{$f_id} > 2;
-                next if $count_of{$g_id} > 2;
-                print $seen{$pair};
-            }
-        }
-    ' \
-    | sort -k 1n,1n -k 2n,2n \
-    > anchor.ovlp.tsv
-
-rm -fr group
-anchr group \
-    anchorLong.db \
-    anchorLong.ovlp.tsv \
-    --oa anchor.ovlp.tsv \
-    --parallel 16 \
-    --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.85 --max "-30" -c 2
-
-cat group/groups.txt \
-    | parallel --no-run-if-empty --linebuffer -k -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.85 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.85 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr overlap --len 10 --idt 0.9999 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | perl -nla -e '\''
-                @F == 13 or next;
-                $F[3] > 0.9999 or next;
-                $F[9] == 0 or next;
-                $F[5] > 0 and $F[6] == $F[7] or next;
-                /anchor.+anchor/ or next;
-                print;
-            '\'' \
-            > group/{}.anchor.ovlp.tsv
-            
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            --oa group/{}.anchor.ovlp.tsv \
-            -o group/{}.contig.fasta
-    '
-popd
-
-# false strand
-cat anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-cat \
-   anchorLong/group/non_grouped.fasta \
-   anchorLong/group/*.contig.fasta \
-   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
-
-```
-
 * contigTrim
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr contigTrim
-anchr overlap2 \
-    --parallel 16 \
-    anchorLong/contig.fasta \
-    canu-X40-trim/${BASE_NAME}.contigs.fasta \
-    -d contigTrim \
-    -b 50 --len 1000 --idt 0.98 --all
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
-echo ${CONTIG_COUNT}
-
-rm -fr contigTrim/group
-anchr group \
-    --parallel 16 \
-    --keep \
-    contigTrim/anchorLong.db \
-    contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 5000 -c 1
-
-pushd contigTrim
-cat group/groups.txt \
-    | parallel --no-run-if-empty --linebuffer -k -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.98 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.98 --all \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-cat \
-    contigTrim/group/non_grouped.fasta \
-    contigTrim/group/*.contig.fasta \
-    >  contigTrim/contig.fasta
-
-```
 
 ## n2: final stats
 
 * Stats
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X40-raw"; faops n50 -H -S -C canu-X40-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X40-trim"; faops n50 -H -S -C canu-X40-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/contigs.non-contained.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/gapClosed.non-contained.fasta;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name                   |      N50 |       Sum |      # |
 |:-----------------------|---------:|----------:|-------:|
@@ -3077,35 +2523,7 @@ cat stat3.md
 
 * quast
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-X40-raw/${BASE_NAME}.contigs.fasta \
-    canu-X40-trim/${BASE_NAME}.contigs.fasta \
-    8_spades/contigs.non-contained.fasta \
-    8_platanus/gapClosed.non-contained.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,contigTrim,canu-40x-raw,canu-40x-trim,spades,platanus,paralogs" \
-    -o 9_qa_contig
-
-```
-
 * Clear QxxLxxx.
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{1,30,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,30,60,90,120}X*
-```
 
 # *Arabidopsis thaliana* Col-0
 
