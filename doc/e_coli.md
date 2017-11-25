@@ -1299,7 +1299,6 @@ done
 # quast
 rm -fr 9_qa_mergeQxxXxx
 quast --no-check --threads 16 \
-    --eukaryote \
     -R 1_genome/genome.fa \
     $( parallel -k 'printf "mergeQ{1}X{2}/anchor.merge.fasta "' ::: ${READ_QUAL} ::: ${COVERAGE2} ) \
     1_genome/paralogs.fas \
