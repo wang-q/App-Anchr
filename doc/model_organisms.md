@@ -230,7 +230,7 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
-parallel --no-run-if-empty -j 3 "
+parallel --no-run-if-empty --linebuffer -k -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -245,49 +245,41 @@ parallel --no-run-if-empty -j 3 "
         ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 35 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 ```
 
 ## s288c: preprocess PacBio reads
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-seqtk sample \
-    3_pacbio/pacbio.fasta \
-    57500 \
-    > 3_pacbio/pacbio.20x.fasta
+for X in ${COVERAGE3}; do
+    printf "==> Coverage: %s\n" ${X}
+    
+    faops split-about -m 1 -l 0 \
+        3_pacbio/pacbio.fasta \
+        $(( ${REAL_G} * ${X} )) \
+        3_pacbio
+        
+    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
 
-seqtk sample \
-    3_pacbio/pacbio.fasta \
-    115000 \
-    > 3_pacbio/pacbio.40x.fasta
+done
 
-seqtk sample \
-    3_pacbio/pacbio.fasta \
-    230000 \
-    > 3_pacbio/pacbio.80x.fasta
+for X in ${COVERAGE3}; do
+    printf "==> Coverage: %s\n" ${X}
+    
+    anchr trimlong --parallel 16 -v \
+        "3_pacbio/pacbio.X${X}.raw.fasta" \
+        -o "3_pacbio/pacbio.X${X}.trim.fasta"
 
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.20x.fasta \
-    -o 3_pacbio/pacbio.20x.trim.fasta
-
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.40x.fasta \
-    -o 3_pacbio/pacbio.40x.trim.fasta
-
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.80x.fasta \
-    -o 3_pacbio/pacbio.80x.trim.fasta
+done
 
 ```
 
 ## s288c: reads stats
 
 ```bash
-BASE_NAME=s288c
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
@@ -299,13 +291,12 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo Q{1}L{2};
@@ -320,43 +311,39 @@ parallel -k --no-run-if-empty -j 3 "
                     2_illumina/Q{1}L{2}/R2.fq.gz;
             fi
         )
-    " ::: 20 25 30 35 ::: 60 \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
     >> stat.md
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
-            echo PacBio.{};
+            echo X{1}.{2};
             faops n50 -H -S -C \
-                3_pacbio/pacbio.{}.fasta;
+                3_pacbio/pacbio.X{1}.{2}.fasta;
         )
-    " ::: 20x 20x.trim 40x 40x.trim 80x 80x.trim \
+    " ::: ${COVERAGE3} ::: raw trim \
     >> stat.md
 
 cat stat.md
 
 ```
 
-| Name            |    N50 |        Sum |        # |
-|:----------------|-------:|-----------:|---------:|
-| Genome          | 924431 |   12157105 |       17 |
-| Paralogs        |   3851 |    1059148 |      366 |
-| Illumina        |    151 | 2939081214 | 19464114 |
-| uniq            |    151 | 2778772064 | 18402464 |
-| Q20L60          |    151 | 2666527231 | 17811724 |
-| Q25L60          |    151 | 2502621682 | 16817924 |
-| Q30L60          |    151 | 2442383221 | 16630313 |
-| Q35L60          |    151 | 2191498731 | 15196440 |
-| PacBio          |   8412 |  820962526 |   177100 |
-| PacBio.20x      |   8416 |  267616865 |    57500 |
-| PacBio.20x.trim |   7695 |  201067497 |    34839 |
-| PacBio.40x      |   8396 |  532547667 |   115000 |
-| PacBio.40x.trim |   7774 |  406775248 |    69600 |
-| PacBio.80x      |   8412 |  820962526 |   177100 |
-| PacBio.80x.trim |   7815 |  625275768 |   106371 |
+| Name     |    N50 |        Sum |        # |
+|:---------|-------:|-----------:|---------:|
+| Genome   | 924431 |   12157105 |       17 |
+| Paralogs |   3851 |    1059148 |      366 |
+| Illumina |    151 | 2939081214 | 19464114 |
+| uniq     |    151 | 2778772064 | 18402464 |
+| Q25L60   |    151 | 2502621682 | 16817924 |
+| Q30L60   |    151 | 2442383221 | 16630313 |
+| PacBio   |   8412 |  820962526 |   177100 |
+| X40.raw  |   8344 |  486285507 |   108074 |
+| X40.trim |   7743 |  373850168 |    64169 |
+| X80.raw  |   8412 |  820962526 |   177100 |
+| X80.trim |   7829 |  626413879 |   106381 |
 
 ## s288c: spades
 
@@ -2434,150 +2421,13 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 * FastQC
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
 * kmergenie
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-parallel -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
-    " ::: R1 R2
-
-```
 
 ## n2: preprocess Illumina reads
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
-
-```
-
 ## n2: preprocess PacBio reads
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-for X in ${COVERAGE3}; do
-    printf "==> Coverage: %s\n" ${X}
-    
-    faops split-about -m 1 -l 0 \
-        3_pacbio/pacbio.fasta \
-        $(( ${REAL_G} * ${X} )) \
-        3_pacbio
-        
-    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
-
-done
-
-for X in ${COVERAGE3}; do
-    printf "==> Coverage: %s\n" ${X}
-    
-    anchr trimlong --parallel 16 -v \
-        "3_pacbio/pacbio.X${X}.raw.fasta" \
-        -o "3_pacbio/pacbio.X${X}.trim.fasta"
-
-done
-
-```
-
 ## n2: reads stats
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-    >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo X{1}.{2};
-            faops n50 -H -S -C \
-                3_pacbio/pacbio.X{1}.{2}.fasta;
-        )
-    " ::: ${COVERAGE3} ::: raw trim \
-    >> stat.md
-
-cat stat.md
-
-```
 
 | Name     |      N50 |         Sum |         # |
 |:---------|---------:|------------:|----------:|
