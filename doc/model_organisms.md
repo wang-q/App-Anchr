@@ -2317,8 +2317,18 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 ## n2: 3GS
 
-| Name | N50 | Sum | # |
-|:-----|----:|----:|--:|
+| Name                  |      N50 |        Sum |      # |
+|:----------------------|---------:|-----------:|-------:|
+| Genome                | 17493829 |  100286401 |      7 |
+| Paralogs              |     2013 |    5313653 |   2637 |
+| X40.raw.trimmedReads  |    16026 | 3225979202 | 271542 |
+| X40.raw               |  3680860 |  106573851 |    153 |
+| X40.trim.trimmedReads |    15968 | 3210251549 | 271514 |
+| X40.trim              |  2965260 |  106522712 |    153 |
+| X80.raw.trimmedReads  |    18183 | 3719126370 | 204086 |
+| X80.raw               |  2922642 |  107417644 |    114 |
+| X80.trim.trimmedReads |    18055 | 3771313179 | 207744 |
+| X80.trim              |  3084499 |  107369523 |    116 |
 
 ## n2: expand anchors
 
@@ -2338,7 +2348,7 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 | others.merge           |    11300 |  11524419 |   3507 |
 | anchorLong             |    17387 |  89485645 |  10168 |
 | contigTrim             |   322297 |  95048266 |    645 |
-| canu-X40-raw           |          |           |        |
+| canu-X40-raw           |  3680860 | 106573851 |    153 |
 | canu-X40-trim          |  2965260 | 106522712 |    153 |
 | spades.scaffold        |    39185 | 105667774 |  39154 |
 | spades.non-contained   |    38451 |  99104997 |   6431 |
