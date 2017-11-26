@@ -2628,7 +2628,6 @@ faops filter -l 0 pacbio.fq.gz pacbio.fasta
 ## col_0: preprocess Illumina reads
 
 ```bash
-BASE_NAME=col_0
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
@@ -2678,7 +2677,7 @@ parallel --no-run-if-empty -j 3 "
         ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 ```
 
