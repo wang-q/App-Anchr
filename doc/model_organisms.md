@@ -810,8 +810,6 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
     " ::: ${COVERAGE3} ::: raw trim
 
-find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
-
 # canu
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
