@@ -18,6 +18,7 @@
     - [s288c: local corrections](#s288c-local-corrections)
     - [s288c: expand anchors](#s288c-expand-anchors)
     - [s288c: final stats](#s288c-final-stats)
+    - [s288c: clear intermediate files](#s288c-clear-intermediate-files)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
     - [iso_1: preprocess Illumina reads](#iso-1-preprocess-illumina-reads)
@@ -32,6 +33,7 @@
     - [iso_1: 3GS](#iso-1-3gs)
     - [iso_1: expand anchors](#iso-1-expand-anchors)
     - [iso_1: final stats](#iso-1-final-stats)
+    - [iso_1: clear intermediate files](#iso-1-clear-intermediate-files)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
     - [n2: preprocess Illumina reads](#n2-preprocess-illumina-reads)
@@ -46,6 +48,7 @@
     - [n2: 3GS](#n2-3gs)
     - [n2: expand anchors](#n2-expand-anchors)
     - [n2: final stats](#n2-final-stats)
+    - [n2: clear intermediate files](#n2-clear-intermediate-files)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [col_0: download](#col-0-download)
     - [col_0: preprocess Illumina reads](#col-0-preprocess-illumina-reads)
@@ -60,6 +63,7 @@
     - [col_0: 3GS](#col-0-3gs)
     - [col_0: expand anchors](#col-0-expand-anchors)
     - [col_0: final stats](#col-0-final-stats)
+    - [col_0: clear intermediate files](#col-0-clear-intermediate-files)
 
 
 # *Saccharomyces cerevisiae* S288c
@@ -471,19 +475,6 @@ cat stat1.md
 |:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
 | Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:06'55'' |
 | Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:06'49'' |
-
-* Clear intermediate files.
-
-```bash
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
 
 ## s288c: down sampling
 
@@ -1220,23 +1211,39 @@ quast --no-check --threads 16 \
 
 ```
 
-* Clear QxxLxxXxx.
+## s288c: clear intermediate files
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
+# bax2bam
+rm 3_pacbio/bam/*
+rm 3_pacbio/fasta/*
+
+# quorum
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+
+# down sampling
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 
 rm -fr mergeQ*
 rm -fr mergeL*
 
+# canu
 find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
 find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
 find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
 
+# spades
 find . -type d -path "*8_spades/*" | xargs rm -fr
 
+# platanus
 find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
 
 ```
@@ -1469,8 +1476,6 @@ parallel --no-run-if-empty -j 3 "
 | Q25L60 | 14.66G | 106.5 | 13.26G |   96.4 |   9.506% |      99 | "71" | 137.57M | 127.11M |     0.92 | 0:58'16'' |
 | Q30L60 |    14G | 101.7 | 12.97G |   94.3 |   7.364% |      99 | "71" | 137.57M |  126.4M |     0.92 | 0:56'23'' |
 
-* Clear intermediate files.
-
 ## iso_1: down sampling
 
 ## iso_1: k-unitigs and anchors (sampled)
@@ -1525,7 +1530,7 @@ parallel --no-run-if-empty -j 3 "
 
 * quast
 
-* Clear QxxLxxXxx.
+## iso_1: clear intermediate files
 
 # *Caenorhabditis elegans* N2
 
@@ -1731,7 +1736,7 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 * quast
 
-* Clear QxxLxxx.
+## n2: clear intermediate files
 
 # *Arabidopsis thaliana* Col-0
 
@@ -2112,4 +2117,4 @@ parallel --no-run-if-empty -j 3 "
 
 * quast
 
-* Clear QxxLxxx.
+## col_0: clear intermediate files
