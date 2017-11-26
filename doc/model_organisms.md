@@ -1248,6 +1248,18 @@ find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
 
 ## iso_1: download
 
+* Settings
+
+```bash
+BASE_NAME=iso_1
+REAL_G=137567477
+COVERAGE2="30 40 50 60 80 90"
+COVERAGE3="40"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
 * Reference genome
 
 ```bash
@@ -1388,11 +1400,7 @@ fastqc -t 16 \
 
 ## iso_1: preprocess Illumina reads
 
-* qual: 20, 25, and 30
-* len: 60
-
 ```bash
-BASE_NAME=iso_1
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
@@ -1408,6 +1416,25 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
+cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
+    > 2_illumina/illumina_adapters.fa
+echo ">TruSeq_Adapter_Index_5" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGC" >> 2_illumina/illumina_adapters.fa
+echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
+echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.uniq.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
 parallel --no-run-if-empty -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -1420,10 +1447,10 @@ parallel --no-run-if-empty -j 3 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 20 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 ```
 
