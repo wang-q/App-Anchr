@@ -4,10 +4,14 @@
 - [Assemble four genomes from GAGE-B data sets by ANCHR](#assemble-four-genomes-from-gage-b-data-sets-by-anchr)
 - [*Bacillus cereus* ATCC 10987](#bacillus-cereus-atcc-10987)
     - [Bcer: download](#bcer-download)
-    - [Bcer: combinations of different quality values and read lengths](#bcer-combinations-of-different-quality-values-and-read-lengths)
+    - [Bcer: preprocess Illumina reads](#bcer-preprocess-illumina-reads)
+    - [Bcer: reads stats](#bcer-reads-stats)
     - [Bcer: quorum](#bcer-quorum)
-    - [Bcer: k-unitigs and anchors](#bcer-k-unitigs-and-anchors)
+    - [Bcer: down sampling](#bcer-down-sampling)
+    - [Bcer: k-unitigs and anchors (sampled)](#bcer-k-unitigs-and-anchors-sampled)
     - [Bcer: merge anchors](#bcer-merge-anchors)
+    - [Bcer: final stats](#bcer-final-stats)
+    - [Bcer: clear intermediate files](#bcer-clear-intermediate-files)
 - [*Rhodobacter sphaeroides* 2.4.1](#rhodobacter-sphaeroides-241)
     - [Rsph: download](#rsph-download)
     - [Rsph: combinations of different quality values and read lengths](#rsph-combinations-of-different-quality-values-and-read-lengths)
@@ -55,6 +59,17 @@
 
 ## Bcer: download
 
+* Settings
+
+```bash
+BASE_NAME=Bcer
+REAL_G=5432652
+COVERAGE2="30 40 50 60"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
 * Reference genome
 
     * Strain: Bacillus cereus ATCC 10987
@@ -64,7 +79,6 @@
     * Proportion of paralogs (> 1000 bp): 0.0797
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 1_genome
@@ -89,7 +103,6 @@ cp ~/data/anchr/paralogs/gage/Results/Bcer/Bcer.multi.fas paralogs.fas
     Download from GAGE-B site.
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 2_illumina
@@ -114,7 +127,6 @@ rm -fr raw
 * GAGE-B assemblies
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 8_competitor
@@ -136,7 +148,6 @@ tar xvfz B_cereus_MiSeq.tar.gz velvet_ctg.fasta
 * FastQC
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 2_illumina/fastqc
@@ -151,24 +162,20 @@ fastqc -t 16 \
 * kmergenie
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
+parallel -j 2 "
+    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    " ::: R1 R2
 
 ```
 
-## Bcer: combinations of different quality values and read lengths
-
-* qual: 25 and 30
-* len: 60
+## Bcer: preprocess Illumina reads
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
@@ -180,11 +187,157 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         -p 2_illumina/R2.uniq.fq
     
     parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
+        pigz -p 4 2_illumina/{}.uniq.fq
         " ::: R1 R2
 fi
 
-parallel --no-run-if-empty -j 3 "
+if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
+    shuffle.sh \
+        in=2_illumina/R1.uniq.fq.gz \
+        in2=2_illumina/R2.uniq.fq.gz \
+        out=2_illumina/R1.shuffle.fq \
+        out2=2_illumina/R2.shuffle.fq
+    
+    parallel --no-run-if-empty -j 2 "
+            pigz -p 8 2_illumina/{}.shuffle.fq
+        " ::: R1 R2
+fi
+
+cat <<EOF > 2_illumina/illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>solexa-forward
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+>nextera-forward-read-contam
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+>nextera-reverse-read-contam
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+>solexa-reverse
+AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+
+>Illumina_Paired_End_Adapter_1
+ACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Paired_End_Adapter_2
+GATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+>Illumina_Paried_End_PCR_Primer_1
+AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Paired_End_PCR_Primer_2
+CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT
+>Illumina_Paried_End_Sequencing_Primer_1
+ACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Paired_End_Sequencing_Primer_2
+CGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT
+
+>Illumina_Multiplexing_Adapter_1
+GATCGGAAGAGCACACGTCT
+>Illumina_Multiplexing_Adapter_2
+ACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Multiplexing_PCR_Primer_1_01
+AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Multiplexing_PCR_Primer_2_01
+GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT
+>Illumina_Multiplexing_Read1_Sequencing_Primer
+ACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>Illumina_Multiplexing_Index_Sequencing_Primer
+GATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>Illumina_Multiplexing_Read2_Sequencing_Primer
+GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT
+
+>Illumina_PCR_Primer_Index_1
+CAAGCAGAAGACGGCATACGAGATCGTGATGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_2
+CAAGCAGAAGACGGCATACGAGATACATCGGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_3
+CAAGCAGAAGACGGCATACGAGATGCCTAAGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_4
+CAAGCAGAAGACGGCATACGAGATTGGTCAGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_5
+CAAGCAGAAGACGGCATACGAGATCACTGTGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_6
+CAAGCAGAAGACGGCATACGAGATATTGGCGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_7
+CAAGCAGAAGACGGCATACGAGATGATCTGGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_8
+CAAGCAGAAGACGGCATACGAGATTCAAGTGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_9
+CAAGCAGAAGACGGCATACGAGATCTGATCGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_10
+CAAGCAGAAGACGGCATACGAGATAAGCTAGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_11
+CAAGCAGAAGACGGCATACGAGATGTAGCCGTGACTGGAGTTC
+>Illumina_PCR_Primer_Index_12
+CAAGCAGAAGACGGCATACGAGATTACAAGGTGACTGGAGTTC
+
+>TruSeq_Universal_Adapter
+AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT
+>TruSeq_Adapter_Index_1
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACATCACGATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_2
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCGATGTATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_3
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACTTAGGCATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_4
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACTGACCAATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_5
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_6
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGCCAATATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_7
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_8
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACACTTGAATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_9
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGATCAGATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_10
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACTAGCTTATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_11
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGGCTACATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_12
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCTTGTAATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_13
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACAGTCAACTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_14
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACAGTTCCGTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_15
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACATGTCAGTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_16
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCCGTCCCTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_18
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGTCCGCATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_19
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGTGAAACTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_20
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGTGGCCTTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_21
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACGTTTCGGTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_22
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCGTACGTTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_23
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCCACTCTTCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_25
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACACTGATATCTCGTATGCCGTCTTCTGCTTG
+>TruSeq_Adapter_Index_27
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACATTCCTTTCTCGTATGCCGTCTTCTGCTTG
+
+EOF
+
+if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+    parallel --no-run-if-empty -j 2 "
+        scythe \
+            2_illumina/{}.shuffle.fq.gz \
+            -q sanger \
+            -a 2_illumina/illumina_adapters.fa \
+            --quiet \
+            | pigz -p 4 -c \
+            > 2_illumina/{}.scythe.fq.gz
+        " ::: R1 R2
+fi
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
     
@@ -196,12 +349,18 @@ parallel --no-run-if-empty -j 3 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
-    " ::: 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
-# Stats
+```
+
+## Bcer: reads stats
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -211,12 +370,17 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "shuffle";  faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo Q{1}L{2};
@@ -231,10 +395,11 @@ parallel -k --no-run-if-empty -j 3 "
                     2_illumina/Q{1}L{2}/R2.fq.gz;
             fi
         )
-    " ::: 25 30 ::: 60 \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
     >> stat.md
 
 cat stat.md
+
 ```
 
 | Name     |     N50 |       Sum |       # |
@@ -243,17 +408,17 @@ cat stat.md
 | Paralogs |    2295 |    223889 |     103 |
 | Illumina |     251 | 481020311 | 2080000 |
 | uniq     |     251 | 480993557 | 2079856 |
-| Q25L60   |     250 | 381755768 | 1713804 |
-| Q30L60   |     250 | 371873795 | 1752907 |
+| shuffle  |     251 | 480993557 | 2079856 |
+| scythe   |     250 | 479154345 | 2079856 |
+| Q25L60   |     250 | 381596630 | 1713388 |
+| Q30L60   |     250 | 371625559 | 1750499 |
 
 ## Bcer: quorum
 
 ```bash
-BASE_NAME=Bcer
-REAL_G=5432652
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-parallel --no-run-if-empty -j 1 "
+parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Group Q{1}L{2} <=='
 
@@ -267,7 +432,7 @@ parallel --no-run-if-empty -j 1 "
         exit;
     fi
 
-    if [[ {1} == '30' ]]; then
+    if [[ {1} -ge '30' ]]; then
         anchr quorum \
             R1.fq.gz R2.fq.gz Rs.fq.gz \
             -p 16 \
@@ -282,147 +447,178 @@ parallel --no-run-if-empty -j 1 "
     bash quorum.sh
     
     echo >&2
-    " ::: 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 # Stats of processed reads
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
     > stat1.md
 
-parallel -k --no-run-if-empty -j 3 "
+parallel --no-run-if-empty -k -j 3 "
     if [ ! -d 2_illumina/Q{1}L{2} ]; then
         exit;
     fi
 
     bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 25 30 ::: 60 \
+    " ::: ${READ_QUAL} ::: ${READ_LEN} \
      >> stat1.md
 
 cat stat1.md
+
 ```
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|------:|------:|------:|---------:|----------:|
-| Q25L60 | 381.76M |  70.3 | 343.49M |   63.2 |  10.023% |     218 | "127" | 5.43M | 5.34M |     0.98 | 0:01'18'' |
-| Q30L60 | 372.08M |  68.5 | 348.42M |   64.1 |   6.360% |     210 | "121" | 5.43M | 5.34M |     0.98 | 0:01'16'' |
+| Q25L60 |  381.6M |  70.2 | 343.43M |   63.2 |  10.003% |     221 | "127" | 5.43M | 5.34M |     0.98 | 0:00'54'' |
+| Q30L60 | 371.83M |  68.4 | 348.36M |   64.1 |   6.312% |     214 | "127" | 5.43M | 5.34M |     0.98 | 0:00'52'' |
 
-* Clear intermediate files.
-
-```bash
-BASE_NAME=Bcer
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* kmergenie
+## Bcer: down sampling
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
+    echo "==> ${QxxLxx}"
 
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q30L60/pe.cor.fa -o Q30L60
+    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
+        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
+        continue;
+    fi
+
+    for X in ${COVERAGE2}; do
+        printf "==> Coverage: %s\n" ${X}
+        
+        rm -fr 2_illumina/${QxxLxx}X${X}*
+    
+        faops split-about -l 0 \
+            2_illumina/${QxxLxx}/pe.cor.fa \
+            $(( ${REAL_G} * ${X} )) \
+            "2_illumina/${QxxLxx}X${X}"
+        
+        MAX_SERIAL=$(
+            cat 2_illumina/${QxxLxx}/environment.json \
+                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
+        )
+        
+        for i in $( seq 0 1 ${MAX_SERIAL} ); do
+            P=$( printf "%03d" ${i})
+            printf "  * Part: %s\n" ${P}
+            
+            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
+            
+            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
+                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
+            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
+    
+        done
+    done
+done
 
 ```
 
-## Bcer: k-unitigs and anchors
+## Bcer: k-unitigs and anchors (sampled)
 
 ```bash
-BASE_NAME=Bcer
-REAL_G=5432652
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-# k-unitigs
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2} '
+# k-unitigs (sampled)
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}/k_unitigs.fasta ]; then
+    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
+        exit;
+    fi
+
+    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
-    
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
+
+    mkdir -p Q{1}L{2}X{3}P{4}
+    cd Q{1}L{2}X{3}P{4}
 
     anchr kunitigs \
-        ../2_illumina/Q{1}L{2}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}/environment.json \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
         -p 16 \
-        --kmer 31,41,51,61,71,81,59,91 \
+        --kmer 31,41,51,61,71,81 \
         -o kunitigs.sh
     bash kunitigs.sh
-    
+
     echo >&2
-    " ::: 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
-# anchors
-parallel --no-run-if-empty -j 3 "
-    echo >&2 '==> Group Q{1}L{2}'
+# anchors (sampled)
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
-    if [ -e Q{1}L{2}/anchor/pe.anchor.fa ]; then
+    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        echo >&2 '    pe.cor.fa not exists'
         exit;
     fi
 
-    if [ ! -e Q{1}L{2}/k_unitigs.fasta ]; then
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    rm -fr Q{1}L{2}/anchor
-    mkdir -p Q{1}L{2}/anchor
-    cd Q{1}L{2}/anchor
+    rm -fr Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p Q{1}L{2}X{3}P{4}/anchor
+    cd Q{1}L{2}X{3}P{4}/anchor
     anchr anchors \
-        ../pe.cor.fa \
         ../k_unitigs.fasta \
+        ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
     
     echo >&2
-    " ::: 25 30 ::: 60
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
 # Stats of anchors
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
     > stat2.md
 
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}/anchor/pe.anchor.fa ]; then
+parallel --no-run-if-empty -k -j 6 "
+    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
         exit;
     fi
 
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2} ${REAL_G}
-    " ::: 25 30 ::: 60 \
-     >> stat2.md
+    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
+    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
+    >> stat2.md
 
 cat stat2.md
+
 ```
 
-| Name   |  SumCor | CovCor | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |    Sum |  # |                      Kmer | RunTimeKU | RunTimeAN |
-|:-------|--------:|-------:|------:|------:|----:|----------:|------:|----:|----------:|-------:|---:|--------------------------:|----------:|:----------|
-| Q25L60 | 343.49M |   63.2 | 34827 | 5.35M | 275 |     34827 | 5.33M | 245 |       806 | 26.22K | 30 | "31,41,51,59,61,71,81,91" | 0:05'15'' | 0:01'42'' |
-| Q30L60 | 348.42M |   64.1 | 43794 | 5.37M | 245 |     43794 | 5.31M | 212 |     16156 | 55.94K | 33 | "31,41,51,59,61,71,81,91" | 0:05'18'' | 0:02'15'' |
+| Name          |  SumCor | CovCor | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |    Sum |  # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|--------:|-------:|------:|------:|----:|----------:|------:|----:|----------:|-------:|---:|--------------------:|----------:|:----------|
+| Q25L60X30P000 | 162.98M |   30.0 | 34594 | 5.35M | 286 |     34817 | 5.32M | 263 |      1023 |  27.1K | 23 | "31,41,51,61,71,81" | 0:01'52'' | 0:00'27'' |
+| Q25L60X30P001 | 162.98M |   30.0 | 31725 | 5.36M | 307 |     31850 | 5.31M | 281 |     27048 | 49.93K | 26 | "31,41,51,61,71,81" | 0:01'47'' | 0:00'26'' |
+| Q25L60X40P000 | 217.31M |   40.0 | 34594 | 5.35M | 278 |     34826 |  5.3M | 254 |     16140 | 47.17K | 24 | "31,41,51,61,71,81" | 0:02'19'' | 0:00'29'' |
+| Q25L60X50P000 | 271.63M |   50.0 | 35092 | 5.37M | 276 |     35194 | 5.31M | 251 |     16167 | 63.06K | 25 | "31,41,51,61,71,81" | 0:02'25'' | 0:00'29'' |
+| Q25L60X60P000 | 325.96M |   60.0 | 34826 | 5.34M | 273 |     34826 | 5.32M | 251 |       633 | 14.59K | 22 | "31,41,51,61,71,81" | 0:02'36'' | 0:00'28'' |
+| Q30L60X30P000 | 162.98M |   30.0 | 37253 | 5.34M | 268 |     37253 | 5.32M | 243 |       700 | 19.46K | 25 | "31,41,51,61,71,81" | 0:02'02'' | 0:00'27'' |
+| Q30L60X30P001 | 162.98M |   30.0 | 35092 | 5.35M | 288 |     35092 | 5.33M | 261 |       691 | 19.86K | 27 | "31,41,51,61,71,81" | 0:01'50'' | 0:00'27'' |
+| Q30L60X40P000 | 217.31M |   40.0 | 41478 | 5.34M | 259 |     41478 | 5.32M | 233 |       697 | 19.36K | 26 | "31,41,51,61,71,81" | 0:02'04'' | 0:00'27'' |
+| Q30L60X50P000 | 271.63M |   50.0 | 42804 | 5.34M | 252 |     42804 | 5.32M | 228 |       659 | 17.67K | 24 | "31,41,51,61,71,81" | 0:02'32'' | 0:00'27'' |
+| Q30L60X60P000 | 325.96M |   60.0 | 42935 | 5.34M | 248 |     42935 | 5.32M | 223 |       659 | 18.09K | 25 | "31,41,51,61,71,81" | 0:02'37'' | 0:00'28'' |
 
 ## Bcer: merge anchors
 
 ```bash
-BASE_NAME=Bcer
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}/anchor/pe.anchor.fa
+        parallel --no-run-if-empty -k -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
             fi
-        " ::: 25 30 ::: 60
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
@@ -434,22 +630,25 @@ anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
+mkdir -p merge
 anchr contained \
     $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}/anchor/pe.others.fa
+        parallel --no-run-if-empty -k -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
-        " ::: 25 30 35 ::: 60
+            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
 anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
+anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o merge/others.merge0.fasta
+anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 16 -o stdout \
     | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
 
-# sort on ref
+# anchor sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
 mummerplot -png out.delta -p anchor.sort --large
@@ -458,7 +657,6 @@ mummerplot -png out.delta -p anchor.sort --large
 rm *.[fr]plot
 rm out.delta
 rm *.gp
-
 mv anchor.sort.png merge/
 
 # quast
@@ -480,37 +678,12 @@ quast --no-check --threads 16 \
 
 ```
 
-```bash
-BASE_NAME=Bcer
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr superreads
-mkdir -p superreads
-perl -MApp::Fasops::Common -e '
-        BEGIN { our $count = 0; }
-        
-        my $seq_of = App::Fasops::Common::read_fasta( q{merge/anchor.merge.fasta} );
-        
-        for my $key (keys %{$seq_of}) {
-            printf qq{>%s length:%d\n}, $count, length($seq_of->{$key});
-            printf qq{%s\n}, $seq_of->{$key};
-        }
-    ' \
-    > superreads/merged_kunitigs.fasta
-
-perl ~/Scripts/cpan/App-Anchr/share/createSuperReadsForDirectory.perl \
-    superreads \
-    superreads/merged_kunitigs.fasta \
-    2_illumina/Q30L60/pe.cor.fa \
-    2_illumina/Q30L60/meanAndStdevByPrefix.pe.txt
- 
-```
+## Bcer: final stats
 
 * Stats
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+cd ${HOME}/data/anchr/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -527,23 +700,33 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
 
 cat stat3.md
+
 ```
 
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 5224283 | 5432652 |   2 |
 | Paralogs     |    2295 |  223889 | 103 |
-| anchor.merge |   45136 | 5333005 | 207 |
-| others.merge |   16158 |   24816 |   4 |
+| anchor.merge |   46591 | 5359287 | 204 |
+| others.merge |   16184 |   68302 |   8 |
 
-* Clear QxxLxxx.
+## Bcer: clear intermediate files
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Bcer
-cd ${BASE_DIR}
+cd ${HOME}/data/anchr/${BASE_NAME}
 
-#rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
+# quorum
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+
+# down sampling
+rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
+rm -fr Q{20,25,30,35}L{30,60,90,120}X*
+
 ```
 
 # *Rhodobacter sphaeroides* 2.4.1
