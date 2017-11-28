@@ -470,6 +470,7 @@ parallel --no-run-if-empty -k -j 3 "
      >> stat1.md
 
 cat stat1.md
+
 ```
 
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
@@ -595,6 +596,7 @@ parallel --no-run-if-empty -k -j 6 "
     >> stat2.md
 
 cat stat2.md
+
 ```
 
 | Name           |  SumCor | CovCor | N50SR |    Sum |    # | N50Anchor |    Sum |    # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
@@ -1173,6 +1175,7 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/gapClosed.non-contained.fasta;) >> stat3.md
 
 cat stat3.md
+
 ```
 
 | Name                   |    N50 |      Sum |    # |
