@@ -1220,9 +1220,9 @@ quast --no-check --threads 16 \
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 # bax2bam
-rm 3_pacbio/bam/*
-rm 3_pacbio/fasta/*
-rm 3_pacbio/untar/*
+rm -fr 3_pacbio/bam/*
+rm -fr 3_pacbio/fasta/*
+rm -fr 3_pacbio/untar/*
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
