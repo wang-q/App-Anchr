@@ -816,18 +816,20 @@ printf "| %s | %s | %s | %s |\n" \
 parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
-            echo X{1}.{2}.trimmedReads;
+            echo X{1}.{2}.corrected;
             faops n50 -H -S -C \
-                canu-X{1}-{2}/${BASE_NAME}.trimmedReads.fasta.gz;
+                canu-X{1}-{2}/${BASE_NAME}.correctedReads.fasta.gz;
         )
+    " ::: ${COVERAGE3} ::: raw trim \
+    >> stat3GS.md
 
+parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo X{1}.{2};
             faops n50 -H -S -C \
                 canu-X{1}-{2}/${BASE_NAME}.contigs.fasta;
         )
-
     " ::: ${COVERAGE3} ::: raw trim \
     >> stat3GS.md
 
@@ -842,18 +844,18 @@ minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
 
 ```
 
-| Name                  |    N50 |       Sum |     # |
-|:----------------------|-------:|----------:|------:|
-| Genome                | 924431 |  12157105 |    17 |
-| Paralogs              |   3851 |   1059148 |   366 |
-| X40.raw.trimmedReads  |   7314 | 292715743 | 53395 |
-| X40.raw               | 498694 |  12267418 |    48 |
-| X40.trim.trimmedReads |   7405 | 304308381 | 54642 |
-| X40.trim              | 551422 |  12193990 |    47 |
-| X80.raw.trimmedReads  |   7327 | 435001864 | 79206 |
-| X80.raw               | 604680 |  12351131 |    37 |
-| X80.trim.trimmedReads |   7913 | 446060990 | 66050 |
-| X80.trim              | 813374 |  12360766 |    26 |
+| Name               |    N50 |       Sum |     # |
+|:-------------------|-------:|----------:|------:|
+| Genome             | 924431 |  12157105 |    17 |
+| Paralogs           |   3851 |   1059148 |   366 |
+| X40.raw.corrected  |   7382 | 297595242 | 53773 |
+| X40.trim.corrected |   7456 | 308765772 | 54958 |
+| X80.raw.corrected  |   7385 | 440867536 | 79638 |
+| X80.trim.corrected |   7965 | 450502473 | 66099 |
+| X40.raw            | 498694 |  12267418 |    48 |
+| X40.trim           | 551422 |  12193990 |    47 |
+| X80.raw            | 604680 |  12351131 |    37 |
+| X80.trim           | 813374 |  12360766 |    26 |
 
 ## s288c: local corrections
 
@@ -969,15 +971,15 @@ rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.merge.fasta \
-    3_pacbio/pacbio.X${EXPAND_WITH}.trim.fasta \
+    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.correctedReads.fasta.gz \
     -d anchorLong \
-    -b 50 --len 1000 --idt 0.85 --all
+    -b 50 --len 1000 --idt 0.98 --all
 
 pushd anchorLong
 
 anchr cover \
     --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
-    --len 1000 --idt 0.85 -c 2 \
+    --len 1000 --idt 0.98 -c 2 \
     anchorLong.ovlp.tsv \
     -o anchor.cover.json
 cat anchor.cover.json | jq "." > environment.json
@@ -1021,19 +1023,19 @@ anchr group \
     --oa anchor.ovlp.tsv \
     --parallel 16 \
     --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.85 --max "-30" -c 2
+    --len 1000 --idt 0.98 --max "-30" -c 2
 
 cat group/groups.txt \
     | parallel --no-run-if-empty --linebuffer -k -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.85 \
+            --len 1000 --idt 0.98 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.85 \
+        anchr overlap --len 1000 --idt 0.98 \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1085,7 +1087,7 @@ anchr overlap2 \
     anchorLong/contig.fasta \
     canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
-    -b 50 --len 1000 --idt 0.98 --all
+    -b 50 --len 1000 --idt 0.995 --all
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
 echo ${CONTIG_COUNT}
@@ -1096,20 +1098,20 @@ anchr group \
     --keep \
     contigTrim/anchorLong.db \
     contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 5000 -c 1
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max 5000 -c 1
 
 pushd contigTrim
 cat group/groups.txt \
     | parallel --no-run-if-empty --linebuffer -k -j 8 '
         echo {};
         anchr orient \
-            --len 1000 --idt 0.98 \
+            --len 1000 --idt 0.995 \
             group/{}.anchor.fasta \
             group/{}.long.fasta \
             -r group/{}.restrict.tsv \
             -o group/{}.strand.fasta;
 
-        anchr overlap --len 1000 --idt 0.98 --all \
+        anchr overlap --len 1000 --idt 0.995 --all \
             group/{}.strand.fasta \
             -o stdout \
             | anchr restrict \
@@ -1179,8 +1181,8 @@ cat stat3.md
 | Paralogs               |   3851 |  1059148 |  366 |
 | anchor.merge           |  32537 | 11325611 |  595 |
 | others.merge           |   6008 |   424881 |  184 |
-| anchorLong             |  41366 | 11219030 |  462 |
-| contigTrim             | 260345 | 11316985 |   84 |
+| anchorLong             |  52320 | 10994598 |  347 |
+| contigTrim             | 260345 | 11021466 |   83 |
 | canu-X40-raw           | 498694 | 12267418 |   48 |
 | canu-X40-trim          | 551422 | 12193990 |   47 |
 | spades.scaffold        |  98572 | 11732702 | 1167 |
@@ -1220,6 +1222,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 # bax2bam
 rm 3_pacbio/bam/*
 rm 3_pacbio/fasta/*
+rm 3_pacbio/untar/*
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
