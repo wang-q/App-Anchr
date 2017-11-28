@@ -82,6 +82,7 @@ COVERAGE2="30 40 50 60 80 120 160"
 COVERAGE3="40 80"
 READ_QUAL="25 30"
 READ_LEN="60"
+EXPAND_WITH="40"
 
 ```
 
@@ -968,7 +969,7 @@ rm -fr anchorLong
 anchr overlap2 \
     --parallel 16 \
     merge/anchor.merge.fasta \
-    3_pacbio/pacbio.X40.trim.fasta \
+    3_pacbio/pacbio.X${EXPAND_WITH}.trim.fasta \
     -d anchorLong \
     -b 50 --len 1000 --idt 0.85 --all
 
@@ -1082,7 +1083,7 @@ rm -fr contigTrim
 anchr overlap2 \
     --parallel 16 \
     anchorLong/contig.fasta \
-    canu-X40-trim/${BASE_NAME}.contigs.fasta \
+    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta \
     -d contigTrim \
     -b 50 --len 1000 --idt 0.98 --all
 
@@ -1155,9 +1156,9 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X40-raw"; faops n50 -H -S -C canu-X40-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
+    $(echo "canu-X${EXPAND_WITH}-raw"; faops n50 -H -S -C canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X40-trim"; faops n50 -H -S -C canu-X40-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
+    $(echo "canu-X${EXPAND_WITH}-trim"; faops n50 -H -S -C canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
@@ -1201,12 +1202,12 @@ quast --no-check --threads 16 \
     merge/anchor.merge.fasta \
     anchorLong/contig.fasta \
     contigTrim/contig.fasta \
-    canu-X40-raw/${BASE_NAME}.contigs.fasta \
-    canu-X40-trim/${BASE_NAME}.contigs.fasta \
+    canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta \
+    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta \
     8_spades/contigs.non-contained.fasta \
     8_platanus/gapClosed.non-contained.fasta \
     1_genome/paralogs.fas \
-    --label "merge,contig,contigTrim,canu-X40-raw,canu-X40-trim,spades,platanus,paralogs" \
+    --label "merge,contig,contigTrim,canu-X${EXPAND_WITH}-raw,canu-X${EXPAND_WITH}-trim,spades,platanus,paralogs" \
     -o 9_qa_contig
 
 ```
