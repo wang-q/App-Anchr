@@ -1508,14 +1508,14 @@ parallel --no-run-if-empty -j 3 "
 
 ## iso_1: 3GS
 
-| Name                  |      N50 |        Sum |      # |
-|:----------------------|---------:|-----------:|-------:|
-| Genome                | 25286936 |  137567477 |      8 |
-| Paralogs              |     4031 |   13665900 |   4492 |
-| X40.raw.trimmedReads  |    13307 | 4187472710 | 434215 |
-| X40.raw               | 13356203 |  149005475 |    425 |
-| X40.trim.trimmedReads |    13286 | 4133326561 | 427121 |
-| X40.trim              |  8097152 |  149602462 |    446 |
+| Name               |      N50 |        Sum |      # |
+|:-------------------|---------:|-----------:|-------:|
+| Genome             | 25286936 |  137567477 |      8 |
+| Paralogs           |     4031 |   13665900 |   4492 |
+| X40.raw.corrected  |    13477 | 4357395055 | 444661 |
+| X40.trim.corrected |    13405 | 4247295356 | 432489 |
+| X40.raw            | 13356203 |  149005475 |    425 |
+| X40.trim           |  8097152 |  149602462 |    446 |
 
 ## iso_1: expand anchors
 
@@ -1533,8 +1533,8 @@ parallel --no-run-if-empty -j 3 "
 | Paralogs               |     4031 |  13665900 |   4492 |
 | anchor.merge           |    31929 | 117520723 |   8728 |
 | others.merge           |     4637 |   4905392 |   2074 |
-| anchorLong             |    35621 | 116298314 |   7583 |
-| contigTrim             |   276661 | 117030739 |   1440 |
+| anchorLong             |    41276 | 113743746 |   6780 |
+| contigTrim             |   216556 | 113102926 |   1899 |
 | canu-X40-raw           | 13356203 | 149005475 |    425 |
 | canu-X40-trim          |  8097152 | 149602462 |    446 |
 | spades.scaffold        |   142273 | 132725706 |  61182 |
@@ -1711,18 +1711,18 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 ## n2: 3GS
 
-| Name                  |      N50 |        Sum |      # |
-|:----------------------|---------:|-----------:|-------:|
-| Genome                | 17493829 |  100286401 |      7 |
-| Paralogs              |     2013 |    5313653 |   2637 |
-| X40.raw.trimmedReads  |    16026 | 3225979202 | 271542 |
-| X40.raw               |  3680860 |  106573851 |    153 |
-| X40.trim.trimmedReads |    15968 | 3210251549 | 271514 |
-| X40.trim              |  2965260 |  106522712 |    153 |
-| X80.raw.trimmedReads  |    18183 | 3719126370 | 204086 |
-| X80.raw               |  2922642 |  107417644 |    114 |
-| X80.trim.trimmedReads |    18055 | 3771313179 | 207744 |
-| X80.trim              |  3084499 |  107369523 |    116 |
+| Name               |      N50 |        Sum |      # |
+|:-------------------|---------:|-----------:|-------:|
+| Genome             | 17493829 |  100286401 |      7 |
+| Paralogs           |     2013 |    5313653 |   2637 |
+| X40.raw.corrected  |    16283 | 3322175158 | 272851 |
+| X40.trim.corrected |    16122 | 3270117760 | 272680 |
+| X80.raw.corrected  |    18543 | 3841910529 | 204406 |
+| X80.trim.corrected |    18288 | 3856015518 | 208003 |
+| X40.raw            |  3680860 |  106573851 |    153 |
+| X40.trim           |  2965260 |  106522712 |    153 |
+| X80.raw            |  2922642 |  107417644 |    114 |
+| X80.trim           |  3084499 |  107369523 |    116 |
 
 ## n2: expand anchors
 
@@ -1740,8 +1740,8 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 | Paralogs               |     2013 |   5313653 |   2637 |
 | anchor.merge           |    15591 |  90656638 |  11754 |
 | others.merge           |    11300 |  11524419 |   3507 |
-| anchorLong             |    17387 |  89485645 |  10168 |
-| contigTrim             |   322297 |  95048266 |    645 |
+| anchorLong             |    20518 |  89701523 |   9054 |
+| contigTrim             |   308321 |  95466256 |    694 |
 | canu-X40-raw           |  3680860 | 106573851 |    153 |
 | canu-X40-trim          |  2965260 | 106522712 |    153 |
 | spades.scaffold        |    39185 | 105667774 |  39154 |
@@ -2104,134 +2104,22 @@ parallel --no-run-if-empty -j 3 "
 
 ## col_0: 3GS
 
-| Name                  |      N50 |        Sum |      # |
-|:----------------------|---------:|-----------:|-------:|
-| Genome                | 23459830 |  119667750 |      7 |
-| Paralogs              |     2007 |   16447809 |   8055 |
-| X40.raw.trimmedReads  |     6234 | 1260183339 | 256777 |
-| X40.raw               |    55098 |  101659090 |   2680 |
-| X40.trim.trimmedReads |     6575 | 1460083731 | 284489 |
-| X40.trim              |   160979 |  113324147 |   1251 |
-| X80.raw.trimmedReads  |     6409 | 2354909348 | 461652 |
-| X80.raw               |   496472 |  119336133 |    699 |
-| X80.trim.trimmedReads |     6634 | 2771771245 | 532567 |
-| X80.trim              |  3410906 |  120074130 |    336 |
+| Name               |      N50 |        Sum |      # |
+|:-------------------|---------:|-----------:|-------:|
+| Genome             | 23459830 |  119667750 |      7 |
+| Paralogs           |     2007 |   16447809 |   8055 |
+| X40.raw.corrected  |     6409 | 1314347545 | 260841 |
+| X40.trim.corrected |     6857 | 1851234466 | 344501 |
+| X80.raw.corrected  |     6531 | 2429934540 | 467495 |
+| X80.trim.corrected |     6748 | 2839501986 | 535499 |
+| X40.raw            |    55098 |  101659090 |   2680 |
+| X40.trim           |   160979 |  113324147 |   1251 |
+| X80.raw            |   496472 |  119336133 |    699 |
+| X80.trim           |  3410906 |  120074130 |    336 |
 
 ## col_0: expand anchors
 
 * anchorLong
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr anchorLong
-anchr overlap2 \
-    --parallel 16 \
-    merge/anchor.merge.fasta \
-    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.correctedReads.fasta.gz \
-    -d anchorLong \
-    -b 50 --len 1000 --idt 0.95 --all
-
-pushd anchorLong
-
-anchr cover \
-    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
-    --len 1000 --idt 0.95 -c 2 \
-    anchorLong.ovlp.tsv \
-    -o anchor.cover.json
-cat anchor.cover.json | jq "." > environment.json
-
-anchr overlap \
-    anchor.fasta \
-    --serial --len 30 --idt 0.9999 \
-    -o stdout \
-    | perl -nla -e '
-        BEGIN {
-            our %seen;
-            our %count_of;
-        }
-
-        @F == 13 or next;
-        $F[3] > 0.9999 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        $count_of{ $F[0] }++;
-        $count_of{ $F[1] }++;
-
-        END {
-            for my $pair ( keys %seen ) {
-                my ($f_id, $g_id) = split "-", $pair;
-                next if $count_of{$f_id} > 2;
-                next if $count_of{$g_id} > 2;
-                print $seen{$pair};
-            }
-        }
-    ' \
-    | sort -k 1n,1n -k 2n,2n \
-    > anchor.ovlp.tsv
-
-rm -fr group
-anchr group \
-    anchorLong.db \
-    anchorLong.ovlp.tsv \
-    --oa anchor.ovlp.tsv \
-    --parallel 16 \
-    --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.95 --max "-30" -c 2
-
-cat group/groups.txt \
-    | parallel --no-run-if-empty --linebuffer -k -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.95 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.95 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr overlap --len 30 --idt 0.9999 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | perl -nla -e '\''
-                @F == 13 or next;
-                $F[3] > 0.9999 or next;
-                $F[9] == 0 or next;
-                $F[5] > 0 and $F[6] == $F[7] or next;
-                /anchor.+anchor/ or next;
-                print;
-            '\'' \
-            > group/{}.anchor.ovlp.tsv
-            
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            --oa group/{}.anchor.ovlp.tsv \
-            -o group/{}.contig.fasta
-    '
-popd
-
-# false strand
-cat anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-cat \
-   anchorLong/group/non_grouped.fasta \
-   anchorLong/group/*.contig.fasta \
-   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
-
-```
 
 * contigTrim
 
@@ -2245,8 +2133,8 @@ cat \
 | Paralogs               |     2007 |  16447809 |   8055 |
 | anchor.merge           |    28769 | 108464379 |   8561 |
 | others.merge           |     2695 |   2223388 |    971 |
-| anchorLong             |    45470 | 107222341 |   5584 |
-| contigTrim             |   922978 | 108571732 |    605 |
+| anchorLong             |    45816 | 107155884 |   5581 |
+| contigTrim             |   987958 | 111197558 |    630 |
 | canu-X80-raw           |   496472 | 119336133 |    699 |
 | canu-X80-trim          |  3410906 | 120074130 |    336 |
 | spades.scaffold        |    67856 | 154750615 | 114703 |
@@ -2258,3 +2146,4 @@ cat \
 * quast
 
 ## col_0: clear intermediate files
+
