@@ -44,25 +44,34 @@
     - [Vcho: clear intermediate files](#vcho-clear-intermediate-files)
 - [*Mycobacterium abscessus* 6G-0125-R Full](#mycobacterium-abscessus-6g-0125-r-full)
     - [MabsF: download](#mabsf-download)
-    - [MabsF: combinations of different quality values and read lengths](#mabsf-combinations-of-different-quality-values-and-read-lengths)
+    - [MabsF: preprocess Illumina reads](#mabsf-preprocess-illumina-reads)
+    - [MabsF: reads stats](#mabsf-reads-stats)
     - [MabsF: quorum](#mabsf-quorum)
     - [MabsF: down sampling](#mabsf-down-sampling)
     - [MabsF: k-unitigs and anchors (sampled)](#mabsf-k-unitigs-and-anchors-sampled)
     - [MabsF: merge anchors](#mabsf-merge-anchors)
+    - [MabsF: final stats](#mabsf-final-stats)
+    - [MabsF: clear intermediate files](#mabsf-clear-intermediate-files)
 - [*Rhodobacter sphaeroides* 2.4.1 Full](#rhodobacter-sphaeroides-241-full)
     - [RsphF: download](#rsphf-download)
-    - [RsphF: combinations of different quality values and read lengths](#rsphf-combinations-of-different-quality-values-and-read-lengths)
+    - [RsphF: preprocess Illumina reads](#rsphf-preprocess-illumina-reads)
+    - [RsphF: reads stats](#rsphf-reads-stats)
     - [RsphF: quorum](#rsphf-quorum)
     - [RsphF: down sampling](#rsphf-down-sampling)
     - [RsphF: k-unitigs and anchors (sampled)](#rsphf-k-unitigs-and-anchors-sampled)
     - [RsphF: merge anchors](#rsphf-merge-anchors)
+    - [RsphF: final stats](#rsphf-final-stats)
+    - [RsphF: clear intermediate files](#rsphf-clear-intermediate-files)
 - [*Vibrio cholerae* CP1032(5) Full](#vibrio-cholerae-cp10325-full)
     - [VchoF: download](#vchof-download)
-    - [VchoF: combinations of different quality values and read lengths](#vchof-combinations-of-different-quality-values-and-read-lengths)
+    - [VchoF: preprocess Illumina reads](#vchof-preprocess-illumina-reads)
+    - [VchoF: reads stats](#vchof-reads-stats)
     - [VchoF: quorum](#vchof-quorum)
     - [VchoF: down sampling](#vchof-down-sampling)
     - [VchoF: k-unitigs and anchors (sampled)](#vchof-k-unitigs-and-anchors-sampled)
     - [VchoF: merge anchors](#vchof-merge-anchors)
+    - [VchoF: final stats](#vchof-final-stats)
+    - [VchoF: clear intermediate files](#vchof-clear-intermediate-files)
 
 
 # *Bacillus cereus* ATCC 10987
@@ -737,6 +746,9 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 rm -fr 2_illumina/Q{20,25,30,35}L{30,60,90,120}X*
 rm -fr Q{20,25,30,35}L{30,60,90,120}X*
 
+# quast
+find . -type d -name "nucmer_output" | xargs rm -fr
+
 ```
 
 # *Rhodobacter sphaeroides* 2.4.1
@@ -1193,10 +1205,20 @@ tar xvfz V_cholerae_MiSeq.tar.gz velvet_ctg.fasta
 
 ## MabsF: download
 
-* Reference genome
+* Settings
 
 ```bash
 BASE_NAME=MabsF
+REAL_G=5090491
+COVERAGE2="30 40 50 60 80 120 160"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
+* Reference genome
+
+```bash
 mkdir -p ${HOME}/data/anchr/${BASE_NAME}
 cd ${HOME}/data/anchr/${BASE_NAME}
 
@@ -1213,7 +1235,6 @@ cp ~/data/anchr/Mabs/1_genome/paralogs.fas .
     SRX246890, SRR768269
 
 ```bash
-BASE_NAME=MabsF
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 2_illumina
@@ -1253,137 +1274,11 @@ cp ~/data/anchr/Mabs/8_competitor/* .
 
 * FastQC
 
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
 * kmergenie
 
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
+## MabsF: preprocess Illumina reads
 
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-
-```
-
-## MabsF: combinations of different quality values and read lengths
-
-* qual: 20, 25, 30, and 35
-* len: 60
-
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-# Down sampling to 200x
-REAL_G=5090491
-READ_COUNT=$(( 200 / 2 * ${REAL_G} / 251 ))
-if [ ! -e 2_illumina/R1.200x.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        seqtk sample \
-            -s${READ_COUNT} \
-            2_illumina/{}.uniq.fq.gz \
-            ${READ_COUNT} \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.200x.fq.gz
-        " ::: R1 R2
-fi
-
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.200x.fq.gz \
-            -q sanger \
-            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 35 ::: 60
-
-# Stats
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "200x";     faops n50 -H -S -C 2_illumina/R1.200x.fq.gz 2_illumina/R2.200x.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 35 ::: 60 \
-    >> stat.md
-
-cat stat.md
-```
+## MabsF: reads stats
 
 | Name     |     N50 |        Sum |       # |
 |:---------|--------:|-----------:|--------:|
@@ -1391,340 +1286,90 @@ cat stat.md
 | Paralogs |    1580 |      83364 |      53 |
 | Illumina |     251 | 2194026140 | 8741140 |
 | uniq     |     251 | 2191831898 | 8732398 |
-| 200x     |     251 | 1018098168 | 4056168 |
-| scythe   |     194 |  734312412 | 4056168 |
-| Q20L60   |     180 |  578890373 | 3469454 |
-| Q25L60   |     174 |  498468112 | 3103052 |
-| Q30L60   |     164 |  439352008 | 2977906 |
-| Q35L60   |     135 |  237111173 | 1957449 |
+| shuffle  |     251 | 2191831898 | 8732398 |
+| scythe   |     194 | 1576871211 | 8732398 |
+| Q25L60   |     174 | 1072306601 | 6675988 |
+| Q30L60   |     164 |  945213634 | 6406573 |
 
 ## MabsF: quorum
 
-```bash
-BASE_NAME=MabsF
-REAL_G=5090491
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 35 ::: 60
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-
-```
-
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 | 578.89M | 113.7 | 451.73M |   88.7 |  21.966% |     167 | "45" | 5.09M | 5.39M |     1.06 | 0:06'06'' |
-| Q25L60 | 498.47M |  97.9 | 415.13M |   81.5 |  16.719% |     161 | "43" | 5.09M | 5.28M |     1.04 | 0:05'27'' |
-| Q30L60 | 439.78M |  86.4 | 382.34M |   75.1 |  13.060% |     152 | "39" | 5.09M | 5.26M |     1.03 | 0:04'49'' |
-| Q35L60 | 237.66M |  46.7 |    221M |   43.4 |   7.010% |     126 | "31" | 5.09M | 5.19M |     1.02 | 0:02'27'' |
-
-* Clear intermediate files.
-
-```bash
-BASE_NAME=MabsF
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
+| Q25L60 |   1.07G | 210.6 | 895.68M |  176.0 |  16.472% |     160 | "43" | 5.09M | 5.49M |     1.08 | 0:02'27'' |
+| Q30L60 | 946.13M | 185.9 | 824.32M |  161.9 |  12.875% |     151 | "39" | 5.09M | 5.41M |     1.06 | 0:02'10'' |
 
 ## MabsF: down sampling
 
-```bash
-BASE_NAME=MabsF
-REAL_G=5090491
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
 ## MabsF: k-unitigs and anchors (sampled)
 
-```bash
-BASE_NAME=MabsF
-REAL_G=5090491
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 3 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../pe.cor.fa \
-        ../k_unitigs.fasta \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 \
-    >> stat2.md
-
-cat stat2.md
-```
-
-| Name          |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |   Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|------:|------:|-----:|----------:|------:|-----:|----------:|--------:|-----:|--------------------:|----------:|:----------|
-| Q20L60X40P000 | 203.62M |   40.0 |  3335 | 5.18M | 2109 |      3572 | 4.81M | 1603 |       770 | 373.43K |  506 | "31,41,51,61,71,81" | 0:05'32'' | 0:02'19'' |
-| Q20L60X40P001 | 203.62M |   40.0 |  3446 | 5.18M | 2081 |      3641 | 4.81M | 1598 |       801 | 364.43K |  483 | "31,41,51,61,71,81" | 0:05'35'' | 0:02'20'' |
-| Q20L60X80P000 | 407.24M |   80.0 |  2027 | 5.06M | 3136 |      2353 | 4.21M | 1973 |       764 | 848.88K | 1163 | "31,41,51,61,71,81" | 0:07'20'' | 0:03'18'' |
-| Q25L60X40P000 | 203.62M |   40.0 | 16018 | 5.19M |  540 |     16459 | 5.12M |  490 |     13041 |  76.17K |   50 | "31,41,51,61,71,81" | 0:04'32'' | 0:02'19'' |
-| Q25L60X40P001 | 203.62M |   40.0 | 17598 | 5.15M |  508 |     17723 | 5.13M |  470 |       812 |  28.51K |   38 | "31,41,51,61,71,81" | 0:03'23'' | 0:02'23'' |
-| Q25L60X80P000 | 407.24M |   80.0 |  8476 | 5.18M |  940 |      8614 | 5.11M |  839 |       816 |  76.51K |  101 | "31,41,51,61,71,81" | 0:05'50'' | 0:03'30'' |
-| Q30L60X40P000 | 203.62M |   40.0 | 18298 | 5.17M |  464 |     18420 | 5.13M |  424 |       914 |   35.4K |   40 | "31,41,51,61,71,81" | 0:03'49'' | 0:02'13'' |
-| Q35L60X40P000 | 203.62M |   40.0 | 20655 | 5.14M |  434 |     20681 | 5.11M |  396 |       757 |  29.91K |   38 | "31,41,51,61,71,81" | 0:04'09'' | 0:02'28'' |
+| Name           |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |   Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|--------:|-------:|------:|------:|-----:|----------:|------:|-----:|----------:|--------:|-----:|--------------------:|----------:|:----------|
+| Q25L60X30P000  | 152.71M |   30.0 |  7842 | 5.19M | 1053 |      8031 | 5.06M |  907 |       855 | 128.05K |  146 | "31,41,51,61,71,81" | 0:02'13'' | 0:00'47'' |
+| Q25L60X30P001  | 152.71M |   30.0 |  8261 | 5.18M |  990 |      8319 | 5.08M |  870 |       782 | 103.59K |  120 | "31,41,51,61,71,81" | 0:02'13'' | 0:00'46'' |
+| Q25L60X30P002  | 152.71M |   30.0 |  7662 | 5.18M | 1036 |      7834 | 5.08M |  914 |       824 |  99.19K |  122 | "31,41,51,61,71,81" | 0:02'13'' | 0:00'46'' |
+| Q25L60X30P003  | 152.71M |   30.0 |  7697 | 5.21M | 1065 |      7835 | 5.07M |  927 |       901 | 144.19K |  138 | "31,41,51,61,71,81" | 0:02'10'' | 0:00'45'' |
+| Q25L60X30P004  | 152.71M |   30.0 |  7601 |  5.2M | 1008 |      7624 | 5.06M |  887 |       929 | 134.94K |  121 | "31,41,51,61,71,81" | 0:02'12'' | 0:00'45'' |
+| Q25L60X40P000  | 203.62M |   40.0 |  6605 |  5.2M | 1226 |      6826 | 5.05M | 1050 |       825 | 147.35K |  176 | "31,41,51,61,71,81" | 0:02'30'' | 0:00'46'' |
+| Q25L60X40P001  | 203.62M |   40.0 |  6339 |  5.2M | 1254 |      6438 | 5.04M | 1064 |       808 | 159.81K |  190 | "31,41,51,61,71,81" | 0:02'34'' | 0:00'50'' |
+| Q25L60X40P002  | 203.62M |   40.0 |  6007 | 5.22M | 1298 |      6202 | 5.03M | 1100 |       881 | 190.08K |  198 | "31,41,51,61,71,81" | 0:02'27'' | 0:00'51'' |
+| Q25L60X40P003  | 203.62M |   40.0 |  6338 | 5.18M | 1209 |      6522 | 5.06M | 1052 |       804 | 122.07K |  157 | "31,41,51,61,71,81" | 0:02'36'' | 0:00'55'' |
+| Q25L60X50P000  | 254.52M |   50.0 |  5316 |  5.2M | 1460 |      5409 |    5M | 1217 |       782 | 190.82K |  243 | "31,41,51,61,71,81" | 0:02'45'' | 0:00'53'' |
+| Q25L60X50P001  | 254.52M |   50.0 |  5192 |  5.2M | 1512 |      5334 | 4.99M | 1244 |       778 | 204.22K |  268 | "31,41,51,61,71,81" | 0:03'18'' | 0:00'53'' |
+| Q25L60X50P002  | 254.52M |   50.0 |  5090 | 5.19M | 1515 |      5280 |    5M | 1257 |       788 | 199.32K |  258 | "31,41,51,61,71,81" | 0:03'39'' | 0:00'59'' |
+| Q25L60X60P000  | 305.43M |   60.0 |  4579 |  5.2M | 1690 |      4765 | 4.94M | 1356 |       779 | 261.91K |  334 | "31,41,51,61,71,81" | 0:04'19'' | 0:00'56'' |
+| Q25L60X60P001  | 305.43M |   60.0 |  4386 | 5.19M | 1705 |      4641 | 4.94M | 1379 |       788 | 249.65K |  326 | "31,41,51,61,71,81" | 0:04'24'' | 0:00'53'' |
+| Q25L60X80P000  | 407.24M |   80.0 |  3459 | 5.19M | 2095 |      3696 |  4.8M | 1590 |       779 | 381.75K |  505 | "31,41,51,61,71,81" | 0:05'42'' | 0:01'04'' |
+| Q25L60X80P001  | 407.24M |   80.0 |  3496 |  5.2M | 2101 |      3734 | 4.82M | 1612 |       790 |  388.9K |  489 | "31,41,51,61,71,81" | 0:05'30'' | 0:01'03'' |
+| Q25L60X120P000 | 610.86M |  120.0 |  2442 | 5.14M | 2753 |      2751 | 4.47M | 1852 |       775 | 672.18K |  901 | "31,41,51,61,71,81" | 0:08'29'' | 0:01'20'' |
+| Q25L60X160P000 | 814.48M |  160.0 |  1942 | 5.06M | 3217 |      2314 | 4.16M | 1989 |       766 | 901.47K | 1228 | "31,41,51,61,71,81" | 0:08'47'' | 0:01'19'' |
+| Q30L60X30P000  | 152.71M |   30.0 | 10078 | 5.21M |  822 |     10078 | 5.07M |  741 |     15243 | 141.59K |   81 | "31,41,51,61,71,81" | 0:04'39'' | 0:00'53'' |
+| Q30L60X30P001  | 152.71M |   30.0 | 10183 |  5.2M |  799 |     10389 | 5.08M |  713 |      2266 | 118.88K |   86 | "31,41,51,61,71,81" | 0:04'13'' | 0:00'48'' |
+| Q30L60X30P002  | 152.71M |   30.0 |  9069 | 5.18M |  878 |      9298 | 5.07M |  780 |       960 | 113.97K |   98 | "31,41,51,61,71,81" | 0:04'17'' | 0:00'47'' |
+| Q30L60X30P003  | 152.71M |   30.0 |  9751 | 5.17M |  821 |      9955 | 5.09M |  739 |       845 |  71.59K |   82 | "31,41,51,61,71,81" | 0:03'40'' | 0:00'47'' |
+| Q30L60X30P004  | 152.71M |   30.0 | 12149 | 5.22M |  667 |     12101 | 5.12M |  609 |     26940 |  98.82K |   58 | "31,41,51,61,71,81" | 0:04'09'' | 0:00'50'' |
+| Q30L60X40P000  | 203.62M |   40.0 |  8663 | 5.22M |  939 |      8680 | 5.08M |  838 |       991 | 134.57K |  101 | "31,41,51,61,71,81" | 0:04'47'' | 0:00'48'' |
+| Q30L60X40P001  | 203.62M |   40.0 |  8130 | 5.19M |  980 |      8220 | 5.08M |  878 |       885 | 109.54K |  102 | "31,41,51,61,71,81" | 0:04'27'' | 0:00'51'' |
+| Q30L60X40P002  | 203.62M |   40.0 |  7852 |  5.2M |  984 |      7928 | 5.09M |  886 |       950 | 110.94K |   98 | "31,41,51,61,71,81" | 0:04'56'' | 0:00'49'' |
+| Q30L60X40P003  | 203.62M |   40.0 | 12056 |  5.2M |  673 |     12056 | 5.11M |  614 |      5466 |  88.34K |   59 | "31,41,51,61,71,81" | 0:05'37'' | 0:00'49'' |
+| Q30L60X50P000  | 254.52M |   50.0 |  7635 | 5.22M | 1077 |      7724 | 5.06M |  943 |       964 | 163.52K |  134 | "31,41,51,61,71,81" | 0:05'22'' | 0:00'54'' |
+| Q30L60X50P001  | 254.52M |   50.0 |  6837 |  5.2M | 1143 |      6999 | 5.06M |  997 |       879 | 139.42K |  146 | "31,41,51,61,71,81" | 0:05'47'' | 0:00'56'' |
+| Q30L60X50P002  | 254.52M |   50.0 |  8197 | 5.21M |  961 |      8238 | 5.09M |  859 |       953 | 122.02K |  102 | "31,41,51,61,71,81" | 0:04'29'' | 0:00'58'' |
+| Q30L60X60P000  | 305.43M |   60.0 |  6482 | 5.23M | 1241 |      6540 | 5.02M | 1057 |       946 | 213.05K |  184 | "31,41,51,61,71,81" | 0:06'59'' | 0:00'58'' |
+| Q30L60X60P001  | 305.43M |   60.0 |  5971 | 5.21M | 1313 |      6099 | 5.05M | 1135 |       852 | 157.41K |  178 | "31,41,51,61,71,81" | 0:05'58'' | 0:00'56'' |
+| Q30L60X80P000  | 407.24M |   80.0 |  5009 |  5.2M | 1557 |      5186 | 4.97M | 1275 |       803 | 228.95K |  282 | "31,41,51,61,71,81" | 0:09'32'' | 0:01'03'' |
+| Q30L60X80P001  | 407.24M |   80.0 |  5681 | 5.22M | 1354 |      5831 | 5.04M | 1166 |       863 | 182.33K |  188 | "31,41,51,61,71,81" | 0:08'14'' | 0:01'09'' |
+| Q30L60X120P000 | 610.86M |  120.0 |  3424 | 5.18M | 2103 |      3611 | 4.81M | 1604 |       777 | 372.15K |  499 | "31,41,51,61,71,81" | 0:13'03'' | 0:01'15'' |
+| Q30L60X160P000 | 814.48M |  160.0 |  2993 | 5.16M | 2344 |      3286 | 4.71M | 1728 |       766 | 456.67K |  616 | "31,41,51,61,71,81" | 0:12'38'' | 0:01'09'' |
 
 ## MabsF: merge anchors
 
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    8_competitor/abyss_ctg.fasta \
-    8_competitor/cabog_ctg.fasta \
-    8_competitor/mira_ctg.fasta \
-    8_competitor/msrca_ctg.fasta \
-    8_competitor/sga_ctg.fasta \
-    8_competitor/soap_ctg.fasta \
-    8_competitor/spades_ctg.fasta \
-    8_competitor/velvet_ctg.fasta \
-    merge/anchor.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
-    -o 9_qa
-
-```
+## MabsF: final stats
 
 * Stats
-
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 5067172 | 5090491 |   2 |
 | Paralogs     |    1580 |   83364 |  53 |
-| anchor.merge |   81639 | 5155449 | 122 |
-| others.merge |   13061 |   39393 |   7 |
+| anchor.merge |  115518 | 5170962 |  91 |
+| others.merge |   11421 |  353510 | 100 |
 
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
-rm -fr Q{20,25,30}L{1,60,90,120}X*
-```
+## MabsF: clear intermediate files
 
 # *Rhodobacter sphaeroides* 2.4.1 Full
 
 ## RsphF: download
+
+* Settings
+
+```bash
+BASE_NAME=RsphF
+REAL_G=4602977
+COVERAGE2="30 40 50 60 80 120 160"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
 
 * Reference genome
 
@@ -1785,138 +1430,11 @@ cp ~/data/anchr/Rsph/8_competitor/* .
 
 * FastQC
 
-```bash
-BASE_NAME=MabsF
-cd ${HOME}/data/anchr/${BASE_NAME}
+* kmergenie
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
+## RsphF: preprocess Illumina reads
 
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
-## RsphF: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 60
-
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
-    shuffle.sh \
-        in=2_illumina/R1.uniq.fq.gz \
-        in2=2_illumina/R2.uniq.fq.gz \
-        out=2_illumina/R1.shuffle.fq \
-        out2=2_illumina/R2.shuffle.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 8 2_illumina/{}.shuffle.fq
-        " ::: R1 R2
-fi
-
-# Down sampling to 300x
-REAL_G=4602977
-READ_COUNT=$(( 300 / 2 * ${REAL_G} / 251 ))
-if [ ! -e 2_illumina/R1.200x.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        seqtk sample \
-            -s${READ_COUNT} \
-            2_illumina/{}.shuffle.fq.gz \
-            ${READ_COUNT} \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.down.fq.gz
-        " ::: R1 R2
-fi
-
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.down.fq.gz \
-            -q sanger \
-            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 60
-
-# Stats
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "shuffle";  faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "down";     faops n50 -H -S -C 2_illumina/R1.down.fq.gz 2_illumina/R2.down.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 ::: 60 \
-    >> stat.md
-
-cat stat.md
-
-```
+## RsphF: reads stats
 
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
@@ -1925,360 +1443,117 @@ cat stat.md
 | Illumina |     251 | 4237215336 | 16881336 |
 | uniq     |     251 | 4199507606 | 16731106 |
 | shuffle  |     251 | 4199507606 | 16731106 |
-| down     |     251 | 1380893066 |  5501566 |
-| scythe   |     251 | 1065413486 |  5501566 |
-| Q20L60   |     145 |  536780836 |  3946238 |
-| Q25L60   |     134 |  446183787 |  3541934 |
-| Q30L60   |     117 |  388454569 |  3542857 |
+| scythe   |     243 | 3201347568 | 16731106 |
+| Q25L60   |     134 | 1357758932 | 10768930 |
+| Q30L60   |     117 | 1182181310 | 10774005 |
 
 ## RsphF: quorum
 
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60
-
-# Stats of processed reads
-REAL_G=4602977
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-
-```
-
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 | 536.78M | 116.6 | 477.56M |  103.8 |  11.032% |     137 | "37" |  4.6M | 4.58M |     1.00 | 0:06'12'' |
-| Q25L60 | 446.18M |  96.9 | 426.13M |   92.6 |   4.494% |     127 | "35" |  4.6M | 4.55M |     0.99 | 0:04'57'' |
-| Q30L60 | 389.16M |  84.5 | 379.54M |   82.5 |   2.473% |     112 | "31" |  4.6M | 4.55M |     0.99 | 0:04'09'' |
-
-* Clear intermediate files.
-
-```bash
-BASE_NAME=RsphF
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* kmergenie
-
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
-
-```
+| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 1.36G | 295.0 |   1.3G |  281.8 |   4.452% |     127 | "35" |  4.6M | 4.59M |     1.00 | 0:09'54'' |
+| Q30L60 | 1.18G | 257.3 |  1.16G |  251.0 |   2.466% |     112 | "31" |  4.6M | 4.55M |     0.99 | 0:07'58'' |
 
 ## RsphF: down sampling
 
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-REAL_G=4602977
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
 ## RsphF: k-unitigs and anchors (sampled)
 
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 3 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../pe.cor.fa \
-        ../k_unitigs.fasta \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# Stats of anchors
-REAL_G=4602977
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 \
-    >> stat2.md
-
-cat stat2.md
-```
-
-| Name          |  SumCor | CovCor | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|------:|------:|----:|----------:|------:|----:|----------:|--------:|----:|--------------------:|----------:|:----------|
-| Q20L60X40P000 | 184.12M |   40.0 | 16431 | 4.55M | 582 |     16523 | 4.48M | 486 |       740 |  68.47K |  96 | "31,41,51,61,71,81" | 0:03'25'' | 0:02'29'' |
-| Q20L60X40P001 | 184.12M |   40.0 | 16649 | 4.56M | 596 |     17665 | 4.48M | 486 |       778 |  82.57K | 110 | "31,41,51,61,71,81" | 0:03'31'' | 0:02'31'' |
-| Q20L60X80P000 | 368.24M |   80.0 | 12635 | 4.55M | 725 |     12869 | 4.44M | 580 |       765 | 105.47K | 145 | "31,41,51,61,71,81" | 0:05'31'' | 0:04'06'' |
-| Q25L60X40P000 | 184.12M |   40.0 | 19595 | 4.54M | 448 |     19960 |  4.5M | 392 |       795 |  45.06K |  56 | "31,41,51,61,71,81" | 0:03'42'' | 0:02'32'' |
-| Q25L60X40P001 | 184.12M |   40.0 | 20582 | 4.54M | 418 |     20698 |  4.5M | 372 |       752 |   33.9K |  46 | "31,41,51,61,71,81" | 0:03'40'' | 0:02'30'' |
-| Q25L60X80P000 | 368.24M |   80.0 | 27777 | 4.55M | 344 |     27802 | 4.51M | 292 |       755 |  41.02K |  52 | "31,41,51,61,71,81" | 0:07'09'' | 0:03'46'' |
-| Q30L60X40P000 | 184.12M |   40.0 | 12285 | 4.53M | 656 |     12365 | 4.46M | 564 |       757 |   67.6K |  92 | "31,41,51,61,71,81" | 0:05'18'' | 0:02'46'' |
-| Q30L60X40P001 | 184.12M |   40.0 | 13794 | 4.54M | 584 |     13944 | 4.49M | 520 |       788 |  46.32K |  64 | "31,41,51,61,71,81" | 0:05'11'' | 0:02'51'' |
-| Q30L60X80P000 | 368.24M |   80.0 | 18881 | 4.55M | 444 |     18924 | 4.51M | 395 |       773 |  36.98K |  49 | "31,41,51,61,71,81" | 0:07'00'' | 0:03'14'' |
+| Name           | SumCor  | CovCor | N50SR |   Sum |    # | N50Anchor |   Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|:--------|-------:|------:|------:|-----:|----------:|------:|----:|----------:|--------:|----:|--------------------:|----------:|----------:|
+| Q25L60X30P000  | 138.09M |   30.0 | 15797 | 4.54M |  552 |     16481 | 4.19M | 418 |      6227 | 352.34K | 134 | "31,41,51,61,71,81" | 0:04'02'' | 0:00'57'' |
+| Q25L60X30P001  | 138.09M |   30.0 | 14119 | 4.54M |  573 |     15236 | 4.19M | 440 |      6677 | 351.87K | 133 | "31,41,51,61,71,81" | 0:04'06'' | 0:00'54'' |
+| Q25L60X30P002  | 138.09M |   30.0 | 14801 | 4.54M |  562 |     15384 | 4.17M | 435 |      6590 | 362.12K | 127 | "31,41,51,61,71,81" | 0:03'54'' | 0:00'54'' |
+| Q25L60X30P003  | 138.09M |   30.0 | 13943 | 4.54M |  590 |     14632 |  4.2M | 453 |      5059 | 338.17K | 137 | "31,41,51,61,71,81" | 0:03'54'' | 0:00'56'' |
+| Q25L60X30P004  | 138.09M |   30.0 | 14618 | 4.54M |  555 |     15404 | 4.16M | 441 |      9135 |  378.2K | 114 | "31,41,51,61,71,81" | 0:03'49'' | 0:00'55'' |
+| Q25L60X30P005  | 138.09M |   30.0 | 13926 | 4.54M |  576 |     14640 | 4.19M | 450 |      7861 | 350.79K | 126 | "31,41,51,61,71,81" | 0:03'38'' | 0:00'57'' |
+| Q25L60X30P006  | 138.09M |   30.0 | 14376 | 4.54M |  555 |     14819 | 4.18M | 432 |      6186 | 360.83K | 123 | "31,41,51,61,71,81" | 0:03'43'' | 0:00'57'' |
+| Q25L60X30P007  | 138.09M |   30.0 | 15302 | 4.54M |  552 |     16319 | 4.17M | 428 |      7902 | 367.51K | 124 | "31,41,51,61,71,81" | 0:03'41'' | 0:00'58'' |
+| Q25L60X30P008  | 138.09M |   30.0 | 15074 | 4.53M |  544 |     16324 | 4.14M | 424 |      7330 | 394.65K | 120 | "31,41,51,61,71,81" | 0:03'43'' | 0:00'56'' |
+| Q25L60X40P000  | 184.12M |   40.0 | 19317 | 4.55M |  493 |     20248 |  4.2M | 359 |      5632 | 348.14K | 134 | "31,41,51,61,71,81" | 0:04'21'' | 0:01'01'' |
+| Q25L60X40P001  | 184.12M |   40.0 | 19311 | 4.55M |  497 |     20582 |  4.2M | 370 |      5222 | 345.42K | 127 | "31,41,51,61,71,81" | 0:04'01'' | 0:01'00'' |
+| Q25L60X40P002  | 184.12M |   40.0 | 17097 | 4.55M |  524 |     17836 | 4.22M | 384 |      4371 | 324.33K | 140 | "31,41,51,61,71,81" | 0:03'55'' | 0:01'03'' |
+| Q25L60X40P003  | 184.12M |   40.0 | 17665 | 4.55M |  500 |     18723 | 4.21M | 379 |      6186 | 338.69K | 121 | "31,41,51,61,71,81" | 0:04'17'' | 0:00'58'' |
+| Q25L60X40P004  | 184.12M |   40.0 | 16491 | 4.55M |  495 |     17579 | 4.21M | 380 |      7861 | 332.87K | 115 | "31,41,51,61,71,81" | 0:04'25'' | 0:00'59'' |
+| Q25L60X40P005  | 184.12M |   40.0 | 17886 | 4.54M |  498 |     18496 | 4.19M | 377 |      5854 | 351.39K | 121 | "31,41,51,61,71,81" | 0:04'25'' | 0:00'55'' |
+| Q25L60X40P006  | 184.12M |   40.0 | 18475 | 4.54M |  487 |     19287 | 4.23M | 373 |      5319 |  312.3K | 114 | "31,41,51,61,71,81" | 0:04'22'' | 0:00'58'' |
+| Q25L60X50P000  | 230.15M |   50.0 | 19317 | 4.55M |  484 |     20257 | 4.24M | 345 |      4103 | 313.64K | 139 | "31,41,51,61,71,81" | 0:04'54'' | 0:00'58'' |
+| Q25L60X50P001  | 230.15M |   50.0 | 20426 | 4.55M |  495 |     21490 | 4.24M | 362 |      4137 | 309.73K | 133 | "31,41,51,61,71,81" | 0:04'53'' | 0:00'58'' |
+| Q25L60X50P002  | 230.15M |   50.0 | 18727 | 4.55M |  490 |     19976 | 4.22M | 362 |      5340 |  335.1K | 128 | "31,41,51,61,71,81" | 0:04'54'' | 0:01'03'' |
+| Q25L60X50P003  | 230.15M |   50.0 | 17413 | 4.55M |  483 |     18177 | 4.25M | 365 |      7571 |  302.5K | 118 | "31,41,51,61,71,81" | 0:05'09'' | 0:01'03'' |
+| Q25L60X50P004  | 230.15M |   50.0 | 19181 | 4.55M |  488 |     20240 | 4.23M | 359 |      4632 | 321.64K | 129 | "31,41,51,61,71,81" | 0:04'47'' | 0:01'03'' |
+| Q25L60X60P000  | 276.18M |   60.0 | 19995 | 4.55M |  490 |     20333 | 4.23M | 342 |      3800 | 325.27K | 148 | "31,41,51,61,71,81" | 0:05'34'' | 0:01'05'' |
+| Q25L60X60P001  | 276.18M |   60.0 | 19659 | 4.56M |  501 |     20583 | 4.26M | 358 |      3169 | 292.96K | 143 | "31,41,51,61,71,81" | 0:05'43'' | 0:01'05'' |
+| Q25L60X60P002  | 276.18M |   60.0 | 18001 | 4.56M |  505 |     19676 | 4.25M | 367 |      4030 | 311.36K | 138 | "31,41,51,61,71,81" | 0:05'40'' | 0:01'05'' |
+| Q25L60X60P003  | 276.18M |   60.0 | 19247 | 4.55M |  483 |     20583 | 4.25M | 349 |      4463 | 306.08K | 134 | "31,41,51,61,71,81" | 0:05'54'' | 0:01'05'' |
+| Q25L60X80P000  | 368.24M |   80.0 | 20018 | 4.56M |  502 |     20279 | 4.34M | 348 |      1860 | 215.74K | 154 | "31,41,51,61,71,81" | 0:06'51'' | 0:01'13'' |
+| Q25L60X80P001  | 368.24M |   80.0 | 16913 | 4.57M |  564 |     17882 | 4.35M | 405 |      1860 | 219.66K | 159 | "31,41,51,61,71,81" | 0:06'59'' | 0:01'09'' |
+| Q25L60X80P002  | 368.24M |   80.0 | 20052 | 4.56M |  509 |     20583 | 4.33M | 376 |      2602 | 230.68K | 133 | "31,41,51,61,71,81" | 0:07'00'' | 0:01'17'' |
+| Q25L60X120P000 | 552.36M |  120.0 | 15043 | 4.56M |  605 |     15723 | 4.35M | 427 |      1195 | 203.66K | 178 | "31,41,51,61,71,81" | 0:09'31'' | 0:01'24'' |
+| Q25L60X120P001 | 552.36M |  120.0 | 15550 | 4.56M |  602 |     16353 | 4.33M | 435 |      1753 | 228.42K | 167 | "31,41,51,61,71,81" | 0:09'29'' | 0:01'29'' |
+| Q25L60X160P000 | 736.48M |  160.0 | 14045 | 4.56M |  688 |     14541 | 4.34M | 482 |      1001 | 214.96K | 206 | "31,41,51,61,71,81" | 0:11'28'' | 0:01'42'' |
+| Q30L60X30P000  | 138.09M |   30.0 |  9591 |  4.5M |  774 |      9591 | 4.12M | 630 |     10323 | 380.62K | 144 | "31,41,51,61,71,81" | 0:03'31'' | 0:00'56'' |
+| Q30L60X30P001  | 138.09M |   30.0 | 10272 | 4.51M |  782 |     10357 | 4.11M | 610 |      8202 | 400.09K | 172 | "31,41,51,61,71,81" | 0:03'38'' | 0:00'56'' |
+| Q30L60X30P002  | 138.09M |   30.0 |  9448 | 4.51M |  796 |      9492 | 4.11M | 642 |      8199 | 408.11K | 154 | "31,41,51,61,71,81" | 0:03'16'' | 0:00'51'' |
+| Q30L60X30P003  | 138.09M |   30.0 |  9464 | 4.51M |  801 |      9517 |  4.1M | 638 |      9100 | 406.59K | 163 | "31,41,51,61,71,81" | 0:03'32'' | 0:00'55'' |
+| Q30L60X30P004  | 138.09M |   30.0 |  9550 | 4.51M |  769 |      9729 |  4.1M | 606 |      8202 | 403.91K | 163 | "31,41,51,61,71,81" | 0:03'27'' | 0:00'55'' |
+| Q30L60X30P005  | 138.09M |   30.0 |  9323 | 4.51M |  794 |      9226 |  4.1M | 635 |      9706 |    407K | 159 | "31,41,51,61,71,81" | 0:03'26'' | 0:00'55'' |
+| Q30L60X30P006  | 138.09M |   30.0 | 11704 | 4.53M |  674 |     11631 | 4.09M | 540 |     12285 | 440.73K | 134 | "31,41,51,61,71,81" | 0:03'29'' | 0:00'53'' |
+| Q30L60X30P007  | 138.09M |   30.0 |  6701 | 4.51M | 1038 |      6748 | 4.24M | 849 |      2444 | 276.07K | 189 | "31,41,51,61,71,81" | 0:03'09'' | 0:00'51'' |
+| Q30L60X40P000  | 184.12M |   40.0 | 12551 | 4.52M |  636 |     12635 | 4.15M | 510 |     11818 | 373.92K | 126 | "31,41,51,61,71,81" | 0:04'01'' | 0:01'01'' |
+| Q30L60X40P001  | 184.12M |   40.0 | 12368 | 4.53M |  666 |     12486 | 4.14M | 536 |     10905 | 385.62K | 130 | "31,41,51,61,71,81" | 0:04'04'' | 0:01'00'' |
+| Q30L60X40P002  | 184.12M |   40.0 | 11387 | 4.52M |  676 |     11567 | 4.14M | 540 |      9406 |  388.5K | 136 | "31,41,51,61,71,81" | 0:04'04'' | 0:00'56'' |
+| Q30L60X40P003  | 184.12M |   40.0 | 12535 | 4.52M |  641 |     12623 | 4.14M | 514 |     11818 | 385.52K | 127 | "31,41,51,61,71,81" | 0:03'57'' | 0:00'57'' |
+| Q30L60X40P004  | 184.12M |   40.0 | 12550 | 4.52M |  632 |     12550 | 4.13M | 511 |     12569 | 385.77K | 121 | "31,41,51,61,71,81" | 0:04'13'' | 0:00'58'' |
+| Q30L60X40P005  | 184.12M |   40.0 | 10736 | 4.55M |  713 |     10763 | 4.21M | 583 |      8441 | 338.43K | 130 | "31,41,51,61,71,81" | 0:04'32'' | 0:01'03'' |
+| Q30L60X50P000  | 230.15M |   50.0 | 15333 | 4.53M |  557 |     15600 | 4.15M | 443 |     12569 |  381.6K | 114 | "31,41,51,61,71,81" | 0:04'49'' | 0:01'03'' |
+| Q30L60X50P001  | 230.15M |   50.0 | 13945 | 4.53M |  587 |     14188 | 4.17M | 474 |     10905 | 361.52K | 113 | "31,41,51,61,71,81" | 0:04'37'' | 0:01'03'' |
+| Q30L60X50P002  | 230.15M |   50.0 | 14521 | 4.53M |  563 |     14812 | 4.16M | 449 |     10343 | 372.36K | 114 | "31,41,51,61,71,81" | 0:04'45'' | 0:01'01'' |
+| Q30L60X50P003  | 230.15M |   50.0 | 14383 | 4.53M |  567 |     14479 | 4.15M | 455 |     12569 | 379.63K | 112 | "31,41,51,61,71,81" | 0:04'41'' | 0:01'01'' |
+| Q30L60X50P004  | 230.15M |   50.0 | 12621 | 4.54M |  616 |     13137 | 4.23M | 504 |     10913 |  313.4K | 112 | "31,41,51,61,71,81" | 0:04'34'' | 0:01'05'' |
+| Q30L60X60P000  | 276.18M |   60.0 | 17511 | 4.53M |  506 |     17858 | 4.16M | 402 |     12569 | 376.45K | 104 | "31,41,51,61,71,81" | 0:05'26'' | 0:01'08'' |
+| Q30L60X60P001  | 276.18M |   60.0 | 14759 | 4.54M |  540 |     15502 | 4.16M | 433 |     11818 | 374.28K | 107 | "31,41,51,61,71,81" | 0:05'25'' | 0:01'10'' |
+| Q30L60X60P002  | 276.18M |   60.0 | 15376 | 4.54M |  532 |     15577 | 4.16M | 424 |     12285 | 375.42K | 108 | "31,41,51,61,71,81" | 0:05'08'' | 0:01'09'' |
+| Q30L60X60P003  | 276.18M |   60.0 | 17627 | 4.54M |  477 |     17627 | 4.07M | 375 |     15263 | 469.36K | 102 | "31,41,51,61,71,81" | 0:05'31'' | 0:01'04'' |
+| Q30L60X80P000  | 368.24M |   80.0 | 18863 | 4.54M |  454 |     18972 | 4.17M | 360 |     12569 | 369.15K |  94 | "31,41,51,61,71,81" | 0:06'10'' | 0:01'16'' |
+| Q30L60X80P001  | 368.24M |   80.0 | 18347 | 4.54M |  483 |     18492 | 4.17M | 381 |     12569 | 371.71K | 102 | "31,41,51,61,71,81" | 0:06'37'' | 0:01'18'' |
+| Q30L60X80P002  | 368.24M |   80.0 | 20252 | 4.55M |  436 |     20515 | 4.06M | 335 |     13379 | 483.71K | 101 | "31,41,51,61,71,81" | 0:06'26'' | 0:01'15'' |
+| Q30L60X120P000 | 552.36M |  120.0 | 21312 | 4.55M |  405 |     21408 | 4.18M | 319 |     13133 | 363.83K |  86 | "31,41,51,61,71,81" | 0:08'38'' | 0:01'36'' |
+| Q30L60X120P001 | 552.36M |  120.0 | 22607 | 4.55M |  385 |     23176 | 4.14M | 297 |     13388 | 411.32K |  88 | "31,41,51,61,71,81" | 0:08'49'' | 0:01'38'' |
+| Q30L60X160P000 | 736.48M |  160.0 | 23176 | 4.55M |  374 |     23824 | 4.19M | 290 |     13345 | 362.97K |  84 | "31,41,51,61,71,81" | 0:07'35'' | 0:01'33'' |
 
 ## RsphF: merge anchors
 
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 20 25 30 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    8_competitor/abyss_ctg.fasta \
-    8_competitor/cabog_ctg.fasta \
-    8_competitor/mira_ctg.fasta \
-    8_competitor/msrca_ctg.fasta \
-    8_competitor/sga_ctg.fasta \
-    8_competitor/soap_ctg.fasta \
-    8_competitor/spades_ctg.fasta \
-    8_competitor/velvet_ctg.fasta \
-    merge/anchor.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
-    -o 9_qa
-
-```
+## RsphF: final stats
 
 * Stats
-
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 3188524 | 4602977 |   7 |
 | Paralogs     |    2337 |  147155 |  66 |
-| anchor.merge |   44642 | 4539106 | 206 |
-| others.merge |    1154 |   21928 |  18 |
+| anchor.merge |   45265 | 4419978 | 193 |
+| others.merge |   13391 |  516209 |  92 |
 
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=RsphF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30}L{1,60,90,120}X*
-rm -fr Q{20,25,30}L{1,60,90,120}X*
-```
+## RsphF: clear intermediate files
 
 # *Vibrio cholerae* CP1032(5) Full
 
 ## VchoF: download
 
-* Reference genome
+* Settings
 
 ```bash
 BASE_NAME=VchoF
+REAL_G=4033464
+COVERAGE2="30 40 50 60 80 120 160"
+READ_QUAL="25 30"
+READ_LEN="60"
+
+```
+
+* Reference genome
+
+```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 1_genome
@@ -2319,7 +1594,6 @@ ln -s SRR769320_2.fastq.gz R2.fq.gz
 * GAGE-B assemblies
 
 ```bash
-BASE_NAME=VchoF
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p 8_competitor
@@ -2331,124 +1605,11 @@ cp ~/data/anchr/Vcho/8_competitor/* .
 
 * FastQC
 
-```bash
-BASE_NAME=VchoF
-cd ${HOME}/data/anchr/${BASE_NAME}
+* kmergenie
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
+## VchoF: preprocess Illumina reads
 
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
-
-```
-
-## VchoF: combinations of different quality values and read lengths
-
-* qual: 20, 25, 30, and 35
-* len: 60
-
-```bash
-BASE_NAME=VchoF
-REAL_G=4033464
-SAMPLING_COVERAGE=200
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-# Down sampling
-READ_COUNT=$(( ${SAMPLING_COVERAGE} / 2 * ${REAL_G} / 251 ))
-if [ ! -e 2_illumina/R1.down.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        seqtk sample \
-            -s${READ_COUNT} \
-            2_illumina/{}.uniq.fq.gz \
-            ${READ_COUNT} \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.down.fq.gz
-        " ::: R1 R2
-fi
-
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.down.fq.gz \
-            -q sanger \
-            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 35 ::: 60
-
-# Stats
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "down";     faops n50 -H -S -C 2_illumina/R1.down.fq.gz 2_illumina/R2.down.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
-
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-            else
-                faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
-            fi
-        )
-    " ::: 20 25 30 35 ::: 60 \
-    >> stat.md
-
-cat stat.md
-```
+## VchoF: reads stats
 
 | Name     |     N50 |        Sum |       # |
 |:---------|--------:|-----------:|--------:|
@@ -2456,351 +1617,83 @@ cat stat.md
 | Paralogs |    3483 |     114707 |      48 |
 | Illumina |     251 | 1762158050 | 7020550 |
 | uniq     |     251 | 1727781592 | 6883592 |
-| down     |     251 |  806692414 | 3213914 |
-| scythe   |     198 |  613637861 | 3213914 |
-| Q20L60   |     191 |  558809317 | 3046850 |
-| Q25L60   |     188 |  513691780 | 2864002 |
-| Q30L60   |     181 |  466029782 | 2737046 |
-| Q35L60   |     156 |  310121409 | 2163038 |
+| shuffle  |     251 | 1727781592 | 6883592 |
+| scythe   |     198 | 1312851134 | 6883592 |
+| Q25L60   |     188 | 1099728002 | 6131160 |
+| Q30L60   |     181 |  997782199 | 5858946 |
 
 ## VchoF: quorum
 
-```bash
-BASE_NAME=VchoF
-REAL_G=4033464
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-parallel --no-run-if-empty -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.fq.gz R2.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: 20 25 30 35 ::: 60
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel -k --no-run-if-empty -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 \
-     >> stat1.md
-
-cat stat1.md
-
-```
-
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|------:|------:|------:|---------:|----------:|
-| Q20L60 | 558.81M | 138.5 | 449.06M |  111.3 |  19.639% |     183 | "111" | 4.03M | 4.05M |     1.00 | 0:01'45'' |
-| Q25L60 | 513.69M | 127.4 | 435.83M |  108.1 |  15.156% |     179 | "109" | 4.03M | 4.01M |     0.99 | 0:01'42'' |
-| Q30L60 | 466.22M | 115.6 | 411.28M |  102.0 |  11.783% |     173 | "103" | 4.03M | 3.98M |     0.99 | 0:01'35'' |
-| Q35L60 | 310.41M |  77.0 | 291.79M |   72.3 |   6.001% |     147 |  "83" | 4.03M | 3.94M |     0.98 | 0:01'05'' |
-
-* Clear intermediate files.
-
-```bash
-BASE_NAME=VchoF
-cd $HOME/data/anchr/${BASE_NAME}
-
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-```
-
-* kmergenie
-
-```bash
-BASE_NAME=VchoF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R1.fq.gz -o oriR1
-kmergenie -l 21 -k 151 -s 10 -t 8 ../R2.fq.gz -o oriR2
-kmergenie -l 21 -k 151 -s 10 -t 8 ../Q20L60/pe.cor.fa -o Q20L60
-
-```
+| Q25L60 |    1.1G | 272.7 | 939.43M |  232.9 |  14.576% |     178 | "109" | 4.03M | 4.37M |     1.08 | 0:06'16'' |
+| Q30L60 | 998.18M | 247.5 | 882.57M |  218.8 |  11.582% |     172 | "105" | 4.03M | 4.16M |     1.03 | 0:05'00'' |
 
 ## VchoF: down sampling
 
-```bash
-BASE_NAME=VchoF
-REAL_G=4033464
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: 20 25 30 35 ::: 60 ); do
-    echo "==> ${QxxLxx}"
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-
-    for X in 40 80; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
-
-```
-
 ## VchoF: k-unitigs and anchors (sampled)
 
-```bash
-BASE_NAME=VchoF
-REAL_G=4033464
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# k-unitigs (sampled)
-parallel --no-run-if-empty -j 1 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# anchors (sampled)
-parallel --no-run-if-empty -j 3 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    anchr anchors \
-        ../pe.cor.fa \
-        ../k_unitigs.fasta \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-    
-    echo >&2
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel -k --no-run-if-empty -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 \
-    >> stat2.md
-
-cat stat2.md
-```
-
-| Name          |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |   Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|------:|------:|-----:|----------:|------:|----:|----------:|--------:|----:|--------------------:|----------:|:----------|
-| Q20L60X40P000 | 161.34M |   40.0 | 10485 | 3.93M |  672 |     10697 | 3.85M | 568 |       780 |  77.45K | 104 | "31,41,51,61,71,81" | 0:01'56'' | 0:00'52'' |
-| Q20L60X40P001 | 161.34M |   40.0 | 10263 | 3.93M |  677 |     10523 | 3.84M | 552 |       772 |  90.95K | 125 | "31,41,51,61,71,81" | 0:01'53'' | 0:00'54'' |
-| Q20L60X80P000 | 322.68M |   80.0 |  5651 | 3.93M | 1086 |      5916 | 3.79M | 885 |       780 | 149.39K | 201 | "31,41,51,61,71,81" | 0:03'00'' | 0:01'25'' |
-| Q25L60X40P000 | 161.34M |   40.0 | 13227 | 3.94M |  546 |     13361 | 3.86M | 454 |       819 |  75.15K |  92 | "31,41,51,61,71,81" | 0:01'57'' | 0:01'03'' |
-| Q25L60X40P001 | 161.34M |   40.0 | 13163 | 3.93M |  551 |     13878 | 3.85M | 441 |       757 |  78.78K | 110 | "31,41,51,61,71,81" | 0:01'56'' | 0:01'07'' |
-| Q25L60X80P000 | 322.68M |   80.0 |  7475 | 3.94M |  871 |      7662 | 3.83M | 716 |       772 | 113.26K | 155 | "31,41,51,61,71,81" | 0:03'04'' | 0:01'32'' |
-| Q30L60X40P000 | 161.34M |   40.0 | 14871 | 3.93M |  488 |     15216 | 3.86M | 396 |       757 |   65.6K |  92 | "31,41,51,61,71,81" | 0:01'54'' | 0:01'05'' |
-| Q30L60X40P001 | 161.34M |   40.0 | 16194 | 3.93M |  482 |     16458 | 3.86M | 383 |       708 |   70.7K |  99 | "31,41,51,61,71,81" | 0:02'28'' | 0:01'02'' |
-| Q30L60X80P000 | 322.68M |   80.0 |  9140 | 3.94M |  756 |      9270 | 3.84M | 622 |       766 |  98.53K | 134 | "31,41,51,61,71,81" | 0:03'49'' | 0:01'27'' |
-| Q35L60X40P000 | 161.34M |   40.0 | 29728 | 3.93M |  318 |     30761 | 3.88M | 245 |       728 |  51.21K |  73 | "31,41,51,61,71,81" | 0:03'18'' | 0:01'07'' |
+| Name           |  SumCor | CovCor | N50SR |   Sum |    # | N50Anchor |   Sum |    # | N50Others |     Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|--------:|-------:|------:|------:|-----:|----------:|------:|-----:|----------:|--------:|-----:|--------------------:|----------:|:----------|
+| Q25L60X30P000  |    121M |   30.0 |  3496 | 3.94M | 1574 |      3812 | 3.61M | 1153 |       797 | 321.14K |  421 | "31,41,51,61,71,81" | 0:04'27'' | 0:00'30'' |
+| Q25L60X30P001  |    121M |   30.0 |  3325 | 3.93M | 1656 |      3575 |  3.6M | 1222 |       779 | 324.35K |  434 | "31,41,51,61,71,81" | 0:04'25'' | 0:00'29'' |
+| Q25L60X30P002  |    121M |   30.0 |  3409 | 3.92M | 1574 |      3732 | 3.62M | 1167 |       790 | 306.19K |  407 | "31,41,51,61,71,81" | 0:03'08'' | 0:00'29'' |
+| Q25L60X30P003  |    121M |   30.0 |  3471 | 3.91M | 1578 |      3675 | 3.61M | 1165 |       779 |  307.9K |  413 | "31,41,51,61,71,81" | 0:03'46'' | 0:00'30'' |
+| Q25L60X30P004  |    121M |   30.0 |  3367 | 3.93M | 1640 |      3616 |  3.6M | 1193 |       776 | 328.81K |  447 | "31,41,51,61,71,81" | 0:02'49'' | 0:00'29'' |
+| Q25L60X30P005  |    121M |   30.0 |  3391 | 3.93M | 1612 |      3712 | 3.62M | 1200 |       806 | 312.16K |  412 | "31,41,51,61,71,81" | 0:03'23'' | 0:00'29'' |
+| Q25L60X30P006  |    121M |   30.0 |  3359 | 3.94M | 1642 |      3664 | 3.61M | 1212 |       791 | 325.04K |  430 | "31,41,51,61,71,81" | 0:03'29'' | 0:00'29'' |
+| Q25L60X40P000  | 161.34M |   40.0 |  2904 | 3.92M | 1871 |      3196 | 3.48M | 1291 |       792 | 435.05K |  580 | "31,41,51,61,71,81" | 0:03'37'' | 0:00'30'' |
+| Q25L60X40P001  | 161.34M |   40.0 |  2667 | 3.92M | 1914 |      2992 | 3.48M | 1332 |       783 | 434.67K |  582 | "31,41,51,61,71,81" | 0:04'12'' | 0:00'30'' |
+| Q25L60X40P002  | 161.34M |   40.0 |  2803 |  3.9M | 1848 |      3029 |  3.5M | 1304 |       772 | 405.43K |  544 | "31,41,51,61,71,81" | 0:04'19'' | 0:00'31'' |
+| Q25L60X40P003  | 161.34M |   40.0 |  2735 | 3.92M | 1928 |      3051 | 3.47M | 1333 |       784 | 440.76K |  595 | "31,41,51,61,71,81" | 0:03'54'' | 0:00'30'' |
+| Q25L60X40P004  | 161.34M |   40.0 |  2744 | 3.92M | 1898 |      2985 |  3.5M | 1342 |       788 | 416.94K |  556 | "31,41,51,61,71,81" | 0:04'08'' | 0:00'31'' |
+| Q25L60X50P000  | 201.67M |   50.0 |  2403 |  3.9M | 2126 |      2775 | 3.36M | 1397 |       779 | 541.39K |  729 | "31,41,51,61,71,81" | 0:04'29'' | 0:00'31'' |
+| Q25L60X50P001  | 201.67M |   50.0 |  2384 | 3.89M | 2127 |      2679 | 3.35M | 1392 |       768 |  540.7K |  735 | "31,41,51,61,71,81" | 0:04'59'' | 0:00'32'' |
+| Q25L60X50P002  | 201.67M |   50.0 |  2353 | 3.88M | 2120 |      2664 | 3.35M | 1407 |       767 | 524.41K |  713 | "31,41,51,61,71,81" | 0:03'51'' | 0:00'31'' |
+| Q25L60X50P003  | 201.67M |   50.0 |  2301 | 3.89M | 2152 |      2618 | 3.37M | 1449 |       788 | 523.24K |  703 | "31,41,51,61,71,81" | 0:04'53'' | 0:00'33'' |
+| Q25L60X60P000  | 242.01M |   60.0 |  2063 | 3.86M | 2368 |      2405 | 3.18M | 1446 |       778 | 682.63K |  922 | "31,41,51,61,71,81" | 0:05'28'' | 0:00'33'' |
+| Q25L60X60P001  | 242.01M |   60.0 |  2092 | 3.84M | 2305 |      2419 | 3.21M | 1445 |       770 | 632.08K |  860 | "31,41,51,61,71,81" | 0:05'54'' | 0:00'33'' |
+| Q25L60X60P002  | 242.01M |   60.0 |  2089 | 3.86M | 2380 |      2427 | 3.19M | 1471 |       771 | 664.44K |  909 | "31,41,51,61,71,81" | 0:04'09'' | 0:00'32'' |
+| Q25L60X80P000  | 322.68M |   80.0 |  1678 | 3.76M | 2674 |      2084 | 2.88M | 1466 |       771 | 885.68K | 1208 | "31,41,51,61,71,81" | 0:07'10'' | 0:00'33'' |
+| Q25L60X80P001  | 322.68M |   80.0 |  1674 | 3.75M | 2657 |      2080 | 2.91M | 1500 |       756 | 843.39K | 1157 | "31,41,51,61,71,81" | 0:04'59'' | 0:00'33'' |
+| Q25L60X120P000 | 484.02M |  120.0 |  1334 | 3.57M | 3031 |      1748 | 2.38M | 1379 |       755 |   1.19M | 1652 | "31,41,51,61,71,81" | 0:07'18'' | 0:00'35'' |
+| Q25L60X160P000 | 645.35M |  160.0 |  1158 |  3.4M | 3209 |      1599 |    2M | 1248 |       729 |   1.39M | 1961 | "31,41,51,61,71,81" | 0:13'04'' | 0:00'36'' |
+| Q30L60X30P000  |    121M |   30.0 |  8864 | 3.93M |  771 |      9084 | 3.81M |  619 |       825 | 121.55K |  152 | "31,41,51,61,71,81" | 0:04'33'' | 0:00'30'' |
+| Q30L60X30P001  |    121M |   30.0 |  7426 | 3.94M |  859 |      7647 | 3.82M |  698 |       795 | 123.76K |  161 | "31,41,51,61,71,81" | 0:03'11'' | 0:00'29'' |
+| Q30L60X30P002  |    121M |   30.0 |  8258 | 3.94M |  788 |      8710 | 3.81M |  629 |       806 | 130.78K |  159 | "31,41,51,61,71,81" | 0:02'33'' | 0:00'29'' |
+| Q30L60X30P003  |    121M |   30.0 |  7695 | 3.94M |  834 |      7892 | 3.83M |  692 |       813 |  110.6K |  142 | "31,41,51,61,71,81" | 0:02'51'' | 0:00'28'' |
+| Q30L60X30P004  |    121M |   30.0 |  7967 | 3.94M |  818 |      8275 | 3.81M |  653 |       776 | 125.12K |  165 | "31,41,51,61,71,81" | 0:02'10'' | 0:00'28'' |
+| Q30L60X30P005  |    121M |   30.0 |  8247 | 3.94M |  809 |      8454 | 3.82M |  661 |       825 | 119.33K |  148 | "31,41,51,61,71,81" | 0:02'32'' | 0:00'30'' |
+| Q30L60X30P006  |    121M |   30.0 |  8135 | 3.94M |  812 |      8489 | 3.82M |  655 |       794 | 121.94K |  157 | "31,41,51,61,71,81" | 0:02'33'' | 0:00'29'' |
+| Q30L60X40P000  | 161.34M |   40.0 |  7090 | 3.95M |  925 |      7327 | 3.81M |  753 |       801 | 133.87K |  172 | "31,41,51,61,71,81" | 0:02'44'' | 0:00'30'' |
+| Q30L60X40P001  | 161.34M |   40.0 |  6468 | 3.95M |  963 |      6719 | 3.81M |  781 |       791 | 138.51K |  182 | "31,41,51,61,71,81" | 0:02'55'' | 0:00'30'' |
+| Q30L60X40P002  | 161.34M |   40.0 |  6976 | 3.96M |  951 |      7076 | 3.78M |  761 |       855 | 176.51K |  190 | "31,41,51,61,71,81" | 0:02'58'' | 0:00'30'' |
+| Q30L60X40P003  | 161.34M |   40.0 |  6669 | 3.95M |  956 |      6840 |  3.8M |  760 |       794 | 149.34K |  196 | "31,41,51,61,71,81" | 0:02'55'' | 0:00'32'' |
+| Q30L60X40P004  | 161.34M |   40.0 |  6771 | 3.95M |  948 |      6906 | 3.81M |  772 |       796 | 134.29K |  176 | "31,41,51,61,71,81" | 0:02'34'' | 0:00'30'' |
+| Q30L60X50P000  | 201.67M |   50.0 |  5778 | 3.95M | 1079 |      6066 | 3.78M |  853 |       801 | 175.94K |  226 | "31,41,51,61,71,81" | 0:02'27'' | 0:00'32'' |
+| Q30L60X50P001  | 201.67M |   50.0 |  5742 | 3.95M | 1086 |      5980 | 3.77M |  850 |       772 |  178.7K |  236 | "31,41,51,61,71,81" | 0:02'16'' | 0:00'32'' |
+| Q30L60X50P002  | 201.67M |   50.0 |  5674 | 3.95M | 1080 |      5982 | 3.79M |  860 |       767 | 165.07K |  220 | "31,41,51,61,71,81" | 0:02'08'' | 0:00'32'' |
+| Q30L60X50P003  | 201.67M |   50.0 |  5712 | 3.95M | 1068 |      5854 | 3.79M |  862 |       801 | 155.78K |  206 | "31,41,51,61,71,81" | 0:02'09'' | 0:00'31'' |
+| Q30L60X60P000  | 242.01M |   60.0 |  4912 | 3.96M | 1232 |      5215 | 3.74M |  953 |       795 | 214.94K |  279 | "31,41,51,61,71,81" | 0:02'23'' | 0:00'33'' |
+| Q30L60X60P001  | 242.01M |   60.0 |  4974 | 3.94M | 1210 |      5312 | 3.74M |  936 |       801 | 209.34K |  274 | "31,41,51,61,71,81" | 0:02'36'' | 0:00'34'' |
+| Q30L60X60P002  | 242.01M |   60.0 |  5038 | 3.95M | 1202 |      5190 | 3.75M |  937 |       801 | 201.46K |  265 | "31,41,51,61,71,81" | 0:02'30'' | 0:00'33'' |
+| Q30L60X80P000  | 322.68M |   80.0 |  3923 | 3.95M | 1466 |      4219 | 3.67M | 1101 |       795 | 277.99K |  365 | "31,41,51,61,71,81" | 0:03'02'' | 0:00'34'' |
+| Q30L60X80P001  | 322.68M |   80.0 |  3920 | 3.95M | 1462 |      4160 | 3.67M | 1095 |       769 | 273.67K |  367 | "31,41,51,61,71,81" | 0:03'01'' | 0:00'34'' |
+| Q30L60X120P000 | 484.02M |  120.0 |  2886 | 3.92M | 1874 |      3173 | 3.48M | 1277 |       774 | 443.32K |  597 | "31,41,51,61,71,81" | 0:04'19'' | 0:00'36'' |
+| Q30L60X160P000 | 645.35M |  160.0 |  2349 | 3.88M | 2171 |      2661 |  3.3M | 1391 |       764 | 573.31K |  780 | "31,41,51,61,71,81" | 0:04'26'' | 0:00'35'' |
 
 ## VchoF: merge anchors
 
-```bash
-BASE_NAME=VchoF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-            fi
-            " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: 20 25 30 35 ::: 60 ::: 40 80 ::: 000 001 002 003 004 005 006
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    8_competitor/abyss_ctg.fasta \
-    8_competitor/cabog_ctg.fasta \
-    8_competitor/mira_ctg.fasta \
-    8_competitor/msrca_ctg.fasta \
-    8_competitor/sga_ctg.fasta \
-    8_competitor/soap_ctg.fasta \
-    8_competitor/spades_ctg.fasta \
-    8_competitor/velvet_ctg.fasta \
-    merge/anchor.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,paralogs" \
-    -o 9_qa
-
-```
+## VchoF: final stats
 
 * Stats
-
-```bash
-BASE_NAME=VchoF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-```
 
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 2961149 | 4033464 |   2 |
 | Paralogs     |    3483 |  114707 |  48 |
-| anchor.merge |   59780 | 3893974 | 136 |
-| others.merge |    1058 |   24575 |  17 |
+| anchor.merge |   98382 | 3911716 | 101 |
+| others.merge |    1023 |  283179 | 236 |
 
-* Clear QxxLxxXxx.
-
-```bash
-BASE_NAME=VchoF
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-rm -fr 2_illumina/Q{20,25,30,35}L{1,60,90,120}X*
-rm -fr Q{20,25,30,35}L{1,60,90,120}X*
-```
+## VchoF: clear intermediate files
 
