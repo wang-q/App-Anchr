@@ -173,11 +173,7 @@ log_info Creating k-unitigs
     create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
         -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 \
         pe.cor.fa \
-        > k_unitigs_K[% kmer %].raw.fasta
-    anchr contained \
-        k_unitigs_K[% kmer %].raw.fasta \
-        --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-        -o k_unitigs_K[% kmer %].fasta
+        > k_unitigs_K[% kmer %].fasta
 
 [% END -%]
 
