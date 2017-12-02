@@ -17,6 +17,6 @@ like( $result->error, qr{doesn't exist}, 'infile not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(anchors t/merge.fasta t/R1.fq.gz -o stdout)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 50, 'line count' );
-like( $result->stdout, qr{Colors.+anchor2}s, 'bash contents' );
+like( $result->stdout, qr{Colors.+anchor}s, 'bash contents' );
 
 done_testing();
