@@ -128,11 +128,10 @@ brew install wang-q/tap/platanus
 
 ## PacBio specific tools
 
-PacBio is switching its data format from `hdf5` to `bam`, but at now
-(early 2017) the majority of public available PacBio data are still in
-formats of `.bax.h5` or `hdf5.tgz`. For dealing with these files, PacBio
-releases some tools which can be installed by another specific tool,
-named `pitchfork`.
+PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
+public available PacBio data are still in formats of `.bax.h5` or `hdf5.tgz`. For dealing with these
+files, PacBio releases some tools which can be installed by another specific tool, named
+`pitchfork`.
 
 Their tools *can* be compiled under macOS with Homebrew.
 
@@ -180,10 +179,9 @@ deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
 make bax2bam
 ```
 
-* Compiled binary files are in `~/share/pitchfork/deployment`. Run
-  `source ~/share/pitchfork/deployment/setup-env.sh` will bring this
-  path to your `$PATH`. This action would also pollute your bash
-  environment, if anything went wrong, restart your terminal.
+* Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
+  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`. This action would
+  also pollute your bash environment, if anything went wrong, restart your terminal.
 
 ```bash
 source ~/share/pitchfork/deployment/setup-env.sh
@@ -194,10 +192,8 @@ bax2bam --help
 
 # *Escherichia coli* str. K-12 substr. MG1655
 
-* Genome: INSDC
-  [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
-* Taxonomy ID:
-  [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145)
+* Genome: INSDC [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
+* Taxonomy ID: [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145)
 * Proportion of paralogs (> 1000 bp): 0.0323
 
 ## e_coli: download
@@ -267,9 +263,9 @@ EOF
 
 * PacBio
 
-    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly)
-    PacBio provides a 7 GB file for *E. coli* (20 kb library), which is
-    gathered with RS II and the P6C4 reagent.
+    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly) PacBio
+    provides a 7 GB file for *E. coli* (20 kb library), which is gathered with RS II and the P6C4
+    reagent.
 
 ```bash
 mkdir -p ~/data/anchr/e_coli/3_pacbio
@@ -614,6 +610,7 @@ parallel --no-run-if-empty -k -j 3 "
 cat stat1.md
 
 ```
+
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
 | Q25L60 | 1.32G | 283.9 |  1.24G |  267.4 |   5.801% |     133 | "83" | 4.64M | 4.58M |     0.99 | 0:03'22'' |
@@ -778,8 +775,8 @@ anchr contained \
     ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
+    | faops filter -a 1000 -l 0 stdin merge/anchor.non-contained.fasta
+anchr orient merge/anchor.non-contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
 anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
@@ -1115,7 +1112,7 @@ printf "|:--|--:|--:|--:|\n" >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
+    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "anchor";   faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
@@ -1128,6 +1125,8 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "canu-X${EXPAND_WITH}-raw"; faops n50 -H -S -C canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "canu-X${EXPAND_WITH}-trim"; faops n50 -H -S -C canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "spades.config"; faops n50 -H -S -C 8_spades/configs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
