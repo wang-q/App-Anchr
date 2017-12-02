@@ -177,6 +177,7 @@ log_info Creating k-unitigs
 
 [% END -%]
 
+log_info Creating non-contained k-unitigs
     anchr contained \
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
