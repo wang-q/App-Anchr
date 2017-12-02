@@ -798,14 +798,9 @@ anchr contained \
             fi
             " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    --len 500 --idt 0.98 --proportion 0.99999 --parallel 16 \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o merge/others.merge0.fasta
-anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
+    | faops filter -a 500 -l 0 stdin merge/others.non-contained.fasta
 
 # anchor sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
@@ -832,7 +827,7 @@ quast --no-check --threads 16 \
     ) \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
+    merge/others.non-contained.fasta \
     1_genome/paralogs.fas \
     --label "merge,others,paralogs" \
     -o 9_qa
@@ -1122,9 +1117,9 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+    $(echo "anchor";   faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
+    $(echo "others";   faops n50 -H -S -C merge/others.non-contained.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
