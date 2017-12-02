@@ -6,6 +6,21 @@
     - [Extra external executables](#extra-external-executables)
     - [Two of the leading assemblers](#two-of-the-leading-assemblers)
     - [PacBio specific tools](#pacbio-specific-tools)
+- [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
+    - [e_coli: download](#e-coli-download)
+    - [e_coli: preprocess Illumina reads](#e-coli-preprocess-illumina-reads)
+    - [e_coli: preprocess PacBio reads](#e-coli-preprocess-pacbio-reads)
+    - [e_coli: reads stats](#e-coli-reads-stats)
+    - [e_coli: spades](#e-coli-spades)
+    - [e_coli: platanus](#e-coli-platanus)
+    - [e_coli: quorum](#e-coli-quorum)
+    - [e_coli: down sampling](#e-coli-down-sampling)
+    - [e_coli: k-unitigs and anchors (sampled)](#e-coli-k-unitigs-and-anchors-sampled)
+    - [e_coli: merge anchors](#e-coli-merge-anchors)
+    - [e_coli: 3GS](#e-coli-3gs)
+    - [e_coli: expand anchors](#e-coli-expand-anchors)
+    - [e_coli: final stats](#e-coli-final-stats)
+    - [e_coli: clear intermediate files](#e-coli-clear-intermediate-files)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
     - [s288c: preprocess Illumina reads](#s288c-preprocess-illumina-reads)
@@ -16,7 +31,6 @@
     - [s288c: quorum](#s288c-quorum)
     - [s288c: down sampling](#s288c-down-sampling)
     - [s288c: k-unitigs and anchors (sampled)](#s288c-k-unitigs-and-anchors-sampled)
-    - [s288c: merge anchors with Qxx and QxxL60Xxx](#s288c-merge-anchors-with-qxx-and-qxxl60xxx)
     - [s288c: merge anchors](#s288c-merge-anchors)
     - [s288c: 3GS](#s288c-3gs)
     - [s288c: local corrections](#s288c-local-corrections)
@@ -177,126 +191,113 @@ source ~/share/pitchfork/deployment/setup-env.sh
 bax2bam --help
 ```
 
-# *Saccharomyces cerevisiae* S288c
 
-* Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Saccharomyces_cerevisiae/Info/Index)
-* Proportion of paralogs (> 1000 bp): 0.058
+# *Escherichia coli* str. K-12 substr. MG1655
 
-## s288c: download
+* Genome: INSDC
+  [U00096.3](https://www.ncbi.nlm.nih.gov/nuccore/U00096.3)
+* Taxonomy ID:
+  [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145)
+* Proportion of paralogs (> 1000 bp): 0.0323
+
+## e_coli: download
 
 * Settings
 
 ```bash
-BASE_NAME=s288c
-REAL_G=12157105
-COVERAGE2="30 40 50 60 80 120 160"
+BASE_NAME=e_coli
+REAL_G=4641652
+COVERAGE2="40 80"
 COVERAGE3="40 80"
 READ_QUAL="25 30"
 READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
 * Reference genome
 
 ```bash
-BASE_NAME=s288c
-mkdir -p ${HOME}/data/anchr/${BASE_NAME}
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ~/data/anchr/e_coli/1_genome
+cd ~/data/anchr/e_coli/1_genome
 
-mkdir -p 1_genome
-cd 1_genome
+curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
+    > U00096.fa
+# simplify header, remove .3
+cat U00096.fa \
+    | perl -nl -e '
+        /^>(\w+)/ and print qq{>$1} and next;
+        print;
+    ' \
+    > genome.fa
 
-wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
-faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
-    <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
-    genome.fa
-
-cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
 ```
 
 * Illumina
 
-    PRJNA340312, SRX2058864
-
 ```bash
-BASE_NAME=s288c
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ~/data/anchr/e_coli/2_illumina
+cd ~/data/anchr/e_coli/2_illumina
+aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
+aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
 
-mkdir -p 2_illumina
-cd 2_illumina
+ln -s MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
+ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
 
-cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_1.fastq.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_2.fastq.gz
+cat <<EOF > illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>solexa-forward
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+>nextera-forward-read-contam
+CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
+>nextera-reverse-read-contam
+CTGTCTCTTATACACATCTGACGCTGCCGACGA
+>solexa-reverse
+AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
+
 EOF
 
-aria2c -x 9 -s 3 -c -i sra_ftp.txt
-
-cat << EOF > sra_md5.txt
-7ba93499d73cdaeaf50dd506e2c8572d SRR4074255_1.fastq.gz
-aee9ec3f855796b6d30a3d191fc22345 SRR4074255_2.fastq.gz
-EOF
-
-md5sum --check sra_md5.txt
-
-ln -s SRR522246_1.fastq.gz R1.fq.gz
-ln -s SRR522246_2.fastq.gz R2.fq.gz
 ```
 
 * PacBio
 
-    PacBio provides a dataset of *S. cerevisiae* strain
-    [W303](https://github.com/PacificBiosciences/DevNet/wiki/Saccharomyces-cerevisiae-W303-Assembly-Contigs),
-    while the reference strain S288c is not provided. So we use the dataset from
-    [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
-    [study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949), and
-    [sample SAMEA4461732](https://www.ncbi.nlm.nih.gov/biosample/SAMEA4461732). They're gathered
-    with RS II and P6C4.
+    [Here](https://github.com/PacificBiosciences/DevNet/wiki/E.-coli-Bacterial-Assembly)
+    PacBio provides a 7 GB file for *E. coli* (20 kb library), which is
+    gathered with RS II and the P6C4 reagent.
 
 ```bash
-mkdir -p ~/data/anchr/s288c/3_pacbio
-cd ~/data/anchr/s288c/3_pacbio
+mkdir -p ~/data/anchr/e_coli/3_pacbio
+cd ~/data/anchr/e_coli/3_pacbio
+aria2c -x 9 -s 3 -c https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
 
-# download from sra
-cat <<EOF > hdf5.txt
-http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
-EOF
+tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
 
-aria2c -x 9 -s 3 -c -i hdf5.txt
-
-# untar
-mkdir -p ~/data/anchr/s288c/3_pacbio/untar
-cd ~/data/anchr/s288c/3_pacbio
-tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
+# Optional, a human readable .metadata.xml file
+#xmllint --format E01_1/m141013_011508_sherri_c100709962550000001823135904221533_s1_p0.metadata.xml \
+#    > m141013.metadata.xml
 
 # convert .bax.h5 to .subreads.bam
-mkdir -p ~/data/anchr/s288c/3_pacbio/bam
-cd ~/data/anchr/s288c/3_pacbio/bam
+mkdir -p ~/data/anchr/e_coli/3_pacbio/bam
+cd ~/data/anchr/e_coli/3_pacbio/bam
 
 source ~/share/pitchfork/deployment/setup-env.sh
-for movie in m150412;
-do 
-    bax2bam ~/data/anchr/s288c/3_pacbio/untar/${movie}*.bax.h5
-done
+bax2bam ../E01_1/Analysis_Results/*.bax.h5
 
 # convert .subreads.bam to fasta
-mkdir -p ~/data/anchr/s288c/3_pacbio/fasta
+mkdir -p ~/data/anchr/e_coli/3_pacbio/fasta
 
-for movie in m150412;
-do
-    if [ ! -e ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam ]; then
-        continue
-    fi
+samtools fasta \
+    ~/data/anchr/e_coli/3_pacbio/bam/m141013*.subreads.bam \
+    > ~/data/anchr/e_coli/3_pacbio/fasta/m141013.fasta
 
-    samtools fasta \
-        ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam \
-        > ~/data/anchr/s288c/3_pacbio/fasta/${movie}.fasta
-done
-
-cd ~/data/anchr/s288c
-cat 3_pacbio/fasta/*.fasta \
-    | faops dazz -l 0 -p long stdin 3_pacbio/pacbio.fasta
+cd ~/data/anchr/e_coli/3_pacbio
+cat fasta/m141013.fasta \
+    | faops dazz -l 0 -p long stdin pacbio.fasta
 
 ```
 
@@ -328,7 +329,7 @@ parallel -j 2 "
 
 ```
 
-## s288c: preprocess Illumina reads
+## e_coli: preprocess Illumina reads
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -346,6 +347,32 @@ if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
         " ::: R1 R2
 fi
 
+if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
+    shuffle.sh \
+        in=2_illumina/R1.uniq.fq.gz \
+        in2=2_illumina/R2.uniq.fq.gz \
+        out=2_illumina/R1.shuffle.fq \
+        out2=2_illumina/R2.shuffle.fq
+    
+    parallel --no-run-if-empty -j 2 "
+        pigz -p 8 2_illumina/{}.shuffle.fq
+        " ::: R1 R2
+fi
+
+if [ -e 2_illumina/illumina_adapters.fa ]; then
+    if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
+        parallel --no-run-if-empty -j 2 "
+            scythe \
+                2_illumina/{}.shuffle.fq.gz \
+                -q sanger \
+                -a 2_illumina/illumina_adapters.fa \
+                --quiet \
+                | pigz -p 4 -c \
+                > 2_illumina/{}.scythe.fq.gz
+            " ::: R1 R2
+    fi
+fi
+
 parallel --no-run-if-empty --linebuffer -k -j 3 "
     mkdir -p 2_illumina/Q{1}L{2}
     cd 2_illumina/Q{1}L{2}
@@ -358,14 +385,14 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
     anchr trim \
         --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
         -o stdout \
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
 
 ```
 
-## s288c: preprocess PacBio reads
+## e_coli: preprocess PacBio reads
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -393,7 +420,7 @@ done
 
 ```
 
-## s288c: reads stats
+## e_coli: reads stats
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -407,10 +434,15 @@ printf "| %s | %s | %s | %s |\n" \
     $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "shuffle";  faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 
 parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
@@ -447,28 +479,32 @@ cat stat.md
 
 ```
 
-| Name     |    N50 |        Sum |        # |
-|:---------|-------:|-----------:|---------:|
-| Genome   | 924431 |   12157105 |       17 |
-| Paralogs |   3851 |    1059148 |      366 |
-| Illumina |    151 | 2939081214 | 19464114 |
-| uniq     |    151 | 2778772064 | 18402464 |
-| Q25L60   |    151 | 2502621682 | 16817924 |
-| Q30L60   |    151 | 2442383221 | 16630313 |
-| PacBio   |   8412 |  820962526 |   177100 |
-| X40.raw  |   8344 |  486285507 |   108074 |
-| X40.trim |   7743 |  373850168 |    64169 |
-| X80.raw  |   8412 |  820962526 |   177100 |
-| X80.trim |   7829 |  626413879 |   106381 |
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 4641652 |    4641652 |        1 |
+| Paralogs |    1934 |     195673 |      106 |
+| Illumina |     151 | 1730299940 | 11458940 |
+| uniq     |     151 | 1727289000 | 11439000 |
+| shuffle  |     151 | 1722450607 | 11439000 |
+| scythe   |     151 | 1722450607 | 11439000 |
+| Q25L60   |     151 | 1317617346 |  9994728 |
+| Q30L60   |     127 | 1149107745 |  9783292 |
+| PacBio   |   13982 |  748508361 |    87225 |
+| X20.raw  |   14138 |   92847236 |    11329 |
+| X20.trim |   13873 |   83906110 |     9733 |
+| X40.raw  |   14030 |  185678104 |    22336 |
+| X40.trim |   13702 |  169380879 |    19468 |
+| X80.raw  |   13990 |  371337468 |    44005 |
+| X80.trim |   13632 |  339513065 |    38725 |
 
-## s288c: spades
+## e_coli: spades
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 spades.py \
     -t 16 \
-    -k 21,33,55,77 \
+    -k 21,33,55,77 --careful \
     -1 2_illumina/Q25L60/R1.fq.gz \
     -2 2_illumina/Q25L60/R2.fq.gz \
     -s 2_illumina/Q25L60/Rs.fq.gz \
@@ -482,7 +518,7 @@ anchr contained \
 
 ```
 
-## s288c: platanus
+## e_coli: platanus
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -525,13 +561,7 @@ anchr contained \
 
 ```
 
-```text
-#### PROCESS INFORMATION ####
-VmPeak:          65.688 GByte
-VmHWM:            7.394 GByte
-```
-
-## s288c: quorum
+## e_coli: quorum
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -583,13 +613,12 @@ parallel --no-run-if-empty -k -j 3 "
 cat stat1.md
 
 ```
+| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 1.32G | 283.9 |  1.24G |  267.4 |   5.801% |     133 | "83" | 4.64M | 4.58M |     0.99 | 0:03'22'' |
+| Q30L60 | 1.15G | 247.7 |  1.12G |  241.6 |   2.484% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:02'58'' |
 
-| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
-|:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
-| Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:06'55'' |
-| Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:06'49'' |
-
-## s288c: down sampling
+## e_coli: down sampling
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -633,12 +662,12 @@ done
 
 ```
 
-## s288c: k-unitigs and anchors (sampled)
+## e_coli: k-unitigs and anchors (sampled)
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-# k-unitigs (sampled)
+# k-unitigs
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
@@ -666,7 +695,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo >&2
     " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
-# anchors (sampled)
+# anchors
 parallel --no-run-if-empty --linebuffer -k -j 3 "
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
 
@@ -675,21 +704,22 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
         exit;
     fi
 
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
+    if [ -e Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
     rm -fr Q{1}L{2}X{3}P{4}/anchor
     mkdir -p Q{1}L{2}X{3}P{4}/anchor
     cd Q{1}L{2}X{3}P{4}/anchor
+    
     anchr anchors \
         ../k_unitigs.fasta \
         ../pe.cor.fa \
         -p 8 \
         -o anchors.sh
     bash anchors.sh
-    
+
     echo >&2
     " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
 
@@ -707,122 +737,30 @@ parallel --no-run-if-empty -k -j 6 "
     >> stat2.md
 
 cat stat2.md
-
 ```
 
-| Name           |  SumCor | CovCor | N50SR |    Sum |    # | N50Anchor |    Sum |    # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|--------:|-------:|------:|-------:|-----:|----------:|-------:|-----:|----------:|--------:|----:|--------------------:|----------:|:----------|
-| Q25L60X30P000  | 364.71M |   30.0 | 10058 | 11.32M | 1910 |     10348 | 11.09M | 1613 |       809 | 230.88K | 297 | "31,41,51,61,71,81" | 0:10'03'' | 0:01'22'' |
-| Q25L60X30P001  | 364.71M |   30.0 | 10449 | 11.32M | 1901 |     10591 | 11.09M | 1592 |       766 | 230.71K | 309 | "31,41,51,61,71,81" | 0:10'13'' | 0:01'21'' |
-| Q25L60X30P002  | 364.71M |   30.0 |  9850 | 11.34M | 1902 |     10106 | 11.08M | 1604 |       822 | 262.06K | 298 | "31,41,51,61,71,81" | 0:09'35'' | 0:01'21'' |
-| Q25L60X30P003  | 364.71M |   30.0 | 10787 | 11.38M | 1814 |     10843 | 11.07M | 1539 |       965 | 309.26K | 275 | "31,41,51,61,71,81" | 0:09'37'' | 0:01'24'' |
-| Q25L60X30P004  | 364.71M |   30.0 | 10708 | 11.37M | 1854 |     10798 |  11.1M | 1573 |       890 | 270.34K | 281 | "31,41,51,61,71,81" | 0:08'25'' | 0:01'26'' |
-| Q25L60X30P005  | 364.71M |   30.0 | 10975 | 11.33M | 1844 |     11298 | 11.09M | 1539 |       791 | 234.89K | 305 | "31,41,51,61,71,81" | 0:08'49'' | 0:01'26'' |
-| Q25L60X40P000  | 486.28M |   40.0 | 10985 | 11.37M | 1842 |     11177 | 11.14M | 1536 |       784 |  230.4K | 306 | "31,41,51,61,71,81" | 0:09'52'' | 0:01'42'' |
-| Q25L60X40P001  | 486.28M |   40.0 | 10671 |  11.4M | 1869 |     10957 | 11.08M | 1538 |       883 | 320.23K | 331 | "31,41,51,61,71,81" | 0:10'56'' | 0:01'42'' |
-| Q25L60X40P002  | 486.28M |   40.0 | 11317 | 11.39M | 1765 |     11489 | 11.13M | 1485 |       872 |  263.1K | 280 | "31,41,51,61,71,81" | 0:10'41'' | 0:01'43'' |
-| Q25L60X40P003  | 486.28M |   40.0 | 11061 | 11.38M | 1844 |     11329 | 11.13M | 1536 |       813 | 249.05K | 308 | "31,41,51,61,71,81" | 0:10'52'' | 0:01'42'' |
-| Q25L60X50P000  | 607.86M |   50.0 | 10316 | 11.38M | 1932 |     10671 | 11.12M | 1591 |       787 | 258.16K | 341 | "31,41,51,61,71,81" | 0:11'27'' | 0:01'43'' |
-| Q25L60X50P001  | 607.86M |   50.0 | 10086 | 11.41M | 1902 |     10191 | 11.12M | 1608 |       880 | 292.52K | 294 | "31,41,51,61,71,81" | 0:10'54'' | 0:01'50'' |
-| Q25L60X50P002  | 607.86M |   50.0 | 10621 | 11.39M | 1875 |     10952 | 11.14M | 1561 |       789 | 248.52K | 314 | "31,41,51,61,71,81" | 0:12'54'' | 0:01'05'' |
-| Q25L60X60P000  | 729.43M |   60.0 |  9557 |  11.4M | 2053 |      9874 | 11.12M | 1691 |       784 | 273.62K | 362 | "31,41,51,61,71,81" | 0:13'23'' | 0:01'09'' |
-| Q25L60X60P001  | 729.43M |   60.0 |  9584 | 11.41M | 2022 |      9822 | 11.12M | 1689 |       813 | 290.68K | 333 | "31,41,51,61,71,81" | 0:12'20'' | 0:01'02'' |
-| Q25L60X60P002  | 729.43M |   60.0 |  9659 | 11.48M | 2067 |      9825 | 11.07M | 1713 |       942 | 405.06K | 354 | "31,41,51,61,71,81" | 0:12'31'' | 0:00'59'' |
-| Q25L60X80P000  | 972.57M |   80.0 |  8264 | 11.44M | 2326 |      8392 | 11.07M | 1912 |       830 | 370.19K | 414 | "31,41,51,61,71,81" | 0:19'02'' | 0:01'12'' |
-| Q25L60X80P001  | 972.57M |   80.0 |  8207 | 11.44M | 2350 |      8450 | 11.06M | 1916 |       822 |  376.3K | 434 | "31,41,51,61,71,81" | 0:18'53'' | 0:01'12'' |
-| Q25L60X120P000 |   1.46G |  120.0 |  6336 | 11.43M | 2924 |      6523 | 10.95M | 2339 |       798 | 481.11K | 585 | "31,41,51,61,71,81" | 0:22'50'' | 0:01'23'' |
-| Q25L60X160P000 |   1.95G |  160.0 |  5329 | 11.38M | 3365 |      5608 | 10.83M | 2619 |       776 | 550.46K | 746 | "31,41,51,61,71,81" | 0:29'58'' | 0:01'59'' |
-| Q30L60X30P000  | 364.71M |   30.0 | 10316 | 11.33M | 1903 |     10489 |  11.1M | 1617 |       793 |  226.9K | 286 | "31,41,51,61,71,81" | 0:09'27'' | 0:01'15'' |
-| Q30L60X30P001  | 364.71M |   30.0 | 10302 | 11.32M | 1910 |     10504 | 11.09M | 1608 |       761 | 227.88K | 302 | "31,41,51,61,71,81" | 0:08'15'' | 0:01'06'' |
-| Q30L60X30P002  | 364.71M |   30.0 | 10281 | 11.31M | 1891 |     10507 | 11.09M | 1592 |       759 | 225.73K | 299 | "31,41,51,61,71,81" | 0:08'40'' | 0:01'03'' |
-| Q30L60X30P003  | 364.71M |   30.0 | 11247 | 11.32M | 1743 |     11426 | 11.08M | 1485 |       832 | 236.32K | 258 | "31,41,51,61,71,81" | 0:07'47'' | 0:01'07'' |
-| Q30L60X30P004  | 364.71M |   30.0 | 10856 | 11.31M | 1837 |     11126 | 11.09M | 1543 |       789 |  224.7K | 294 | "31,41,51,61,71,81" | 0:07'57'' | 0:01'07'' |
-| Q30L60X40P000  | 486.28M |   40.0 | 11148 | 11.36M | 1814 |     11317 | 11.14M | 1517 |       789 |  226.9K | 297 | "31,41,51,61,71,81" | 0:10'01'' | 0:01'12'' |
-| Q30L60X40P001  | 486.28M |   40.0 | 11437 | 11.35M | 1769 |     11594 | 11.12M | 1466 |       771 | 228.01K | 303 | "31,41,51,61,71,81" | 0:09'49'' | 0:01'25'' |
-| Q30L60X40P002  | 486.28M |   40.0 | 11734 | 11.38M | 1704 |     11819 | 11.11M | 1444 |       904 | 264.88K | 260 | "31,41,51,61,71,81" | 0:07'55'' | 0:01'32'' |
-| Q30L60X40P003  | 486.28M |   40.0 | 11941 | 11.35M | 1761 |     12110 | 11.13M | 1465 |       785 | 221.56K | 296 | "31,41,51,61,71,81" | 0:08'01'' | 0:01'47'' |
-| Q30L60X50P000  | 607.86M |   50.0 | 10982 | 11.38M | 1853 |     11259 | 11.14M | 1537 |       785 |  239.2K | 316 | "31,41,51,61,71,81" | 0:11'32'' | 0:01'50'' |
-| Q30L60X50P001  | 607.86M |   50.0 | 10822 | 11.37M | 1834 |     11165 | 11.14M | 1535 |       769 | 223.95K | 299 | "31,41,51,61,71,81" | 0:11'55'' | 0:01'44'' |
-| Q30L60X50P002  | 607.86M |   50.0 | 11181 | 11.38M | 1813 |     11347 | 11.15M | 1515 |       789 |  234.4K | 298 | "31,41,51,61,71,81" | 0:12'56'' | 0:01'48'' |
-| Q30L60X60P000  | 729.43M |   60.0 | 10356 | 11.39M | 1961 |     10657 | 11.14M | 1616 |       780 | 255.15K | 345 | "31,41,51,61,71,81" | 0:14'23'' | 0:01'40'' |
-| Q30L60X60P001  | 729.43M |   60.0 | 10332 |  11.4M | 1927 |     10613 | 11.11M | 1607 |       808 | 288.85K | 320 | "31,41,51,61,71,81" | 0:12'55'' | 0:01'39'' |
-| Q30L60X80P000  | 972.57M |   80.0 |  9106 | 11.42M | 2186 |      9387 |  11.1M | 1799 |       805 | 326.52K | 387 | "31,41,51,61,71,81" | 0:15'13'' | 0:02'01'' |
-| Q30L60X80P001  | 972.57M |   80.0 |  8759 | 11.42M | 2214 |      8905 | 11.05M | 1812 |       849 | 368.46K | 402 | "31,41,51,61,71,81" | 0:17'06'' | 0:02'09'' |
-| Q30L60X120P000 |   1.46G |  120.0 |  6733 | 11.44M | 2754 |      6973 | 10.98M | 2210 |       808 | 455.74K | 544 | "31,41,51,61,71,81" | 0:24'24'' | 0:02'22'' |
-| Q30L60X160P000 |   1.95G |  160.0 |  5899 | 11.39M | 3142 |      6134 | 10.89M | 2471 |       777 | 504.21K | 671 | "31,41,51,61,71,81" | 0:20'56'' | 0:01'59'' |
+| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|--------------------:|----------:|:----------|
+| Q25L60X40P000 | 185.67M |   40.0 |     44775 | 4.54M | 188 |       812 | 20.34K | 26 | "31,41,51,61,71,81" | 0:02'11'' | 0:01'06'' |
+| Q25L60X40P001 | 185.67M |   40.0 |     35531 | 4.54M | 207 |       796 | 19.71K | 27 | "31,41,51,61,71,81" | 0:02'05'' | 0:01'06'' |
+| Q25L60X40P002 | 185.67M |   40.0 |     39053 | 4.54M | 193 |       847 | 24.57K | 28 | "31,41,51,61,71,81" | 0:02'03'' | 0:01'06'' |
+| Q25L60X40P003 | 185.67M |   40.0 |     39050 | 4.54M | 204 |       767 | 19.98K | 28 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'05'' |
+| Q25L60X40P004 | 185.67M |   40.0 |     38807 | 4.54M | 188 |       812 | 22.62K | 29 | "31,41,51,61,71,81" | 0:02'06'' | 0:01'03'' |
+| Q25L60X40P005 | 185.67M |   40.0 |     36372 | 4.54M | 204 |       754 | 21.51K | 29 | "31,41,51,61,71,81" | 0:02'05'' | 0:01'07'' |
+| Q25L60X80P000 | 371.33M |   80.0 |     27749 | 4.54M | 272 |       833 | 23.34K | 31 | "31,41,51,61,71,81" | 0:03'20'' | 0:01'05'' |
+| Q25L60X80P001 | 371.33M |   80.0 |     28431 | 4.54M | 274 |       830 | 22.38K | 29 | "31,41,51,61,71,81" | 0:03'21'' | 0:01'07'' |
+| Q25L60X80P002 | 371.33M |   80.0 |     26255 | 4.54M | 271 |       738 | 22.75K | 31 | "31,41,51,61,71,81" | 0:03'04'' | 0:01'04'' |
+| Q30L60X40P000 | 185.67M |   40.0 |     41461 | 4.54M | 197 |       808 | 29.26K | 38 | "31,41,51,61,71,81" | 0:02'18'' | 0:01'09'' |
+| Q30L60X40P001 | 185.67M |   40.0 |     40063 | 4.53M | 200 |       803 | 30.68K | 40 | "31,41,51,61,71,81" | 0:01'58'' | 0:01'05'' |
+| Q30L60X40P002 | 185.67M |   40.0 |     41462 | 4.54M | 202 |       812 | 30.68K | 41 | "31,41,51,61,71,81" | 0:02'02'' | 0:01'09'' |
+| Q30L60X40P003 | 185.67M |   40.0 |     40210 | 4.53M | 199 |       765 | 27.75K | 37 | "31,41,51,61,71,81" | 0:01'51'' | 0:01'07'' |
+| Q30L60X40P004 | 185.67M |   40.0 |     35814 | 4.54M | 194 |       812 | 30.93K | 40 | "31,41,51,61,71,81" | 0:02'04'' | 0:01'06'' |
+| Q30L60X40P005 | 185.67M |   40.0 |     34625 | 4.54M | 229 |       715 | 36.67K | 51 | "31,41,51,61,71,81" | 0:01'58'' | 0:01'04'' |
+| Q30L60X80P000 | 371.33M |   80.0 |     53721 | 4.53M | 164 |       836 | 25.22K | 31 | "31,41,51,61,71,81" | 0:03'19'' | 0:01'19'' |
+| Q30L60X80P001 | 371.33M |   80.0 |     48122 | 4.53M | 168 |       754 | 23.17K | 31 | "31,41,51,61,71,81" | 0:03'13'' | 0:01'19'' |
+| Q30L60X80P002 | 371.33M |   80.0 |     46294 | 4.53M | 170 |       797 | 22.19K | 29 | "31,41,51,61,71,81" | 0:02'11'' | 0:01'17'' |
 
-## s288c: merge anchors with Qxx and QxxL60Xxx
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# merge anchors with Qxx
-for Q in ${READ_QUAL}; do
-    mkdir -p mergeQ${Q}
-    anchr contained \
-        $(
-            parallel -k --no-run-if-empty -j 6 '
-                if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                    echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-                fi
-                ' ::: ${Q} ::: ${READ_LEN} :::  ${COVERAGE2} ::: $(printf "%03d " {0..100})
-        ) \
-        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-        -o stdout \
-        | faops filter -a 1000 -l 0 stdin mergeQ${Q}/anchor.contained.fasta
-    anchr orient mergeQ${Q}/anchor.contained.fasta --len 1000 --idt 0.98 -o mergeQ${Q}/anchor.orient.fasta
-    anchr merge mergeQ${Q}/anchor.orient.fasta --len 1000 --idt 0.999 -o mergeQ${Q}/anchor.merge0.fasta
-    anchr contained mergeQ${Q}/anchor.merge0.fasta --len 1000 --idt 0.98 \
-        --proportion 0.99 --parallel 16 -o stdout \
-        | faops filter -a 1000 -l 0 stdin mergeQ${Q}/anchor.merge.fasta
-done
-
-# merge anchors with QxxL60Xxx
-for Q in ${READ_QUAL}; do
-    for X in ${COVERAGE2}; do
-        mkdir -p mergeQ${Q}X${X}
-        anchr contained \
-            $(
-                parallel -k --no-run-if-empty -j 6 '
-                    if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                        echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
-                    fi
-                    ' ::: ${Q} ::: 60 ::: ${X} ::: $(printf "%03d " {0..100})
-            ) \
-            --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-            -o stdout \
-            | faops filter -a 1000 -l 0 stdin mergeQ${Q}X${X}/anchor.contained.fasta
-        anchr orient mergeQ${Q}X${X}/anchor.contained.fasta --len 1000 --idt 0.98 -o mergeQ${Q}X${X}/anchor.orient.fasta
-        anchr merge mergeQ${Q}X${X}/anchor.orient.fasta --len 1000 --idt 0.999 -o mergeQ${Q}X${X}/anchor.merge0.fasta
-        anchr contained mergeQ${Q}X${X}/anchor.merge0.fasta --len 1000 --idt 0.98 \
-            --proportion 0.99 --parallel 16 -o stdout \
-            | faops filter -a 1000 -l 0 stdin mergeQ${Q}X${X}/anchor.merge.fasta
-    done
-done
-
-# quast
-rm -fr 9_qa_mergeQxx
-quast --no-check --threads 16 \
-    --eukaryote \
-    -R 1_genome/genome.fa \
-    mergeQ25/anchor.merge.fasta \
-    mergeQ30/anchor.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "mergeQ25,mergeQ30,paralogs" \
-    -o 9_qa_mergeQxx
-
-rm -fr 9_qa_mergeQxxXxx
-quast --no-check --threads 16 \
-    --eukaryote \
-    -R 1_genome/genome.fa \
-    $( parallel -k 'printf "mergeQ{1}X{2}/anchor.merge.fasta "' ::: ${READ_QUAL} ::: ${COVERAGE2} ) \
-    1_genome/paralogs.fas \
-    --label "$( parallel -k 'printf "mergeQ{1}X{2},"' ::: ${READ_QUAL} ::: ${COVERAGE2} )paralogs" \
-    -o 9_qa_mergeQxxXxx
-
-```
-
-## s288c: merge anchors
+## e_coli: merge anchors
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -831,9 +769,9 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p merge
 anchr contained \
     $(
-        parallel --no-run-if-empty -k -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa
+        parallel -k --no-run-if-empty -j 6 "
+            if [ -e Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+                echo Q{1}L{2}X{3}P{4}/anchor/anchor.fasta
             fi
             " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
     ) \
@@ -844,13 +782,16 @@ anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
 anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge1.fasta
+faops order merge/anchor.merge1.fasta \
+    <(faops size merge/anchor.merge1.fasta | sort -n -r -k2,2 | cut -f 1) \
+    merge/anchor.merge.fasta
 
 # merge others
 mkdir -p merge
 anchr contained \
     $(
-        parallel --no-run-if-empty -k -j 6 "
+        parallel -k --no-run-if-empty -j 6 "
             if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
                 echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
             fi
@@ -868,7 +809,7 @@ anchr contained merge/others.merge0.fasta --len 1000 --idt 0.98 \
 # anchor sort on ref
 bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
 nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
+mummerplot out.delta --png --large -p anchor.sort
 
 # mummerplot files
 rm *.[fr]plot
@@ -876,11 +817,13 @@ rm out.delta
 rm *.gp
 mv anchor.sort.png merge/
 
+# minidot
+minimap merge/anchor.sort.fa 1_genome/genome.fa \
+    | minidot - > merge/anchor.minidot.eps
+
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
@@ -890,7 +833,7 @@ quast --no-check --threads 16 \
 
 ```
 
-## s288c: 3GS
+## e_coli: 3GS
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -957,123 +900,33 @@ minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
 
 ```
 
-| Name               |    N50 |       Sum |     # |
-|:-------------------|-------:|----------:|------:|
-| Genome             | 924431 |  12157105 |    17 |
-| Paralogs           |   3851 |   1059148 |   366 |
-| X40.raw.corrected  |   7382 | 297595242 | 53773 |
-| X40.trim.corrected |   7456 | 308765772 | 54958 |
-| X80.raw.corrected  |   7385 | 440867536 | 79638 |
-| X80.trim.corrected |   7965 | 450502473 | 66099 |
-| X40.raw            | 498694 |  12267418 |    48 |
-| X40.trim           | 551422 |  12193990 |    47 |
-| X80.raw            | 604680 |  12351131 |    37 |
-| X80.trim           | 813374 |  12360766 |    26 |
+| Name               |     N50 |       Sum |     # |
+|:-------------------|--------:|----------:|------:|
+| Genome             | 4641652 |   4641652 |     1 |
+| Paralogs           |    1934 |    195673 |   106 |
+| X40.raw.corrected  |   13465 | 150999437 | 17096 |
+| X40.trim.corrected |   13372 | 148630560 | 16928 |
+| X80.raw.corrected  |   16977 | 174462103 | 10692 |
+| X80.trim.corrected |   16820 | 175594582 | 10873 |
+| X40.raw            | 4674150 |   4674150 |     1 |
+| X40.trim           | 4674046 |   4674046 |     1 |
+| X80.raw            | 4658166 |   4658166 |     1 |
+| X80.trim           | 4657933 |   4657933 |     1 |
 
-## s288c: local corrections
+## e_coli: expand anchors
 
-```bash
-BASE_NAME=s288c
-REAL_G=12157105
-cd ${HOME}/data/anchr/${BASE_NAME}
+三代 reads 里有一个常见的错误, 即单一 ZMW 里的测序结果中, 接头序列部分的测序结果出现了较多的错误,
+因此并没有将接头序列去除干净, 形成的 subreads 里含有多份基因组上同一片段, 它们之间以接头序列为间隔.
 
-rm -fr localCor
-anchr overlap2 \
-    --parallel 16 \
-    merge/anchor.merge.fasta \
-    3_pacbio/pacbio.40x.trim.fasta \
-    -d localCor \
-    -b 20 --len 1000 --idt 0.85 --all
+`anchr group` 命令默认会将这种三代的 reads 去除. `--keep` 选项会留下这种 reads, 这适用于组装好的三代序列.
 
-pushd localCor
-
-anchr cover \
-    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
-    --len 1000 --idt 0.85 -c 2 \
-    anchorLong.ovlp.tsv \
-    -o anchor.cover.json
-cat anchor.cover.json | jq "." > environment.json
-
-rm -fr group
-anchr localcor \
-    anchorLong.db \
-    anchorLong.ovlp.tsv \
-    --parallel 16 \
-    --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.85 -v
-
-faops some -i -l 0 \
-    long.fasta \
-    group/overlapped.long.txt \
-    independentLong.fasta
-
-find . -type d -name "correction" | xargs rm -fr
-
-# localCor
-gzip -d -c -f $(find group -type f -name "*.correctedReads.fasta.gz") \
-    | faops filter -l 0 stdin stdout \
-    | grep -E '^>long' -A 1 \
-    | sed '/^--$/d' \
-    | faops dazz -a -l 0 stdin stdout \
-    | pigz -c > localCor.fasta.gz
-
-canu \
-    -p ${BASE_NAME} -d localCor \
-    gnuplotTested=true \
-    genomeSize=${REAL_G} \
-    -pacbio-corrected localCor.fasta.gz \
-    -pacbio-corrected anchor.fasta
-
-canu \
-    -p ${BASE_NAME} -d localCorRaw \
-    gnuplotTested=true \
-    genomeSize=${REAL_G} \
-    -pacbio-raw localCor.fasta.gz \
-    -pacbio-raw anchor.fasta
-
-canu \
-    -p ${BASE_NAME} -d localCorIndep \
-    gnuplotTested=true \
-    genomeSize=${REAL_G} \
-    -pacbio-raw localCor.fasta.gz \
-    -pacbio-raw anchor.fasta \
-    -pacbio-raw independentLong.fasta
-
-popd
-
-# quast
-rm -fr 9_qa_localCor
-quast --no-check --threads 16 \
-    --eukaryote \
-    -R 1_genome/genome.fa \
-    localCor/anchor.fasta \
-    localCor/localCor/${BASE_NAME}.contigs.fasta \
-    localCor/localCorRaw/${BASE_NAME}.contigs.fasta \
-    localCor/localCorIndep/${BASE_NAME}.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "anchor,localCor,localCorRaw,localCorIndep,paralogs" \
-    -o 9_qa_localCor
-
-find . -type d -name "correction" | xargs rm -fr
-
+```text
+      ===
+------------>
+             )
+  <----------
+      ===
 ```
-
-## s288c: expand anchors
-
-在酿酒酵母中, 有下列几组完全相同的序列, 它们都是新近发生的片段重复:
-
-* I:216563-218385, VIII:537165-538987
-* I:223713-224783, VIII:550350-551420
-* IV:528442-530427, IV:532327-534312, IV:536212-538197
-* IV:530324-531519, IV:534209-535404
-* IV:5645-7725, X:738076-740156
-* IV:7810-9432, X:736368-737990
-* IX:9683-11043, X:9666-11026
-* IV:1244112-1245373, XV:575980-577241
-* VIII:212266-214124, VIII:214264-216122
-* IX:11366-14953, X:11349-14936
-* XII:468935-470576, XII:472587-474228, XII:482167-483808, XII:485819-487460,
-* XII:483798-485798, XII:487450-489450
 
 * anchorLong
 
@@ -1246,7 +1099,7 @@ cat \
 
 ```
 
-## s288c: final stats
+## e_coli: final stats
 
 * Stats
 
@@ -1289,21 +1142,21 @@ cat stat3.md
 
 ```
 
-| Name                   |    N50 |      Sum |    # |
-|:-----------------------|-------:|---------:|-----:|
-| Genome                 | 924431 | 12157105 |   17 |
-| Paralogs               |   3851 |  1059148 |  366 |
-| anchor.merge           |  32537 | 11325611 |  595 |
-| others.merge           |   6008 |   424881 |  184 |
-| anchorLong             |  52320 | 10994598 |  347 |
-| contigTrim             | 260345 | 11021466 |   83 |
-| canu-X40-raw           | 498694 | 12267418 |   48 |
-| canu-X40-trim          | 551422 | 12193990 |   47 |
-| spades.scaffold        |  98572 | 11732702 | 1167 |
-| spades.non-contained   |  91619 | 11544360 |  291 |
-| platanus.contig        |   5983 | 12437850 | 7727 |
-| platanus.scaffold      |  55443 | 12073445 | 4735 |
-| platanus.non-contained |  59263 | 11404921 |  360 |
+| Name                   |     N50 |     Sum |    # |
+|:-----------------------|--------:|--------:|-----:|
+| Genome                 | 4641652 | 4641652 |    1 |
+| Paralogs               |    1934 |  195673 |  106 |
+| anchor.merge           |   63699 | 4533814 |  122 |
+| others.merge           |    1345 |   16905 |   12 |
+| anchorLong             |   88022 | 4530317 |  103 |
+| contigTrim             |  868115 | 4743100 |    9 |
+| canu-X40-raw           | 4674150 | 4674150 |    1 |
+| canu-X40-trim          | 4674046 | 4674046 |    1 |
+| spades.scaffold        |  133063 | 4645555 |  306 |
+| spades.non-contained   |  132662 | 4568816 |   78 |
+| platanus.contig        |   15090 | 4683012 | 1069 |
+| platanus.scaffold      |  133014 | 4575941 |  137 |
+| platanus.non-contained |  133014 | 4559275 |   63 |
 
 * quast
 
@@ -1312,8 +1165,6 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
-    --eukaryote \
-    --no-icarus \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     anchorLong/contig.fasta \
@@ -1328,7 +1179,7 @@ quast --no-check --threads 16 \
 
 ```
 
-## s288c: clear intermediate files
+## e_coli: clear intermediate files
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -1365,6 +1216,460 @@ find . -type d -path "*8_spades/*" | xargs rm -fr
 find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
 
 ```
+
+# *Saccharomyces cerevisiae* S288c
+
+* Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Saccharomyces_cerevisiae/Info/Index)
+* Proportion of paralogs (> 1000 bp): 0.058
+
+## s288c: download
+
+* Settings
+
+```bash
+BASE_NAME=s288c
+REAL_G=12157105
+COVERAGE2="30 40 50 60 80 120 160"
+COVERAGE3="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+EXPAND_WITH="40"
+
+```
+
+* Reference genome
+
+```bash
+BASE_NAME=s288c
+mkdir -p ${HOME}/data/anchr/${BASE_NAME}
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 1_genome
+cd 1_genome
+
+wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
+faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
+    <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
+    genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_genome/paralogs.fas
+```
+
+* Illumina
+
+    PRJNA340312, SRX2058864
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+7ba93499d73cdaeaf50dd506e2c8572d SRR4074255_1.fastq.gz
+aee9ec3f855796b6d30a3d191fc22345 SRR4074255_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR522246_1.fastq.gz R1.fq.gz
+ln -s SRR522246_2.fastq.gz R2.fq.gz
+```
+
+* PacBio
+
+    PacBio provides a dataset of *S. cerevisiae* strain
+    [W303](https://github.com/PacificBiosciences/DevNet/wiki/Saccharomyces-cerevisiae-W303-Assembly-Contigs),
+    while the reference strain S288c is not provided. So we use the dataset from
+    [project PRJEB7245](https://www.ncbi.nlm.nih.gov/bioproject/PRJEB7245),
+    [study ERP006949](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=ERP006949), and
+    [sample SAMEA4461732](https://www.ncbi.nlm.nih.gov/biosample/SAMEA4461732). They're gathered
+    with RS II and P6C4.
+
+```bash
+mkdir -p ~/data/anchr/s288c/3_pacbio
+cd ~/data/anchr/s288c/3_pacbio
+
+# download from sra
+cat <<EOF > hdf5.txt
+http://sra-download.ncbi.nlm.nih.gov/srapub_files/ERR1655118_ERR1655118_hdf5.tgz
+EOF
+
+aria2c -x 9 -s 3 -c -i hdf5.txt
+
+# untar
+mkdir -p ~/data/anchr/s288c/3_pacbio/untar
+cd ~/data/anchr/s288c/3_pacbio
+tar xvfz ERR1655118_ERR1655118_hdf5.tgz --directory untar
+
+# convert .bax.h5 to .subreads.bam
+mkdir -p ~/data/anchr/s288c/3_pacbio/bam
+cd ~/data/anchr/s288c/3_pacbio/bam
+
+source ~/share/pitchfork/deployment/setup-env.sh
+for movie in m150412;
+do 
+    bax2bam ~/data/anchr/s288c/3_pacbio/untar/${movie}*.bax.h5
+done
+
+# convert .subreads.bam to fasta
+mkdir -p ~/data/anchr/s288c/3_pacbio/fasta
+
+for movie in m150412;
+do
+    if [ ! -e ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam ]; then
+        continue
+    fi
+
+    samtools fasta \
+        ~/data/anchr/s288c/3_pacbio/bam/${movie}*.subreads.bam \
+        > ~/data/anchr/s288c/3_pacbio/fasta/${movie}.fasta
+done
+
+cd ~/data/anchr/s288c
+cat 3_pacbio/fasta/*.fasta \
+    | faops dazz -l 0 -p long stdin 3_pacbio/pacbio.fasta
+
+```
+
+* FastQC
+
+* kmergenie
+
+## s288c: preprocess Illumina reads
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i 2_illumina/R1.fq.gz \
+        -j 2_illumina/R2.fq.gz \
+        -o 2_illumina/R1.uniq.fq \
+        -p 2_illumina/R2.uniq.fq
+    
+    parallel --no-run-if-empty -j 2 "
+        pigz -p 4 2_illumina/{}.uniq.fq
+        " ::: R1 R2
+fi
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    mkdir -p 2_illumina/Q{1}L{2}
+    cd 2_illumina/Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        --noscythe \
+        -q {1} -l {2} \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        -o stdout \
+        | bash
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
+
+```
+
+## s288c: preprocess PacBio reads
+
+## s288c: reads stats
+
+| Name     |    N50 |        Sum |        # |
+|:---------|-------:|-----------:|---------:|
+| Genome   | 924431 |   12157105 |       17 |
+| Paralogs |   3851 |    1059148 |      366 |
+| Illumina |    151 | 2939081214 | 19464114 |
+| uniq     |    151 | 2778772064 | 18402464 |
+| Q25L60   |    151 | 2502621682 | 16817924 |
+| Q30L60   |    151 | 2442383221 | 16630313 |
+| PacBio   |   8412 |  820962526 |   177100 |
+| X40.raw  |   8344 |  486285507 |   108074 |
+| X40.trim |   7743 |  373850168 |    64169 |
+| X80.raw  |   8412 |  820962526 |   177100 |
+| X80.trim |   7829 |  626413879 |   106381 |
+
+## s288c: spades
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -1 2_illumina/Q25L60/R1.fq.gz \
+    -2 2_illumina/Q25L60/R2.fq.gz \
+    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
+
+```
+
+## s288c: platanus
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.fq.gz \
+        ../2_illumina/Q25L60/R2.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+anchr contained \
+    out_gapClosed.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
+
+```
+
+```text
+#### PROCESS INFORMATION ####
+VmPeak:          65.688 GByte
+VmHWM:            7.394 GByte
+```
+
+## s288c: quorum
+
+| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
+|:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
+| Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:06'55'' |
+| Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:06'49'' |
+
+## s288c: down sampling
+
+## s288c: k-unitigs and anchors (sampled)
+
+| Name           |  SumCor | CovCor | N50SR |    Sum |    # | N50Anchor |    Sum |    # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|--------:|-------:|------:|-------:|-----:|----------:|-------:|-----:|----------:|--------:|----:|--------------------:|----------:|:----------|
+| Q25L60X30P000  | 364.71M |   30.0 | 10058 | 11.32M | 1910 |     10348 | 11.09M | 1613 |       809 | 230.88K | 297 | "31,41,51,61,71,81" | 0:10'03'' | 0:01'22'' |
+| Q25L60X30P001  | 364.71M |   30.0 | 10449 | 11.32M | 1901 |     10591 | 11.09M | 1592 |       766 | 230.71K | 309 | "31,41,51,61,71,81" | 0:10'13'' | 0:01'21'' |
+| Q25L60X30P002  | 364.71M |   30.0 |  9850 | 11.34M | 1902 |     10106 | 11.08M | 1604 |       822 | 262.06K | 298 | "31,41,51,61,71,81" | 0:09'35'' | 0:01'21'' |
+| Q25L60X30P003  | 364.71M |   30.0 | 10787 | 11.38M | 1814 |     10843 | 11.07M | 1539 |       965 | 309.26K | 275 | "31,41,51,61,71,81" | 0:09'37'' | 0:01'24'' |
+| Q25L60X30P004  | 364.71M |   30.0 | 10708 | 11.37M | 1854 |     10798 |  11.1M | 1573 |       890 | 270.34K | 281 | "31,41,51,61,71,81" | 0:08'25'' | 0:01'26'' |
+| Q25L60X30P005  | 364.71M |   30.0 | 10975 | 11.33M | 1844 |     11298 | 11.09M | 1539 |       791 | 234.89K | 305 | "31,41,51,61,71,81" | 0:08'49'' | 0:01'26'' |
+| Q25L60X40P000  | 486.28M |   40.0 | 10985 | 11.37M | 1842 |     11177 | 11.14M | 1536 |       784 |  230.4K | 306 | "31,41,51,61,71,81" | 0:09'52'' | 0:01'42'' |
+| Q25L60X40P001  | 486.28M |   40.0 | 10671 |  11.4M | 1869 |     10957 | 11.08M | 1538 |       883 | 320.23K | 331 | "31,41,51,61,71,81" | 0:10'56'' | 0:01'42'' |
+| Q25L60X40P002  | 486.28M |   40.0 | 11317 | 11.39M | 1765 |     11489 | 11.13M | 1485 |       872 |  263.1K | 280 | "31,41,51,61,71,81" | 0:10'41'' | 0:01'43'' |
+| Q25L60X40P003  | 486.28M |   40.0 | 11061 | 11.38M | 1844 |     11329 | 11.13M | 1536 |       813 | 249.05K | 308 | "31,41,51,61,71,81" | 0:10'52'' | 0:01'42'' |
+| Q25L60X50P000  | 607.86M |   50.0 | 10316 | 11.38M | 1932 |     10671 | 11.12M | 1591 |       787 | 258.16K | 341 | "31,41,51,61,71,81" | 0:11'27'' | 0:01'43'' |
+| Q25L60X50P001  | 607.86M |   50.0 | 10086 | 11.41M | 1902 |     10191 | 11.12M | 1608 |       880 | 292.52K | 294 | "31,41,51,61,71,81" | 0:10'54'' | 0:01'50'' |
+| Q25L60X50P002  | 607.86M |   50.0 | 10621 | 11.39M | 1875 |     10952 | 11.14M | 1561 |       789 | 248.52K | 314 | "31,41,51,61,71,81" | 0:12'54'' | 0:01'05'' |
+| Q25L60X60P000  | 729.43M |   60.0 |  9557 |  11.4M | 2053 |      9874 | 11.12M | 1691 |       784 | 273.62K | 362 | "31,41,51,61,71,81" | 0:13'23'' | 0:01'09'' |
+| Q25L60X60P001  | 729.43M |   60.0 |  9584 | 11.41M | 2022 |      9822 | 11.12M | 1689 |       813 | 290.68K | 333 | "31,41,51,61,71,81" | 0:12'20'' | 0:01'02'' |
+| Q25L60X60P002  | 729.43M |   60.0 |  9659 | 11.48M | 2067 |      9825 | 11.07M | 1713 |       942 | 405.06K | 354 | "31,41,51,61,71,81" | 0:12'31'' | 0:00'59'' |
+| Q25L60X80P000  | 972.57M |   80.0 |  8264 | 11.44M | 2326 |      8392 | 11.07M | 1912 |       830 | 370.19K | 414 | "31,41,51,61,71,81" | 0:19'02'' | 0:01'12'' |
+| Q25L60X80P001  | 972.57M |   80.0 |  8207 | 11.44M | 2350 |      8450 | 11.06M | 1916 |       822 |  376.3K | 434 | "31,41,51,61,71,81" | 0:18'53'' | 0:01'12'' |
+| Q25L60X120P000 |   1.46G |  120.0 |  6336 | 11.43M | 2924 |      6523 | 10.95M | 2339 |       798 | 481.11K | 585 | "31,41,51,61,71,81" | 0:22'50'' | 0:01'23'' |
+| Q25L60X160P000 |   1.95G |  160.0 |  5329 | 11.38M | 3365 |      5608 | 10.83M | 2619 |       776 | 550.46K | 746 | "31,41,51,61,71,81" | 0:29'58'' | 0:01'59'' |
+| Q30L60X30P000  | 364.71M |   30.0 | 10316 | 11.33M | 1903 |     10489 |  11.1M | 1617 |       793 |  226.9K | 286 | "31,41,51,61,71,81" | 0:09'27'' | 0:01'15'' |
+| Q30L60X30P001  | 364.71M |   30.0 | 10302 | 11.32M | 1910 |     10504 | 11.09M | 1608 |       761 | 227.88K | 302 | "31,41,51,61,71,81" | 0:08'15'' | 0:01'06'' |
+| Q30L60X30P002  | 364.71M |   30.0 | 10281 | 11.31M | 1891 |     10507 | 11.09M | 1592 |       759 | 225.73K | 299 | "31,41,51,61,71,81" | 0:08'40'' | 0:01'03'' |
+| Q30L60X30P003  | 364.71M |   30.0 | 11247 | 11.32M | 1743 |     11426 | 11.08M | 1485 |       832 | 236.32K | 258 | "31,41,51,61,71,81" | 0:07'47'' | 0:01'07'' |
+| Q30L60X30P004  | 364.71M |   30.0 | 10856 | 11.31M | 1837 |     11126 | 11.09M | 1543 |       789 |  224.7K | 294 | "31,41,51,61,71,81" | 0:07'57'' | 0:01'07'' |
+| Q30L60X40P000  | 486.28M |   40.0 | 11148 | 11.36M | 1814 |     11317 | 11.14M | 1517 |       789 |  226.9K | 297 | "31,41,51,61,71,81" | 0:10'01'' | 0:01'12'' |
+| Q30L60X40P001  | 486.28M |   40.0 | 11437 | 11.35M | 1769 |     11594 | 11.12M | 1466 |       771 | 228.01K | 303 | "31,41,51,61,71,81" | 0:09'49'' | 0:01'25'' |
+| Q30L60X40P002  | 486.28M |   40.0 | 11734 | 11.38M | 1704 |     11819 | 11.11M | 1444 |       904 | 264.88K | 260 | "31,41,51,61,71,81" | 0:07'55'' | 0:01'32'' |
+| Q30L60X40P003  | 486.28M |   40.0 | 11941 | 11.35M | 1761 |     12110 | 11.13M | 1465 |       785 | 221.56K | 296 | "31,41,51,61,71,81" | 0:08'01'' | 0:01'47'' |
+| Q30L60X50P000  | 607.86M |   50.0 | 10982 | 11.38M | 1853 |     11259 | 11.14M | 1537 |       785 |  239.2K | 316 | "31,41,51,61,71,81" | 0:11'32'' | 0:01'50'' |
+| Q30L60X50P001  | 607.86M |   50.0 | 10822 | 11.37M | 1834 |     11165 | 11.14M | 1535 |       769 | 223.95K | 299 | "31,41,51,61,71,81" | 0:11'55'' | 0:01'44'' |
+| Q30L60X50P002  | 607.86M |   50.0 | 11181 | 11.38M | 1813 |     11347 | 11.15M | 1515 |       789 |  234.4K | 298 | "31,41,51,61,71,81" | 0:12'56'' | 0:01'48'' |
+| Q30L60X60P000  | 729.43M |   60.0 | 10356 | 11.39M | 1961 |     10657 | 11.14M | 1616 |       780 | 255.15K | 345 | "31,41,51,61,71,81" | 0:14'23'' | 0:01'40'' |
+| Q30L60X60P001  | 729.43M |   60.0 | 10332 |  11.4M | 1927 |     10613 | 11.11M | 1607 |       808 | 288.85K | 320 | "31,41,51,61,71,81" | 0:12'55'' | 0:01'39'' |
+| Q30L60X80P000  | 972.57M |   80.0 |  9106 | 11.42M | 2186 |      9387 |  11.1M | 1799 |       805 | 326.52K | 387 | "31,41,51,61,71,81" | 0:15'13'' | 0:02'01'' |
+| Q30L60X80P001  | 972.57M |   80.0 |  8759 | 11.42M | 2214 |      8905 | 11.05M | 1812 |       849 | 368.46K | 402 | "31,41,51,61,71,81" | 0:17'06'' | 0:02'09'' |
+| Q30L60X120P000 |   1.46G |  120.0 |  6733 | 11.44M | 2754 |      6973 | 10.98M | 2210 |       808 | 455.74K | 544 | "31,41,51,61,71,81" | 0:24'24'' | 0:02'22'' |
+| Q30L60X160P000 |   1.95G |  160.0 |  5899 | 11.39M | 3142 |      6134 | 10.89M | 2471 |       777 | 504.21K | 671 | "31,41,51,61,71,81" | 0:20'56'' | 0:01'59'' |
+
+## s288c: merge anchors
+
+## s288c: 3GS
+
+| Name               |    N50 |       Sum |     # |
+|:-------------------|-------:|----------:|------:|
+| Genome             | 924431 |  12157105 |    17 |
+| Paralogs           |   3851 |   1059148 |   366 |
+| X40.raw.corrected  |   7382 | 297595242 | 53773 |
+| X40.trim.corrected |   7456 | 308765772 | 54958 |
+| X80.raw.corrected  |   7385 | 440867536 | 79638 |
+| X80.trim.corrected |   7965 | 450502473 | 66099 |
+| X40.raw            | 498694 |  12267418 |    48 |
+| X40.trim           | 551422 |  12193990 |    47 |
+| X80.raw            | 604680 |  12351131 |    37 |
+| X80.trim           | 813374 |  12360766 |    26 |
+
+## s288c: local corrections
+
+```bash
+BASE_NAME=s288c
+REAL_G=12157105
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+rm -fr localCor
+anchr overlap2 \
+    --parallel 16 \
+    merge/anchor.merge.fasta \
+    3_pacbio/pacbio.40x.trim.fasta \
+    -d localCor \
+    -b 20 --len 1000 --idt 0.85 --all
+
+pushd localCor
+
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.85 -c 2 \
+    anchorLong.ovlp.tsv \
+    -o anchor.cover.json
+cat anchor.cover.json | jq "." > environment.json
+
+rm -fr group
+anchr localcor \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --parallel 16 \
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.85 -v
+
+faops some -i -l 0 \
+    long.fasta \
+    group/overlapped.long.txt \
+    independentLong.fasta
+
+find . -type d -name "correction" | xargs rm -fr
+
+# localCor
+gzip -d -c -f $(find group -type f -name "*.correctedReads.fasta.gz") \
+    | faops filter -l 0 stdin stdout \
+    | grep -E '^>long' -A 1 \
+    | sed '/^--$/d' \
+    | faops dazz -a -l 0 stdin stdout \
+    | pigz -c > localCor.fasta.gz
+
+canu \
+    -p ${BASE_NAME} -d localCor \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-corrected localCor.fasta.gz \
+    -pacbio-corrected anchor.fasta
+
+canu \
+    -p ${BASE_NAME} -d localCorRaw \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-raw localCor.fasta.gz \
+    -pacbio-raw anchor.fasta
+
+canu \
+    -p ${BASE_NAME} -d localCorIndep \
+    gnuplotTested=true \
+    genomeSize=${REAL_G} \
+    -pacbio-raw localCor.fasta.gz \
+    -pacbio-raw anchor.fasta \
+    -pacbio-raw independentLong.fasta
+
+popd
+
+# quast
+rm -fr 9_qa_localCor
+quast --no-check --threads 16 \
+    --eukaryote \
+    -R 1_genome/genome.fa \
+    localCor/anchor.fasta \
+    localCor/localCor/${BASE_NAME}.contigs.fasta \
+    localCor/localCorRaw/${BASE_NAME}.contigs.fasta \
+    localCor/localCorIndep/${BASE_NAME}.contigs.fasta \
+    1_genome/paralogs.fas \
+    --label "anchor,localCor,localCorRaw,localCorIndep,paralogs" \
+    -o 9_qa_localCor
+
+find . -type d -name "correction" | xargs rm -fr
+
+```
+
+## s288c: expand anchors
+
+在酿酒酵母中, 有下列几组完全相同的序列, 它们都是新近发生的片段重复:
+
+* I:216563-218385, VIII:537165-538987
+* I:223713-224783, VIII:550350-551420
+* IV:528442-530427, IV:532327-534312, IV:536212-538197
+* IV:530324-531519, IV:534209-535404
+* IV:5645-7725, X:738076-740156
+* IV:7810-9432, X:736368-737990
+* IX:9683-11043, X:9666-11026
+* IV:1244112-1245373, XV:575980-577241
+* VIII:212266-214124, VIII:214264-216122
+* IX:11366-14953, X:11349-14936
+* XII:468935-470576, XII:472587-474228, XII:482167-483808, XII:485819-487460,
+* XII:483798-485798, XII:487450-489450
+
+* anchorLong
+
+* contigTrim
+
+## s288c: final stats
+
+* Stats
+
+| Name                   |    N50 |      Sum |    # |
+|:-----------------------|-------:|---------:|-----:|
+| Genome                 | 924431 | 12157105 |   17 |
+| Paralogs               |   3851 |  1059148 |  366 |
+| anchor.merge           |  32537 | 11325611 |  595 |
+| others.merge           |   6008 |   424881 |  184 |
+| anchorLong             |  52320 | 10994598 |  347 |
+| contigTrim             | 260345 | 11021466 |   83 |
+| canu-X40-raw           | 498694 | 12267418 |   48 |
+| canu-X40-trim          | 551422 | 12193990 |   47 |
+| spades.scaffold        |  98572 | 11732702 | 1167 |
+| spades.non-contained   |  91619 | 11544360 |  291 |
+| platanus.contig        |   5983 | 12437850 | 7727 |
+| platanus.scaffold      |  55443 | 12073445 | 4735 |
+| platanus.non-contained |  59263 | 11404921 |  360 |
+
+* quast
+
+## s288c: clear intermediate files
 
 # *Drosophila melanogaster* iso-1
 
