@@ -207,6 +207,7 @@ bax2bam --help
 ```bash
 BASE_NAME=e_coli
 REAL_G=4641652
+IS_EUK="false"
 COVERAGE2="40 80"
 COVERAGE3="40 80"
 READ_QUAL="25 30"
@@ -824,6 +825,11 @@ minimap merge/anchor.sort.fa 1_genome/genome.fa \
 # quast
 rm -fr 9_qa
 quast --no-check --threads 16 \
+    $(
+        if [ "${IS_EUK}" = "true" ]; then
+            echo "--eukaryote --no-icarus"
+        fi
+    ) \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     merge/others.merge.fasta \
@@ -1165,6 +1171,11 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
+    $(
+        if [ "${IS_EUK}" = "true" ]; then
+            echo "--eukaryote --no-icarus"
+        fi
+    ) \
     -R 1_genome/genome.fa \
     merge/anchor.merge.fasta \
     anchorLong/contig.fasta \
