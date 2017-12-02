@@ -2,6 +2,10 @@
 
 [TOC levels=1-3]: # " "
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
+- [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
+    - [Extra external executables](#extra-external-executables)
+    - [Two of the leading assemblers](#two-of-the-leading-assemblers)
+    - [PacBio specific tools](#pacbio-specific-tools)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
     - [s288c: preprocess Illumina reads](#s288c-preprocess-illumina-reads)
@@ -65,6 +69,113 @@
     - [col_0: final stats](#col-0-final-stats)
     - [col_0: clear intermediate files](#col-0-clear-intermediate-files)
 
+
+# More tools on downloading and preprocessing data
+
+## Extra external executables
+
+```bash
+brew install aria2 curl                     # downloading tools
+
+brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
+
+brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
+brew reinstall --build-from-source gnuplot@4
+brew install homebrew/science/mummer        # mummer need gnuplot4
+
+brew install openblas                       # numpy
+
+brew install python
+brew install homebrew/science/quast         # assembly quality assessment
+quast --test                                # may recompile the bundled nucmer
+
+# canu requires gnuplot 5 while mummer requires gnuplot 4
+brew install --build-from-source canu
+
+brew unlink gnuplot@4
+brew install gnuplot
+brew unlink gnuplot
+
+brew link gnuplot@4 --force
+
+brew install r
+brew install kmergenie --with-maxkmer=200
+
+brew install homebrew/science/kmc --HEAD
+```
+
+## Two of the leading assemblers
+
+```bash
+brew install homebrew/science/spades
+brew install wang-q/tap/platanus
+
+```
+
+## PacBio specific tools
+
+PacBio is switching its data format from `hdf5` to `bam`, but at now
+(early 2017) the majority of public available PacBio data are still in
+formats of `.bax.h5` or `hdf5.tgz`. For dealing with these files, PacBio
+releases some tools which can be installed by another specific tool,
+named `pitchfork`.
+
+Their tools *can* be compiled under macOS with Homebrew.
+
+* Install some third party tools
+
+```bash
+brew install md5sha1sum
+brew install zlib boost openblas
+brew install python cmake ccache hdf5
+brew install samtools
+
+brew cleanup --force # only keep the latest version
+```
+
+* Compiling with `pitchfork`
+
+```bash
+mkdir -p ~/share/pitchfork
+git clone https://github.com/PacificBiosciences/pitchfork ~/share/pitchfork
+cd ~/share/pitchfork
+
+cat <<EOF > settings.mk
+HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib     | sed 's/ /\//')
+HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost    | sed 's/ /\//')
+HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
+
+HAVE_PYTHON   = $(brew --prefix)/bin/python
+HAVE_CMAKE    = $(brew --prefix)/bin/cmake
+HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
+HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5   | sed 's/ /\//')
+
+EOF
+
+# fix several Makefiles
+sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
+
+sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
+
+cd ~/share/pitchfork
+make pip
+deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
+
+make bax2bam
+```
+
+* Compiled binary files are in `~/share/pitchfork/deployment`. Run
+  `source ~/share/pitchfork/deployment/setup-env.sh` will bring this
+  path to your `$PATH`. This action would also pollute your bash
+  environment, if anything went wrong, restart your terminal.
+
+```bash
+source ~/share/pitchfork/deployment/setup-env.sh
+
+bax2bam --help
+```
 
 # *Saccharomyces cerevisiae* S288c
 
