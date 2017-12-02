@@ -134,27 +134,6 @@ source ~/share/pitchfork/deployment/setup-env.sh
 bax2bam --help
 ```
 
-* Data of P4C2 and older are not supported in the current version of
-  PacBio softwares (SMRTAnalysis). So install SMRTAnalysis_2.3.0.
-
-```bash
-mkdir -p ~/share/SMRTAnalysis_2.3.0
-cd ~/share/SMRTAnalysis_2.3.0
-
-aria2c -x 9 -s 3 -c http://files.pacb.com/software/smrtanalysis/2.3.0/smrtanalysis_2.3.0.140936.run
-aria2c -x 9 -s 3 -c http://files.pacb.com/software/smrtanalysis/2.3.0/smrtanalysis-patch_2.3.0.140936.p5.run
-
-aria2c -x 9 -s 3 -c https://atlas.hashicorp.com/ubuntu/boxes/trusty64/versions/20170313.0.7/providers/virtualbox.box
-vagrant box add ubuntu/trusty64 trusty-server-cloudimg-amd64-vagrant-disk1.box --force
-
-curl -O https://raw.githubusercontent.com/mhsieh/SMRTAnalysis_2.3.0_install/master/vagrant-u1404/Vagrantfile
-
-vagrant destroy -f
-rm -fr .vagrant/
-vagrant up --provider virtualbox
-
-```
-
 # *Escherichia coli* str. K-12 substr. MG1655
 
 * Genome: INSDC
