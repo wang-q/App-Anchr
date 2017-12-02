@@ -10,10 +10,10 @@ use constant abstract => "selete anchors from k-unitigs or superreads";
 
 sub opt_spec {
     return (
-        [ "outfile|o=s",  "output filename, [stdout] for screen",  { default => "anchors.sh" }, ],
-        [ 'min=i',        'minimal length of anchors',             { default => 1000, }, ],
-        [ 'unambi=i',     'minimal coverage of unambiguous reads', { default => 2, }, ],
-        [ 'parallel|p=i', 'number of threads',                     { default => 8, }, ],
+        [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "anchors.sh" }, ],
+        [ 'min=i',        'minimal length of anchors',            { default => 1000, }, ],
+        [ 'reads=i',      'minimal coverage of reads',            { default => 2, }, ],
+        [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
         { show_defaults => 1, }
     );
 }
@@ -114,22 +114,25 @@ log_debug "SR sizes"
 faops size SR.fasta > sr.chr.sizes
 
 #----------------------------#
-# unambiguous
+# Mapping reads
 #----------------------------#
-log_info "Unambiguous regions"
+log_info "Mapping reads"
 
 log_debug "bbmap"
 bbmap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
-    ambiguous=toss \
+    ambiguous=all \
     nodisk \
     ref=SR.fasta in=pe.cor.fa \
-    outm=unambiguous.sam outu=unmapped.sam \
+    outm=mapped.sam outu=unmapped.sam \
     basecov=basecov.txt \
     1>bbmap.err 2>&1
 
-# at least [% opt.unambi %] unambiguous reads covered
+#----------------------------#
+# Covered reads
+#----------------------------#
+# at least [% opt.reads %] reads covered
 # Pos is 0-based
 #RefName	Pos	Coverage
 log_debug "covered"
@@ -152,7 +155,7 @@ cat basecov.txt \
             return @ranges;
         }
 
-        $F[2] < 2 and next;
+        $F[2] < [% opt.reads %] and next;
 
         if ( !defined $name ) {
             $name = $F[0];
@@ -188,18 +191,16 @@ cat basecov.txt \
             }
         }
     ' \
-    > unambiguous.covered.txt
-
-#find . -type f -name "*.sam"   | parallel --no-run-if-empty -j 1 rm
+    > reads.covered.txt
 
 #----------------------------#
 # anchor
 #----------------------------#
-log_info "anchor - unambiguous"
-jrunlist cover unambiguous.covered.txt -o unambiguous.covered.yml
-jrunlist stat sr.chr.sizes unambiguous.covered.yml -o unambiguous.covered.csv
+log_info "anchor - 95% covered"
+jrunlist cover reads.covered.txt -o reads.covered.yml
+jrunlist stat sr.chr.sizes reads.covered.yml -o reads.covered.csv
 
-cat unambiguous.covered.csv \
+cat reads.covered.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
         $F[0] eq q{all} and next;
@@ -210,42 +211,7 @@ cat unambiguous.covered.csv \
     | sort -n \
     > anchor.txt
 
-rm unambiguous.covered.txt
-
-#----------------------------#
-# anchor2
-#----------------------------#
-log_info "anchor2 - unambiguous2"
-
-# contiguous unique region longer than [% opt.min %]
-jrunlist span unambiguous.covered.yml --op excise -n [% opt.min %] -o unambiguous2.covered.yml
-jrunlist stat sr.chr.sizes unambiguous2.covered.yml -o unambiguous2.covered.csv
-
-cat unambiguous2.covered.csv \
-    | perl -nla -F"," -e '
-        $F[0] eq q{chr} and next;
-        $F[0] eq q{all} and next;
-        $F[2] < [% opt.min %] and next;
-        print $F[0];
-    ' \
-    | sort -n \
-    > unambiguous2.txt
-
-cat unambiguous2.txt \
-    | perl -nl -MPath::Tiny -e '
-        BEGIN {
-            %seen = ();
-            @ls = grep {/\S/}
-                  path(q{anchor.txt})->lines({ chomp => 1});
-            $seen{$_}++ for @ls;
-        }
-
-        $seen{$_} and next;
-        print;
-    ' \
-    > anchor2.txt
-
-rm unambiguous2.*
+rm reads.covered.txt
 
 #----------------------------#
 # basecov
@@ -276,12 +242,12 @@ cat basecov.txt \
             printf qq{%s\t%d\n}, $name, int $mean_cov;
         }
     ' \
-    > unambiguous.coverage.tsv
+    > reads.coverage.tsv
 
 # How to best eliminate values in a list that are outliers
 # http://www.perlmonks.org/?node_id=1147296
 # http://exploringdatablog.blogspot.com/2013/02/finding-outliers-in-numerical-data.html
-cat unambiguous.coverage.tsv \
+cat reads.coverage.tsv \
     | perl -nla -MStatistics::Descriptive -e '
         BEGIN {
             our $stat   = Statistics::Descriptive::Full->new();
@@ -311,7 +277,7 @@ cat unambiguous.coverage.tsv \
     ' \
     > outlier.txt
 
-cat anchor.txt anchor2.txt \
+cat anchor.txt \
     | grep -Fx -f outlier.txt -v \
     > wanted.txt
 
@@ -322,6 +288,26 @@ log_info "pe.anchor.fa & pe.others.fa"
 faops some -l 0 SR.fasta wanted.txt pe.anchor.fa
 
 faops some -l 0 -i SR.fasta wanted.txt pe.others.fa
+
+#----------------------------#
+# Merging anchors
+#----------------------------#
+log_info "Merging anchors"
+anchr contained \
+    pe.anchor.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 8 \
+    -o anchor.non-contained.fasta
+anchr orient \
+    anchor.non-contained.fasta \
+    --len 1000 --idt 0.98 \
+    -o anchor.orient.fasta
+anchr merge \
+    anchor.orient.fasta --len 1000 --idt 0.999 \
+    -o anchor.merge0.fasta
+anchr contained \
+    anchor.merge0.fasta --len 1000 --idt 0.98 \
+    --proportion 0.99 --parallel 8 \
+    -o anchor.fasta
 
 #----------------------------#
 # Done.

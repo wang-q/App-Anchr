@@ -13,8 +13,9 @@ sub opt_spec {
         [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "kunitigs.sh" }, ],
         [ 'jf=s',         'jellyfish hash size',                  { default => "auto", }, ],
         [ 'estsize=s',    'estimated genome size',                { default => "auto", }, ],
-        [ 'kmer=s',       'kmer size to be used for super reads', { default => "auto", }, ],
+        [ 'kmer=s',       'kmer size to be used',                 { default => "31", }, ],
         [ 'min=i',        'minimal length of k-unitigs',          { default => 500, }, ],
+        [ 'merge',        'merge k-unitigs from all kmers', ],
         [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
         { show_defaults => 1, }
     );
@@ -46,12 +47,10 @@ sub validate_args {
         }
     }
 
-    if ( $opt->{kmer} ne 'auto' ) {
-        unless ( $opt->{kmer} =~ /^[\d,]+$/ ) {
-            $self->usage_error("Invalid k-mer [$opt->{kmer}].");
-        }
-        $opt->{kmer} = [ sort { $a <=> $b } grep {defined} split ",", $opt->{kmer} ];
+    unless ( $opt->{kmer} =~ /^[\d,]+$/ ) {
+        $self->usage_error("Invalid k-mer [$opt->{kmer}].");
     }
+    $opt->{kmer} = [ sort { $a <=> $b } grep {defined} split ",", $opt->{kmer} ];
 }
 
 sub execute {
@@ -143,14 +142,9 @@ log_info Read stats of PE reads
 SUM_COR=$( faops n50 -H -N 0 -S pe.cor.fa )
 save SUM_COR
 
-[% IF opt.kmer == 'auto' -%]
-KMER=$( cat environment.json | jq '.KMER' )
-log_debug "Choosing kmer size of $KMER for the graph"
-[% ELSE -%]
 KMER=[% opt.kmer.join(',') %]
 save KMER
 log_debug "You set kmer size of $KMER for the graph"
-[% END -%]
 
 [% IF opt.jf == 'auto' -%]
 JF_SIZE=$( cat environment.json | jq '.JF_SIZE | tonumber' )
@@ -173,40 +167,39 @@ log_debug "ESTIMATED_GENOME_SIZE: $ESTIMATED_GENOME_SIZE"
 #----------------------------#
 if [ ! -e k_unitigs.fasta ]; then
 log_info Creating k-unitigs
-[% IF opt.kmer == 'auto' -%]
-    log_debug with k=$KMER
-    create_k_unitigs_large_k -c $(($KMER-1)) -t [% opt.parallel %] \
-        -m $KMER -n $ESTIMATED_GENOME_SIZE -l $KMER -f 0.000001 pe.cor.fa \
-        > k_unitigs_K$KMER.fasta
 
-    anchr contained \
-        k_unitigs_K$KMER.fasta \
-        --len [% opt.min %] --idt 0.99 --proportion 0.99999 --parallel [% opt.parallel %] \
-        -o stdout \
-        | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
-[% ELSE -%]
 [% FOREACH kmer IN opt.kmer -%]
     log_debug with k=[% kmer %]
     create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
-        -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 pe.cor.fa \
-        > k_unitigs_K[% kmer %].fasta
+        -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 \
+        pe.cor.fa \
+        > k_unitigs_K[% kmer %].raw.fasta
+    anchr contained \
+        k_unitigs_K[% kmer %].raw.fasta \
+        --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o k_unitigs_K[% kmer %].fasta
 
 [% END -%]
-    log_info Merging k-unitigs
+
     anchr contained \
 [% FOREACH kmer IN opt.kmer -%]
         k_unitigs_K[% kmer %].fasta \
 [% END -%]
-        --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-        -o stdout \
-        | faops filter -a [% opt.min %] -l 0 stdin k_unitigs.contained.fasta
-[% END -%]
-    anchr orient k_unitigs.contained.fasta \
+        --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o k_unitigs.non-contained.fasta
+
+[% IF opt.merge -%]
+    log_info Merging k-unitigs
+    anchr orient k_unitigs.non-contained.fasta \
         --len [% opt.min %] --idt 0.99 --parallel [% opt.parallel %] \
         -o k_unitigs.orient.fasta
     anchr merge k_unitigs.orient.fasta \
         --len [% opt.min %] --idt 0.999 --parallel [% opt.parallel %] \
         -o k_unitigs.fasta
+[% ELSE -%]
+    mv k_unitigs.non-contained.fasta k_unitigs.fasta
+[% END -%]
+
 fi
 
 #----------------------------#
