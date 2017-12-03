@@ -433,12 +433,18 @@ printf "| %s | %s | %s | %s |\n" \
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "shuffle";  faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+if [ -e 2_illumina/R1.uniq.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.scythe.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+fi
 
 parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
