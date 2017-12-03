@@ -330,48 +330,22 @@ parallel -j 2 "
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
-    shuffle.sh \
-        in=2_illumina/R1.uniq.fq.gz \
-        in2=2_illumina/R2.uniq.fq.gz \
-        out=2_illumina/R1.shuffle.fq \
-        out2=2_illumina/R2.shuffle.fq
-
-    parallel --no-run-if-empty -j 2 "
-        pigz -p 8 2_illumina/{}.shuffle.fq
-        " ::: R1 R2
-fi
-
-if [ -e 2_illumina/illumina_adapters.fa ]; then
-    if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-        parallel --no-run-if-empty -j 2 "
-            scythe \
-                2_illumina/{}.shuffle.fq.gz \
-                -q sanger \
-                -a 2_illumina/illumina_adapters.fa \
-                --quiet \
-                | pigz -p 4 -c \
-                > 2_illumina/{}.scythe.fq.gz
-            " ::: R1 R2
-    fi
-fi
+cd 2_illumina
+anchr trim \
+    --uniq \
+    $(
+        if [ -e illumina_adapters.fa ]; then
+            echo "--scythe -a 2_illumina/illumina_adapters.fa"
+        fi
+    ) \
+    --nosickle \
+    R1.fq.gz R2.fq.gz \
+    -o stdout \
+    | bash
 
 parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
     
     if [ -e R1.fq.gz ]; then
         echo '    R1.fq.gz already presents'
@@ -379,9 +353,8 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
     fi
 
     anchr trim \
-        --noscythe \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
         -o stdout \
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
@@ -452,13 +425,13 @@ parallel --no-run-if-empty -k -j 3 "
             echo Q{1}L{2};
             if [[ {1} -ge '30' ]]; then
                 faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz \
-                    2_illumina/Q{1}L{2}/Rs.fq.gz;
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.sickle.fq.gz;
             else
                 faops n50 -H -S -C \
-                    2_illumina/Q{1}L{2}/R1.fq.gz \
-                    2_illumina/Q{1}L{2}/R2.fq.gz;
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
             fi
         )
     " ::: ${READ_QUAL} ::: ${READ_LEN} \
@@ -507,9 +480,9 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 spades.py \
     -t 16 \
     -k 21,33,55,77 --careful \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
+    -1 2_illumina/Q25L60/R1.sickle.fq.gz \
+    -2 2_illumina/Q25L60/R2.sickle.fq.gz \
+    -s 2_illumina/Q25L60/Rs.sickle.fq.gz \
     -o 8_spades
 
 anchr contained \
@@ -531,13 +504,13 @@ cd 8_platanus
 if [ ! -e pe.fa ]; then
     faops interleave \
         -p pe \
-        ../2_illumina/Q25L60/R1.fq.gz \
-        ../2_illumina/Q25L60/R2.fq.gz \
+        ../2_illumina/Q25L60/R1.sickle.fq.gz \
+        ../2_illumina/Q25L60/R2.sickle.fq.gz \
         > pe.fa
     
     faops interleave \
         -p se \
-        ../2_illumina/Q25L60/Rs.fq.gz \
+        ../2_illumina/Q25L60/Rs.sickle.fq.gz \
         > se.fa
 fi
 
@@ -572,8 +545,8 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Group Q{1}L{2} <=='
 
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
+    if [ ! -e R1.sickle.fq.gz ]; then
+        echo >&2 '    R1.sickle.fq.gz not exists'
         exit;
     fi
 
@@ -584,12 +557,12 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
 
     if [[ {1} -ge '30' ]]; then
         anchr quorum \
-            R1.fq.gz R2.fq.gz Rs.fq.gz \
+            R1.sickle.fq.gz R2.sickle.fq.gz Rs.sickle.fq.gz \
             -p 16 \
             -o quorum.sh
     else
         anchr quorum \
-            R1.fq.gz R2.fq.gz \
+            R1.sickle.fq.gz R2.sickle.fq.gz \
             -p 16 \
             -o quorum.sh
     fi
