@@ -791,7 +791,6 @@ faops order merge/anchor.merge1.fasta \
     merge/anchor.merge.fasta
 
 # merge others
-mkdir -p merge
 anchr contained \
     $(
         parallel -k --no-run-if-empty -j 6 "
@@ -1131,7 +1130,7 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "canu-X${EXPAND_WITH}-trim"; faops n50 -H -S -C canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.config"; faops n50 -H -S -C 8_spades/configs.fasta;) >> stat3.md
+    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
