@@ -349,7 +349,7 @@ if [ ! -e 2_illumina/R1.shuffle.fq.gz ]; then
         in2=2_illumina/R2.uniq.fq.gz \
         out=2_illumina/R1.shuffle.fq \
         out2=2_illumina/R2.shuffle.fq
-    
+
     parallel --no-run-if-empty -j 2 "
         pigz -p 8 2_illumina/{}.shuffle.fq
         " ::: R1 R2
