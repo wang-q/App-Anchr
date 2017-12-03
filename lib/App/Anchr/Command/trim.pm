@@ -17,9 +17,10 @@ sub opt_spec {
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
-        [ "uniq",    "the uniq step", ],
-        [ "shuffle", "the shuffle step", ],
-        [ "scythe",  "the scythe step", ],
+        [ "uniq",     "the uniq step", ],
+        [ "shuffle",  "the shuffle step", ],
+        [ "scythe",   "the scythe step", ],
+        [ "nosickle", "skip the sickle step", ],
         [ "parallel|p=i", "number of threads", { default => 8 }, ],
         { show_defaults => 1, }
     );
@@ -208,6 +209,7 @@ fi
 [% prev = 'scythe' -%]
 [% END -%]
 
+[% IF not opt.nosickle -%]
 [% current = 'sickle' -%]
 #----------------------------#
 # [% current %]
@@ -253,10 +255,12 @@ fi
 #----------------------------#
 # outputs
 #----------------------------#
-mv R1.sickle.fq.gz [% opt.basename %]1.fq.gz
+mv R1.sickle.fq.gz [% opt.basename %]1.sickle.fq.gz
 [% IF args.1 -%]
-mv R2.sickle.fq.gz [% opt.basename %]2.fq.gz
-mv Rs.sickle.fq.gz [% opt.basename %]s.fq.gz
+mv R2.sickle.fq.gz [% opt.basename %]2.sickle.fq.gz
+mv Rs.sickle.fq.gz [% opt.basename %]s.sickle.fq.gz
+[% END -%]
+
 [% END -%]
 
 exit 0

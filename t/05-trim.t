@@ -52,8 +52,8 @@ unlike( $result->stdout, qr{\spe\s}s, 'se mode without pe' );
 
     ok( $tempdir->child("trim.sh")->is_file, 'bash file exists' );
     system( sprintf "bash %s", $tempdir->child("trim.sh")->stringify );
-    ok( $tempdir->child("R1.fq.gz")->is_file, 'output files exist' );
-    ok( $tempdir->child("Rs.fq.gz")->is_file, 'output files exist' );
+    ok( $tempdir->child("R1.sickle.fq.gz")->is_file, 'output files exist' );
+    ok( $tempdir->child("Rs.sickle.fq.gz")->is_file, 'output files exist' );
 
     #        chdir $tempdir;    # keep tempdir
 }
