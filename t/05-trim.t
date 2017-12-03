@@ -23,21 +23,20 @@ $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -a t/not_exis
 like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout)] );
-is( scalar( grep {/\S/} split( /\n/, $result->stdout ) ), 67, 'line count' );
-like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
+ok( scalar( grep {/\S/} split( /\n/, $result->stdout ) ) > 40, 'line count' );
+like( $result->stdout, qr{sickle.+outputs}s, 'bash contents' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -b fancy/NAMES -o stdout)] );
 like( $result->stdout, qr{fancy\/NAMES}s, 'fancy names' );
 
-$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout --noscythe)] );
-ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) < 70, 'line count' );
+$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout --scythe)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 40, 'line count' );
 like( $result->stdout, qr{scythe.+sickle.+outputs}s, 'bash contents' );
-unlike( $result->stdout, qr{# scythe}s, 'bash contents' );
-like( $result->stdout, qr{\spe\s}s, 'pe mode' );
+like( $result->stdout, qr{# scythe}s,                'bash contents' );
+like( $result->stdout, qr{\spe\s}s,                  'pe mode' );
 unlike( $result->stdout, qr{\sse\s}s, 'pe mode without se' );
 
-$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz -o stdout --noscythe)] );
+$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz -o stdout )] );
 like( $result->stdout, qr{\sse\s}s, 'se mode' );
 unlike( $result->stdout, qr{\spe\s}s, 'se mode without pe' );
 
@@ -56,7 +55,7 @@ unlike( $result->stdout, qr{\spe\s}s, 'se mode without pe' );
     ok( $tempdir->child("R1.fq.gz")->is_file, 'output files exist' );
     ok( $tempdir->child("Rs.fq.gz")->is_file, 'output files exist' );
 
-    #    chdir $tempdir;    # keep tempdir
+    #        chdir $tempdir;    # keep tempdir
 }
 
 done_testing();

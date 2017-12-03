@@ -6,25 +6,27 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "trim PE Illumina fastq files";
+use constant abstract => "trim PE/SE Illumina fastq files";
 
 sub opt_spec {
     return (
         [ "outfile|o=s",  "output filename, [stdout] for screen",      { default => "trim.sh" }, ],
         [ "basename|b=s", "prefix of fastq filenames",                 { default => "R" }, ],
-        [ "len|l=i",      "filter reads less or equal to this length", { default => 80 }, ],
-        [ "qual|q=i",     "quality threshold",                         { default => 20 }, ],
+        [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
+        [ "qual|q=i",     "quality threshold",                         { default => 25 }, ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
-        [ "noscythe", "skip the scythe step", ],
+        [ "uniq",    "the uniq step", ],
+        [ "shuffle", "the shuffle step", ],
+        [ "scythe",  "the scythe step", ],
         [ "parallel|p=i", "number of threads", { default => 8 }, ],
         { show_defaults => 1, }
     );
 }
 
 sub usage_desc {
-    return "anchr trim [options] <PE file1> <PE file2>";
+    return "anchr trim [options] <file1> [file2]";
 }
 
 sub description {
@@ -37,7 +39,7 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( !( @{$args} == 1 or @{$args} == 2  )  ) {
+    if ( !( @{$args} == 1 or @{$args} == 2 ) ) {
         my $message = "This command need one or two input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
@@ -101,69 +103,152 @@ log_debug () {
 # Run
 #----------------------------#
 
-[% IF opt.noscythe -%]
-log_info "Skip the scythe step"
+[% IF opt.uniq -%]
+[% current = 'uniq' -%]
+#----------------------------#
+# [% current %]
+#----------------------------#
+log_info "[% current %]"
+if [ ! -e R1.[% current %].fq.gz ]; then
+[% IF args.1 -%]
+    tally \
+        --pair-by-offset --with-quality --nozip --unsorted \
+        -i [% args.0 %] \
+        -j [% args.1 %] \
+        -o R1.[% current %].fq \
+        -p R2.[% current %].fq
+
+    parallel --no-run-if-empty -j 1 "
+        pigz -p [% opt.parallel %] {}.[% current %].fq
+        " ::: R1 R2
 [% ELSE -%]
+    tally \
+        --with-quality --nozip --unsorted \
+        -i [% args.0 %] \
+        -o R1.[% current %].fq
+
+    pigz -p [% opt.parallel %] R1.[% current %].fq
+[% END -%]
+fi
+[% prev = 'uniq' -%]
+[% END -%]
+
+[% IF opt.shuffle -%]
+[% current = 'shuffle' -%]
 #----------------------------#
-# scythe
+# [% current %]
 #----------------------------#
-log_info "scythe [% args.0 %]"
-scythe \
-    [% args.0 %] \
-    -q sanger \
-    -M [% opt.len %] \
-    -a [% opt.adapter %] \
-    --quiet \
-    | pigz -p [% opt.parallel %] -c \
-    > R1.scythe.fq.gz
+log_info "[% current %]"
+if [ ! -e R1.[% current %].fq.gz ]; then
+[% IF args.1 -%]
+    shuffle.sh \
+[% IF prev -%]
+        in=R1.[% prev %].fq.gz \
+        in2=R2.[% prev %].fq.gz \
+[% ELSE -%]
+        in=[% args.0 %] \
+        in2=[% args.1 %] \
+[% END -%]
+        out=R1.[% current %].fq \
+        out2=R2.[% current %].fq
+
+    parallel --no-run-if-empty -j 1 "
+        pigz -p [% opt.parallel %] {}.[% current %].fq
+        " ::: R1 R2
+[% ELSE -%]
+    shuffle.sh \
+[% IF prev -%]
+        in=R1.[% prev %].fq.gz \
+[% ELSE -%]
+        in=[% args.0 %] \
+[% END -%]
+        out=R1.[% current %].fq
+
+    pigz -p [% opt.parallel %] R1.[% current %].fq
+[% END -%]
+fi
+[% prev = 'shuffle' -%]
+[% END -%]
+
+[% IF opt.scythe -%]
+[% current = 'scythe' -%]
+#----------------------------#
+# [% current %]
+#----------------------------#
+log_info "[% current %]"
+if [ ! -e R1.[% current %].fq.gz ]; then
+    scythe \
+[% IF prev -%]
+        R1.[% prev %].fq.gz \
+[% ELSE -%]
+        [% args.0 %] \
+[% END -%]
+        -q sanger \
+        -M [% opt.len %] \
+        -a [% opt.adapter %] \
+        --quiet \
+        | pigz -p [% opt.parallel %] -c \
+        > R1.[% current %].fq.gz
 
 [% IF args.1 -%]
-log_info "scythe [% args.1 %]"
-scythe \
-    [% args.1 %] \
-    -q sanger \
-    -M [% opt.len %] \
-    -a [% opt.adapter %] \
-    --quiet \
-    | pigz -p [% opt.parallel %] -c \
-    > R2.scythe.fq.gz
+    scythe \
+[% IF prev -%]
+        R2.[% prev %].fq.gz \
+[% ELSE -%]
+        [% args.1 %] \
 [% END -%]
+        -q sanger \
+        -M [% opt.len %] \
+        -a [% opt.adapter %] \
+        --quiet \
+        | pigz -p [% opt.parallel %] -c \
+        > R2.[% current %].fq.gz
+[% END -%]
+fi
+[% prev = 'scythe' -%]
 [% END -%]
 
+[% current = 'sickle' -%]
 #----------------------------#
-# sickle
+# [% current %]
 #----------------------------#
-log_info "sickle [% args.0 %] [% args.1 %]"
-
+log_info "[% current %]"
+if [ ! -e R1.[% current %].fq.gz ]; then
 [% IF args.1 -%]
-sickle pe \
-    -t sanger \
-    -l [% opt.len %] \
-    -q [% opt.qual %] \
-[% IF opt.noscythe -%]
-    -f [% args.0 %] \
-    -r [% args.1 %] \
+    sickle pe \
+        -t sanger \
+        -l [% opt.len %] \
+        -q [% opt.qual %] \
+[% IF prev -%]
+        -f R1.[% prev %].fq.gz \
+        -r R2.[% prev %].fq.gz \
 [% ELSE -%]
-    -f R1.scythe.fq.gz \
-    -r R2.scythe.fq.gz \
+        -f [% args.0 %] \
+        -r [% args.1 %] \
 [% END -%]
-    -o R1.sickle.fq \
-    -p R2.sickle.fq \
-    -s single.sickle.fq
-[% ELSE -%]
-sickle se \
-    -t sanger \
-    -l [% opt.len %] \
-    -q [% opt.qual %] \
-[% IF opt.noscythe -%]
-    -f [% args.0 %] \
-[% ELSE -%]
-    -f R1.scythe.fq.gz \
-[% END -%]
-    -o R1.sickle.fq
-[% END -%]
+        -o R1.[% current %].fq \
+        -p R2.[% current %].fq \
+        -s Rs.[% current %].fq
 
-find . -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
+    parallel --no-run-if-empty -j 1 "
+        pigz -p [% opt.parallel %] {}.[% current %].fq
+        " ::: R1 R2 Rs
+[% ELSE -%]
+    sickle se \
+        -t sanger \
+        -l [% opt.len %] \
+        -q [% opt.qual %] \
+[% IF prev -%]
+        -f R1.[% prev %].fq.gz \
+[% ELSE -%]
+        -f [% args.0 %] \
+[% END -%]
+        -o R1.sickle.fq
+
+    pigz -p [% opt.parallel %] R1.[% current %].fq
+[% END -%]
+fi
+[% prev = 'sickle' -%]
 
 #----------------------------#
 # outputs
@@ -171,7 +256,7 @@ find . -type f -name "*.sickle.fq" | xargs pigz -p [% opt.parallel %]
 mv R1.sickle.fq.gz [% opt.basename %]1.fq.gz
 [% IF args.1 -%]
 mv R2.sickle.fq.gz [% opt.basename %]2.fq.gz
-mv single.sickle.fq.gz [% opt.basename %]s.fq.gz
+mv Rs.sickle.fq.gz [% opt.basename %]s.fq.gz
 [% END -%]
 
 exit 0
