@@ -19,6 +19,7 @@ sub opt_spec {
         ],
         [ "uniq",     "the uniq step", ],
         [ "shuffle",  "the shuffle step", ],
+        [ "sample=i",  "the sample step", ],
         [ "scythe",   "the scythe step", ],
         [ "nosickle", "skip the sickle step", ],
         [ "parallel|p=i", "number of threads", { default => 8 }, ],
@@ -169,6 +170,47 @@ if [ ! -e R1.[% current %].fq.gz ]; then
 [% END -%]
 fi
 [% prev = 'shuffle' -%]
+[% END -%]
+
+[% IF opt.sample -%]
+[% current = 'sample' -%]
+#----------------------------#
+# [% current %]
+#----------------------------#
+log_info "[% current %]"
+if [ ! -e R1.[% current %].fq.gz ]; then
+[% IF args.1 -%]
+    reformat.sh \
+        sampleseed=[% opt.sample %] \
+        samplebasestarget=[% opt.sample %] \
+[% IF prev -%]
+        in=R1.[% prev %].fq.gz \
+        in2=R2.[% prev %].fq.gz \
+[% ELSE -%]
+        in=[% args.0 %] \
+        in2=[% args.1 %] \
+[% END -%]
+        out=R1.[% current %].fq \
+        out2=R2.[% current %].fq
+
+    parallel --no-run-if-empty -j 1 "
+        pigz -p [% opt.parallel %] {}.[% current %].fq
+        " ::: R1 R2
+[% ELSE -%]
+    reformat.sh \
+        sampleseed=[% opt.sample %] \
+        samplebasestarget=[% opt.sample %] \
+[% IF prev -%]
+        in=R1.[% prev %].fq.gz \
+[% ELSE -%]
+        in=[% args.0 %] \
+[% END -%]
+        out=R1.[% current %].fq
+
+    pigz -p [% opt.parallel %] R1.[% current %].fq
+[% END -%]
+fi
+[% prev = 'sample' -%]
 [% END -%]
 
 [% IF opt.scythe -%]
