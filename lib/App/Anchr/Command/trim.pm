@@ -178,33 +178,20 @@ fi
 #----------------------------#
 log_info "[% current %]"
 if [ ! -e R1.[% current %].fq.gz ]; then
-    scythe \
+    parallel --no-run-if-empty -j 2 "
+        scythe \
 [% IF prev -%]
-        R1.[% prev %].fq.gz \
+            {}.[% prev %].fq.gz \
 [% ELSE -%]
-        [% args.0 %] \
+            [% args.0 %] \
 [% END -%]
-        -q sanger \
-        -M [% opt.len %] \
-        -a [% opt.adapter %] \
-        --quiet \
-        | pigz -p [% opt.parallel %] -c \
-        > R1.[% current %].fq.gz
-
-[% IF args.1 -%]
-    scythe \
-[% IF prev -%]
-        R2.[% prev %].fq.gz \
-[% ELSE -%]
-        [% args.1 %] \
-[% END -%]
-        -q sanger \
-        -M [% opt.len %] \
-        -a [% opt.adapter %] \
-        --quiet \
-        | pigz -p [% opt.parallel %] -c \
-        > R2.[% current %].fq.gz
-[% END -%]
+            -q sanger \
+            -M [% opt.len %] \
+            -a [% opt.adapter %] \
+            --quiet \
+            | pigz -p [% opt.parallel %] -c \
+            > {}.[% current %].fq.gz
+        " ::: R1 [% IF args.1 %]R2[% END %]
 fi
 [% prev = 'scythe' -%]
 [% END -%]
