@@ -929,8 +929,18 @@ EOF
 
 md5sum --check sra_md5.txt
 
-ln -s SRR4272082_1.fastq.gz R1.fq.gz
-ln -s SRR4272082_2.fastq.gz R2.fq.gz
+# Down sampling to 200x
+reformat.sh \
+    sampleseed=$(( 200 * ${REAL_G} )) \
+    samplebasestarget=$(( 200 * ${REAL_G} )) \
+    in=SRR4272082_1.fastq.gz \
+    in2=SRR4272082_2.fastq.gz \
+    out=R1.fq \
+    out2=R2.fq
+
+parallel --no-run-if-empty -j 2 "
+    pigz -p 8 {}.fq
+    " ::: R1 R2
 
 ```
 
