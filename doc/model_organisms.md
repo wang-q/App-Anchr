@@ -1788,6 +1788,7 @@ parallel --no-run-if-empty -j 3 "
 ```bash
 BASE_NAME=n2
 REAL_G=100286401
+IS_EUK="false"
 COVERAGE2="30 40 50 60"
 COVERAGE3="40 80"
 READ_QUAL="25 30"
@@ -1815,8 +1816,8 @@ cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
     * Other SRA
         * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
         * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
-        * DRR008443
-        * SRR065390
+        * DRR008443 - GA II
+        * SRR065390 - GA II
 
 ```bash
 # Downloading from ena with aria2
