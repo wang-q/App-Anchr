@@ -1330,22 +1330,18 @@ cat 3_pacbio/fasta/*.fasta \
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-        pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
+cd 2_illumina
+
+anchr trim \
+    --uniq \
+    --nosickle \
+    R1.fq.gz R2.fq.gz \
+    -o trim.sh
+bash trim.sh
 
 parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
     
     if [ -e R1.fq.gz ]; then
         echo '    R1.fq.gz already presents'
@@ -1353,9 +1349,21 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
     fi
 
     anchr trim \
-        --noscythe \
         -q {1} -l {2} \
-        ../R1.uniq.fq.gz ../R2.uniq.fq.gz \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+         \
         -o stdout \
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
@@ -1382,80 +1390,14 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 
 ## s288c: spades
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -1 2_illumina/Q25L60/R1.fq.gz \
-    -2 2_illumina/Q25L60/R2.fq.gz \
-    -s 2_illumina/Q25L60/Rs.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
-
-```
-
 ## s288c: platanus
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e pe.fa ]; then
-    faops interleave \
-        -p pe \
-        ../2_illumina/Q25L60/R1.fq.gz \
-        ../2_illumina/Q25L60/R2.fq.gz \
-        > pe.fa
-    
-    faops interleave \
-        -p se \
-        ../2_illumina/Q25L60/Rs.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f pe.fa se.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 pe.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -ip1 pe.fa \
-    2>&1 | tee gap_log.txt
-
-anchr contained \
-    out_gapClosed.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
-
-```
-
-```text
-#### PROCESS INFORMATION ####
-VmPeak:          65.688 GByte
-VmHWM:            7.394 GByte
-```
 
 ## s288c: quorum
 
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
-| Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:06'55'' |
-| Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:06'49'' |
+| Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:07'55'' |
+| Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:07'41'' |
 
 ## s288c: down sampling
 
@@ -1463,18 +1405,18 @@ VmHWM:            7.394 GByte
 
 | Name          |  SumCor | CovCor | N50Anchor |    Sum |    # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|-------:|-----:|----------:|--------:|----:|--------------------:|----------:|:----------|
-| Q25L60X40P000 | 486.28M |   40.0 |     11041 | 11.15M | 1551 |       787 | 314.94K | 416 | "31,41,51,61,71,81" | 0:06'06'' | 0:01'46'' |
-| Q25L60X40P001 | 486.28M |   40.0 |     10934 | 11.12M | 1554 |       801 | 321.86K | 421 | "31,41,51,61,71,81" | 0:06'07'' | 0:01'47'' |
-| Q25L60X40P002 | 486.28M |   40.0 |     11342 | 11.15M | 1507 |       795 | 290.07K | 373 | "31,41,51,61,71,81" | 0:05'50'' | 0:01'46'' |
-| Q25L60X40P003 | 486.28M |   40.0 |     11301 | 11.15M | 1552 |       787 | 302.63K | 399 | "31,41,51,61,71,81" | 0:05'54'' | 0:01'48'' |
-| Q25L60X80P000 | 972.57M |   80.0 |      8378 |  11.1M | 1921 |       772 |  346.4K | 467 | "31,41,51,61,71,81" | 0:09'41'' | 0:01'50'' |
-| Q25L60X80P001 | 972.57M |   80.0 |      8450 | 11.08M | 1925 |       771 | 358.02K | 483 | "31,41,51,61,71,81" | 0:09'37'' | 0:01'50'' |
-| Q30L60X40P000 | 486.28M |   40.0 |     11286 | 11.15M | 1536 |       788 |  310.8K | 409 | "31,41,51,61,71,81" | 0:05'50'' | 0:01'48'' |
-| Q30L60X40P001 | 486.28M |   40.0 |     11505 | 11.13M | 1481 |       802 |  323.9K | 414 | "31,41,51,61,71,81" | 0:05'54'' | 0:01'46'' |
-| Q30L60X40P002 | 486.28M |   40.0 |     11804 | 11.15M | 1452 |       786 |  287.3K | 371 | "31,41,51,61,71,81" | 0:05'43'' | 0:01'50'' |
-| Q30L60X40P003 | 486.28M |   40.0 |     12015 | 11.14M | 1484 |       787 | 300.28K | 397 | "31,41,51,61,71,81" | 0:05'49'' | 0:01'49'' |
-| Q30L60X80P000 | 972.57M |   80.0 |      9372 | 11.12M | 1806 |       765 |  340.9K | 463 | "31,41,51,61,71,81" | 0:09'45'' | 0:01'49'' |
-| Q30L60X80P001 | 972.57M |   80.0 |      8927 | 11.09M | 1817 |       783 |  338.2K | 457 | "31,41,51,61,71,81" | 0:09'39'' | 0:01'50'' |
+| Q25L60X40P000 | 486.28M |   40.0 |     11041 | 11.15M | 1551 |       787 | 314.94K | 416 | "31,41,51,61,71,81" | 0:08'42'' | 0:01'56'' |
+| Q25L60X40P001 | 486.28M |   40.0 |     10934 | 11.12M | 1554 |       801 | 321.86K | 421 | "31,41,51,61,71,81" | 0:08'46'' | 0:01'52'' |
+| Q25L60X40P002 | 486.28M |   40.0 |     11342 | 11.15M | 1507 |       795 | 290.07K | 373 | "31,41,51,61,71,81" | 0:08'24'' | 0:01'52'' |
+| Q25L60X40P003 | 486.28M |   40.0 |     11304 | 11.19M | 1554 |       787 | 302.63K | 399 | "31,41,51,61,71,81" | 0:08'23'' | 0:01'59'' |
+| Q25L60X80P000 | 972.57M |   80.0 |      8378 |  11.1M | 1921 |       772 |  346.4K | 467 | "31,41,51,61,71,81" | 0:14'10'' | 0:02'03'' |
+| Q25L60X80P001 | 972.57M |   80.0 |      8450 | 11.08M | 1925 |       771 | 358.02K | 483 | "31,41,51,61,71,81" | 0:14'15'' | 0:02'11'' |
+| Q30L60X40P000 | 486.28M |   40.0 |     11286 | 11.15M | 1536 |       788 |  310.8K | 409 | "31,41,51,61,71,81" | 0:08'28'' | 0:01'54'' |
+| Q30L60X40P001 | 486.28M |   40.0 |     11505 | 11.13M | 1481 |       802 |  323.9K | 414 | "31,41,51,61,71,81" | 0:08'22'' | 0:01'50'' |
+| Q30L60X40P002 | 486.28M |   40.0 |     11804 | 11.15M | 1452 |       786 |  287.3K | 371 | "31,41,51,61,71,81" | 0:08'24'' | 0:01'52'' |
+| Q30L60X40P003 | 486.28M |   40.0 |     12015 | 11.14M | 1484 |       787 | 300.28K | 397 | "31,41,51,61,71,81" | 0:08'20'' | 0:02'04'' |
+| Q30L60X80P000 | 972.57M |   80.0 |      9372 | 11.12M | 1806 |       765 |  340.9K | 463 | "31,41,51,61,71,81" | 0:13'54'' | 0:02'01'' |
+| Q30L60X80P001 | 972.57M |   80.0 |      8927 | 11.09M | 1817 |       783 | 338.23K | 457 | "31,41,51,61,71,81" | 0:14'06'' | 0:02'07'' |
 
 ## s288c: merge anchors
 
@@ -1522,13 +1464,13 @@ VmHWM:            7.394 GByte
 |:-----------------------|-------:|---------:|-----:|
 | Genome                 | 924431 | 12157105 |   17 |
 | Paralogs               |   3851 |  1059148 |  366 |
-| anchor                 |  28720 | 11364419 |  680 |
-| others                 |    850 |  1131998 | 1386 |
-| anchorLong             |  49345 | 11045341 |  382 |
-| contigTrim             | 260335 | 11087887 |   85 |
+| anchor                 |  28784 | 11408955 |  680 |
+| others                 |    850 |  1131512 | 1385 |
+| anchorLong             |  49593 | 11091233 |  385 |
+| contigTrim             | 260335 | 11141971 |   86 |
 | canu-X40-raw           | 498694 | 12267418 |   48 |
 | canu-X40-trim          | 551422 | 12193990 |   47 |
-| spades.config          |        |          |      |
+| spades.contig          |  89836 | 11731746 | 1189 |
 | spades.scaffold        |  98572 | 11732702 | 1167 |
 | spades.non-contained   |  91619 | 11544360 |  291 |
 | platanus.contig        |   5983 | 12437850 | 7727 |
