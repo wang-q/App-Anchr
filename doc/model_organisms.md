@@ -789,10 +789,7 @@ anchr orient merge/anchor.non-contained.fasta --len 1000 --idt 0.98 -o merge/anc
 anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
 anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
     --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge1.fasta
-faops order merge/anchor.merge1.fasta \
-    <(faops size merge/anchor.merge1.fasta | sort -n -r -k2,2 | cut -f 1) \
-    merge/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
 
 # merge others
 anchr contained \
