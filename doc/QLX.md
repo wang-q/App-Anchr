@@ -11,9 +11,9 @@
     - [K-unitigs and anchors (sampled)](#k-unitigs-and-anchors-sampled)
     - [Merge anchors with Qxx, Lxx and QxxLxx](#merge-anchors-with-qxx-lxx-and-qxxlxx)
     - [Clear intermediate files](#clear-intermediate-files)
-    - [Preprocess Illumina single end reads](#preprocess-illumina-single-end-reads)
     - [miniasm](#miniasm)
     - [Local corrections](#local-corrections)
+    - [kmc](#kmc)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -91,61 +91,6 @@ EOF
 ```
 
 ## Preprocess Illumina reads
-
-* kmc
-
-```bash
-BASE_NAME=e_coli
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina/kmc
-cd 2_illumina/kmc
-
-# raw
-cat <<EOF > list.tmp
-../R1.fq.gz
-../R2.fq.gz
-
-EOF
-
-kmc -k51 -n100 -ci3 @list.tmp raw . 
-kmc_tools transform raw histogram hist.raw.txt
-
-# uniq
-cat <<EOF > list.tmp
-../R1.uniq.fq.gz
-../R2.uniq.fq.gz
-
-EOF
-
-kmc -k51 -n100 -ci3 @list.tmp uniq . 
-kmc_tools transform uniq histogram hist.uniq.txt
-
-# Q25L60
-cat <<EOF > list.tmp
-../Q25L60/R1.fq.gz
-../Q25L60/R2.fq.gz
-
-EOF
-
-kmc -k51 -n100 -ci1 @list.tmp Q25L60 . 
-kmc_tools transform Q25L60 histogram hist.Q25L60.txt
-
-#kmc_tools transform Q25L60 dump dump.Q25L60.txt
-
-kmc_tools filter Q25L60 @list.tmp -ci3 filtered.fa -fa
-
-faops n50 -H -S -C \
-    ../Q25L60/R1.fq.gz \
-    ../Q25L60/R2.fq.gz;
-    
-faops n50 -H -S -C \
-    ../Q25L60/pe.cor.fa;
-
-faops n50 -H -S -C \
-    filtered.fa;
-
-```
 
 ## Reads stats
 
@@ -531,66 +476,6 @@ quast --no-check --threads 16 \
 
 ## Clear intermediate files
 
-## Preprocess Illumina single end reads
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-# symlink R1.fq.gz
-mkdir -p 2_illumina_se
-cd 2_illumina_se
-ln -s ../2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
-
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina_se/R1.uniq.fq.gz ]; then
-    tally \
-        --with-quality --nozip --unsorted \
-        -i 2_illumina_se/R1.fq.gz \
-        -o 2_illumina_se/R1.uniq.fq
-
-    pigz -p 8 2_illumina_se/R1.uniq.fq
-fi
-
-# get the default adapter file
-# anchr trim --help
-if [ ! -e 2_illumina_se/R1.scythe.fq.gz ]; then
-    scythe \
-        2_illumina_se/R1.uniq.fq.gz \
-        -q sanger \
-        -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-        --quiet \
-        | pigz -p 4 -c \
-        > 2_illumina_se/R1.scythe.fq.gz
-fi
-
-if [ ! -e 2_illumina_se/R1.shuffle.fq.gz ]; then
-    shuffle.sh \
-        in=2_illumina_se/R1.scythe.fq.gz \
-        out=2_illumina_se/R1.shuffle.fq
-
-    pigz -p 8 2_illumina_se/R1.shuffle.fq
-fi
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p 2_illumina_se/Q{1}L{2}
-    cd 2_illumina_se/Q{1}L{2}
-
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.shuffle.fq.gz \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
-
-```
-
 ## miniasm
 
 * `-S skip self and dual mappings`
@@ -738,6 +623,61 @@ quast --no-check --threads 16 \
     -o 9_qa_localCor
 
 find . -type d -name "correction" | xargs rm -fr
+
+```
+
+## kmc
+
+```bash
+BASE_NAME=e_coli
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmc
+cd 2_illumina/kmc
+
+# raw
+cat <<EOF > list.tmp
+../R1.fq.gz
+../R2.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci3 @list.tmp raw . 
+kmc_tools transform raw histogram hist.raw.txt
+
+# uniq
+cat <<EOF > list.tmp
+../R1.uniq.fq.gz
+../R2.uniq.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci3 @list.tmp uniq . 
+kmc_tools transform uniq histogram hist.uniq.txt
+
+# Q25L60
+cat <<EOF > list.tmp
+../Q25L60/R1.fq.gz
+../Q25L60/R2.fq.gz
+
+EOF
+
+kmc -k51 -n100 -ci1 @list.tmp Q25L60 . 
+kmc_tools transform Q25L60 histogram hist.Q25L60.txt
+
+#kmc_tools transform Q25L60 dump dump.Q25L60.txt
+
+kmc_tools filter Q25L60 @list.tmp -ci3 filtered.fa -fa
+
+faops n50 -H -S -C \
+    ../Q25L60/R1.fq.gz \
+    ../Q25L60/R2.fq.gz;
+    
+faops n50 -H -S -C \
+    ../Q25L60/pe.cor.fa;
+
+faops n50 -H -S -C \
+    filtered.fa;
 
 ```
 
