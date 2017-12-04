@@ -46,12 +46,6 @@ READ_LEN="60"
 
 * Reference genome
 
-    * Strain: Bacillus cereus ATCC 10987
-    * Taxid: [222523](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=222523)
-    * RefSeq assembly accession:
-      [GCF_000008005.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0797
-
 ```bash
 mkdir -p ${HOME}/data/anchr/${BASE_NAME}/1_genome
 cd ${HOME}/data/anchr/${BASE_NAME}/1_genome
@@ -681,3 +675,17 @@ faops n50 -H -S -C \
 
 ```
 
+## CalcUniqueness
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+bbcountunique.sh \
+    in=2_illumina/Q25L60/pe.cor.fa \
+    out=2_illumina/Q25L60/histogram.txt
+
+bbcountunique.sh \
+    in=2_illumina/Q30L60/pe.cor.fa \
+    out=2_illumina/Q30L60/histogram.txt
+
+```
