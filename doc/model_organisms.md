@@ -316,28 +316,10 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 cd 2_illumina
 
-cat <<EOF > illumina_adapters.fa
->multiplexing-forward
-GATCGGAAGAGCACACGTCT
->solexa-forward
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
->truseq-forward-contam
-AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
->truseq-reverse-contam
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
->nextera-forward-read-contam
-CTGTCTCTTATACACATCTCCGAGCCCACGAGAC
->nextera-reverse-read-contam
-CTGTCTCTTATACACATCTGACGCTGCCGACGA
->solexa-reverse
-AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG
-
-EOF
-
 anchr trim \
     --uniq \
     --shuffle \
-    --scythe -a illumina_adapters.fa \
+    --scythe \
     --nosickle \
     R1.fq.gz R2.fq.gz \
     -o trim.sh
@@ -354,7 +336,20 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 
     anchr trim \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+         \
         -o stdout \
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
@@ -410,13 +405,13 @@ if [ -e 2_illumina/R1.uniq.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 fi
-if [ -e 2_illumina/R1.sample.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> stat.md
-fi
 if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+fi
+if [ -e 2_illumina/R1.sample.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> stat.md
 fi
 if [ -e 2_illumina/R1.scythe.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
