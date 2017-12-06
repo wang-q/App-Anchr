@@ -3,14 +3,16 @@
 [TOC levels=1-3]: # " "
 - [Single End](#single-end)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
-    - [Download](#download)
-    - [Preprocess Illumina reads](#preprocess-illumina-reads)
-    - [Reads stats](#reads-stats)
-    - [Quorum](#quorum)
-    - [Down sampling](#down-sampling)
-    - [K-unitigs and anchors (sampled)](#k-unitigs-and-anchors-sampled)
-    - [Merge anchors](#merge-anchors)
-    - [Clear intermediate files](#clear-intermediate-files)
+    - [SE: download](#se-download)
+    - [SE: preprocess Illumina reads](#se-preprocess-illumina-reads)
+    - [SE: reads stats](#se-reads-stats)
+    - [SE: quorum](#se-quorum)
+    - [SE: adapter filtering](#se-adapter-filtering)
+    - [SE: down sampling](#se-down-sampling)
+    - [SE: k-unitigs and anchors (sampled)](#se-k-unitigs-and-anchors-sampled)
+    - [SE: merge anchors](#se-merge-anchors)
+    - [SE: final stats](#se-final-stats)
+    - [SE: clear intermediate files](#se-clear-intermediate-files)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -19,7 +21,7 @@
 * Taxonomy ID: [511145](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145)
 * Proportion of paralogs (> 1000 bp): 0.0323
 
-## Download
+## SE: download
 
 * Settings
 
@@ -53,7 +55,7 @@ ln -sf ${HOME}/data/anchr/e_coli/2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fast
 
 ```
 
-## Preprocess Illumina reads
+## SE: preprocess Illumina reads
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -100,7 +102,7 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 
 ```
 
-## Reads stats
+## SE: reads stats
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -159,7 +161,7 @@ cat stat.md
 | Q25L60   |     151 | 603356181 | 4434322 |
 | Q30L60   |     138 | 520273582 | 4122960 |
 
-## Quorum
+## SE: quorum
 
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
@@ -207,24 +209,49 @@ cat stat1.md
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.818% |     137 | "31" | 4.64M | 4.57M |     0.98 | 0:02'02'' |
-| Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     129 | "31" | 4.64M | 4.56M |     0.98 | 0:01'58'' |
+| Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.818% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:01'36'' |
+| Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'25'' |
 
-## Down sampling
+## SE: adapter filtering
 
-## K-unitigs and anchors (sampled)
+```text
+#File	2_illumina/Q25L60/pe.cor.raw
+#Total	4126622
+#Matched	8	0.00019%
+#Name	Reads	ReadsPct
+RNA_PCR_Primer_Index_48_(RPI48)	2	0.00005%
+TruSeq_Adapter_Index_13	2	0.00005%
+TruSeq_Adapter_Index_3	1	0.00002%
+TruSeq_Adapter_Index_14	1	0.00002%
+I7_Primer_Nextera_XT_Index_Kit_v2_N721	1	0.00002%
+TruSeq_Adapter_Index_22	1	0.00002%
+
+```
+
+## SE: down sampling
+
+## SE: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|--------------------:|----------:|:----------|
-| Q25L60X40P000 | 185.67M |   40.0 |     40210 | 4.54M | 185 |       797 | 19.21K | 25 | "31,41,51,61,71,81" | 0:02'58'' | 0:01'08'' |
-| Q25L60X40P001 | 185.67M |   40.0 |     41491 | 4.54M | 184 |       797 | 15.23K | 21 | "31,41,51,61,71,81" | 0:02'50'' | 0:01'08'' |
-| Q25L60X40P002 | 185.67M |   40.0 |     40099 | 4.54M | 201 |       754 |  19.7K | 27 | "31,41,51,61,71,81" | 0:03'05'' | 0:01'06'' |
-| Q25L60X80P000 | 371.33M |   80.0 |     32375 | 4.54M | 245 |       706 | 19.59K | 27 | "31,41,51,61,71,81" | 0:04'26'' | 0:01'16'' |
-| Q30L60X40P000 | 185.67M |   40.0 |     41181 | 4.53M | 181 |       812 | 23.32K | 30 | "31,41,51,61,71,81" | 0:02'38'' | 0:01'22'' |
-| Q30L60X40P001 | 185.67M |   40.0 |     43292 | 4.53M | 177 |       754 | 21.05K | 29 | "31,41,51,61,71,81" | 0:02'53'' | 0:01'22'' |
-| Q30L60X80P000 | 371.33M |   80.0 |     49172 | 4.53M | 166 |       754 | 20.76K | 27 | "31,41,51,61,71,81" | 0:03'03'' | 0:01'01'' |
+| Q25L60X40P000 | 185.67M |   40.0 |     40210 | 4.53M | 190 |       754 | 17.52K | 24 | "31,41,51,61,71,81" | 0:02'19'' | 0:01'10'' |
+| Q25L60X40P001 | 185.67M |   40.0 |     41181 | 4.53M | 197 |       812 | 19.55K | 25 | "31,41,51,61,71,81" | 0:02'16'' | 0:01'11'' |
+| Q25L60X40P002 | 185.67M |   40.0 |     39149 | 4.53M | 185 |       754 |  16.1K | 22 | "31,41,51,61,71,81" | 0:02'16'' | 0:01'11'' |
+| Q25L60X80P000 | 371.33M |   80.0 |     32791 | 4.53M | 233 |       812 | 19.38K | 25 | "31,41,51,61,71,81" | 0:03'26'' | 0:01'15'' |
+| Q30L60X40P000 | 185.67M |   40.0 |     44636 | 4.53M | 179 |       765 | 23.17K | 31 | "31,41,51,61,71,81" | 0:02'07'' | 0:01'12'' |
+| Q30L60X40P001 | 185.67M |   40.0 |     40910 | 4.53M | 186 |       797 | 24.96K | 32 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'13'' |
+| Q30L60X80P000 | 371.33M |   80.0 |     49172 | 4.53M | 164 |       976 | 30.79K | 28 | "31,41,51,61,71,81" | 0:02'33'' | 0:01'20'' |
 
-## Merge anchors
+## SE: merge anchors
 
-## Clear intermediate files
+## SE: final stats
+
+| Name     |     N50 |     Sum |   # |
+|:---------|--------:|--------:|----:|
+| Genome   | 4641652 | 4641652 |   1 |
+| Paralogs |    1934 |  195673 | 106 |
+| anchor   |   63476 | 4531207 | 122 |
+| others   |     947 |   46487 |  46 |
+
+## SE: clear intermediate files
 
