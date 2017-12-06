@@ -13,6 +13,7 @@ sub opt_spec {
         [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "anchors.sh" }, ],
         [ 'min=i',        'minimal length of anchors',            { default => 1000, }, ],
         [ 'reads=i',      'minimal coverage of reads',            { default => 2, }, ],
+        [ 'scale=i',      'the scale factor',                     { default => 3, }, ],
         [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
         { show_defaults => 1, }
     );
@@ -57,7 +58,7 @@ sub execute {
         open $out_fh, ">", $opt->{outfile};
     }
 
-    my $tt = Template->new;
+    my $tt = Template->new( ABSOLUTE => 1, );
     my $output;
     $tt->process(
         File::ShareDir::dist_file( 'App-Anchr', 'anchors.tt2' ),
