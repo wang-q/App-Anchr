@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+#----------------------------#
+# Colors in term
+#----------------------------#
+# http://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
+GREEN=
+RED=
+NC=
+if tty -s < /dev/fd/1 2> /dev/null; then
+    GREEN='\033[0;32m'
+    RED='\033[0;31m'
+    NC='\033[0m' # No Color
+fi
+
+log_warn () {
+    echo >&2 -e "${RED}==> $@ <==${NC}"
+}
+
+log_info () {
+    echo >&2 -e "${GREEN}==> $@${NC}"
+}
+
+log_debug () {
+    echo >&2 -e "  * $@"
+}
+
+#----------------------------#
+# masurca
+#----------------------------#
+set +e
+# Set some paths and prime system to save environment variables
+save () {
+    printf ". + {%s: \"%s\"}" $1 $(eval "echo -n \"\$$1\"") > jq.filter.txt
+
+    if [ -e environment.json ]; then
+        cat environment.json \
+            | jq -f jq.filter.txt \
+            > environment.json.new
+        rm environment.json
+    else
+        jq -f jq.filter.txt -n \
+            > environment.json.new
+    fi
+
+    mv environment.json.new environment.json
+    rm jq.filter.txt
+}
+
+signaled () {
+    log_warn Interrupted
+    exit 1
+}
+trap signaled TERM QUIT INT
+
+START_TIME=$(date +%s)
+save START_TIME
+
+NUM_THREADS=[% opt.parallel %]
+save NUM_THREADS
+
+#----------------------------#
+# Read stats of PE reads
+#----------------------------#
+log_info Symlink/copy input files
+if [ ! -e pe.cor.fa ]; then
+    ln -s [% args.0 %] pe.cor.fa
+fi
+cp [% args.1 %] environment.json
+
+log_info Read stats of PE reads
+
+SUM_COR=$( faops n50 -H -N 0 -S pe.cor.fa )
+save SUM_COR
+
+KMER=[% opt.kmer.join(',') %]
+save KMER
+log_debug "You set kmer size of $KMER for the graph"
+
+[% IF opt.jf == 'auto' -%]
+JF_SIZE=$( cat environment.json | jq '.JF_SIZE | tonumber' )
+[% ELSE -%]
+JF_SIZE=[% opt.jf %]
+save JF_SIZE
+[% END -%]
+log_debug "JF_SIZE: $JF_SIZE"
+
+[% IF opt.estsize == 'auto' -%]
+ESTIMATED_GENOME_SIZE=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
+[% ELSE -%]
+ESTIMATED_GENOME_SIZE=[% opt.estsize %]
+save ESTIMATED_GENOME_SIZE
+[% END -%]
+log_debug "ESTIMATED_GENOME_SIZE: $ESTIMATED_GENOME_SIZE"
+
+#----------------------------#
+# Build k-unitigs
+#----------------------------#
+if [ ! -e k_unitigs.fasta ]; then
+log_info Creating k-unitigs
+
+[% FOREACH kmer IN opt.kmer -%]
+    log_debug with k=[% kmer %]
+    create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
+        -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 \
+        pe.cor.fa \
+        > k_unitigs_K[% kmer %].fasta
+
+[% END -%]
+
+log_info Creating non-contained k-unitigs
+    anchr contained \
+[% FOREACH kmer IN opt.kmer -%]
+        k_unitigs_K[% kmer %].fasta \
+[% END -%]
+        --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o k_unitigs.non-contained.fasta
+
+[% IF opt.merge -%]
+    log_info Merging k-unitigs
+    anchr orient k_unitigs.non-contained.fasta \
+        --len [% opt.min %] --idt 0.99 --parallel [% opt.parallel %] \
+        -o k_unitigs.orient.fasta
+    anchr merge k_unitigs.orient.fasta \
+        --len [% opt.min %] --idt 0.999 --parallel [% opt.parallel %] \
+        -o k_unitigs.fasta
+[% ELSE -%]
+    mv k_unitigs.non-contained.fasta k_unitigs.fasta
+[% END -%]
+
+fi
+
+#----------------------------#
+# Done.
+#----------------------------#
+END_TIME=$(date +%s)
+save END_TIME
+
+RUNTIME=$((END_TIME-START_TIME))
+save RUNTIME
+
+log_info Done.
+
+exit 0
