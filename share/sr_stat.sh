@@ -109,7 +109,7 @@ elif [ "${STAT_TASK}" = "2" ]; then
         SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
         SECS_AN=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/anchors.sh))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %.1f | %.1f | %.1f | %.1f | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_COR} / ${GENOME_SIZE};" ) \
