@@ -120,7 +120,7 @@ cat reads.coverage.tsv \
             my $MAD = $abs_res_stat->median();
             my $k   = [% opt.scale %];   # the scale factor
 
-            my $lower = ( $median - $k * $MAD ) / 2;
+            my $lower = ( $median - $k * $MAD ) / 3;
             $lower = [% opt.reads %] if $lower < [% opt.reads %];
             my $upper = ( $median + $k * $MAD ) * 1.5;
             $upper = $median * 2 if $upper > $median * 2;
