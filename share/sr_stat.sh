@@ -90,13 +90,14 @@ if [ "${STAT_TASK}" = "1" ]; then
 
 elif [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \
             "SumCor" "CovCor" \
             "N50Anchor" "Sum" "#" \
             "N50Others" "Sum" "#" \
+            "median" "MAD" "lower" "upper" \
             "Kmer" "RunTimeKU" "RunTimeAN"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
+        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
     elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
         log_warn "Need a integer for GENOME_SIZE"
         exit 1;
@@ -108,12 +109,16 @@ elif [ "${STAT_TASK}" = "2" ]; then
         SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
         SECS_AN=$(expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/anchors.sh))
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             $( basename $( pwd ) ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_COR} / ${GENOME_SIZE};" ) \
             $( stat_format anchor/anchor.fasta ) \
             $( stat_format anchor/pe.others.fa ) \
+            $( cat anchor/environment.json | jq '.median | tonumber' ) \
+            $( cat anchor/environment.json | jq '.MAD | tonumber' ) \
+            $( cat anchor/environment.json | jq '.lower | tonumber' ) \
+            $( cat anchor/environment.json | jq '.upper | tonumber' ) \
             $( cat environment.json | jq '.KMER' ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS_KU}/3600)) $((${SECS_KU}%3600/60)) $((${SECS_KU}%60)) ) \
             $( printf "%d:%02d'%02d''\n" $((${SECS_AN}/3600)) $((${SECS_AN}%3600/60)) $((${SECS_AN}%60)) )
