@@ -71,7 +71,7 @@ sub execute {
     my $tt = Template->new( ABSOLUTE => 1, );
     my $output;
     $tt->process(
-        File::ShareDir::dist_file( 'App-Anchr', 'anchors.tt2' ),
+        File::ShareDir::dist_file( 'App-Anchr', 'quorum.tt2' ),
         {   args => $args,
             opt  => $opt,
         },
