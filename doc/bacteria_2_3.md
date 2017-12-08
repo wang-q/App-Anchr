@@ -2859,6 +2859,23 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 
 * Stats
 
+| Name                   |     N50 |     Sum |   # |
+|:-----------------------|--------:|--------:|----:|
+| Genome                 | 1830138 | 1830138 |   1 |
+| Paralogs               |    5432 |   95358 |  29 |
+| anchor                 |   60057 | 1773239 |  49 |
+| others                 |     851 |   54675 |  62 |
+| anchorLong             |   99572 | 1772561 |  39 |
+| contigTrim             |  376410 | 1791701 |   8 |
+| canu-X80-raw           |         |         |     |
+| canu-X80-trim          | 1838071 | 1851226 |   2 |
+| spades.contig          |  127782 | 1822232 | 120 |
+| spades.scaffold        |  131566 | 1822382 | 114 |
+| spades.non-contained   |  127782 | 1797190 |  29 |
+| platanus.contig        |   77817 | 1807137 | 154 |
+| platanus.scaffold      |  161477 | 1799094 |  83 |
+| platanus.non-contained |  161477 | 1789782 |  21 |
+
 * quast
 
 ## Hinf: clear intermediate files
@@ -2868,6 +2885,21 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Lmon: download
+
+* Settings
+
+```bash
+BASE_NAME=Lmon
+REAL_G=2944528
+IS_EUK="false"
+SAMPLE2=
+COVERAGE2="40 80"
+COVERAGE3="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+EXPAND_WITH="80"
+
+```
 
 * Reference genome
 
@@ -2896,26 +2928,162 @@ cp ~/data/anchr/paralogs/otherbac/Results/Lmon/Lmon.multi.fas paralogs.fas
 
 * Illumina
 
-    * [SRX2717967](https://www.ncbi.nlm.nih.gov/sra/SRX2717967)
+    * [SRX2717967](https://www.ncbi.nlm.nih.gov/sra/SRX2717967) SRR5427943
 
 ```bash
-mkdir -p ~/data/anchr/Vpar/2_illumina
-cd ~/data/anchr/Vpar/2_illumina
+mkdir -p ~/data/anchr/Lmon/2_illumina
+cd ~/data/anchr/Lmon/2_illumina
 
 cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR542/003/SRR5427943/SRR5427943_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR542/003/SRR5427943/SRR5427943_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
+6a8f391d5836e3a5aada44fa19df14a4 SRR5427943_1.fastq.gz
+759c755f5e6653d4b0495e72db87cbe8 SRR5427943_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
-ln -s SRR4244665_1.fastq.gz R1.fq.gz
-ln -s SRR4244665_2.fastq.gz R2.fq.gz
+ln -s SRR5427943_1.fastq.gz R1.fq.gz
+ln -s SRR5427943_2.fastq.gz R2.fq.gz
 
 ```
+
+* PacBio
+
+    * [SRX2717966](https://www.ncbi.nlm.nih.gov/sra/SRX2717966) SRR5427942
+
+* FastQC
+
+* kmergenie
+
+## Lmon: preprocess Illumina reads
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+cd 2_illumina
+
+anchr trim \
+    --uniq \
+    --sample $(( ${REAL_G} * 200 )) \
+    --nosickle \
+    R1.fq.gz R2.fq.gz \
+    -o trim.sh
+bash trim.sh
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        -q {1} -l {2} \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+         \
+        -o stdout \
+        | bash
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
+
+```
+
+## Lmon: reads stats
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 2944528 |    2944528 |        1 |
+| Paralogs |         |            |          |
+| Illumina |     151 | 2590175480 | 17153480 |
+| uniq     |     151 | 2462888218 | 16310518 |
+| sample   |     151 |  588905436 |  3900036 |
+| Q25L60   |     151 |  457352457 |  3268580 |
+| Q30L60   |     151 |  442570581 |  3281099 |
+
+## Lmon: spades
+
+## Lmon: platanus
+
+## Lmon: quorum
+
+| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG | EstG | Est/Real |   RunTime |
+|:-------|--------:|------:|--------:|-------:|---------:|--------:|------:|------:|-----:|---------:|----------:|
+| Q25L60 | 457.35M | 155.3 | 362.25M |  123.0 |  20.794% |     143 | "105" | 2.94M | 5.5M |     1.87 | 0:01'17'' |
+| Q30L60 | 443.02M | 150.5 | 378.29M |  128.5 |  14.611% |     139 |  "91" | 2.94M | 5.4M |     1.84 | 0:01'17'' |
+
+## Lmon: adapter filtering
+
+```text
+#File	2_illumina/Q25L60/pe.cor.raw
+#Total	2563156
+#Matched	828	0.03230%
+#Name	Reads	ReadsPct
+Reverse_adapter	824	0.03215%
+PCR_Primers	2	0.00008%
+TruSeq_Adapter_Index_3	1	0.00004%
+pcr_dimer	1	0.00004%
+```
+
+## Lmon: down sampling
+
+## Lmon: k-unitigs and anchors (sampled)
+
+| Name          |  SumCor | CovCor | N50Anchor |    Sum |   # | N50Others |    Sum |    # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|--------:|-------:|----------:|-------:|----:|----------:|-------:|-----:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 | 117.78M |   40.0 |     29355 |  2.79M | 163 |       627 | 89.82K |  135 |   30.0 | 14.0 |   2.0 |  60.0 | "31,41,51,61,71,81" | 0:01'55'' | 0:00'50'' |
+| Q25L60X40P001 | 117.78M |   40.0 |     27529 |  2.91M | 189 |       610 | 71.74K |  113 |   32.0 | 12.0 |   2.0 |  64.0 | "31,41,51,61,71,81" | 0:01'49'' | 0:00'50'' |
+| Q25L60X40P002 | 117.78M |   40.0 |     24151 |  2.93M | 216 |       665 | 70.48K |  103 |   34.0 |  8.0 |   3.3 |  68.0 | "31,41,51,61,71,81" | 0:01'58'' | 0:00'51'' |
+| Q25L60X80P000 | 235.56M |   80.0 |      1225 | 47.67K |  38 |      8370 |   3.6M | 1349 |    4.0 |  1.0 |   2.0 |   8.0 | "31,41,51,61,71,81" | 0:02'35'' | 0:00'50'' |
+| Q30L60X40P000 | 117.78M |   40.0 |      1987 | 30.56K |  15 |     58920 |  3.25M |  205 |   14.0 | 12.0 |   2.0 |  28.0 | "31,41,51,61,71,81" | 0:01'56'' | 0:00'48'' |
+| Q30L60X40P001 | 117.78M |   40.0 |      2534 | 37.38K |  17 |     58800 |  3.02M |  216 |   14.0 | 12.0 |   2.0 |  28.0 | "31,41,51,61,71,81" | 0:01'50'' | 0:00'47'' |
+| Q30L60X40P002 | 117.78M |   40.0 |     57689 |  2.93M |  99 |       603 | 51.95K |   81 |   31.5 | 13.5 |   2.0 |  63.0 | "31,41,51,61,71,81" | 0:01'56'' | 0:00'44'' |
+| Q30L60X80P000 | 235.56M |   80.0 |      1168 | 57.15K |  46 |     21762 |   3.6M | 1055 |    4.0 |  1.0 |   2.0 |   8.0 | "31,41,51,61,71,81" | 0:02'06'' | 0:00'44'' |
+
+## Lmon: merge anchors
+
+## Lmon: final stats
+
+* Stats
+
+| Name                   |     N50 |     Sum |    # |
+|:-----------------------|--------:|--------:|-----:|
+| Genome                 | 2944528 | 2944528 |    1 |
+| Paralogs               |         |         |      |
+| anchor                 |  369542 | 3064639 |  115 |
+| others                 |   57936 | 5487724 | 1458 |
+| anchorLong             |         |         |      |
+| contigTrim             |         |         |      |
+| canu-X80-raw           |         |         |      |
+| canu-X80-trim          |         |         |      |
+| spades.contig          |    4582 | 8294104 | 8792 |
+| spades.scaffold        |    4584 | 8294154 | 8787 |
+| spades.non-contained   |  225033 | 5340540 |  714 |
+| platanus.contig        |  289999 | 2969795 |  101 |
+| platanus.scaffold      |  557585 | 2960623 |   32 |
+| platanus.non-contained |  557585 | 2956610 |   15 |
+
+* quast
+
+## Lmon: clear intermediate files
 
 # Clostridioides difficile 630
 
