@@ -2638,6 +2638,21 @@ rm -fr Q{20,25,30}L*
 
 ## Hinf: download
 
+* Settings
+
+```bash
+BASE_NAME=Hinf
+REAL_G=1830138
+IS_EUK="false"
+SAMPLE2=
+COVERAGE2="40 80"
+COVERAGE3="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+EXPAND_WITH="80"
+
+```
+
 * Reference genome
 
     * Strain: Haemophilus influenzae Rd KW20 (g-proteobacteria)
@@ -2672,19 +2687,181 @@ mkdir -p ~/data/anchr/Hinf/2_illumina
 cd ~/data/anchr/Hinf/2_illumina
 
 cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR412/008/SRR4123928/SRR4123928_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR412/008/SRR4123928/SRR4123928_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
+52f3219360843923b3ecf15cef65fd33 SRR4123928_1.fastq.gz
+6232cce4e5ac6c608bdf2f58bf5563ea SRR4123928_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
-ln -s SRR4124773_1.fastq.gz R1.fq.gz
-ln -s SRR4124773_2.fastq.gz R2.fq.gz
+ln -s SRR4123928_1.fastq.gz R1.fq.gz
+ln -s SRR4123928_2.fastq.gz R2.fq.gz
 
 ```
+
+* PacBio
+
+    * [SRX2104759](https://www.ncbi.nlm.nih.gov/sra/SRX2104759) SRR4123929
+
+```bash
+mkdir -p ~/data/anchr/Hinf/3_pacbio
+cd ~/data/anchr/Hinf/3_pacbio
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR412/009/SRR4123929
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+dea1a26fe2bd72256c29950cfd53f7c9 SRR4123929
+EOF
+
+md5sum --check sra_md5.txt
+
+fastq-dump --fasta 0 SRR4123929
+
+ln -s SRR4123929.fasta pacbio.fasta
+
+```
+
+* FastQC
+
+* kmergenie
+
+## Hinf: preprocess Illumina reads
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+cd 2_illumina
+
+anchr trim \
+    --uniq \
+    --sample $(( ${REAL_G} * 200 )) \
+    --nosickle \
+    R1.fq.gz R2.fq.gz \
+    -o trim.sh
+bash trim.sh
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
+    
+    if [ -e R1.fq.gz ]; then
+        echo '    R1.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        -q {1} -l {2} \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+         \
+        -o stdout \
+        | bash
+    " ::: ${READ_QUAL} ::: ${READ_LEN}
+
+```
+
+## Hinf: preprocess PacBio reads
+
+## Hinf: reads stats
+
+| Name     |     N50 |        Sum |        # |
+|:---------|--------:|-----------:|---------:|
+| Genome   | 1830138 |    1830138 |        1 |
+| Paralogs |    5432 |      95358 |       29 |
+| Illumina |     101 | 1235356048 | 12231248 |
+| uniq     |     101 | 1226542990 | 12143990 |
+| sample   |     101 |  366027636 |  3624036 |
+| Q25L60   |     101 |  336197323 |  3361918 |
+| Q30L60   |     101 |  319321429 |  3256068 |
+| PacBio   |   11870 |  407419334 |   163475 |
+| X40.raw  |   10606 |   73205571 |    31846 |
+| X40.trim |   11036 |   31223296 |     3571 |
+| X80.raw  |   11062 |  146420707 |    62532 |
+| X80.trim |   12100 |   70301992 |     7562 |
+
+## Hinf: spades
+
+## Hinf: platanus
+
+## Hinf: quorum
+
+| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real |   RunTime |
+|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|-----:|---------:|----------:|
+| Q25L60 |  336.2M | 183.7 | 319.81M |  174.7 |   4.876% |     100 | "71" | 1.83M | 1.8M |     0.98 | 0:01'03'' |
+| Q30L60 | 319.47M | 174.6 | 307.56M |  168.1 |   3.728% |      98 | "71" | 1.83M | 1.8M |     0.98 | 0:01'08'' |
+
+## Hinf: adapter filtering
+
+## Hinf: down sampling
+
+## Hinf: k-unitigs and anchors (sampled)
+
+| Name          |  SumCor | CovCor | N50Anchor |   Sum |  # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|--------:|-------:|----------:|------:|---:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |  73.21M |   40.0 |     60057 | 1.77M | 51 |       992 | 24.28K | 20 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'41'' |
+| Q25L60X40P001 |  73.21M |   40.0 |     55173 | 1.77M | 58 |       839 | 17.66K | 21 |   39.5 | 3.5 |   9.7 |  75.0 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'43'' |
+| Q25L60X40P002 |  73.21M |   40.0 |     58199 | 1.77M | 49 |      1019 | 22.88K | 20 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'42'' |
+| Q25L60X40P003 |  73.21M |   40.0 |     54671 | 1.77M | 61 |      1009 | 23.28K | 22 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:00'51'' | 0:00'42'' |
+| Q25L60X80P000 | 146.41M |   80.0 |     54823 | 1.77M | 61 |       948 | 13.74K | 15 |   80.5 | 6.5 |  20.3 | 150.0 | "31,41,51,61,71,81" | 0:01'22'' | 0:00'39'' |
+| Q25L60X80P001 | 146.41M |   80.0 |     54671 | 1.77M | 62 |      1561 | 18.29K | 15 |   81.0 | 6.0 |  21.0 | 148.5 | "31,41,51,61,71,81" | 0:01'21'' | 0:00'39'' |
+| Q30L60X40P000 |  73.21M |   40.0 |     57131 | 1.77M | 52 |       965 | 30.63K | 28 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'42'' |
+| Q30L60X40P001 |  73.21M |   40.0 |     58229 | 1.77M | 53 |       860 |  23.3K | 26 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'43'' |
+| Q30L60X40P002 |  73.21M |   40.0 |     60057 | 1.77M | 52 |      1634 | 21.06K | 17 |   40.0 | 3.0 |  10.3 |  73.5 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'43'' |
+| Q30L60X40P003 |  73.21M |   40.0 |     58229 | 1.77M | 52 |       851 |  17.2K | 18 |   40.0 | 3.0 |  10.3 |  73.5 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'42'' |
+| Q30L60X80P000 | 146.41M |   80.0 |     58229 | 1.77M | 52 |      1634 | 18.55K | 14 |   78.0 | 7.0 |  19.0 | 148.5 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'42'' |
+| Q30L60X80P001 | 146.41M |   80.0 |     58229 | 1.77M | 49 |      3503 | 17.15K | 12 |   79.5 | 7.5 |  19.0 | 153.0 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'42'' |
+
+## Hinf: merge anchors
+
+## Hinf: 3GS
+
+| Name               |     N50 |      Sum |    # |
+|:-------------------|--------:|---------:|-----:|
+| Genome             | 1830138 |  1830138 |    1 |
+| Paralogs           |    5432 |    95358 |   29 |
+| X40.raw.corrected  |         |          |      |
+| X40.trim.corrected |   11014 | 30760163 | 3520 |
+| X80.raw.corrected  |         |          |      |
+| X80.trim.corrected |   11133 | 58801690 | 6431 |
+| X40.raw            |         |          |      |
+| X40.trim           |  435588 |  1788708 |    6 |
+| X80.raw            |         |          |      |
+| X80.trim           | 1838071 |  1851226 |    2 |
+
+## Hinf: expand anchors
+
+* anchorLong
+
+* contigTrim
+
+## Hinf: final stats
+
+* Stats
+
+* quast
+
+## Hinf: clear intermediate files
 
 # Listeria monocytogenes FDAARGOS_351, 单核细胞增生李斯特氏菌
 
