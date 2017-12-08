@@ -305,7 +305,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-parallel -j 2 "
+parallel --no-run-if-empty --linebuffer -k -j 2 "
     kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
     " ::: R1 R2
 
