@@ -1169,6 +1169,47 @@ cat stat3.md
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
+QUAST_TARGET=
+QUAST_LABEL=
+
+if [ -e 1_genome/genome.fa ]; then
+    QUAST_TARGET+=" -R 1_genome/genome.fa "
+fi
+if [ -e merge/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" merge/anchor.merge.fasta "
+    QUAST_LABEL+="merge,"
+fi
+if [ -e anchorLong/contig.fasta ]; then
+    QUAST_TARGET+=" anchorLong/contig.fasta "
+    QUAST_LABEL+="anchorLong,"
+fi
+if [ -e contigTrim/contig.fasta ]; then
+    QUAST_TARGET+=" contigTrim/contig.fasta "
+    QUAST_LABEL+="contigTrim,"
+fi
+if [ -e canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta ]; then
+    QUAST_TARGET+=" canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta "
+    QUAST_LABEL+="canu-X${EXPAND_WITH}-raw,"
+fi
+if [ -e canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta ]; then
+    QUAST_TARGET+=" canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta "
+    QUAST_LABEL+="canu-X${EXPAND_WITH}-trim,"
+fi
+if [ -e 8_spades/contigs.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_spades/contigs.non-contained.fasta "
+    QUAST_LABEL+="spades,"
+fi
+if [ -e 8_platanus/gapClosed.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_platanus/gapClosed.non-contained.fasta "
+    QUAST_LABEL+="platanus,"
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    QUAST_TARGET+=" 1_genome/paralogs.fas "
+    QUAST_LABEL+="paralogs,"
+fi
+
+QUAST_LABEL=$( echo "${QUAST_LABEL}" | sed 's/,$//' )
+
 rm -fr 9_qa_contig
 quast --no-check --threads 16 \
     $(
@@ -1176,16 +1217,8 @@ quast --no-check --threads 16 \
             echo "--eukaryote --no-icarus"
         fi
     ) \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta \
-    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta \
-    8_spades/contigs.non-contained.fasta \
-    8_platanus/gapClosed.non-contained.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,contig,contigTrim,canu-X${EXPAND_WITH}-raw,canu-X${EXPAND_WITH}-trim,spades,platanus,paralogs" \
+    ${QUAST_TARGET} \
+    --label ${QUAST_LABEL} \
     -o 9_qa_contig
 
 ```
