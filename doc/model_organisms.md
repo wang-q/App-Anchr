@@ -497,7 +497,7 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 spades.py \
     -t 16 \
-    -k 21,33,55,77 --careful \
+    -k 21,33,55,77 \
     -1 2_illumina/Q25L60/R1.sickle.fq.gz \
     -2 2_illumina/Q25L60/R2.sickle.fq.gz \
     -s 2_illumina/Q25L60/Rs.sickle.fq.gz \
