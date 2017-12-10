@@ -306,7 +306,7 @@ mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t 8 ../{}.fq.gz -o {}
+    kmergenie -l 21 -k 121 -s 10 -t 8 --one-pass ../{}.fq.gz -o {}
     " ::: R1 R2
 
 ```
