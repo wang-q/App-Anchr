@@ -494,7 +494,7 @@ cat stat.md
 ## e_coli: spades
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 spades.py \
     -t 16 \
@@ -515,7 +515,7 @@ anchr contained \
 ## e_coli: platanus
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 8_platanus
 cd 8_platanus
@@ -558,7 +558,7 @@ anchr contained \
 ## e_coli: quorum
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
@@ -616,7 +616,7 @@ cat stat1.md
 ## e_coli: adapter filtering
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
     echo "==> ${QxxLxx}"
@@ -648,7 +648,7 @@ done
 ## e_coli: down sampling
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
     echo "==> ${QxxLxx}"
@@ -692,7 +692,7 @@ done
 ## e_coli: k-unitigs and anchors (sampled)
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # k-unitigs
 parallel --no-run-if-empty --linebuffer -k -j 2 "
@@ -790,7 +790,7 @@ cat stat2.md
 ## e_coli: merge anchors
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # merge anchors
 mkdir -p merge
@@ -859,7 +859,7 @@ quast --no-check --threads 16 \
 ## e_coli: 3GS
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     echo >&2 '==> Group X{1}-{2}'
@@ -954,7 +954,7 @@ minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
 * anchorLong
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 rm -fr anchorLong
 anchr overlap2 \
@@ -1068,7 +1068,7 @@ cat \
 * contigTrim
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 rm -fr contigTrim
 anchr overlap2 \
@@ -1127,7 +1127,7 @@ cat \
 * Stats
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
@@ -1187,7 +1187,7 @@ cat stat3.md
 * quast
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 QUAST_TARGET=
 QUAST_LABEL=
@@ -1246,7 +1246,7 @@ quast --no-check --threads 16 \
 ## e_coli: clear intermediate files
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 # bax2bam
 rm -fr 3_pacbio/bam/*
