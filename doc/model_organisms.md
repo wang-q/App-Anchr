@@ -392,20 +392,26 @@ done
 ## e_coli: reads stats
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
 printf "|:--|--:|--:|--:|\n" >> stat.md
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+if [ -e 1_genome/genome.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+fi
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+if [ -e 2_illumina/R1.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+fi
 if [ -e 2_illumina/R1.uniq.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
@@ -424,6 +430,10 @@ if [ -e 2_illumina/R1.scythe.fq.gz ]; then
 fi
 
 parallel --no-run-if-empty -k -j 3 "
+    if [ ! -e 2_illumina/Q{1}L{2}/R1.sickle.fq.gz ]; then
+        exit;
+    fi
+
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo Q{1}L{2};
@@ -441,10 +451,16 @@ parallel --no-run-if-empty -k -j 3 "
     " ::: ${READ_QUAL} ::: ${READ_LEN} \
     >> stat.md
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+if [ -e 3_pacbio/pacbio.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+fi
 
 parallel --no-run-if-empty -k -j 3 "
+    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta ]; then
+        exit;
+    fi
+
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo X{1}.{2};
