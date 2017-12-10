@@ -207,11 +207,12 @@ WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
 REAL_G=4641652
 IS_EUK="false"
+TRIM2="--uniq --shuffle --scythe "
 SAMPLE2=
 COVERAGE2="40 80"
-COVERAGE3="40 80"
 READ_QUAL="25 30"
 READ_LEN="60"
+COVERAGE3="40 80"
 EXPAND_WITH="80"
 
 ```
@@ -323,9 +324,12 @@ cd ${WORKING_DIR}/${BASE_NAME}
 cd 2_illumina
 
 anchr trim \
-    --uniq \
-    --shuffle \
-    --scythe \
+    ${TRIM2} \
+    $(
+        if [ ${SAMPLE2} ]; then
+            echo "--sample $(( ${REAL_G} * ${SAMPLE2} ))";
+        fi
+    ) \
     --nosickle \
     R1.fq.gz R2.fq.gz \
     -o trim.sh
