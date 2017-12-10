@@ -231,6 +231,7 @@ if [ ! -e pe.cor.fa ]; then
     cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 fi
 
+log_debug "Reads stats with faops"
 SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %])
 save SUM_IN
 SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
