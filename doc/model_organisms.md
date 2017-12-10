@@ -202,6 +202,7 @@ bax2bam --help
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
 REAL_G=4641652
 IS_EUK="false"
@@ -217,8 +218,8 @@ EXPAND_WITH="80"
 * Reference genome
 
 ```bash
-mkdir -p ~/data/anchr/e_coli/1_genome
-cd ~/data/anchr/e_coli/1_genome
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
+cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
 curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
     > U00096.fa
@@ -230,14 +231,15 @@ cat U00096.fa \
     ' \
     > genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
+cp ${WORKING_DIR}/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
 ```
 
 * Illumina
 
 ```bash
-mkdir -p ~/data/anchr/e_coli/2_illumina
-cd ~/data/anchr/e_coli/2_illumina
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+
 aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
 aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
 
@@ -253,8 +255,9 @@ ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
     reagent.
 
 ```bash
-mkdir -p ~/data/anchr/e_coli/3_pacbio
-cd ~/data/anchr/e_coli/3_pacbio
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+
 aria2c -x 9 -s 3 -c https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
 
 tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
@@ -286,7 +289,7 @@ cat fasta/m141013.fasta \
 * FastQC
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
@@ -300,7 +303,7 @@ fastqc -t 16 \
 * kmergenie
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
@@ -314,7 +317,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 ## e_coli: preprocess Illumina reads
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 cd 2_illumina
 
@@ -361,7 +364,7 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 ## e_coli: preprocess PacBio reads
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 for X in ${COVERAGE3}; do
     printf "==> Coverage: %s\n" ${X}
