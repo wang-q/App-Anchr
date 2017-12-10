@@ -399,6 +399,13 @@ done
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $@) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > stat.md
@@ -415,26 +422,33 @@ fi
 
 if [ -e 2_illumina/R1.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
+        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
 fi
 if [ -e 2_illumina/R1.uniq.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
+        $(echo "uniq";    stat_format 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
 fi
 if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
+        $(echo "shuffle"; stat_format 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> stat.md
 fi
 if [ -e 2_illumina/R1.sample.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> stat.md
+        $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> stat.md
 fi
 if [ -e 2_illumina/R1.scythe.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
+        $(echo "scythe";  stat_format 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
 fi
 
 parallel --no-run-if-empty -k -j 3 "
+    stat_format () {
+        echo \$(faops n50 -H -N 50 -S -C \$@) \
+            | perl -nla -MNumber::Format -e '
+                printf qq{%d\t%s\t%d\n}, \$F[0], Number::Format::format_bytes(\$F[1], base => 1000,), \$F[2];
+            '
+    }
+
     if [ ! -e 2_illumina/Q{1}L{2}/R1.sickle.fq.gz ]; then
         exit;
     fi
@@ -443,12 +457,12 @@ parallel --no-run-if-empty -k -j 3 "
         \$( 
             echo Q{1}L{2};
             if [[ {1} -ge '30' ]]; then
-                faops n50 -H -S -C \
+                stat_format \
                     2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
                     2_illumina/Q{1}L{2}/R2.sickle.fq.gz \
                     2_illumina/Q{1}L{2}/Rs.sickle.fq.gz;
             else
-                faops n50 -H -S -C \
+                stat_format \
                     2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
                     2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
             fi
@@ -458,10 +472,17 @@ parallel --no-run-if-empty -k -j 3 "
 
 if [ -e 3_pacbio/pacbio.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+        $(echo "PacBio"; stat_format 3_pacbio/pacbio.fasta;) >> stat.md
 fi
 
 parallel --no-run-if-empty -k -j 3 "
+    stat_format () {
+        echo \$(faops n50 -H -N 50 -S -C \$@) \
+            | perl -nla -MNumber::Format -e '
+                printf qq{%d\t%s\t%d\n}, \$F[0], Number::Format::format_bytes(\$F[1], base => 1000,), \$F[2];
+            '
+    }
+
     if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta ]; then
         exit;
     fi
@@ -469,7 +490,7 @@ parallel --no-run-if-empty -k -j 3 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$( 
             echo X{1}.{2};
-            faops n50 -H -S -C \
+            stat_format \
                 3_pacbio/pacbio.X{1}.{2}.fasta;
         )
     " ::: ${COVERAGE3} ::: raw trim \
