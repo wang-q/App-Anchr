@@ -2154,6 +2154,7 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 ```bash
 BASE_NAME=col_0
 REAL_G=119667750
+IS_EUK="true"
 COVERAGE2="30 40 50 60 70"
 COVERAGE3="40 80"
 READ_QUAL="25 30"
@@ -2386,41 +2387,34 @@ faops filter -l 0 pacbio.fq.gz pacbio.fasta
 ```bash
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
+cd 2_illumina
 
-cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-    > 2_illumina/illumina_adapters.fa
-echo ">TruSeq_Adapter_Index_7" >> 2_illumina/illumina_adapters.fa
-echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGC" >> 2_illumina/illumina_adapters.fa
-echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
-echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
+cat <<EOF > illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
 
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.uniq.fq.gz \
-            -q sanger \
-            -a 2_illumina/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
+>TruSeq_Adapter_Index_7
+GATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGC
+>Illumina_Single_End_PCR_Primer_1
+GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG
 
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
+EOF
+
+anchr trim \
+    --uniq \
+    --scythe -a illumina_adapters.fa \
+    --nosickle \
+    R1.fq.gz R2.fq.gz \
+    -o trim.sh
+bash trim.sh
+
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
     
     if [ -e R1.fq.gz ]; then
         echo '    R1.fq.gz already presents'
@@ -2428,9 +2422,21 @@ parallel --no-run-if-empty -j 3 "
     fi
 
     anchr trim \
-        --noscythe \
         -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+         \
         -o stdout \
         | bash
     " ::: ${READ_QUAL} ::: ${READ_LEN}
