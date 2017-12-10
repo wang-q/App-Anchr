@@ -118,12 +118,12 @@ KMER=$(
     tail -n 40000 pe_data.tmp \
     | perl -e '
         my @lines;
-        while ( my $line = <STDIN> ) {
-            $line = <STDIN>;
+        while ( my $line = <> ) {
+            $line = <>;
             chomp($line);
             push( @lines, $line );
-            $line = <STDIN>;
-            $line = <STDIN>;
+            $line = <>;
+            $line = <>;
         }
         my @legnths;
         my $min_len    = 100000;
