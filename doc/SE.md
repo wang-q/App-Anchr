@@ -6,6 +6,7 @@
     - [SE: download](#se-download)
     - [SE: preprocess Illumina reads](#se-preprocess-illumina-reads)
     - [SE: reads stats](#se-reads-stats)
+    - [SE: spades](#se-spades)
     - [SE: quorum](#se-quorum)
     - [SE: adapter filtering](#se-adapter-filtering)
     - [SE: down sampling](#se-down-sampling)
@@ -28,6 +29,7 @@
 ```bash
 BASE_NAME=SE
 REAL_G=4641652
+IS_EUK="false"
 COVERAGE2="40 80"
 READ_QUAL="25 30"
 READ_LEN="60"
@@ -161,6 +163,25 @@ cat stat.md
 | Q25L60   |     151 | 603356181 | 4434322 |
 | Q30L60   |     138 | 520273582 | 4122960 |
 
+## SE: spades
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -s 2_illumina/Q25L60/R1.sickle.fq.gz \
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
+
+```
+
 ## SE: quorum
 
 ```bash
@@ -246,12 +267,19 @@ TruSeq_Adapter_Index_22	1	0.00002%
 
 ## SE: final stats
 
-| Name     |     N50 |     Sum |   # |
-|:---------|--------:|--------:|----:|
-| Genome   | 4641652 | 4641652 |   1 |
-| Paralogs |    1934 |  195673 | 106 |
-| anchor   |   63476 | 4531207 | 122 |
-| others   |     989 |   53000 |  50 |
+* Stats
+
+| Name                 |     N50 |     Sum |   # |
+|:---------------------|--------:|--------:|----:|
+| Genome               | 4641652 | 4641652 |   1 |
+| Paralogs             |    1934 |  195673 | 106 |
+| anchor               |   63171 | 4532654 | 126 |
+| others               |     847 |   39054 |  49 |
+| spades.contig        |  106190 | 4646950 | 258 |
+| spades.scaffold      |  112078 | 4647450 | 253 |
+| spades.non-contained |  106190 | 4583351 | 108 |
+
+* quast
 
 ## SE: clear intermediate files
 
