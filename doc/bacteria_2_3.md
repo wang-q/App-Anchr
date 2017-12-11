@@ -3434,6 +3434,41 @@ Project [SRP055199](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP055199)
 
 ## lambda: download
 
+* Settings
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=lambda
+REAL_G=48502
+IS_EUK="false"
+TRIM2="--uniq --scythe "
+SAMPLE2=200
+COVERAGE2="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+COVERAGE3="40 80"
+EXPAND_WITH="80"
+
+cat <<EOF > ${WORKING_DIR}/${BASE_NAME}/2_illumina/illumina_adapters.fa
+>multiplexing-forward
+GATCGGAAGAGCACACGTCT
+>truseq-forward-contam
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+>truseq-reverse-contam
+AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
+
+>TruSeq_Adapter_Index_1
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCACATGAGCATCTCGTATG
+>No_Hit
+AGGTCGCCGCCCCGTAACCTGTCGGATCACCGGAAAGGACCCGTAAAGTG
+
+>Illumina_Single_End_PCR_Primer_1
+AGATCGGAAGAGCACACGTCTGAACTCCAGTCACATGAGCATCTCGTATG
+
+EOF
+
+```
+
 * Reference genome
 
     * Strain: Escherichia virus Lambda (viruses)
@@ -3444,8 +3479,8 @@ Project [SRP055199](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP055199)
     * Proportion of paralogs (> 1000 bp): 0.0
 
 ```bash
-mkdir -p ~/data/anchr/lambda/1_genome
-cd ~/data/anchr/lambda/1_genome
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
+cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
 aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/840/245/GCF_000840245.1_ViralProj14204/GCF_000840245.1_ViralProj14204_genomic.fna.gz
 
@@ -3457,14 +3492,33 @@ EOF
 faops replace GCF_000840245.1_ViralProj14204_genomic.fna.gz replace.tsv genome.fa
 
 #cp ~/data/anchr/paralogs/otherbac/Results/lambda/lambda.multi.fas paralogs.fas
+touch paralogs.fas
+
+```
+
+* Illumina
+
+    * [SRX2365802](https://www.ncbi.nlm.nih.gov/sra/SRR5042715)
+
+```bash
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+
+aria2c -x 9 -s 3 -c https://sra-download.ncbi.nlm.nih.gov/traces/sra16/SRR/004924/SRR5042715
+fastq-dump --split-files ./SRR5042715
+
+find . -type f -name "*.fastq" | parallel -j 2 pigz -p 8 
+
+ln -s SRR5042715_1.fastq.gz R1.fq.gz
+ln -s SRR5042715_2.fastq.gz R2.fq.gz
 
 ```
 
 * PacBio
 
 ```bash
-mkdir -p ~/data/anchr/lambda/3_pacbio
-cd ~/data/anchr/lambda/3_pacbio
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
 
 cat << EOF > sra_ftp.txt
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR179/005/SRR1796325/SRR1796325.fastq.gz
@@ -3483,107 +3537,104 @@ faops filter -l 0 3_pacbio/SRR1796325.fastq.gz 3_pacbio/pacbio.fasta
 
 ```
 
+## lambda: preprocess Illumina reads
+
 ## lambda: preprocess PacBio reads
-
-```bash
-BASE_NAME=lambda
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-head -n 3000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-
-anchr trimlong --parallel 16 -v \
-    3_pacbio/pacbio.40x.fasta \
-    -o 3_pacbio/pacbio.40x.trim.fasta
-
-```
 
 ## lambda: reads stats
 
-```bash
-BASE_NAME=lambda
-cd ${HOME}/data/anchr/${BASE_NAME}
+| Name     |   N50 |    Sum |        # |
+|:---------|------:|-------:|---------:|
+| Genome   | 48502 |  48502 |        1 |
+| Paralogs |     0 |      0 |        0 |
+| Illumina |   108 |  3.57G | 33080474 |
+| uniq     |   108 |  2.98G | 27609894 |
+| sample   |   108 |   9.7M |    89820 |
+| scythe   |   108 |  9.45M |    89820 |
+| Q25L60   |   108 |   7.9M |    75110 |
+| Q30L60   |   108 |   7.5M |    74201 |
+| PacBio   |  1325 | 11.95M |     9796 |
+| X40.raw  |  1363 |  1.94M |     1536 |
+| X40.trim |  1456 |  1.51M |     1050 |
+| X80.raw  |  1361 |  3.88M |     3084 |
+| X80.trim |  1453 |  3.06M |     2133 |
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
+## lambda: spades
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-#
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-#printf "| %s | %s | %s | %s |\n" \
-#    $(echo "uniq";     faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-#
-#parallel -k --no-run-if-empty -j 3 "
-#    printf \"| %s | %s | %s | %s |\n\" \
-#        \$( 
-#            echo Q{1}L{2};
-#            if [[ {1} -ge '30' ]]; then
-#                faops n50 -H -S -C \
-#                    2_illumina/Q{1}L{2}/R1.fq.gz \
-#                    2_illumina/Q{1}L{2}/R2.fq.gz \
-#                    2_illumina/Q{1}L{2}/Rs.fq.gz;
-#            else
-#                faops n50 -H -S -C \
-#                    2_illumina/Q{1}L{2}/R1.fq.gz \
-#                    2_illumina/Q{1}L{2}/R2.fq.gz;
-#            fi
-#        )
-#    " ::: 20 25 30 35 ::: 60 \
-#    >> stat.md
+## lambda: platanus
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";    faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
+## lambda: quorum
 
-parallel -k --no-run-if-empty -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo PacBio.{};
-            faops n50 -H -S -C \
-                3_pacbio/pacbio.{}.fasta;
-        )
-    " ::: 40x 40x.trim \
-    >> stat.md
+| Name | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real | RunTime |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| Q25L60 | 7.9M | 163.0 | 7.56M | 155.9 | 4.367% | 105 | "75" | 48.5K | 48.48K | 1.00 | 0:00'50'' |
+| Q30L60 | 7.51M | 154.8 | 7.26M | 149.8 | 3.240% | 102 | "75" | 48.5K | 48.48K | 1.00 | 0:00'18'' |
 
-cat stat.md
+## lambda: adapter filtering
 
-```
+## lambda: down sampling
 
-| Name            |   N50 |      Sum |    # |
-|:----------------|------:|---------:|-----:|
-| Genome          | 48502 |    48502 |    1 |
-| PacBio          |  1325 | 11945526 | 9796 |
-| PacBio.40x      |  1365 |  1896887 | 1500 |
-| PacBio.40x.trim |  1452 |  1509584 | 1054 |
+## lambda: k-unitigs and anchors (sampled)
+
+| Name          | SumCor | CovCor | N50Anchor |    Sum | # | N50Others |  Sum | # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|-------:|----------:|-------:|--:|----------:|-----:|--:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |  1.94M |   40.0 |     29275 | 48.33K | 2 |         0 |    0 | 0 |   38.0 | 0.0 |  12.7 |  57.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'31'' |
+| Q25L60X40P001 |  1.94M |   40.0 |     48447 | 48.45K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'30'' |
+| Q25L60X40P002 |  1.94M |   40.0 |     48358 | 48.36K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'31'' |
+| Q25L60X40P003 |  1.94M |   40.0 |     47199 | 48.33K | 2 |       957 |  957 | 1 |   32.5 | 5.0 |   5.8 |  65.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'30'' |
+| Q25L60X40P004 |  1.94M |   40.0 |     45503 | 47.99K | 2 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'31'' |
+| Q25L60X40P005 |  1.94M |   40.0 |     29387 | 48.47K | 2 |         0 |    0 | 0 |   41.0 | 1.0 |  12.7 |  66.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'30'' |
+| Q25L60X40P006 |  1.94M |   40.0 |     46323 |    49K | 2 |         0 |    0 | 0 |   39.5 | 0.5 |  12.7 |  61.5 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'32'' |
+| Q25L60X80P000 |  3.88M |   80.0 |     29388 | 48.53K | 2 |         0 |    0 | 0 |   77.0 | 1.0 |  24.7 | 120.0 | "31,41,51,61,71,81" | 0:00'09'' | 0:00'31'' |
+| Q25L60X80P001 |  3.88M |   80.0 |      3127 |  3.13K | 1 |      1236 | 2.2K | 2 |   58.0 | 1.0 |  18.3 |  91.5 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'30'' |
+| Q25L60X80P002 |  3.88M |   80.0 |     26384 | 48.32K | 3 |         0 |    0 | 0 |   78.0 | 5.0 |  21.0 | 139.5 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'30'' |
+| Q30L60X40P000 |  1.94M |   40.0 |     48264 | 48.26K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'29'' |
+| Q30L60X40P001 |  1.94M |   40.0 |     48419 | 48.42K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'29'' |
+| Q30L60X40P002 |  1.94M |   40.0 |     48256 | 48.26K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'05'' | 0:00'30'' |
+| Q30L60X40P003 |  1.94M |   40.0 |     48202 |  48.2K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'28'' |
+| Q30L60X40P004 |  1.94M |   40.0 |     48268 | 48.27K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'29'' |
+| Q30L60X40P005 |  1.94M |   40.0 |     48386 | 48.39K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'05'' | 0:00'26'' |
+| Q30L60X40P006 |  1.94M |   40.0 |     48355 | 48.36K | 1 |         0 |    0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'27'' |
+| Q30L60X80P000 |  3.88M |   80.0 |     48448 | 48.45K | 1 |         0 |    0 | 0 |   80.0 | 0.0 |  26.7 | 120.0 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'28'' |
+| Q30L60X80P001 |  3.88M |   80.0 |     48491 | 48.49K | 1 |         0 |    0 | 0 |   80.0 | 0.0 |  26.7 | 120.0 | "31,41,51,61,71,81" | 0:00'07'' | 0:00'28'' |
+| Q30L60X80P002 |  3.88M |   80.0 |     48388 | 48.39K | 1 |         0 |    0 | 0 |   80.0 | 0.0 |  26.7 | 120.0 | "31,41,51,61,71,81" | 0:00'06'' | 0:00'27'' |
+
+## lambda: merge anchors
 
 ## lambda: 3GS
 
-* miniasm
+| Name               |   N50 |     Sum |    # |
+|:-------------------|------:|--------:|-----:|
+| Genome             | 48502 |   48502 |    1 |
+| Paralogs           |     0 |       0 |    0 |
+| X40.raw.corrected  |  1459 | 1516012 | 1048 |
+| X40.trim.corrected |  1448 | 1478749 | 1027 |
+| X80.raw.corrected  |  1638 | 1934295 | 1165 |
+| X80.trim.corrected |  1624 | 1937656 | 1175 |
+| X40.raw            | 50619 |   50619 |    1 |
+| X40.trim           | 45657 |   45657 |    1 |
+| X80.raw            | 48497 |   50960 |    2 |
+| X80.trim           | 48489 |   48489 |    1 |
 
-```bash
-BASE_NAME=lambda
-cd ${HOME}/data/anchr/${BASE_NAME}
+## lambda: final stats
 
-mkdir -p miniasm
+* Stats
 
-minimap -Sw5 -L100 -m0 -t16 \
-    ~/data/anchr/e_coli/anchorLong/group/11_2.long.fasta ~/data/anchr/e_coli/anchorLong/group/11_2.long.fasta \
-    > miniasm/pacbio.40x.paf
+| Name                   |   N50 |   Sum | # |
+|:-----------------------|------:|------:|--:|
+| Genome                 | 48502 | 48502 | 1 |
+| Paralogs               |     0 |     0 | 0 |
+| anchor                 | 48512 | 48512 | 1 |
+| others                 |     0 |     0 | 0 |
+| canu-X80-raw           | 48497 | 50960 | 2 |
+| canu-X80-trim          | 48489 | 48489 | 1 |
+| spades.contig          | 48514 | 48514 | 1 |
+| spades.scaffold        | 48514 | 48514 | 1 |
+| spades.non-contained   | 48514 | 48514 | 1 |
+| platanus.contig        | 46367 | 48480 | 2 |
+| platanus.scaffold      | 48424 | 48424 | 1 |
+| platanus.non-contained | 48424 | 48424 | 1 |
 
-sftp://wangq@wq.nju.edu.cn
+* quast
 
-miniasm miniasm/pacbio.40x.paf > miniasm/utg.noseq.gfa
-
-miniasm -f 3_pacbio/pacbio.40x.fasta miniasm/pacbio.40x.paf \
-    > miniasm/utg.gfa
-
-awk '/^S/{print ">"$2"\n"$3}' miniasm/utg.gfa > miniasm/utg.fa
-
-minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
-
-```
-
+## lambda: clear intermediate files
