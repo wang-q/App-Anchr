@@ -148,6 +148,17 @@
     - [Lmon: clear intermediate files](#lmon-clear-intermediate-files)
 - [Clostridioides difficile 630](#clostridioides-difficile-630)
     - [Cdif: download](#cdif-download)
+    - [Cdif: preprocess Illumina reads](#cdif-preprocess-illumina-reads)
+    - [Cdif: reads stats](#cdif-reads-stats)
+    - [Cdif: spades](#cdif-spades)
+    - [Cdif: platanus](#cdif-platanus)
+    - [Cdif: quorum](#cdif-quorum)
+    - [Cdif: adapter filtering](#cdif-adapter-filtering)
+    - [Cdif: down sampling](#cdif-down-sampling)
+    - [Cdif: k-unitigs and anchors (sampled)](#cdif-k-unitigs-and-anchors-sampled)
+    - [Cdif: merge anchors](#cdif-merge-anchors)
+    - [Cdif: final stats](#cdif-final-stats)
+    - [Cdif: clear intermediate files](#cdif-clear-intermediate-files)
 - [Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌](#campylobacter-jejuni-subsp-jejuni-atcc-700819-空肠弯曲杆菌)
     - [Cjej: download](#cjej-download)
 - [Escherichia virus Lambda](#escherichia-virus-lambda)
@@ -3116,6 +3127,23 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Cdif: download
 
+* Settings
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Cdif
+REAL_G=4298133
+IS_EUK="false"
+TRIM2="--uniq --shuffle --scythe "
+SAMPLE2=200
+COVERAGE2="40 80"
+READ_QUAL="25 30"
+READ_LEN="60"
+COVERAGE3="40 80"
+EXPAND_WITH="80"
+
+```
+
 * Reference genome
 
     * Strain: Clostridioides difficile 630
@@ -3125,8 +3153,8 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
     * Proportion of paralogs (> 1000 bp): 0.0661
 
 ```bash
-mkdir -p ~/data/anchr/Cdif/1_genome
-cd ~/data/anchr/Cdif/1_genome
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
+cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
 aria2c -x 9 -s 3 -c ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/205/GCF_000009205.1_ASM920v1/GCF_000009205.1_ASM920v1_genomic.fna.gz
 
@@ -3142,7 +3170,110 @@ cp ~/data/anchr/paralogs/otherbac/Results/Cdif/Cdif.multi.fas paralogs.fas
 
 ```
 
-SRX2107163
+* Illumina
+
+    * [SRX2107163](https://www.ncbi.nlm.nih.gov/sra/SRX2107163) SRR4125185
+
+```bash
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR412/005/SRR4125185/SRR4125185_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR412/005/SRR4125185/SRR4125185_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+abfbf6a3f7a8251ea7184b872c8ecb32 SRR4125185_1.fastq.gz
+2a7a667cbe598dff97da27d96f7cae1b SRR4125185_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4125185_1.fastq.gz R1.fq.gz
+ln -s SRR4125185_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+    * [SRX2104759](https://www.ncbi.nlm.nih.gov/sra/SRX2104759) SRR4125184
+
+* FastQC
+
+* kmergenie
+
+## Cdif: preprocess Illumina reads
+
+## Cdif: reads stats
+
+| Name     |     N50 |     Sum |        # |
+|:---------|--------:|--------:|---------:|
+| Genome   | 4290252 | 4298133 |        2 |
+| Illumina |     101 |   1.33G | 13190786 |
+| uniq     |     101 |   1.32G | 13029692 |
+| shuffle  |     101 |   1.32G | 13029692 |
+| sample   |     101 | 859.63M |  8511154 |
+| scythe   |     101 | 850.77M |  8511154 |
+| Q25L60   |     101 |  787.8M |  7855952 |
+| Q30L60   |     101 | 771.97M |  7785648 |
+
+## Cdif: spades
+
+## Cdif: platanus
+
+## Cdif: quorum
+
+| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real |   RunTime |
+|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|-----:|---------:|----------:|
+| Q25L60 |  787.8M | 183.3 | 740.76M |  172.3 |   5.971% |     100 | "71" |  4.3M | 4.2M |     0.98 | 0:03'34'' |
+| Q30L60 | 772.47M | 179.7 | 736.69M |  171.4 |   4.631% |      99 | "71" |  4.3M | 4.2M |     0.98 | 0:03'18'' |
+
+## Cdif: adapter filtering
+
+## Cdif: down sampling
+
+## Cdif: k-unitigs and anchors (sampled)
+
+| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 | 171.93M |   40.0 |    102986 | 4.14M | 109 |      7659 |  65.9K | 44 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:03'14'' | 0:01'34'' |
+| Q25L60X40P001 | 171.93M |   40.0 |     86904 | 4.15M | 116 |      1043 | 58.84K | 47 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:03'10'' | 0:01'36'' |
+| Q25L60X40P002 | 171.93M |   40.0 |     88796 | 4.15M | 113 |      1367 |  56.7K | 44 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:03'08'' | 0:01'38'' |
+| Q25L60X40P003 | 171.93M |   40.0 |     91606 | 4.15M | 116 |      1367 | 56.37K | 42 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:02'55'' | 0:01'26'' |
+| Q25L60X80P000 | 343.85M |   80.0 |     85314 | 4.15M | 122 |      7145 |  40.5K | 24 |   80.0 | 7.0 |  19.7 | 151.5 | "31,41,51,61,71,81" | 0:04'20'' | 0:01'45'' |
+| Q25L60X80P001 | 343.85M |   80.0 |     80207 | 4.15M | 119 |      2859 | 39.31K | 24 |   80.0 | 7.0 |  19.7 | 151.5 | "31,41,51,61,71,81" | 0:04'21'' | 0:01'41'' |
+| Q30L60X40P000 | 171.93M |   40.0 |    104088 | 4.15M | 108 |      1367 | 53.69K | 40 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:03'18'' | 0:01'27'' |
+| Q30L60X40P001 | 171.93M |   40.0 |     85713 | 4.15M | 110 |      1102 | 58.35K | 46 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:03'08'' | 0:01'42'' |
+| Q30L60X40P002 | 171.93M |   40.0 |     86799 | 4.15M | 110 |      1102 |  56.5K | 45 |   39.0 | 4.0 |   9.0 |  76.5 | "31,41,51,61,71,81" | 0:03'10'' | 0:01'47'' |
+| Q30L60X40P003 | 171.93M |   40.0 |     86240 | 4.15M | 109 |      1017 | 63.11K | 52 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:03'06'' | 0:01'43'' |
+| Q30L60X80P000 | 343.85M |   80.0 |    105540 | 4.14M | 103 |      7659 | 41.42K | 23 |   78.0 | 8.0 |  18.0 | 153.0 | "31,41,51,61,71,81" | 0:04'15'' | 0:02'01'' |
+| Q30L60X80P001 | 343.85M |   80.0 |    105540 | 4.15M | 104 |      5646 | 39.41K | 22 |   79.0 | 7.0 |  19.3 | 150.0 | "31,41,51,61,71,81" | 0:04'20'' | 0:01'52'' |
+
+## Cdif: merge anchors
+
+## Cdif: final stats
+
+* Stats
+
+| Name                   |     N50 |     Sum |   # |
+|:-----------------------|--------:|--------:|----:|
+| Genome                 | 4290252 | 4298133 |   2 |
+| Paralogs               |         |         |     |
+| anchor                 |  108261 | 4145958 |  89 |
+| others                 |     953 |  138134 | 124 |
+| spades.contig          |  227529 | 4237854 | 241 |
+| spades.scaffold        |  227529 | 4237894 | 237 |
+| spades.non-contained   |  227529 | 4200680 |  50 |
+| platanus.contig        |  104398 | 4271640 | 680 |
+| platanus.scaffold      |  225728 | 4236396 | 416 |
+| platanus.non-contained |  225728 | 4181483 |  49 |
+
+* quast
+
+## Cdif: clear intermediate files
 
 # Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌
 
