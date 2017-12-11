@@ -20,10 +20,12 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    7227   --name 7227=iso_1    \
     --id    6239   --name 6239=n2       \
     --id    3702   --name 3702=col_0    \
+    \
     --id    222523 --name 222523=Bcer   \
     --id    272943 --name 272943=Rsph   \
     --id    561007 --name 561007=Mabs   \
     --id    243277 --name 243277=Vcho   \
+    \
     --id    198214 --name 198214=Sfle   \
     --id    223926 --name 223926=Vpar   \
     --id    169963 --name 169963=Lmon   \
