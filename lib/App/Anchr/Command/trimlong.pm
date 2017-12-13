@@ -13,6 +13,7 @@ sub opt_spec {
         [ "outfile|o=s", "output filename, [stdout] for screen", ],
         [ "coverage|c=i", "minimal coverage",           { default => 3 }, ],
         [ "len|l=i",      "minimal length of overlaps", { default => 1000 }, ],
+        [ "tmp=s",        "user defined tempdir", ],
         [ "parallel|p=i", "number of threads",          { default => 8 }, ],
         [ "verbose|v",    "verbose mode", ],
         [   "jvm=s",
@@ -67,8 +68,17 @@ sub execute {
     }
 
     # record cwd, we'll return there
-    my $cwd     = Path::Tiny->cwd;
-    my $tempdir = Path::Tiny->tempdir("anchr_trimlong_XXXXXXXX");
+    my $cwd = Path::Tiny->cwd;
+    my $tempdir;
+    if ( $opt->{tmp} ) {
+        $tempdir = Path::Tiny->tempdir(
+            TEMPLATE => "anchr_trimlong_XXXXXXXX",
+            DIR      => $opt->{tmp},
+        );
+    }
+    else {
+        $tempdir = Path::Tiny->tempdir("anchr_trimlong_XXXXXXXX");
+    }
     chdir $tempdir;
 
     my $basename = $tempdir->basename();
