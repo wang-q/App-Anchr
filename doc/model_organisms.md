@@ -529,6 +529,7 @@ cd ${WORKING_DIR}/${BASE_NAME}
 spades.py \
     -t 16 \
     -k 21,33,55,77 \
+    --only-assembler \
     -1 2_illumina/Q25L60/R1.sickle.fq.gz \
     -2 2_illumina/Q25L60/R2.sickle.fq.gz \
     -s 2_illumina/Q25L60/Rs.sickle.fq.gz \
@@ -1191,15 +1192,15 @@ cat stat3.md
 |:-----------------------|--------:|--------:|-----:|
 | Genome                 | 4641652 | 4641652 |    1 |
 | Paralogs               |    1934 |  195673 |  106 |
-| anchor                 |   63699 | 4533510 |  123 |
-| others                 |     934 |  135528 |  153 |
-| anchorLong             |   88022 | 4530033 |  104 |
-| contigTrim             | 1188456 | 4745048 |    9 |
+| anchor                 |   63501 | 4534356 |  120 |
+| others                 |     941 |  122752 |  129 |
+| anchorLong             |   82828 | 4532095 |  102 |
+| contigTrim             | 1047591 | 4604252 |    9 |
 | canu-X80-raw           | 4658166 | 4658166 |    1 |
 | canu-X80-trim          | 4657933 | 4657933 |    1 |
-| spades.contig          |  132662 | 4645193 |  311 |
-| spades.scaffold        |  133063 | 4645555 |  306 |
-| spades.non-contained   |  132662 | 4568816 |   78 |
+| spades.contig          |  133059 | 4588342 |  169 |
+| spades.scaffold        |  148513 | 4588382 |  165 |
+| spades.non-contained   |  133059 | 4563262 |   74 |
 | platanus.contig        |   15090 | 4683012 | 1069 |
 | platanus.scaffold      |  133014 | 4575941 |  137 |
 | platanus.non-contained |  133014 | 4559275 |   63 |
