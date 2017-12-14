@@ -4,6 +4,8 @@
 - [Single End](#single-end)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [SE: download](#se-download)
+    - [SE: template](#se-template)
+    - [SE: preprocessing](#se-preprocessing)
     - [SE: preprocess Illumina reads](#se-preprocess-illumina-reads)
     - [SE: reads stats](#se-reads-stats)
     - [SE: spades](#se-spades)
@@ -27,6 +29,7 @@
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=SE
 REAL_G=4641652
 IS_EUK="false"
@@ -53,102 +56,47 @@ cp ~/data/anchr/e_coli/1_genome/paralogs.fas .
 mkdir -p ${HOME}/data/anchr/${BASE_NAME}/2_illumina
 cd ${HOME}/data/anchr/${BASE_NAME}/2_illumina
 
-ln -sf ${HOME}/data/anchr/e_coli/2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
+cp ../../e_coli/2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
 
 ```
 
-## SE: preprocess Illumina reads
+## SE: template
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-cd 2_illumina
-
-anchr trim \
-    --uniq \
-    --shuffle \
-    --scythe \
-    --nosickle \
-    R1.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+rsync -avP ~/data/anchr/SE/ wangq@202.119.37.251:data/anchr/SE
 
 ```
 
-## SE: reads stats
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --se \
+    --basename SE \
+    --genome 4641652 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --coverage2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 16
+
+```
+
+## SE: preprocessing
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
+# Illumina QC
+bash 2_fastqc.sh
+bash 2_kmergenie.sh
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
+# preprocess Illumina reads
+bash 2_trim.sh
 
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz;) >> stat.md
-if [ -e 2_illumina/R1.uniq.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "uniq";    faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "shuffle"; faops n50 -H -S -C 2_illumina/R1.shuffle.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.sample.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";   faops n50 -H -S -C 2_illumina/R1.sample.fq.gz;) >> stat.md
-fi
-if [ -e 2_illumina/R1.scythe.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "scythe";  faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz;) >> stat.md
-fi
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo Q{1}L{2};
-            faops n50 -H -S -C \
-                2_illumina/Q{1}L{2}/R1.sickle.fq.gz;
-        )
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-    >> stat.md
-
-cat stat.md
+# reads stats
+bash 23_statReads.sh
 
 ```
 

@@ -9,7 +9,7 @@
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [e_coli: download](#e-coli-download)
     - [e_coli: template](#e-coli-template)
-    - [e_coli: run](#e-coli-run)
+    - [e_coli: preprocessing](#e-coli-preprocessing)
     - [e_coli: spades](#e-coli-spades)
     - [e_coli: platanus](#e-coli-platanus)
     - [e_coli: quorum](#e-coli-quorum)
@@ -305,7 +305,7 @@ anchr template \
 
 ```
 
-## e_coli: run
+## e_coli: preprocessing
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
