@@ -133,11 +133,11 @@ hash poa 2>/dev/null || {
     exit 1;
 }
 
-perl -MGraphViz -e "1" 2>/dev/null || {
-    echo >&2 "GraphViz is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm GraphViz";
-    exit 1;
-}
+#perl -MGraphViz -e "1" 2>/dev/null || {
+#    echo >&2 "GraphViz is required but it's not installed.";
+#    echo >&2 "Install with cpanm: cpanm GraphViz";
+#    exit 1;
+#}
 
 perl -MAlignDB::IntSpan -e "1" 2>/dev/null || {
     echo >&2 "AlignDB::IntSpan is required but it's not installed.";
