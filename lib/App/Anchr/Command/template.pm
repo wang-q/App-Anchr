@@ -14,12 +14,12 @@ sub opt_spec {
         [ "genome=i",   "your best guess of the haploid genome size", ],
         [ "is_euk",     "eukaryotes or not", ],
         [ "tmp=s",      "user defined tempdir", ],
-        [ "trim2=s",      "steps for trimming illumina reads",         default   => "--uniq" ],
+        [ "trim2=s",      "steps for trimming illumina reads",         { default => "--uniq" }, ],
         [ "sample2=i",    "total sampling coverage of illumina reads", ],
-        [ "coverage2=s",  "down sampling coverage of illumina reads",  default   => "40 80" ],
+        [ "coverage2=s",  "down sampling coverage of illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
-        [ "coverage3=s",  "down sampling coverage of pacbio reads",    default   => "40 80" ],
+        [ "coverage3=s",  "down sampling coverage of pacbio reads",    { default => "40 80" }, ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         { show_defaults => 1, }
     );
@@ -51,10 +51,10 @@ sub validate_args {
         }
     }
 
-    $args->[0] = Path::Tiny::path($args->[0])->absolute;
+    $args->[0] = Path::Tiny::path( $args->[0] )->absolute;
 
-    if (! $opt->{basename}) {
-        $opt->{basename} = Path::Tiny::path($args->[0])->basename();
+    if ( !$opt->{basename} ) {
+        $opt->{basename} = Path::Tiny::path( $args->[0] )->basename();
     }
 
 }
