@@ -10,7 +10,7 @@ use constant abstract => "create executing bash files";
 
 sub opt_spec {
     return (
-        [ "basename=i", "the basename of this genome, default is the working directory", ],
+        [ "basename=s", "the basename of this genome, default is the working directory", ],
         [ "genome=i",   "your best guess of the haploid genome size", ],
         [ "is_euk",     "eukaryotes or not", ],
         [ "tmp=s",      "user defined tempdir", ],
