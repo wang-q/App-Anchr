@@ -14,12 +14,13 @@ sub opt_spec {
         [ "genome=i",   "your best guess of the haploid genome size", ],
         [ "is_euk",     "eukaryotes or not", ],
         [ "tmp=s",      "user defined tempdir", ],
-        [ "trim2=s",      "steps for trimming illumina reads",         { default => "--uniq" }, ],
-        [ "sample2=i",    "total sampling coverage of illumina reads", ],
-        [ "coverage2=s",  "down sampling coverage of illumina reads",  { default => "40 80" }, ],
+        [ "se",         "single end mode for Illumina", ],
+        [ "trim2=s",      "steps for trimming Illumina reads",         { default => "--uniq" }, ],
+        [ "sample2=i",    "total sampling coverage of Illumina reads", ],
+        [ "coverage2=s",  "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
-        [ "coverage3=s",  "down sampling coverage of pacbio reads",    { default => "40 80" }, ],
+        [ "coverage3=s",  "down sampling coverage of PacBio reads", ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         { show_defaults => 1, }
     );
@@ -79,7 +80,7 @@ mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
 
 fastqc -t [% opt.parallel %] \
-    ../R1.fq.gz ../R2.fq.gz \
+    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
     -o .
 
 EOF
@@ -102,7 +103,7 @@ cd 2_illumina/kmergenie
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
-    " ::: R1 R2
+    " ::: R1  [% IF not opt.se %]R2[% END %]
 
 EOF
     $tt->process(
@@ -126,8 +127,8 @@ anchr trim \
 [% IF opt.sample2 -%]
 [% IF opt.genome -%]
     --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
-[% END-%]
-[% END-%]
+[% END -%]
+[% END -%]
     $(
         if [ -e illumina_adapters.fa ]; then
             echo "-a illumina_adapters.fa";
@@ -135,7 +136,7 @@ anchr trim \
     ) \
     --nosickle \
     --parallel [% opt.parallel %] \
-    R1.fq.gz R2.fq.gz \
+    R1.fq.gz [% IF not opt.se %]R2.fq.gz[% END %] \
     -o trim.sh
 bash trim.sh
 
@@ -153,15 +154,15 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         -q {1} -l {2} \
         \$(
             if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+                echo '../R1.scythe.fq.gz [% IF not opt.se %]../R2.scythe.fq.gz[% END %]'
             elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+                echo '../R1.sample.fq.gz [% IF not opt.se %]../R2.sample.fq.gz[% END %]'
             elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+                echo '../R1.shuffle.fq.gz [% IF not opt.se %]../R2.shuffle.fq.gz[% END %]'
             elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+                echo '../R1.uniq.fq.gz [% IF not opt.se %]../R2.uniq.fq.gz[% END %]'
             else
-                echo '../R1.fq.gz ../R2.fq.gz'
+                echo '../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %]'
             fi
         ) \
         --parallel [% opt.parallel %] \
@@ -243,23 +244,23 @@ fi
 
 if [ -e 2_illumina/R1.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> statReads.md
+        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz [% IF not opt.se %]2_illumina/R2.fq.gz[% END %];) >> statReads.md
 fi
 if [ -e 2_illumina/R1.uniq.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "uniq";    stat_format 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> statReads.md
+        $(echo "uniq";    stat_format 2_illumina/R1.uniq.fq.gz [% IF not opt.se %]2_illumina/R2.uniq.fq.gz[% END %];) >> statReads.md
 fi
 if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "shuffle"; stat_format 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> statReads.md
+        $(echo "shuffle"; stat_format 2_illumina/R1.shuffle.fq.gz [% IF not opt.se %]2_illumina/R2.shuffle.fq.gz[% END %];) >> statReads.md
 fi
 if [ -e 2_illumina/R1.sample.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> statReads.md
+        $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz [% IF not opt.se %]2_illumina/R2.sample.fq.gz[% END %];) >> statReads.md
 fi
 if [ -e 2_illumina/R1.scythe.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "scythe";  stat_format 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> statReads.md
+        $(echo "scythe";  stat_format 2_illumina/R1.scythe.fq.gz [% IF not opt.se %]2_illumina/R2.scythe.fq.gz[% END %];) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "
@@ -277,6 +278,7 @@ parallel --no-run-if-empty -k -j 2 "
     printf \"| %s | %s | %s | %s |\n\" \
         \$(
             echo Q{1}L{2};
+[% IF not opt.se %]
             if [[ {1} -ge '30' ]]; then
                 stat_format \
                     2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
@@ -287,6 +289,10 @@ parallel --no-run-if-empty -k -j 2 "
                     2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
                     2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
             fi
+[% ELSE %]
+            faops n50 -H -S -C \
+                2_illumina/Q{1}L{2}/R1.sickle.fq.gz;
+[% END %]
         )
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] \
     >> statReads.md
