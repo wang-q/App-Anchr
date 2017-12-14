@@ -178,6 +178,156 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+    # trimlong
+    if ( $opt->{coverage3} ) {
+        $sh_name = "3_trimlong.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+cd [% args.0 %]
+
+for X in [% opt.coverage3 %]; do
+    printf "==> Coverage: %s\n" ${X}
+
+    faops split-about -m 1 -l 0 \
+        3_pacbio/pacbio.fasta \
+        $(( [% opt.genome %] * ${X} )) \
+        3_pacbio
+
+    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
+done
+
+for X in  [% opt.coverage3 %]; do
+    printf "==> Coverage: %s\n" ${X}
+
+    anchr trimlong --parallel 16 -v \
+        "3_pacbio/pacbio.X${X}.raw.fasta" \
+        -o "3_pacbio/pacbio.X${X}.trim.fasta"
+done
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    # statReads
+    $sh_name = "23_statReads.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+cd [% args.0 %]
+
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $@) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statReads.md
+printf "|:--|--:|--:|--:|\n" >> statReads.md
+
+if [ -e 1_genome/genome.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statReads.md
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statReads.md
+fi
+
+if [ -e 2_illumina/R1.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/R1.uniq.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "uniq";    stat_format 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "shuffle"; stat_format 2_illumina/R1.shuffle.fq.gz 2_illumina/R2.shuffle.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/R1.sample.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz 2_illumina/R2.sample.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/R1.scythe.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "scythe";  stat_format 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> statReads.md
+fi
+
+parallel --no-run-if-empty -k -j 2 "
+    stat_format () {
+        echo \$(faops n50 -H -N 50 -S -C \$@) \
+            | perl -nla -MNumber::Format -e '
+                printf qq{%d\t%s\t%d\n}, \$F[0], Number::Format::format_bytes(\$F[1], base => 1000,), \$F[2];
+            '
+    }
+
+    if [ ! -e 2_illumina/Q{1}L{2}/R1.sickle.fq.gz ]; then
+        exit;
+    fi
+
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo Q{1}L{2};
+            if [[ {1} -ge '30' ]]; then
+                stat_format \
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/Rs.sickle.fq.gz;
+            else
+                stat_format \
+                    2_illumina/Q{1}L{2}/R1.sickle.fq.gz \
+                    2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
+            fi
+        )
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] \
+    >> statReads.md
+
+if [ -e 3_pacbio/pacbio.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "PacBio"; stat_format 3_pacbio/pacbio.fasta;) >> statReads.md
+fi
+
+parallel --no-run-if-empty -k -j 2 "
+    stat_format () {
+        echo \$(faops n50 -H -N 50 -S -C \$@) \
+            | perl -nla -MNumber::Format -e '
+                printf qq{%d\t%s\t%d\n}, \$F[0], Number::Format::format_bytes(\$F[1], base => 1000,), \$F[2];
+            '
+    }
+
+    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta ]; then
+        exit;
+    fi
+
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo X{1}.{2};
+            stat_format \
+                3_pacbio/pacbio.X{1}.{2}.fasta;
+        )
+    " ::: [% opt.coverage3 %] ::: raw trim \
+    >> statReads.md
+
+cat statReads.md
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 1;
