@@ -113,6 +113,71 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+    # trim2
+    $sh_name = "2_trim.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+cd [% args.0 %]
+
+cd 2_illumina
+
+anchr trim \
+    [% opt.trim2 %] \
+[% IF opt.sample2 -%]
+[% IF opt.genome -%]
+    --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
+[% END-%]
+[% END-%]
+    $(
+        if [ -e illumina_adapters.fa ]; then
+            echo "-a illumina_adapters.fa";
+        fi
+    ) \
+    --nosickle \
+    --parallel [% opt.parallel %] \
+    R1.fq.gz R2.fq.gz \
+    -o trim.sh
+bash trim.sh
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
+
+    printf '==> Qual-Len: %s\n'  Q{1}L{2}
+    if [ -e R1.sickle.fq.gz ]; then
+        echo '    R1.sickle.fq.gz already presents'
+        exit;
+    fi
+
+    anchr trim \
+        -q {1} -l {2} \
+        \$(
+            if [ -e ../R1.scythe.fq.gz ]; then
+                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
+            elif [ -e ../R1.sample.fq.gz ]; then
+                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
+            elif [ -e ../R1.shuffle.fq.gz ]; then
+                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
+            elif [ -e ../R1.uniq.fq.gz ]; then
+                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
+            else
+                echo '../R1.fq.gz ../R2.fq.gz'
+            fi
+        ) \
+        --parallel [% opt.parallel %] \
+        -o stdout \
+        | bash
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 1;

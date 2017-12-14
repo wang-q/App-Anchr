@@ -322,53 +322,7 @@ bash 2_kmergenie.sh
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-cd 2_illumina
-
-anchr trim \
-    ${TRIM2} \
-    $(
-        if [ ${SAMPLE2} ]; then
-            echo "--sample $(( ${REAL_G} * ${SAMPLE2} ))";
-        fi
-    ) \
-    $(
-        if [ -e illumina_adapters.fa ]; then
-            echo "-a illumina_adapters.fa";
-        fi
-    ) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bash 2_trim.sh
 
 ```
 
