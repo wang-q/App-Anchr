@@ -288,31 +288,32 @@ cat fasta/m141013.fasta \
 
 ```
 
-* FastQC
+## e_coli: template
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-mkdir -p 2_illumina/fastqc
-cd 2_illumina/fastqc
-
-fastqc -t 16 \
-    ../R1.fq.gz ../R2.fq.gz \
-    -o .
+anchr template \
+    . \
+    --basename e_coli \
+    --genome 4641652 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --coverage2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --coverage3 "40 80" \
+    --parallel 16
 
 ```
 
-* kmergenie
+## e_coli: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-mkdir -p 2_illumina/kmergenie
-cd 2_illumina/kmergenie
-
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t 8 --one-pass ../{}.fq.gz -o {}
-    " ::: R1 R2
+# illumina
+bash 2_fastqc.sh
+bash 2_kmergenie.sh
 
 ```
 

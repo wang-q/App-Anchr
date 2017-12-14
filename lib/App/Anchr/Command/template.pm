@@ -57,6 +57,9 @@ sub validate_args {
         $opt->{basename} = Path::Tiny::path( $args->[0] )->basename();
     }
 
+    $opt->{parallel2} = int( $opt->{parallel} / 2 );
+    $opt->{parallel2} = 2 if $opt->{parallel2} < 2;
+
 }
 
 sub execute {
@@ -75,9 +78,31 @@ cd [% args.0 %]
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
 
-fastqc -t 16 \
+fastqc -t [% opt.parallel %] \
     ../R1.fq.gz ../R2.fq.gz \
     -o .
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+    # kmergenie
+    $sh_name = "2_kmergenie.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+cd [% args.0 %]
+
+mkdir -p 2_illumina/kmergenie
+cd 2_illumina/kmergenie
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
+    " ::: R1 R2
 
 EOF
     $tt->process(
