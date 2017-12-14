@@ -8,9 +8,8 @@
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [e_coli: download](#e-coli-download)
-    - [e_coli: preprocess Illumina reads](#e-coli-preprocess-illumina-reads)
-    - [e_coli: preprocess PacBio reads](#e-coli-preprocess-pacbio-reads)
-    - [e_coli: reads stats](#e-coli-reads-stats)
+    - [e_coli: template](#e-coli-template)
+    - [e_coli: run](#e-coli-run)
     - [e_coli: spades](#e-coli-spades)
     - [e_coli: platanus](#e-coli-platanus)
     - [e_coli: quorum](#e-coli-quorum)
@@ -311,54 +310,36 @@ anchr template \
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-# illumina
+# Illumina QC
 bash 2_fastqc.sh
 bash 2_kmergenie.sh
 
-```
-
-## e_coli: preprocess Illumina reads
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
+# preprocess Illumina reads
 bash 2_trim.sh
 
-```
-
-## e_coli: preprocess PacBio reads
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
+# preprocess PacBio reads
 bash 3_trimlong.sh
 
-```
-
-## e_coli: reads stats
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
+# reads stats
 bash 23_statReads.sh
 
 ```
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 4641652 |    4641652 |        1 |
-| Paralogs |    1934 |     195673 |      106 |
-| Illumina |     151 | 1730299940 | 11458940 |
-| uniq     |     151 | 1727289000 | 11439000 |
-| sample   |     151 |  928330484 |  6147884 |
-| scythe   |     151 |  925669872 |  6147884 |
-| Q25L60   |     151 |  708050410 |  5371012 |
-| Q30L60   |     127 |  617512404 |  5257556 |
-| PacBio   |   13982 |  748508361 |    87225 |
-| X40.raw  |   14030 |  185678104 |    22336 |
-| X40.trim |   13702 |  169380879 |    19468 |
-| X80.raw  |   13990 |  371337468 |    44005 |
-| X80.trim |   13632 |  339513065 |    38725 |
+| Name     |     N50 |     Sum |        # |
+|:---------|--------:|--------:|---------:|
+| Genome   | 4641652 | 4641652 |        1 |
+| Paralogs |    1934 |  195673 |      106 |
+| Illumina |     151 |   1.73G | 11458940 |
+| uniq     |     151 |   1.73G | 11439000 |
+| shuffle  |     151 |   1.73G | 11439000 |
+| scythe   |     151 |   1.72G | 11439000 |
+| Q25L60   |     151 |   1.32G |  9994656 |
+| Q30L60   |     127 |   1.15G |  9783226 |
+| PacBio   |   13982 | 748.51M |    87225 |
+| X40.raw  |   14030 | 185.68M |    22336 |
+| X40.trim |   13702 | 169.38M |    19468 |
+| X80.raw  |   13990 | 371.34M |    44005 |
+| X80.trim |   13632 | 339.51M |    38725 |
 
 ## e_coli: spades
 
