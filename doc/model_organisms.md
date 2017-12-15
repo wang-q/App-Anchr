@@ -321,7 +321,7 @@ bash 2_trim.sh
 bash 3_trimlong.sh
 
 # reads stats
-bash 23_statReads.sh
+bash 9_statReads.sh
 
 ```
 
@@ -411,51 +411,9 @@ anchr contained \
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
+bash 2_quorum.sh
 
-    if [ ! -e R1.sickle.fq.gz ]; then
-        echo >&2 '    R1.sickle.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    if [[ {1} -ge '30' ]]; then
-        anchr quorum \
-            R1.sickle.fq.gz R2.sickle.fq.gz Rs.sickle.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    else
-        anchr quorum \
-            R1.sickle.fq.gz R2.sickle.fq.gz \
-            -p 16 \
-            -o quorum.sh
-    fi
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
-
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel --no-run-if-empty -k -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-     >> stat1.md
-
-cat stat1.md
+bash 9_statQuorum.sh
 
 ```
 
@@ -464,125 +422,19 @@ cat stat1.md
 | Q25L60 | 1.32G | 283.9 |  1.24G |  267.4 |   5.801% |     133 | "83" | 4.64M | 4.58M |     0.99 | 0:03'47'' |
 | Q30L60 | 1.15G | 247.7 |  1.12G |  241.6 |   2.484% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:03'12'' |
 
-## e_coli: down sampling
+## e_coli: down sampling, k-unitigs and anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
-    echo "==> ${QxxLxx}"
+bash 4_down_sampling.sh
 
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
+bash 5_kunitigs.sh
 
-    for X in ${COVERAGE2}; do
-        printf "==> Coverage: %s\n" ${X}
-        
-        rm -fr 2_illumina/${QxxLxx}X${X}*
-    
-        faops split-about -l 0 \
-            2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
-            "2_illumina/${QxxLxx}X${X}"
-        
-        MAX_SERIAL=$(
-            cat 2_illumina/${QxxLxx}/environment.json \
-                | jq ".SUM_OUT | tonumber | . / ${REAL_G} / ${X} | floor | . - 1"
-        )
-        
-        for i in $( seq 0 1 ${MAX_SERIAL} ); do
-            P=$( printf "%03d" ${i})
-            printf "  * Part: %s\n" ${P}
-            
-            mkdir -p "2_illumina/${QxxLxx}X${X}P${P}"
-            
-            mv  "2_illumina/${QxxLxx}X${X}/${P}.fa" \
-                "2_illumina/${QxxLxx}X${X}P${P}/pe.cor.fa"
-            cp 2_illumina/${QxxLxx}/environment.json "2_illumina/${QxxLxx}X${X}P${P}"
-    
-        done
-    done
-done
+bash 5_anchors.sh
 
-```
+bash 9_statAnchors.sh
 
-## e_coli: k-unitigs and anchors (sampled)
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-# k-unitigs
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e 2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p Q{1}L{2}X{3}P{4}
-    cd Q{1}L{2}X{3}P{4}
-
-    anchr kunitigs \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../2_illumina/Q{1}L{2}X{3}P{4}/environment.json \
-        -p 16 \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# anchors
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-
-    if [ ! -e Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa not exists'
-        exit;
-    fi
-
-    if [ -e Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
-        echo >&2 '    anchor.fasta already presents'
-        exit;
-    fi
-
-    rm -fr Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p Q{1}L{2}X{3}P{4}/anchor
-    cd Q{1}L{2}X{3}P{4}/anchor
-    
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p 8 \
-        -o anchors.sh
-    bash anchors.sh
-
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-
-# Stats of anchors
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > stat2.md
-
-parallel --no-run-if-empty -k -j 6 "
-    if [ ! -e Q{1}L{2}X{3}P{4}/anchor/pe.anchor.fa ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 Q{1}L{2}X{3}P{4} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100}) \
-    >> stat2.md
-
-cat stat2.md
 ```
 
 | Name          | SumCor | CovCor | N50Anchor |    Sum | # | N50Others | Sum | # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
