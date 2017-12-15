@@ -282,6 +282,18 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+    # statQuorum
+    $sh_name = "4_down_sampling.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '4_down_sampling.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 1;

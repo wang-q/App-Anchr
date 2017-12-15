@@ -1,0 +1,40 @@
+[% INCLUDE header.tt2 %]
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
+    echo "==> ${QxxLxx}"
+
+    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
+        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
+        continue;
+    fi
+
+    for X in [% opt.coverage2 %]; do
+        printf "==> Coverage: %s\n" ${X}
+        
+        rm -fr 4_${QxxLxx}X${X}*
+    
+        faops split-about -l 0 \
+            2_illumina/${QxxLxx}/pe.cor.fa \
+            $(( ${REAL_G} * ${X} )) \
+            "4_${QxxLxx}X${X}"
+        
+        MAX_SERIAL=$(
+            cat 2_illumina/${QxxLxx}/environment.json \
+                | jq ".SUM_OUT | tonumber | . / [% opt.genome %] / ${X} | floor | . - 1"
+        )
+        
+        for i in $( seq 0 1 ${MAX_SERIAL} ); do
+            P=$( printf "%03d" ${i})
+            printf "  * Part: %s\n" ${P}
+            
+            mkdir -p "4_${QxxLxx}X${X}P${P}"
+            
+            mv  "4_${QxxLxx}X${X}/${P}.fa" \
+                "4_${QxxLxx}X${X}P${P}/pe.cor.fa"
+            cp 2_illumina/${QxxLxx}/environment.json "4_${QxxLxx}X${X}P${P}"
+    
+        done
+    done
+done

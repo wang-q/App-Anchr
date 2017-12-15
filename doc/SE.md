@@ -164,6 +164,13 @@ TruSeq_Adapter_Index_22	1	0.00002%
 
 ## SE: down sampling
 
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bsub -q largemem -n 24 -J "${BASE_NAME}-4_down_sampling" "bash 4_down_sampling.sh"
+
+```
+
 ## SE: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
