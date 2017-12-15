@@ -181,12 +181,6 @@ if [ ! -e pe.cor.fa ]; then
     cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
 fi
 
-log_debug "Reads stats with faops"
-SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %])
-save SUM_IN
-SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
-save SUM_OUT
-
 #----------------------------#
 # Estimating genome size.
 #----------------------------#
@@ -204,6 +198,28 @@ ESTIMATED_GENOME_SIZE=[% opt.estsize %]
 save ESTIMATED_GENOME_SIZE
 log_debug "You set ESTIMATED_GENOME_SIZE of $ESTIMATED_GENOME_SIZE"
 [% END -%]
+
+#----------------------------#
+# Adapter filtering with bbtools.
+#----------------------------#
+log_info Adapter filtering with bbtools.
+
+mv pe.cor.fa pe.cor.raw
+
+bbduk.sh \
+    in=pe.cor.raw \
+    out=pe.cor.fa \
+    outm=matched.fa \
+    ref=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources/adapters.fa \
+    k=27 hdist=1 stats=filtering.stats.txt
+
+rm pe.cor.raw
+
+log_debug "Reads stats with faops"
+SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %])
+save SUM_IN
+SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
+save SUM_OUT
 
 #----------------------------#
 # Done.

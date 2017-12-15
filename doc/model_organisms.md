@@ -464,38 +464,6 @@ cat stat1.md
 | Q25L60 | 1.32G | 283.9 |  1.24G |  267.4 |   5.801% |     133 | "83" | 4.64M | 4.58M |     0.99 | 0:03'47'' |
 | Q30L60 | 1.15G | 247.7 |  1.12G |  241.6 |   2.484% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:03'12'' |
 
-## e_coli: adapter filtering
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
-    echo "==> ${QxxLxx}"
-
-    if [ -e 2_illumina/${QxxLxx}/filtering.stats.txt ]; then
-        echo "2_illumina/${QxxLxx}/filtering.stats.txt already exists"
-        continue;
-    fi
-
-    if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
-        echo "2_illumina/${QxxLxx}/pe.cor.fa not exists"
-        continue;
-    fi
-    
-    mv 2_illumina/${QxxLxx}/pe.cor.fa 2_illumina/${QxxLxx}/pe.cor.raw
-
-    bbduk.sh \
-        in=2_illumina/${QxxLxx}/pe.cor.raw \
-        out=2_illumina/${QxxLxx}/pe.cor.fa \
-        outm=2_illumina/${QxxLxx}/matched.fa \
-        ref=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources/adapters.fa \
-        k=27 hdist=1 stats=2_illumina/${QxxLxx}/filtering.stats.txt
-
-    rm 2_illumina/${QxxLxx}/pe.cor.raw
-done
-
-```
-
 ## e_coli: down sampling
 
 ```bash
