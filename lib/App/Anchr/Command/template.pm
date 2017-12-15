@@ -384,6 +384,96 @@ EOF
         }
     }
 
+    # anchors
+    if ( !$opt->{separate} ) {
+        $sh_name = "5_anchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 5_Q{1}L{2}X{3}P{4}_kunitigs/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    cd 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+    else {
+        for my $qual ( grep {/^\d+$/} split /\s+/, $opt->{qual2} ) {
+            for my $len ( grep {/^\d+$/} split /\s+/, $opt->{len2} ) {
+                for my $cov ( grep {/^\d+$/} split /\s+/, $opt->{coverage2} ) {
+                    $sh_name = "5_anchors_Q${qual}L${len}X${cov}.sh";
+                    print "Create $sh_name\n";
+                    $template = <<'EOF';
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
+    if [ -e 5_Q[% qual %]L[% len %]X[% cov %]P{}_kunitigs/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+    mkdir -p 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+    cd 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+    " ::: $(printf "%03d " {0..50})
+
+EOF
+                    $tt->process(
+                        \$template,
+                        {   args => $args,
+                            opt  => $opt,
+                            qual => $qual,
+                            len  => $len,
+                            cov  => $cov,
+                        },
+                        Path::Tiny::path( $args->[0], $sh_name )->stringify
+                    ) or die Template->error;
+
+                }
+            }
+        }
+    }
+
 }
 
 1;
