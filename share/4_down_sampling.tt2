@@ -2,7 +2,7 @@
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); do
+for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: [% opt.qual2 %] ::: [% opt.len2 %] ); do
     echo "==> ${QxxLxx}"
 
     if [ ! -e 2_illumina/${QxxLxx}/pe.cor.fa ]; then
@@ -17,7 +17,7 @@ for QxxLxx in $( parallel "echo 'Q{1}L{2}'" ::: ${READ_QUAL} ::: ${READ_LEN} ); 
     
         faops split-about -l 0 \
             2_illumina/${QxxLxx}/pe.cor.fa \
-            $(( ${REAL_G} * ${X} )) \
+            $(( [% opt.genome %] * ${X} )) \
             "4_${QxxLxx}X${X}"
         
         MAX_SERIAL=$(
