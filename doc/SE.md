@@ -8,7 +8,6 @@
     - [SE: preprocessing](#se-preprocessing)
     - [SE: spades](#se-spades)
     - [SE: quorum](#se-quorum)
-    - [SE: adapter filtering](#se-adapter-filtering)
     - [SE: down sampling](#se-down-sampling)
     - [SE: k-unitigs and anchors (sampled)](#se-k-unitigs-and-anchors-sampled)
     - [SE: merge anchors](#se-merge-anchors)
@@ -133,31 +132,9 @@ anchr contained \
 ## SE: quorum
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Group Q{1}L{2} <=='
-
-    if [ ! -e R1.sickle.fq.gz ]; then
-        echo >&2 '    R1.sickle.fq.gz not exists'
-        exit;
-    fi
-
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
-        exit;
-    fi
-
-    anchr quorum \
-        R1.sickle.fq.gz \
-        -p 16 \
-        -o quorum.sh
-
-    bash quorum.sh
-    
-    echo >&2
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
 
 # Stats of processed reads
 bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
@@ -181,7 +158,7 @@ cat stat1.md
 | Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.818% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:01'36'' |
 | Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'25'' |
 
-## SE: adapter filtering
+* adapter filtering
 
 ```text
 #File	2_illumina/Q25L60/pe.cor.raw
