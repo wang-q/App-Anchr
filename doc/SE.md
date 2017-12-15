@@ -136,27 +136,15 @@ cd ${WORKING_DIR}/${BASE_NAME}
 
 bsub -q largemem -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
 
-# Stats of processed reads
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > stat1.md
-
-parallel --no-run-if-empty -k -j 3 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
-
-    bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 2_illumina/Q{1}L{2} ${REAL_G}
-    " ::: ${READ_QUAL} ::: ${READ_LEN} \
-     >> stat1.md
-
-cat stat1.md
+bsub -w "done(${BASE_NAME}-2_quorum)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
 
 ```
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.818% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:01'36'' |
-| Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'25'' |
+| Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.819% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:00'49'' |
+| Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'04'' |
 
 * adapter filtering
 

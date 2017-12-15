@@ -49,46 +49,7 @@ stat_format () {
         '
 }
 
-if [ "${STAT_TASK}" = "1" ]; then
-    if [ "${RESULT_DIR}" = "header" ]; then
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-            "Name" \
-            "SumIn" "CovIn" \
-            "SumOut" "CovOut" "Discard%" \
-            "AvgRead" "Kmer" \
-            "RealG" "EstG" "Est/Real" \
-            "RunTime"
-        printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n"
-    elif [ "${GENOME_SIZE}" -ne "${GENOME_SIZE}" ]; then
-        log_warn "Need a integer for GENOME_SIZE"
-        exit 1;
-    elif [ -e "${RESULT_DIR}/environment.json" ]; then
-        log_debug "${RESULT_DIR}"
-        cd "${RESULT_DIR}"
-
-        SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
-        SUM_OUT=$( cat environment.json | jq '.SUM_OUT | tonumber' )
-        EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
-        SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
-
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-            $( basename $( pwd ) ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_IN}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.1f}, ${SUM_IN} / ${GENOME_SIZE};" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_OUT}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.1f}, ${SUM_OUT} / ${GENOME_SIZE};" ) \
-            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
-            $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
-            $( cat environment.json | jq '.KMER' ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${GENOME_SIZE}, base => 1000,);" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
-            $( perl -e "printf qq{%.2f}, ${EST_G} / ${GENOME_SIZE}" ) \
-            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
-    else
-        log_warn "RESULT_DIR not exists"
-    fi
-
-elif [ "${STAT_TASK}" = "2" ]; then
+if [ "${STAT_TASK}" = "2" ]; then
     if [ "${RESULT_DIR}" = "header" ]; then
         printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Name" \

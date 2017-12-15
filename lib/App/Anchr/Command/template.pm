@@ -270,6 +270,67 @@ EOF
         }
     }
 
+    # statQuorum
+    $sh_name = "9_statQuorum.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $@) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
+cd [% args.0 %]
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+    "Name" \
+    "SumIn" "CovIn" \
+    "SumOut" "CovOut" "Discard%" \
+    "AvgRead" "Kmer" \
+    "RealG" "EstG" "Est/Real" \
+    "RunTime" \
+    > statQuorum.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+    >> statQuorum.md
+
+for Q in [% opt.qual2 %]; do
+    for L in [% opt.len2 %]; do
+        pushd 2_illumina/Q${Q}L${L} > /dev/null
+
+        SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
+        SUM_OUT=$( cat environment.json | jq '.SUM_OUT | tonumber' )
+        EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
+        SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
+
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+            "Q${Q}L${L}" \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_IN}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_IN} / [% opt.genome %];" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_OUT}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.1f}, ${SUM_OUT} / [% opt.genome %];" ) \
+            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
+            $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
+            $( cat environment.json | jq '.KMER' ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes([% opt.genome %], base => 1000,);" ) \
+            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
+            $( perl -e "printf qq{%.2f}, ${EST_G} / [% opt.genome %]" ) \
+            $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) )
+
+        popd > /dev/null
+    done
+done \
+>> statQuorum.md
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 1;
