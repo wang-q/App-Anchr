@@ -210,6 +210,7 @@ bbduk.sh \
     in=pe.cor.raw \
     out=pe.cor.fa \
     outm=matched.fa \
+    overwrite=t \
     ref=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources/adapters.fa \
     k=27 hdist=1 stats=filtering.stats.txt
 
