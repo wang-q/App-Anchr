@@ -71,8 +71,8 @@ cd ${WORKING_DIR}/${BASE_NAME}
 anchr template \
     . \
     --se \
-    --basename SE \
-    --genome 4641652 \
+    --basename ${BASE_NAME} \
+    --genome ${REAL_G} \
     --trim2 "--uniq --shuffle --scythe " \
     --coverage2 "40 80" \
     --qual2 "25 30" \
@@ -87,14 +87,16 @@ anchr template \
 cd ${WORKING_DIR}/${BASE_NAME}
 
 # Illumina QC
-bsub -q largemem -n 24 -J SE-2_fastqc "bash 2_fastqc.sh"
-bsub -q largemem -n 24 -J SE-2_kmergenie "bash 2_kmergenie.sh"
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
 # preprocess Illumina reads
-bsub -q largemem -n 24 -J SE-2_trim "bash 2_trim.sh"
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
 # reads stats
-bsub -q largemem -n 24 -J SE-23_statReads "bash 23_statReads.sh"
+# execute after 2_trim finished
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q largemem -n 24 -J "${BASE_NAME}-23_statReads" "bash 23_statReads.sh"
 
 ```
 
