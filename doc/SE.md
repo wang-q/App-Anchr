@@ -95,7 +95,7 @@ bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 # reads stats
 # execute after 2_trim finished
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q largemem -n 24 -J "${BASE_NAME}-23_statReads" "bash 23_statReads.sh"
+    -q largemem -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
 ```
 
