@@ -20,6 +20,7 @@ sub opt_spec {
         [ "coverage2=s",  "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
+        [ "separate",     "separate each Qual-Len groups", ],
         [ "coverage3=s",  "down sampling coverage of PacBio reads", ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         { show_defaults => 1, }
@@ -290,7 +291,7 @@ parallel --no-run-if-empty -k -j 2 "
                     2_illumina/Q{1}L{2}/R2.sickle.fq.gz;
             fi
 [% ELSE %]
-            faops n50 -H -S -C \
+            stat_format \
                 2_illumina/Q{1}L{2}/R1.sickle.fq.gz;
 [% END %]
         )
