@@ -1,14 +1,13 @@
 [% INCLUDE header.tt2 %]
 
-printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     "Name" \
-    "SumIn" "CovIn" \
-    "SumOut" "CovOut" "Discard%" \
+    "CovIn" "CovOut" "Discard%" \
     "AvgRead" "Kmer" \
     "RealG" "EstG" "Est/Real" \
     "RunTime" \
     > statQuorum.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> statQuorum.md
 
 for Q in [% opt.qual2 %]; do
@@ -20,11 +19,9 @@ for Q in [% opt.qual2 %]; do
         EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
         SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
 
-        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
             "Q${Q}L${L}" \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_IN}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_IN} / [% opt.genome %];" ) \
-            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_OUT}, base => 1000,);" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_OUT} / [% opt.genome %];" ) \
             $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
             $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \

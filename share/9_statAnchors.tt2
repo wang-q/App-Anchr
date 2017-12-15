@@ -1,14 +1,13 @@
 [% INCLUDE header.tt2 %]
 
-printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
-    "Name" \
-    "SumCor" "CovCor" \
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+    "Name" "CovCor" \
     "N50Anchor" "Sum" "#" \
     "N50Others" "Sum" "#" \
     "median" "MAD" "lower" "upper" \
     "Kmer" "RunTimeKU" "RunTimeAN" \
     > statAnchors.md
-printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> statAnchors.md
 
 for Q in [% opt.qual2 %]; do
@@ -25,9 +24,8 @@ for Q in [% opt.qual2 %]; do
 		        SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
 		        SECS_AN=$( expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/anchors.sh) )
 		
-		        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %.1f | %.1f | %.1f | %.1f | %s | %s | %s |\n" \
+		        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %.1f | %.1f | %.1f | %.1f | %s | %s | %s |\n" \
 		            "Q${Q}L${L}X${X}P${P}" \
-		            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
 		            $( perl -e "printf qq{%.1f}, ${SUM_COR} / [% opt.genome %];" ) \
 		            $( stat_format anchor/anchor.fasta ) \
 		            $( stat_format anchor/pe.others.fa ) \
