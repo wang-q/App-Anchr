@@ -6,8 +6,6 @@
     - [SE: download](#se-download)
     - [SE: template](#se-template)
     - [SE: preprocessing](#se-preprocessing)
-    - [SE: preprocess Illumina reads](#se-preprocess-illumina-reads)
-    - [SE: reads stats](#se-reads-stats)
     - [SE: spades](#se-spades)
     - [SE: quorum](#se-quorum)
     - [SE: adapter filtering](#se-adapter-filtering)
@@ -79,7 +77,7 @@ anchr template \
     --coverage2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
 
 ```
 
@@ -89,14 +87,14 @@ anchr template \
 cd ${WORKING_DIR}/${BASE_NAME}
 
 # Illumina QC
-bash 2_fastqc.sh
-bash 2_kmergenie.sh
+bsub -q largemem -n 24 -J SE-2_fastqc "bash 2_fastqc.sh"
+bsub -q largemem -n 24 -J SE-2_kmergenie "bash 2_kmergenie.sh"
 
 # preprocess Illumina reads
-bash 2_trim.sh
+bsub -q largemem -n 24 -J SE-2_trim "bash 2_trim.sh"
 
 # reads stats
-bash 23_statReads.sh
+bsub -q largemem -n 24 -J SE-23_statReads "bash 23_statReads.sh"
 
 ```
 
@@ -110,6 +108,7 @@ bash 23_statReads.sh
 | scythe   |     151 | 715942404 | 4752465 |
 | Q25L60   |     151 | 603356181 | 4434322 |
 | Q30L60   |     138 | 520273582 | 4122960 |
+
 
 ## SE: spades
 
