@@ -164,11 +164,11 @@ EOF
     }
 
     # statReads
-    $sh_name = "23_statReads.sh";
+    $sh_name = "9_statReads.sh";
     print "Create $sh_name\n";
 
     $tt->process(
-        '23_statReads.tt2',
+        '9_statReads.tt2',
         {   args => $args,
             opt  => $opt,
         },
