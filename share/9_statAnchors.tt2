@@ -1,0 +1,47 @@
+[% INCLUDE header.tt2 %]
+
+printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+    "Name" \
+    "SumCor" "CovCor" \
+    "N50Anchor" "Sum" "#" \
+    "N50Others" "Sum" "#" \
+    "median" "MAD" "lower" "upper" \
+    "Kmer" "RunTimeKU" "RunTimeAN" \
+    > statAnchors.md
+printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+    >> statAnchors.md
+
+for Q in [% opt.qual2 %]; do
+    for L in [% opt.len2 %]; do
+	    for X in [% opt.coverage2 %]; do
+		    for P in $(printf "%03d " {0..50}); do
+		        if [ ! -e 5_kunitigs_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
+			        continue;
+			    fi
+
+		        pushd 5_kunitigs_Q${Q}L${L}X${X}P${P}/ > /dev/null
+		
+		        SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
+		        SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
+		        SECS_AN=$( expr $(stat -c %Y anchor/anchor.success) - $(stat -c %Y anchor/anchors.sh) )
+		
+		        printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %.1f | %.1f | %.1f | %.1f | %s | %s | %s |\n" \
+		            "Q${Q}L${L}X${X}P${P}" \
+		            $( perl -MNumber::Format -e "print Number::Format::format_bytes(${SUM_COR}, base => 1000,);" ) \
+		            $( perl -e "printf qq{%.1f}, ${SUM_COR} / [% opt.genome %];" ) \
+		            $( stat_format anchor/anchor.fasta ) \
+		            $( stat_format anchor/pe.others.fa ) \
+		            $( cat anchor/environment.json | jq '.median | tonumber' ) \
+		            $( cat anchor/environment.json | jq '.MAD | tonumber' ) \
+		            $( cat anchor/environment.json | jq '.lower | tonumber' ) \
+		            $( cat anchor/environment.json | jq '.upper | tonumber' ) \
+		            $( cat environment.json | jq '.KMER' ) \
+		            $( printf "%d:%02d'%02d''\n" $((${SECS_KU}/3600)) $((${SECS_KU}%3600/60)) $((${SECS_KU}%60)) ) \
+		            $( printf "%d:%02d'%02d''\n" $((${SECS_AN}/3600)) $((${SECS_AN}%3600/60)) $((${SECS_AN}%60)) )
+				
+		        popd > /dev/null
+		    done
+	    done
+    done
+done \
+>> statAnchors.md

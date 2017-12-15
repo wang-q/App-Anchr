@@ -97,6 +97,9 @@ sub execute {
     # anchors
     $self->gen_anchors( $opt, $args );
 
+    # statAnchors
+    $self->gen_statAnchors( $opt, $args );
+
 }
 
 sub gen_fastqc {
@@ -574,6 +577,26 @@ EOF
             }
         }
     }
+
+}
+
+sub gen_statAnchors {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statAnchors.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statAnchors.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
