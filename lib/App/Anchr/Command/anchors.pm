@@ -58,10 +58,10 @@ sub execute {
         open $out_fh, ">", $opt->{outfile};
     }
 
-    my $tt = Template->new( ABSOLUTE => 1, );
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
     my $output;
     $tt->process(
-        File::ShareDir::dist_file( 'App-Anchr', 'anchors.tt2' ),
+        'anchors.tt2',
         {   args => $args,
             opt  => $opt,
         },
