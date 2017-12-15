@@ -45,3 +45,5 @@ for Q in [% opt.qual2 %]; do
     done
 done \
 >> statAnchors.md
+
+cat statAnchors.md

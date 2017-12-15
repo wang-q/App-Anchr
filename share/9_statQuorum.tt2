@@ -38,3 +38,5 @@ for Q in [% opt.qual2 %]; do
     done
 done \
 >> statQuorum.md
+
+cat statQuorum.md
