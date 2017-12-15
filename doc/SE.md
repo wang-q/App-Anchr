@@ -181,9 +181,9 @@ TruSeq_Adapter_Index_22	1	0.00002%
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bsub -q largemem -n 24 -J "${BASE_NAME}-4_down_sampling" "bash 4_down_sampling.sh"
+bsub -q largemem -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
 
-bsub -w "done(${BASE_NAME}-4_down_sampling)" \
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
     -q largemem -n 24 -J "${BASE_NAME}-5_kunitigs" "bash 5_kunitigs.sh"
 
 bsub -w "done(${BASE_NAME}-5_kunitigs)" \

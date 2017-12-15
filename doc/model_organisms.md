@@ -412,7 +412,6 @@ anchr contained \
 cd ${WORKING_DIR}/${BASE_NAME}
 
 bash 2_quorum.sh
-
 bash 9_statQuorum.sh
 
 ```
@@ -427,7 +426,7 @@ bash 9_statQuorum.sh
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bash 4_down_sampling.sh
+bash 4_downSampling.sh
 
 bash 5_kunitigs.sh
 

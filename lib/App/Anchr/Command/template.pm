@@ -88,8 +88,8 @@ sub execute {
     # statQuorum
     $self->gen_statQuorum( $opt, $args );
 
-    # down_sampling
-    $self->gen_down_sampling( $opt, $args );
+    # downSampling
+    $self->gen_downSampling( $opt, $args );
 
     # kunitigs
     $self->gen_kunitigs( $opt, $args );
@@ -366,18 +366,18 @@ sub gen_statQuorum {
 
 }
 
-sub gen_down_sampling {
+sub gen_downSampling {
     my ( $self, $opt, $args ) = @_;
 
     my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
     my $template;
     my $sh_name;
 
-    $sh_name = "4_down_sampling.sh";
+    $sh_name = "4_downSampling.sh";
     print "Create $sh_name\n";
 
     $tt->process(
-        '4_down_sampling.tt2',
+        '4_downSampling.tt2',
         {   args => $args,
             opt  => $opt,
         },
