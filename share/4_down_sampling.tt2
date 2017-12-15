@@ -8,8 +8,18 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 4_Q{1}L{2}X{3}
+    rm -fr 4_Q{1}L{2}X{3}   
+    
+    # shortcut if coverage2 == all
+    if [[ {3} == "all" ]]; then
+        mkdir -p 4_Q{1}L{2}XallP000
+        cd 4_Q{1}L{2}XallP000
+        ln -s ../2_illumina/Q{1}L{2}/pe.cor.fa pe.cor.fa
+        cp ../2_illumina/Q{1}L{2}/environment.json .
+        exit;
+    fi
 
+    # actual sampling
     faops split-about -l 0 \
         2_illumina/Q{1}L{2}/pe.cor.fa \
         \$(( [% opt.genome %] * {3} )) \
@@ -32,4 +42,4 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 
     done
 
-	" ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %]
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %]
