@@ -1,5 +1,8 @@
 [% INCLUDE header.tt2 %]
 
+#----------------------------#
+# set parameters
+#----------------------------#
 USAGE="Usage: $0 DIR_PREFIX"
 
 if [ "$#" -lt 1 ]; then
@@ -7,21 +10,14 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-# set default parameters
-DIR_PREFIX=${1:-5_kunitigs_}
+DIR_PREFIX=$1
 
 #----------------------------#
 # merge anchors
 #----------------------------#
 mkdir -p 6_mergeAnchors
 anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e \${DIR_PREFIX}Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
-                echo \${DIR_PREFIX}Q{1}L{2}X{3}P{4}/anchor/anchor.fasta
-            fi
-            " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
-    ) \
+    $( find . -type f -name "anchor.fasta" -path "*${DIR_PREFIX}*" | sort ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin 6_mergeAnchors/anchor.non-contained.fasta
@@ -43,13 +39,7 @@ anchr contained \
 # merge others
 #----------------------------#
 anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e \${DIR_PREFIX}Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo \${DIR_PREFIX}Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
-    ) \
+    $( find . -type f -name "pe.others.fa" -path "*${DIR_PREFIX}*" | sort ) \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
-    | faops filter -a 500 -l 0 stdin merge/others.non-contained.fasta
+    | faops filter -a 500 -l 0 stdin 6_mergeAnchors/others.non-contained.fasta
