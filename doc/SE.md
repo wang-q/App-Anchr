@@ -8,8 +8,7 @@
     - [SE: preprocessing](#se-preprocessing)
     - [SE: spades](#se-spades)
     - [SE: quorum](#se-quorum)
-    - [SE: down sampling](#se-down-sampling)
-    - [SE: k-unitigs and anchors (sampled)](#se-k-unitigs-and-anchors-sampled)
+    - [SE: down sampling, k-unitigs and anchors](#se-down-sampling-k-unitigs-and-anchors)
     - [SE: merge anchors](#se-merge-anchors)
     - [SE: final stats](#se-final-stats)
     - [SE: clear intermediate files](#se-clear-intermediate-files)
@@ -30,30 +29,37 @@ WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=SE
 REAL_G=4641652
 IS_EUK="false"
-COVERAGE2="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
 
 ```
 
 * Reference genome
 
 ```bash
-mkdir -p ${HOME}/data/anchr/${BASE_NAME}/1_genome
-cd ${HOME}/data/anchr/${BASE_NAME}/1_genome
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
+cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
-cp ~/data/anchr/e_coli/1_genome/genome.fa .
-cp ~/data/anchr/e_coli/1_genome/paralogs.fas .
+cp ../../e_coli/1_genome/genome.fa .
+cp ../../e_coli/1_genome/paralogs.fas .
 
 ```
 
 * Illumina
 
 ```bash
-mkdir -p ${HOME}/data/anchr/${BASE_NAME}/2_illumina
-cd ${HOME}/data/anchr/${BASE_NAME}/2_illumina
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
 
 cp ../../e_coli/2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
+
+```
+
+* PacBio
+
+```bash
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+
+cp ../../e_coli/3_pacbio/pacbio.fasta .
 
 ```
 
@@ -76,6 +82,7 @@ anchr template \
     --coverage2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
+    --coverage3 "40 80" \
     --parallel 24
 
 ```
@@ -92,9 +99,11 @@ bsub -q largemem -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 # preprocess Illumina reads
 bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
+# preprocess PacBio reads
+bsub -q largemem -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
+
 # reads stats
-# execute after 2_trim finished
-bsub -w "done(${BASE_NAME}-2_trim)" \
+bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
     -q largemem -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
 ```
@@ -109,6 +118,11 @@ bsub -w "done(${BASE_NAME}-2_trim)" \
 | scythe   |     151 | 715.94M | 4752465 |
 | Q25L60   |     151 | 603.36M | 4434322 |
 | Q30L60   |     138 | 520.27M | 4122960 |
+| PacBio   |   13982 | 748.51M |   87225 |
+| X40.raw  |   14030 | 185.68M |   22336 |
+| X40.trim |   13702 | 169.38M |   19468 |
+| X80.raw  |   13990 | 371.34M |   44005 |
+| X80.trim |   13632 | 339.51M |   38725 |
 
 ## SE: spades
 
@@ -162,28 +176,33 @@ TruSeq_Adapter_Index_22	1	0.00002%
 
 ```
 
-## SE: down sampling
+## SE: down sampling, k-unitigs and anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
 bsub -q largemem -n 24 -J "${BASE_NAME}-4_down_sampling" "bash 4_down_sampling.sh"
 
-bsub -q largemem -n 24 -J "${BASE_NAME}-5_kunitigs" "bash 5_kunitigs.sh"
+bsub -w "done(${BASE_NAME}-4_down_sampling)" \
+    -q largemem -n 24 -J "${BASE_NAME}-5_kunitigs" "bash 5_kunitigs.sh"
+
+bsub -w "done(${BASE_NAME}-5_kunitigs)" \
+    -q largemem -n 24 -J "${BASE_NAME}-5_anchors" "bash 5_anchors.sh"
+
+bsub -w "done(${BASE_NAME}-5_anchors)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
 
 ```
 
-## SE: k-unitigs and anchors (sampled)
-
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 | 185.67M |   40.0 |     40210 | 4.53M | 189 |       812 | 19.08K | 25 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:02'19'' | 0:01'02'' |
-| Q25L60X40P001 | 185.67M |   40.0 |     41181 | 4.53M | 195 |       848 | 23.93K | 28 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:02'16'' | 0:01'05'' |
-| Q25L60X40P002 | 185.67M |   40.0 |     39149 | 4.53M | 185 |       797 | 17.34K | 23 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:02'16'' | 0:01'03'' |
-| Q25L60X80P000 | 371.33M |   80.0 |     32791 | 4.53M | 233 |       812 | 19.38K | 25 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:03'26'' | 0:01'07'' |
-| Q30L60X40P000 | 185.67M |   40.0 |     44636 | 4.53M | 178 |       797 | 24.74K | 32 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:02'07'' | 0:01'08'' |
-| Q30L60X40P001 | 185.67M |   40.0 |     40910 | 4.53M | 185 |       812 | 26.58K | 33 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'10'' |
-| Q30L60X80P000 | 371.33M |   80.0 |     49172 | 4.53M | 163 |      1054 | 32.35K | 29 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:02'33'' | 0:01'13'' |
+| Q25L60X40P000 | 185.67M |   40.0 |     38676 | 4.52M | 199 |       847 | 25.98K | 31 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
+| Q25L60X40P001 | 185.67M |   40.0 |     41560 | 4.53M | 180 |       861 |  21.7K | 25 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'58'' |
+| Q25L60X40P002 | 185.67M |   40.0 |     40210 | 4.53M | 186 |       787 | 19.86K | 26 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'57'' |
+| Q25L60X80P000 | 371.33M |   80.0 |     33340 | 4.53M | 235 |       869 | 23.38K | 27 |   79.0 | 2.0 |  24.3 | 127.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'55'' |
+| Q30L60X40P000 | 185.67M |   40.0 |     44646 | 4.52M | 177 |       963 | 34.91K | 36 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'00'' | 0:01'01'' |
+| Q30L60X40P001 | 185.67M |   40.0 |     48417 | 4.53M | 169 |       844 | 31.33K | 38 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'01'' |
+| Q30L60X80P000 | 371.33M |   80.0 |     50795 | 4.52M | 157 |      1138 | 34.48K | 32 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'02'' |
 
 ## SE: merge anchors
 
