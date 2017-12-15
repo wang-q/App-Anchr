@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+BASH_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+cd ${BASH_DIR}
+
 #----------------------------#
 # Colors in term
 #----------------------------#
@@ -53,7 +57,3 @@ save () {
     mv environment.json.new environment.json
     rm jq.filter.txt
 }
-
-BASH_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
-cd ${BASH_DIR}
