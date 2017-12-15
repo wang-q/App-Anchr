@@ -282,7 +282,7 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
-    # statQuorum
+    # down_sampling
     $sh_name = "4_down_sampling.sh";
     print "Create $sh_name\n";
 
@@ -293,6 +293,96 @@ EOF
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+
+    # kunitigs
+    if ( !$opt->{separate} ) {
+        $sh_name = "5_kunitigs.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 5_Q{1}L{2}X{3}P{4}_kunitigs/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 5_kunitigs_Q{1}L{2}X{3}P{4}
+    cd 5_kunitigs_Q{1}L{2}X{3}P{4}
+
+    anchr kunitigs \
+        ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../4_Q{1}L{2}X{3}P{4}/environment.json \
+        -p [% opt.parallel %] \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+    else {
+        for my $qual ( grep {/^\d+$/} split /\s+/, $opt->{qual2} ) {
+            for my $len ( grep {/^\d+$/} split /\s+/, $opt->{len2} ) {
+                for my $cov ( grep {/^\d+$/} split /\s+/, $opt->{coverage2} ) {
+                    $sh_name = "5_kunitigs_Q${qual}L${len}X${cov}.sh";
+                    print "Create $sh_name\n";
+                    $template = <<'EOF';
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
+    if [ -e 5_Q[% qual %]L[% len %]X[% cov %]P{}_kunitigs/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
+    cd 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
+
+    anchr kunitigs \
+        ../4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa \
+        ../4_Q[% qual %]L[% len %]X[% cov %]P{}/environment.json \
+        -p [% opt.parallel %] \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+    " ::: $(printf "%03d " {0..50})
+
+EOF
+                    $tt->process(
+                        \$template,
+                        {   args => $args,
+                            opt  => $opt,
+                            qual => $qual,
+                            len  => $len,
+                            cov  => $cov,
+                        },
+                        Path::Tiny::path( $args->[0], $sh_name )->stringify
+                    ) or die Template->error;
+
+                }
+            }
+        }
+    }
 
 }
 

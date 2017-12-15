@@ -169,6 +169,8 @@ cd ${WORKING_DIR}/${BASE_NAME}
 
 bsub -q largemem -n 24 -J "${BASE_NAME}-4_down_sampling" "bash 4_down_sampling.sh"
 
+bsub -q largemem -n 24 -J "${BASE_NAME}-5_kunitigs" "bash 5_kunitigs.sh"
+
 ```
 
 ## SE: k-unitigs and anchors (sampled)
