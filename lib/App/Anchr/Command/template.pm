@@ -100,6 +100,9 @@ sub execute {
     # statAnchors
     $self->gen_statAnchors( $opt, $args );
 
+    # mergeAnchors
+    $self->gen_mergeAnchors( $opt, $args );
+
 }
 
 sub gen_fastqc {
@@ -592,6 +595,26 @@ sub gen_statAnchors {
 
     $tt->process(
         '9_statAnchors.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_mergeAnchors {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "6_mergeAnchors.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '6_mergeAnchors.tt2',
         {   args => $args,
             opt  => $opt,
         },
