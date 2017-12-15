@@ -67,11 +67,45 @@ sub validate_args {
 sub execute {
     my ( $self, $opt, $args ) = @_;
 
+    # fastqc
+    $self->gen_fastqc( $opt, $args );
+
+    # kmergenie
+    $self->gen_kmergenie( $opt, $args );
+
+    # trim2
+    $self->gen_trim( $opt, $args );
+
+    # trimlong
+    $self->gen_trimlong( $opt, $args );
+
+    # statReads
+    $self->gen_statReads( $opt, $args );
+
+    # quorum
+    $self->gen_quorum( $opt, $args );
+
+    # statQuorum
+    $self->gen_statQuorum( $opt, $args );
+
+    # down_sampling
+    $self->gen_down_sampling( $opt, $args );
+
+    # kunitigs
+    $self->gen_kunitigs( $opt, $args );
+
+    # anchors
+    $self->gen_anchors( $opt, $args );
+
+}
+
+sub gen_fastqc {
+    my ( $self, $opt, $args ) = @_;
+
     my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
     my $template;
     my $sh_name;
 
-    # fastqc
     $sh_name = "2_fastqc.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
@@ -92,8 +126,15 @@ EOF
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+}
 
-    # kmergenie
+sub gen_kmergenie {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
     $sh_name = "2_kmergenie.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
@@ -115,7 +156,15 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
-    # trim2
+}
+
+sub gen_trim {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
     $sh_name = "2_trim.sh";
     print "Create $sh_name\n";
 
@@ -126,54 +175,6 @@ EOF
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
-
-    # trimlong
-    $self->gen_trimlong( $opt, $args );
-
-    # statReads
-    $sh_name = "9_statReads.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '9_statReads.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-    # quorum
-    $self->gen_quorum( $opt, $args );
-
-    # statQuorum
-    $sh_name = "9_statQuorum.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '9_statQuorum.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-    # down_sampling
-    $sh_name = "4_down_sampling.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '4_down_sampling.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-    # kunitigs
-    $self->gen_kunitigs( $opt, $args );
-
-    # anchors
-    $self->gen_anchors( $opt, $args );
 
 }
 
@@ -219,6 +220,25 @@ EOF
         ) or die Template->error;
     }
 
+}
+
+sub gen_statReads {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statReads.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statReads.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 }
 
 sub gen_quorum {
@@ -320,6 +340,46 @@ EOF
             }
         }
     }
+
+}
+
+sub gen_statQuorum {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statQuorum.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statQuorum.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_down_sampling {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "4_down_sampling.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '4_down_sampling.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
