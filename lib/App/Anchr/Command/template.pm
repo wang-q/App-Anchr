@@ -297,8 +297,8 @@ EOF
         ) or die Template->error;
     }
     else {
-        for my $qual ( grep {/^\d+$/} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {/^\d+$/} split /\s+/, $opt->{len2} ) {
+        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
+            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
                 $sh_name = "2_quorum_Q${qual}L${len}.sh";
                 print "Create $sh_name\n";
                 $template = <<'EOF';
@@ -434,9 +434,9 @@ EOF
         ) or die Template->error;
     }
     else {
-        for my $qual ( grep {/^\d+$/} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {/^\d+$/} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {/^\d+$/} split /\s+/, $opt->{coverage2} ) {
+        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
+            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
+                for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
                     $sh_name = "5_kunitigs_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
@@ -531,9 +531,9 @@ EOF
         ) or die Template->error;
     }
     else {
-        for my $qual ( grep {/^\d+$/} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {/^\d+$/} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {/^\d+$/} split /\s+/, $opt->{coverage2} ) {
+        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
+            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
+                for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
                     $sh_name = "5_anchors_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
