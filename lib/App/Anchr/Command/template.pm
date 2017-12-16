@@ -397,7 +397,7 @@ sub gen_kunitigs {
     my $sh_name;
 
     if ( !$opt->{separate} ) {
-        $sh_name = "5_kunitigs.sh";
+        $sh_name = "4_kunitigs.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
 cd [% args.0 %]
@@ -440,7 +440,7 @@ EOF
         for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
             for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
                 for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
-                    $sh_name = "5_kunitigs_Q${qual}L${len}X${cov}.sh";
+                    $sh_name = "4_kunitigs_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
 cd [% args.0 %]
@@ -494,7 +494,7 @@ sub gen_anchors {
     my $sh_name;
 
     if ( !$opt->{separate} ) {
-        $sh_name = "5_anchors.sh";
+        $sh_name = "4_anchors.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
 cd [% args.0 %]
@@ -537,7 +537,7 @@ EOF
         for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
             for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
                 for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
-                    $sh_name = "5_anchors_Q${qual}L${len}X${cov}.sh";
+                    $sh_name = "4_anchors_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
 cd [% args.0 %]
