@@ -124,25 +124,6 @@ bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
 | X80.raw  |   13990 | 371.34M |   44005 |
 | X80.trim |   13632 | 339.51M |   38725 |
 
-## SE: spades
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    -s 2_illumina/Q25L60/R1.sickle.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
-
-```
-
 ## SE: quorum
 
 ```bash
@@ -155,10 +136,10 @@ bsub -w "done(${BASE_NAME}-2_quorum)" \
 
 ```
 
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 607.79M | 130.9 | 560.27M |  120.7 |   7.819% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:00'49'' |
-| Q30L60 |  524.4M | 113.0 |  503.4M |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'04'' |
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 130.9 |  120.7 |   7.819% |     138 | "31" | 4.64M | 4.57M |     0.98 | 0:00'49'' |
+| Q30L60 | 113.0 |  108.5 |   4.003% |     128 | "31" | 4.64M | 4.56M |     0.98 | 0:01'04'' |
 
 * adapter filtering
 
@@ -184,29 +165,68 @@ cd ${WORKING_DIR}/${BASE_NAME}
 bsub -q largemem -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
 
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q largemem -n 24 -J "${BASE_NAME}-5_kunitigs" "bash 5_kunitigs.sh"
+    -q largemem -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 
-bsub -w "done(${BASE_NAME}-5_kunitigs)" \
-    -q largemem -n 24 -J "${BASE_NAME}-5_anchors" "bash 5_anchors.sh"
+bsub -w "done(${BASE_NAME}-4_kunitigs)" \
+    -q largemem -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 
-bsub -w "done(${BASE_NAME}-5_anchors)" \
+bsub -w "done(${BASE_NAME}-4_anchors)" \
     -q largemem -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
 
 ```
 
-| Name           |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000  | 185.67M |   40.0 |     38676 | 4.52M | 199 |       847 | 25.98K | 31 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
-| Q25L60X40P001  | 185.67M |   40.0 |     41560 | 4.53M | 180 |       861 |  21.7K | 25 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'58'' |
-| Q25L60X40P002  | 185.67M |   40.0 |     40210 | 4.53M | 186 |       787 | 19.86K | 26 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
-| Q25L60X80P000  | 371.33M |   80.0 |     33340 | 4.53M | 235 |       869 | 23.38K | 27 |   79.0 | 2.0 |  24.3 | 127.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'55'' |
-| Q25L60XallP000 | 560.27M |  120.7 |     30704 | 4.53M | 259 |       848 | 24.05K | 29 |  119.0 | 4.0 |  35.7 | 196.5 | "31,41,51,61,71,81" | 0:01'57'' | 0:00'57'' |
-| Q30L60X40P000  | 185.67M |   40.0 |     44646 | 4.52M | 177 |       963 | 34.91K | 36 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'00'' | 0:01'00'' |
-| Q30L60X40P001  | 185.67M |   40.0 |     48417 | 4.53M | 169 |       844 | 31.33K | 38 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'01'' |
-| Q30L60X80P000  | 371.33M |   80.0 |     50795 | 4.52M | 157 |      1138 | 34.48K | 32 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'03'' |
-| Q30L60XallP000 |  503.4M |  108.5 |     49198 | 4.53M | 158 |      1054 | 31.67K | 27 |  107.0 | 3.0 |  32.7 | 174.0 | "31,41,51,61,71,81" | 0:01'43'' | 0:01'06'' |
+| Name           | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000  |   40.0 |     38676 | 4.52M | 199 |       847 | 25.98K | 31 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
+| Q25L60X40P001  |   40.0 |     41560 | 4.53M | 180 |       861 |  21.7K | 25 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'58'' |
+| Q25L60X40P002  |   40.0 |     40210 | 4.53M | 186 |       787 | 19.86K | 26 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
+| Q25L60X80P000  |   80.0 |     33340 | 4.53M | 235 |       869 | 23.38K | 27 |   79.0 | 2.0 |  24.3 | 127.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:00'55'' |
+| Q25L60XallP000 |  120.7 |     30704 | 4.53M | 259 |       848 | 24.05K | 29 |  119.0 | 4.0 |  35.7 | 196.5 | "31,41,51,61,71,81" | 0:01'57'' | 0:00'57'' |
+| Q30L60X40P000  |   40.0 |     44646 | 4.52M | 177 |       963 | 34.91K | 36 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'00'' | 0:01'00'' |
+| Q30L60X40P001  |   40.0 |     48417 | 4.53M | 169 |       844 | 31.33K | 38 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'01'' |
+| Q30L60X80P000  |   80.0 |     50795 | 4.52M | 157 |      1138 | 34.48K | 32 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'03'' |
+| Q30L60XallP000 |  108.5 |     49198 | 4.53M | 158 |      1054 | 31.67K | 27 |  107.0 | 3.0 |  32.7 | 174.0 | "31,41,51,61,71,81" | 0:01'43'' | 0:01'06'' |
 
 ## SE: merge anchors
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bsub -q largemem -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+
+# In a local machine
+# anchor sort on ref
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
+    6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
+nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
+mummerplot --postscript out.delta -p anchor.sort --small
+
+# mummerplot files
+rm *.[fr]plot
+rm out.delta
+rm *.gp
+mv anchor.sort.ps 6_mergeAnchors/
+
+```
+
+## SE: spades
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    -s 2_illumina/Q25L60/R1.sickle.fq.gz \
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
+
+```
 
 ## SE: final stats
 
