@@ -408,13 +408,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
 
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 5_Q{1}L{2}X{3}P{4}_kunitigs/k_unitigs.fasta ]; then
+    if [ -e 4_kunitigs_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 5_kunitigs_Q{1}L{2}X{3}P{4}
-    cd 5_kunitigs_Q{1}L{2}X{3}P{4}
+    mkdir -p 4_kunitigs_Q{1}L{2}X{3}P{4}
+    cd 4_kunitigs_Q{1}L{2}X{3}P{4}
 
     anchr kunitigs \
         ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
@@ -451,13 +451,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
 
     echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
-    if [ -e 5_Q[% qual %]L[% len %]X[% cov %]P{}_kunitigs/k_unitigs.fasta ]; then
+    if [ -e 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
-    cd 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
+    mkdir -p 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
+    cd 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
 
     anchr kunitigs \
         ../4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa \
@@ -505,14 +505,14 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     fi
 
     echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 5_Q{1}L{2}X{3}P{4}_kunitigs/anchor/anchor.fasta ]; then
+    if [ -e 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
-    cd 5_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    rm -fr 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    cd 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -548,14 +548,14 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     fi
 
     echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
-    if [ -e 5_Q[% qual %]L[% len %]X[% cov %]P{}_kunitigs/anchor/anchor.fasta ]; then
+    if [ -e 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
-    mkdir -p 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
-    cd 5_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+    rm -fr 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+    mkdir -p 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
+    cd 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \

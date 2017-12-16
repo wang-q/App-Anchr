@@ -14,11 +14,11 @@ for Q in [% opt.qual2 %]; do
     for L in [% opt.len2 %]; do
 	    for X in [% opt.coverage2 %]; do
 		    for P in $(printf "%03d " {0..50}); do
-		        if [ ! -e 5_kunitigs_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
+		        if [ ! -e 4_kunitigs_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
 			        continue;
 			    fi
 
-		        pushd 5_kunitigs_Q${Q}L${L}X${X}P${P}/ > /dev/null
+		        pushd 4_kunitigs_Q${Q}L${L}X${X}P${P}/ > /dev/null
 		
 		        SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
 		        SECS_KU=$( cat environment.json | jq '.RUNTIME | tonumber' )
