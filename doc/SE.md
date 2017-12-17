@@ -6,10 +6,12 @@
     - [SE: download](#se-download)
     - [SE: template](#se-template)
     - [SE: preprocessing](#se-preprocessing)
-    - [SE: spades](#se-spades)
     - [SE: quorum](#se-quorum)
     - [SE: down sampling, k-unitigs and anchors](#se-down-sampling-k-unitigs-and-anchors)
     - [SE: merge anchors](#se-merge-anchors)
+    - [SE: canu](#se-canu)
+    - [SE: spades](#se-spades)
+    - [SE: platanus](#se-platanus)
     - [SE: final stats](#se-final-stats)
     - [SE: clear intermediate files](#se-clear-intermediate-files)
 
@@ -27,7 +29,6 @@
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=SE
-REAL_G=4641652
 IS_EUK="false"
 
 ```
@@ -77,12 +78,13 @@ anchr template \
     . \
     --se \
     --basename ${BASE_NAME} \
-    --genome ${REAL_G} \
+    --genome 4641652 \
     --trim2 "--uniq --shuffle --scythe " \
     --coverage2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --coverage3 "40 80" \
+    --coverage3 "80" \
+    --qual3 "trim" \
     --parallel 24
 
 ```
@@ -209,6 +211,25 @@ mv anchor.sort.ps 6_mergeAnchors/
 
 ```
 
+## SE: canu
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bsub -q largemem -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
+
+bsub -w "done(${BASE_NAME}-5_canu)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
+
+```
+
+| Name               |     N50 |     Sum |     # |
+|:-------------------|--------:|--------:|------:|
+| Genome             | 4641652 | 4641652 |     1 |
+| Paralogs           |    1934 |  195673 |   106 |
+| X80.trim.corrected |   16820 | 175.59M | 10873 |
+| X80.trim.contig    | 4657933 | 4657933 |     1 |
+
 ## SE: spades
 
 ```bash
@@ -229,21 +250,55 @@ anchr contained \
 
 ```
 
+## SE: platanus
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e se.fa ]; then
+    faops interleave \
+        -p se \
+        ../2_illumina/Q30L60/R1.sickle.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f se.fa \
+    2>&1 | tee ass_log.txt
+
+anchr contained \
+    out_contig.fa out_contigBubble.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
+
+```
+
 ## SE: final stats
 
-* Stats
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bash 9_statFinal.sh
+bash 9_quast.sh
+
+```
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
 | Genome                 | 4641652 | 4641652 |   1 |
 | Paralogs               |    1934 |  195673 | 106 |
-| anchor                 |   63440 | 4532169 | 123 |
+| anchors                |   63440 | 4532169 | 123 |
 | others                 |    1096 |   68234 |  61 |
+| canu_X80-trim          | 4657933 | 4657933 |   1 |
 | spades.contig          |   97656 | 4646879 | 271 |
 | spades.scaffold        |  112078 | 4647379 | 266 |
 | spades.non-contained   |  106190 | 4577172 | 104 |
-
-* quast
+| platanus.contig        |   29376 | 4612136 | 961 |
+| platanus.non-contained |   29673 | 4517996 | 253 |
 
 ## SE: clear intermediate files
 
