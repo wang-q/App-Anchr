@@ -10,15 +10,13 @@
     - [e_coli: download](#e-coli-download)
     - [e_coli: template](#e-coli-template)
     - [e_coli: preprocessing](#e-coli-preprocessing)
-    - [e_coli: spades](#e-coli-spades)
-    - [e_coli: platanus](#e-coli-platanus)
     - [e_coli: quorum](#e-coli-quorum)
-    - [e_coli: adapter filtering](#e-coli-adapter-filtering)
-    - [e_coli: down sampling](#e-coli-down-sampling)
-    - [e_coli: k-unitigs and anchors (sampled)](#e-coli-k-unitigs-and-anchors-sampled)
+    - [e_coli: down sampling, k-unitigs and anchors](#e-coli-down-sampling-k-unitigs-and-anchors)
     - [e_coli: merge anchors](#e-coli-merge-anchors)
     - [e_coli: 3GS](#e-coli-3gs)
     - [e_coli: expand anchors](#e-coli-expand-anchors)
+    - [e_coli: spades](#e-coli-spades)
+    - [e_coli: platanus](#e-coli-platanus)
     - [e_coli: final stats](#e-coli-final-stats)
     - [e_coli: clear intermediate files](#e-coli-clear-intermediate-files)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
@@ -95,6 +93,7 @@ brew install aria2 curl                     # downloading tools
 brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
 
 brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
+brew reinstall --build-from-source lua@5.1
 brew reinstall --build-from-source gnuplot@4
 brew install homebrew/science/mummer        # mummer need gnuplot4
 
@@ -206,11 +205,6 @@ WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
 REAL_G=4641652
 IS_EUK="false"
-TRIM2="--uniq --shuffle --scythe "
-SAMPLE2=
-COVERAGE2="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
 COVERAGE3="40 80"
 EXPAND_WITH="80"
 
@@ -297,6 +291,7 @@ anchr template \
     --basename e_coli \
     --genome 4641652 \
     --trim2 "--uniq --shuffle --scythe " \
+    --sample2 300 \
     --coverage2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
@@ -332,79 +327,15 @@ bash 9_statReads.sh
 | Illumina |     151 |   1.73G | 11458940 |
 | uniq     |     151 |   1.73G | 11439000 |
 | shuffle  |     151 |   1.73G | 11439000 |
-| scythe   |     151 |   1.72G | 11439000 |
-| Q25L60   |     151 |   1.32G |  9994656 |
-| Q30L60   |     127 |   1.15G |  9783226 |
+| sample   |     151 |   1.39G |  9221824 |
+| scythe   |     151 |   1.39G |  9221824 |
+| Q25L60   |     151 |   1.06G |  8057720 |
+| Q30L60   |     127 | 926.35M |  7887100 |
 | PacBio   |   13982 | 748.51M |    87225 |
 | X40.raw  |   14030 | 185.68M |    22336 |
 | X40.trim |   13702 | 169.38M |    19468 |
 | X80.raw  |   13990 | 371.34M |    44005 |
 | X80.trim |   13632 | 339.51M |    38725 |
-
-## e_coli: spades
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    -k 21,33,55,77 \
-    --only-assembler \
-    -1 2_illumina/Q25L60/R1.sickle.fq.gz \
-    -2 2_illumina/Q25L60/R2.sickle.fq.gz \
-    -s 2_illumina/Q25L60/Rs.sickle.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/contigs.non-contained.fasta
-
-```
-
-## e_coli: platanus
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e pe.fa ]; then
-    faops interleave \
-        -p pe \
-        ../2_illumina/Q25L60/R1.sickle.fq.gz \
-        ../2_illumina/Q25L60/R2.sickle.fq.gz \
-        > pe.fa
-    
-    faops interleave \
-        -p se \
-        ../2_illumina/Q25L60/Rs.sickle.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f pe.fa se.fa \
-    2>&1 | tee ass_log.txt
-
-platanus scaffold -t 16 \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 pe.fa \
-    2>&1 | tee sca_log.txt
-
-platanus gap_close -t 16 \
-    -c out_scaffold.fa \
-    -ip1 pe.fa \
-    2>&1 | tee gap_log.txt
-
-anchr contained \
-    out_gapClosed.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin gapClosed.non-contained.fasta
-
-```
 
 ## e_coli: quorum
 
@@ -416,10 +347,10 @@ bash 9_statQuorum.sh
 
 ```
 
-| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 1.32G | 283.9 |  1.24G |  267.4 |   5.801% |     133 | "83" | 4.64M | 4.58M |     0.99 | 0:03'47'' |
-| Q30L60 | 1.15G | 247.7 |  1.12G |  241.6 |   2.484% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:03'12'' |
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 228.8 |  215.5 |   5.815% |     133 | "83" | 4.64M | 4.57M |     0.99 | 0:02'27'' |
+| Q30L60 | 199.7 |  194.8 |   2.483% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:02'10'' |
 
 ## e_coli: down sampling, k-unitigs and anchors
 
@@ -428,76 +359,52 @@ cd ${WORKING_DIR}/${BASE_NAME}
 
 bash 4_downSampling.sh
 
-bash 5_kunitigs.sh
+bash 4_kunitigs.sh
 
-bash 5_anchors.sh
+bash 4_anchors.sh
 
 bash 9_statAnchors.sh
 
 ```
 
-| Name          | SumCor | CovCor | N50Anchor |    Sum | # | N50Others | Sum | # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|-------:|-------:|----------:|-------:|--:|----------:|----:|--:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |  1.94M |   40.0 |     48509 | 48.51K | 1 |         0 |   0 | 0 |   40.5 | 1.5 |  12.0 |  67.5 | "31,41,51,61,71,81" | 0:00'11'' | 0:00'37'' |
-| Q25L60X40P001 |  1.94M |   40.0 |     48294 | 48.29K | 1 |         0 |   0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'12'' | 0:00'36'' |
-| Q25L60X40P002 |  1.94M |   40.0 |     48460 | 48.46K | 1 |         0 |   0 | 0 |   40.0 | 0.0 |  13.3 |  60.0 | "31,41,51,61,71,81" | 0:00'11'' | 0:00'37'' |
-| Q25L60X80P000 |  3.88M |   80.0 |     48512 | 48.51K | 1 |         0 |   0 | 0 |   81.0 | 0.0 |  27.0 | 121.5 | "31,41,51,61,71,81" | 0:00'12'' | 0:00'38'' |
-| Q30L60X40P000 |  1.94M |   40.0 |     48509 | 48.51K | 1 |         0 |   0 | 0 |   40.5 | 2.5 |  11.0 |  72.0 | "31,41,51,61,71,81" | 0:00'12'' | 0:00'39'' |
-| Q30L60X40P001 |  1.94M |   40.0 |     48396 |  48.4K | 1 |         0 |   0 | 0 |   40.5 | 2.0 |  11.5 |  69.8 | "31,41,51,61,71,81" | 0:00'11'' | 0:00'37'' |
-| Q30L60X40P002 |  1.94M |   40.0 |     48491 | 48.49K | 1 |         0 |   0 | 0 |   38.5 | 2.5 |  10.3 |  69.0 | "31,41,51,61,71,81" | 0:00'10'' | 0:00'21'' |
-| Q30L60X80P000 |  3.88M |   80.0 |     48512 | 48.51K | 1 |         0 |   0 | 0 |   80.0 | 2.0 |  24.7 | 129.0 | "31,41,51,61,71,81" | 0:00'11'' | 0:00'23'' |
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |     43332 |  4.5M | 184 |       919 | 34.97K | 40 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'55'' |
+| Q25L60X40P001 |   40.0 |     43332 |  4.5M | 177 |       847 | 25.49K | 29 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'05'' | 0:00'55'' |
+| Q25L60X40P002 |   40.0 |     48038 | 4.51M | 173 |       993 | 30.14K | 32 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'05'' | 0:00'55'' |
+| Q25L60X40P003 |   40.0 |     39149 |  4.5M | 185 |       927 | 31.42K | 35 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'54'' |
+| Q25L60X40P004 |   40.0 |     40210 |  4.5M | 177 |      1054 | 27.53K | 29 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'05'' | 0:00'55'' |
+| Q25L60X80P000 |   80.0 |     33192 | 4.52M | 223 |       847 | 28.32K | 34 |   78.0 | 4.0 |  22.0 | 135.0 | "31,41,51,61,71,81" | 0:01'46'' | 0:00'52'' |
+| Q25L60X80P001 |   80.0 |     31632 | 4.52M | 229 |       840 | 31.45K | 38 |   78.0 | 4.0 |  22.0 | 135.0 | "31,41,51,61,71,81" | 0:01'46'' | 0:00'53'' |
+| Q30L60X40P000 |   40.0 |     41181 | 4.47M | 195 |       933 | 49.98K | 58 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:01'04'' | 0:00'54'' |
+| Q30L60X40P001 |   40.0 |     41171 | 4.49M | 192 |       897 | 44.88K | 52 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:01'04'' | 0:00'56'' |
+| Q30L60X40P002 |   40.0 |     40190 | 4.51M | 201 |       926 | 51.93K | 58 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'55'' |
+| Q30L60X40P003 |   40.0 |     35664 | 4.51M | 203 |       972 | 48.19K | 53 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'55'' |
+| Q30L60X80P000 |   80.0 |     48126 | 4.48M | 161 |       960 | 34.34K | 38 |   78.0 | 5.0 |  21.0 | 139.5 | "31,41,51,61,71,81" | 0:01'42'' | 0:01'00'' |
+| Q30L60X80P001 |   80.0 |     48133 | 4.51M | 167 |       936 | 28.75K | 32 |   78.0 | 5.0 |  21.0 | 139.5 | "31,41,51,61,71,81" | 0:01'42'' | 0:01'00'' |
 
 ## e_coli: merge anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-# merge anchors
-mkdir -p merge
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/anchor.fasta
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.non-contained.fasta
-anchr orient merge/anchor.non-contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o merge/anchor.merge0.fasta
-anchr contained merge/anchor.merge0.fasta --len 1000 --idt 0.98 \
-    --proportion 0.99 --parallel 16 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-anchr contained \
-    $(
-        parallel -k --no-run-if-empty -j 6 "
-            if [ -e Q{1}L{2}X{3}P{4}/anchor/pe.others.fa ]; then
-                echo Q{1}L{2}X{3}P{4}/anchor/pe.others.fa
-            fi
-            " ::: ${READ_QUAL} ::: ${READ_LEN} ::: ${COVERAGE2} ::: $(printf "%03d " {0..100})
-    ) \
-    --len 500 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 500 -l 0 stdin merge/others.non-contained.fasta
+bash 6_mergeAnchors.sh 4_kunitigs_Q
 
 # anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot out.delta --png --large -p anchor.sort
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
+    6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
+nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
+mummerplot --postscript out.delta -p anchor.sort --small
 
 # mummerplot files
 rm *.[fr]plot
 rm out.delta
 rm *.gp
-mv anchor.sort.png merge/
+mv anchor.sort.ps 6_mergeAnchors/
 
 # minidot
-minimap merge/anchor.sort.fa 1_genome/genome.fa \
-    | minidot - > merge/anchor.minidot.eps
+minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
+    | minidot - > 6_mergeAnchors/anchor.minidot.eps
 
 # quast
 rm -fr 9_qa
@@ -508,8 +415,8 @@ quast --no-check --threads 16 \
         fi
     ) \
     -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/others.non-contained.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
     1_genome/paralogs.fas \
     --label "merge,others,paralogs" \
     -o 9_qa
@@ -782,6 +689,71 @@ cat \
 
 ```
 
+## e_coli: spades
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+spades.py \
+    -t 16 \
+    -k 21,33,55,77 \
+    --only-assembler \
+    -1 2_illumina/Q25L60/R1.sickle.fq.gz \
+    -2 2_illumina/Q25L60/R2.sickle.fq.gz \
+    -s 2_illumina/Q25L60/Rs.sickle.fq.gz \
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
+
+```
+
+## e_coli: platanus
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+mkdir -p 8_platanus
+cd 8_platanus
+
+if [ ! -e pe.fa ]; then
+    faops interleave \
+        -p pe \
+        ../2_illumina/Q25L60/R1.sickle.fq.gz \
+        ../2_illumina/Q25L60/R2.sickle.fq.gz \
+        > pe.fa
+    
+    faops interleave \
+        -p se \
+        ../2_illumina/Q25L60/Rs.sickle.fq.gz \
+        > se.fa
+fi
+
+platanus assemble -t 16 -m 100 \
+    -f pe.fa se.fa \
+    2>&1 | tee ass_log.txt
+
+platanus scaffold -t 16 \
+    -c out_contig.fa -b out_contigBubble.fa \
+    -ip1 pe.fa \
+    2>&1 | tee sca_log.txt
+
+platanus gap_close -t 16 \
+    -c out_scaffold.fa \
+    -ip1 pe.fa \
+    2>&1 | tee gap_log.txt
+
+anchr contained \
+    out_gapClosed.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
+
+```
+
 ## e_coli: final stats
 
 * Stats
@@ -799,9 +771,9 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor";   faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
+    $(echo "anchor";   faops n50 -H -S -C 6_mergeAnchors/anchor.merge.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "others";   faops n50 -H -S -C merge/others.non-contained.fasta;) >> stat3.md
+    $(echo "others";   faops n50 -H -S -C 6_mergeAnchors/others.non-contained.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
@@ -815,13 +787,13 @@ printf "| %s | %s | %s | %s |\n" \
 printf "| %s | %s | %s | %s |\n" \
     $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/contigs.non-contained.fasta;) >> stat3.md
+    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/spades.non-contained.fasta;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
     $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/gapClosed.non-contained.fasta;) >> stat3.md
+    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/platanus.non-contained.fasta;) >> stat3.md
 
 cat stat3.md
 
@@ -856,7 +828,7 @@ if [ -e 1_genome/genome.fa ]; then
     QUAST_TARGET+=" -R 1_genome/genome.fa "
 fi
 if [ -e merge/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" merge/anchor.merge.fasta "
+    QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="merge,"
 fi
 if [ -e anchorLong/contig.fasta ]; then
@@ -875,12 +847,12 @@ if [ -e canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta ]; then
     QUAST_TARGET+=" canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta "
     QUAST_LABEL+="canu-X${EXPAND_WITH}-trim,"
 fi
-if [ -e 8_spades/contigs.non-contained.fasta ]; then
-    QUAST_TARGET+=" 8_spades/contigs.non-contained.fasta "
+if [ -e 8_spades/spades.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_spades/spades.non-contained.fasta "
     QUAST_LABEL+="spades,"
 fi
-if [ -e 8_platanus/gapClosed.non-contained.fasta ]; then
-    QUAST_TARGET+=" 8_platanus/gapClosed.non-contained.fasta "
+if [ -e 8_platanus/platanus.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_platanus/platanus.non-contained.fasta "
     QUAST_LABEL+="platanus,"
 fi
 if [ -e 1_genome/paralogs.fas ]; then
