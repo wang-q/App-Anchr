@@ -20,7 +20,7 @@ if [ -e contigTrim/contig.fasta ]; then
     QUAST_LABEL+="contigTrim,"
 fi
 
-[% FOREACH cov IN opt.coverage3.split('\s+') -%]
+[% FOREACH cov IN opt.cov3.split('\s+') -%]
 [% FOREACH qual IN opt.qual3.split('\s+') -%]
 if [ -e 5_canu_X[% cov %]-[% qual %]/[% opt.basename %].contigs.fasta ]; then
     QUAST_TARGET+=" 5_canu_X[% cov %]-[% qual %]/[% opt.basename %].contigs.fasta "

@@ -12,7 +12,7 @@ printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
 
 for Q in [% opt.qual2 %]; do
     for L in [% opt.len2 %]; do
-	    for X in [% opt.coverage2 %]; do
+	    for X in [% opt.cov2 %]; do
 		    for P in $(printf "%03d " {0..50}); do
 		        if [ ! -e 4_kunitigs_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
 			        continue;

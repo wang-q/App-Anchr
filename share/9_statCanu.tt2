@@ -28,7 +28,7 @@ parallel --no-run-if-empty -k -j 2 "
             stat_format \
                 5_canu_X{1}-{2}/[% opt.basename %].correctedReads.fasta.gz;
         )
-    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %] \
+    " ::: [% opt.cov3 %] ::: [% opt.qual3 %] \
     >> statCanu.md
 
 parallel --no-run-if-empty -k -j 2 "
@@ -38,7 +38,7 @@ parallel --no-run-if-empty -k -j 2 "
             faops n50 -H -S -C \
                 5_canu_X{1}-{2}/[% opt.basename %].contigs.fasta;
         )
-    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %] \
+    " ::: [% opt.cov3 %] ::: [% opt.qual3 %] \
     >> statCanu.md
 
 cat statCanu.md

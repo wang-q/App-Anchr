@@ -289,10 +289,10 @@ anchr template \
     --genome 4641652 \
     --trim2 "--uniq --shuffle --scythe " \
     --sample2 300 \
-    --coverage2 "40 80" \
+    --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --coverage3 "40 80 all" \
+    --cov3 "40 80 all" \
     --qual3 "raw trim" \
     --parallel 16
 

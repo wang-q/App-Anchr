@@ -127,7 +127,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 5432652 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 50 60 all" \
+    --cov2 "40 50 60 all" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16
@@ -336,7 +336,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 4602977 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "all" \
+    --cov2 "all" \
     --qual2 "20 25 30" \
     --len2 "60" \
     --parallel 16
@@ -475,7 +475,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 5090491 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 all" \
+    --cov2 "40 all" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16
@@ -612,7 +612,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 4033464 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 50 all" \
+    --cov2 "40 50 all" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16
@@ -730,7 +730,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 5090491 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 80" \
+    --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16
@@ -864,7 +864,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 4602977 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 80" \
+    --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16
@@ -1001,7 +1001,7 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 4033464 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 80" \
+    --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
     --parallel 16

@@ -92,7 +92,7 @@ parallel --no-run-if-empty -k -j 2 "
             stat_format \
                 3_pacbio/pacbio.X{1}.{2}.fasta;
         )
-    " ::: [% opt.coverage3 %] ::: raw trim \
+    " ::: [% opt.cov3 %] ::: raw trim \
     >> statReads.md
 
 cat statReads.md

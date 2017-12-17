@@ -80,10 +80,10 @@ anchr template \
     --basename ${BASE_NAME} \
     --genome 4641652 \
     --trim2 "--uniq --shuffle --scythe " \
-    --coverage2 "40 80 all" \
+    --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --coverage3 "80" \
+    --cov3 "80" \
     --qual3 "trim" \
     --parallel 24
 

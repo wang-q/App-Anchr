@@ -15,13 +15,13 @@ sub opt_spec {
         [ "is_euk",     "eukaryotes or not", ],
         [ "tmp=s",      "user defined tempdir", ],
         [ "se",         "single end mode for Illumina", ],
-        [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
+        [ "separate",   "separate each Qual-Len/Cov-Qual groups", ],
         [ "trim2=s",      "steps for trimming Illumina reads",         { default => "--uniq" }, ],
         [ "sample2=i",    "total sampling coverage of Illumina reads", ],
-        [ "coverage2=s",  "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
+        [ "cov2=s",       "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
-        [ "coverage3=s",  "down sampling coverage of PacBio reads", ],
+        [ "cov3=s",       "down sampling coverage of PacBio reads", ],
         [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         { show_defaults => 1, }
@@ -204,21 +204,21 @@ sub gen_trimlong {
     my $template;
     my $sh_name;
 
-    return unless $opt->{coverage3};
+    return unless $opt->{cov3};
 
     $sh_name = "3_trimlong.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
 cd [% args.0 %]
 
-for X in [% opt.coverage3 %]; do
+for X in [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
     if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
         echo "  pacbio.X${X}.raw.fasta presents"
     fi
 
-    # shortcut if coverage3 == all
+    # shortcut if cov3 == all
     if [[ ${X} == "all" ]]; then
         pushd 3_pacbio > /dev/null
 
@@ -236,7 +236,7 @@ for X in [% opt.coverage3 %]; do
     mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
 done
 
-for X in  [% opt.coverage3 %]; do
+for X in  [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
     if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
@@ -456,7 +456,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
         $tt->process(
@@ -470,7 +470,7 @@ EOF
     else {
         for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
             for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
+                for my $cov ( grep {defined} split /\s+/, $opt->{cov2} ) {
                     $sh_name = "4_kunitigs_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
@@ -553,7 +553,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
         $tt->process(
@@ -567,7 +567,7 @@ EOF
     else {
         for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
             for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {defined} split /\s+/, $opt->{coverage2} ) {
+                for my $cov ( grep {defined} split /\s+/, $opt->{cov2} ) {
                     $sh_name = "4_anchors_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
@@ -661,7 +661,7 @@ sub gen_canu {
     my $template;
     my $sh_name;
 
-    return unless $opt->{coverage3};
+    return unless $opt->{cov3};
 
     if ( !$opt->{separate} ) {
         $sh_name = "5_canu.sh";
@@ -689,7 +689,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         useGrid=false \
         genomeSize=[% opt.genome %] \
         -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
-    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %]
+    " ::: [% opt.cov3 %] ::: [% opt.qual3 %]
 
 EOF
         $tt->process(
@@ -701,7 +701,7 @@ EOF
         ) or die Template->error;
     }
     else {
-        for my $cov ( grep {defined} split /\s+/, $opt->{coverage3} ) {
+        for my $cov ( grep {defined} split /\s+/, $opt->{cov3} ) {
             for my $qual ( grep {defined} split /\s+/, $opt->{qual3} ) {
                 $sh_name = "5_canu_X${cov}-${qual}.sh";
                 print "Create $sh_name\n";

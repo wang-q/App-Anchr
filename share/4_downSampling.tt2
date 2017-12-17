@@ -10,7 +10,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 
     rm -fr 4_Q{1}L{2}X{3}   
     
-    # shortcut if coverage2 == all
+    # shortcut if cov2 == all
     if [[ {3} == "all" ]]; then
         mkdir -p 4_Q{1}L{2}XallP000
         cd 4_Q{1}L{2}XallP000
@@ -42,4 +42,4 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 
     done
 
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.coverage2 %]
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %]
