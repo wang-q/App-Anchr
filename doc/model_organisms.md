@@ -894,8 +894,8 @@ find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 
 # down sampling
-rm -fr 2_illumina/Q{15,20,25,30,35}L{30,60,90,120}X*
-rm -fr Q{15,20,25,30,35}L{30,60,90,120}X*
+rm -fr 4_Q{15,20,25,30,35}*
+rm -fr 4_kunitigs_Q{15,20,25,30,35}*
 
 rm -fr mergeQ*
 rm -fr mergeL*
