@@ -77,8 +77,6 @@
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Bcer
-REAL_G=5432652
-IS_EUK="false"
 
 ```
 
@@ -163,7 +161,7 @@ cd ${WORKING_DIR}/${BASE_NAME}
 anchr template \
     . \
     --basename ${BASE_NAME} \
-    --genome ${REAL_G} \
+    --genome 5432652 \
     --trim2 "--uniq --shuffle --scythe " \
     --coverage2 "40 50 60 all" \
     --qual2 "25 30" \
@@ -193,23 +191,28 @@ bash 9_statQuorum.sh
 
 # down sampling, k-unitigs and anchors
 bash 4_downSampling.sh
-bash 5_kunitigs.sh
-bash 5_anchors.sh
+bash 4_kunitigs.sh
+bash 4_anchors.sh
 bash 9_statAnchors.sh
 
 # merge anchors
-bash 6_mergeAnchors.sh 5_kunitigs
+bash 6_mergeAnchors.sh 4_kunitigs_Q
 
 # anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh 6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
+bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
+    6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
 nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
+mummerplot --postscript out.delta -p anchor.sort --small
 
 # mummerplot files
 rm *.[fr]plot
 rm out.delta
 rm *.gp
-mv anchor.sort.png 6_mergeAnchors/
+mv anchor.sort.ps 6_mergeAnchors/
+
+# minidot
+minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
+    | minidot - > 6_mergeAnchors/anchor.minidot.eps
 
 # quast
 rm -fr 9_qa
@@ -258,27 +261,6 @@ quast --no-check --threads 16 \
 | Q30L60X60P000  |   60.0 |     41794 | 5.31M | 222 |       835 |  35.1K | 42 |   57.5 | 7.5 |  11.7 | 115.0 | "31,41,51,61,71,81" | 0:02'00'' | 0:00'53'' |
 | Q30L60XallP000 |   64.1 |     42832 | 5.31M | 220 |       824 | 34.62K | 42 |   62.0 | 8.0 |  12.7 | 124.0 | "31,41,51,61,71,81" | 0:02'07'' | 0:00'54'' |
 
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-
-cat stat3.md
-
-```
-
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 5224283 | 5432652 |   2 |
@@ -293,11 +275,8 @@ cat stat3.md
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Rsph
-REAL_G=4602977
-COVERAGE2="26 30 33"
-READ_QUAL="20 25 30"
-READ_LEN="60"
 
 ```
 
@@ -381,61 +360,48 @@ tar xvfz R_sphaeroides_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
-* FastQC
+## Rsph: template
 
-* kmergenie
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
 
-## Rsph: preprocess Illumina reads
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 4602977 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --coverage2 "all" \
+    --qual2 "20 25 30" \
+    --len2 "60" \
+    --parallel 16
 
-## Rsph: reads stats
+```
 
-| Name     |     N50 |       Sum |       # |
-|:---------|--------:|----------:|--------:|
-| Genome   | 3188524 |   4602977 |       7 |
-| Paralogs |    2337 |    147155 |      66 |
-| Illumina |     251 | 451800000 | 1800000 |
-| uniq     |     251 | 447895946 | 1784446 |
-| shuffle  |     251 | 447895946 | 1784446 |
-| scythe   |     243 | 341352824 | 1784446 |
-| Q20L60   |     145 | 174386583 | 1281040 |
-| Q25L60   |     134 | 144921317 | 1149546 |
-| Q30L60   |     117 | 126132575 | 1149416 |
+## Rsph: run
 
-## Rsph: quorum
+| Name     |     N50 |     Sum |       # |
+|:---------|--------:|--------:|--------:|
+| Genome   | 3188524 | 4602977 |       7 |
+| Paralogs |    2337 |  147155 |      66 |
+| Illumina |     251 |  451.8M | 1800000 |
+| uniq     |     251 |  447.9M | 1784446 |
+| shuffle  |     251 |  447.9M | 1784446 |
+| scythe   |     251 | 343.91M | 1784446 |
+| Q20L60   |     145 | 174.27M | 1280932 |
+| Q25L60   |     134 | 144.87M | 1149640 |
+| Q30L60   |     117 | 126.09M | 1149405 |
 
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 | 174.39M |  37.9 | 154.88M |   33.6 |  11.186% |     137 | "37" |  4.6M | 4.55M |     0.99 | 0:00'27'' |
-| Q25L60 | 144.92M |  31.5 | 138.39M |   30.1 |   4.509% |     127 | "35" |  4.6M | 4.53M |     0.99 | 0:00'24'' |
-| Q30L60 | 126.36M |  27.5 | 123.26M |   26.8 |   2.454% |     112 | "31" |  4.6M | 4.52M |     0.98 | 0:00'22'' |
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q20L60 |  37.9 |   33.7 |  11.120% |     137 | "37" |  4.6M | 4.55M |     0.99 | 0:00'29'' |
+| Q25L60 |  31.5 |   30.1 |   4.500% |     127 | "35" |  4.6M | 4.53M |     0.99 | 0:00'25'' |
+| Q30L60 |  27.4 |   26.8 |   2.454% |     112 | "31" |  4.6M | 4.52M |     0.98 | 0:00'24'' |
 
-## Rsph: down sampling
-
-## Rsph: k-unitigs and anchors (sampled)
-
-| Name          | SumCor  | CovCor | N50SR |   Sum |   # | N50Anchor |   Sum |   # | N50Others |     Sum |   # |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|:--------|-------:|------:|------:|----:|----------:|------:|----:|----------:|--------:|----:|--------------------:|----------:|----------:|
-| Q20L60X26P000 | 119.68M |   26.0 | 16387 | 4.55M | 478 |     17883 |  4.2M | 356 |      7220 | 352.21K | 122 | "31,41,51,61,71,81" | 0:01'18'' | 0:00'24'' |
-| Q20L60X30P000 | 138.09M |   30.0 | 18769 | 4.56M | 449 |     21000 | 4.28M | 333 |      4745 | 279.58K | 116 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'24'' |
-| Q20L60X33P000 | 151.9M  |   33.0 | 20586 | 4.56M | 434 |     21857 | 4.23M | 314 |      6186 | 326.95K | 120 | "31,41,51,61,71,81" | 0:01'25'' | 0:00'24'' |
-| Q25L60X26P000 | 119.68M |   26.0 | 16013 | 4.52M | 546 |     16320 | 4.15M | 436 |     12569 | 375.62K | 110 | "31,41,51,61,71,81" | 0:01'17'' | 0:00'24'' |
-| Q25L60X30P000 | 138.09M |   30.0 | 17440 | 4.53M | 493 |     17665 | 4.18M | 388 |     12285 | 353.24K | 105 | "31,41,51,61,71,81" | 0:01'19'' | 0:00'24'' |
-| Q30L60X26P000 | 119.68M |   26.0 | 10294 | 4.51M | 747 |     10241 | 4.11M | 597 |     12285 | 402.75K | 150 | "31,41,51,61,71,81" | 0:01'12'' | 0:00'23'' |
-
-## Rsph: merge anchors
-
-## Rsph: final stats
-
-* Stats
-
-| Name         |     N50 |     Sum |   # |
-|:-------------|--------:|--------:|----:|
-| Genome       | 3188524 | 4602977 |   7 |
-| Paralogs     |    2337 |  147155 |  66 |
-| anchor.merge |   27785 | 4284438 | 259 |
-| others.merge |   13124 |  354828 |  53 |
-
-## Rsph: clear intermediate files
+| Name           | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60XallP000 |   33.7 |     22439 | 4.08M | 316 |      5013 | 502.59K | 188 |   29.0 | 3.0 |   6.7 |  57.0 | "31,41,51,61,71,81" | 0:01'02'' | 0:00'46'' |
+| Q25L60XallP000 |   30.1 |     16602 | 4.04M | 392 |      9581 | 602.48K | 193 |   26.0 | 3.0 |   5.7 |  52.0 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'45'' |
+| Q30L60XallP000 |   26.8 |      9711 | 3.95M | 593 |      7245 |  780.3K | 280 |   23.0 | 2.0 |   5.7 |  43.5 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'43'' |
 
 # *Mycobacterium abscessus* 6G-0125-R
 
