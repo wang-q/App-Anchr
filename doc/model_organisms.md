@@ -827,7 +827,7 @@ QUAST_LABEL=
 if [ -e 1_genome/genome.fa ]; then
     QUAST_TARGET+=" -R 1_genome/genome.fa "
 fi
-if [ -e merge/anchor.merge.fasta ]; then
+if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="merge,"
 fi

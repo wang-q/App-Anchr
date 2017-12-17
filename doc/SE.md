@@ -212,11 +212,12 @@ mv anchor.sort.ps 6_mergeAnchors/
 ## SE: spades
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 spades.py \
     -t 16 \
     -k 21,33,55,77 \
+    --only-assembler \
     -s 2_illumina/Q25L60/R1.sickle.fq.gz \
     -o 8_spades
 
@@ -232,15 +233,15 @@ anchr contained \
 
 * Stats
 
-| Name                 |     N50 |     Sum |   # |
-|:---------------------|--------:|--------:|----:|
-| Genome               | 4641652 | 4641652 |   1 |
-| Paralogs             |    1934 |  195673 | 106 |
-| anchor               |   63171 | 4532654 | 126 |
-| others               |     847 |   39054 |  49 |
-| spades.contig        |  106190 | 4646950 | 258 |
-| spades.scaffold      |  112078 | 4647450 | 253 |
-| spades.non-contained |  106190 | 4583351 | 108 |
+| Name                   |     N50 |     Sum |   # |
+|:-----------------------|--------:|--------:|----:|
+| Genome                 | 4641652 | 4641652 |   1 |
+| Paralogs               |    1934 |  195673 | 106 |
+| anchor                 |   63440 | 4532169 | 123 |
+| others                 |    1096 |   68234 |  61 |
+| spades.contig          |   97656 | 4646879 | 271 |
+| spades.scaffold        |  112078 | 4647379 | 266 |
+| spades.non-contained   |  106190 | 4577172 | 104 |
 
 * quast
 
