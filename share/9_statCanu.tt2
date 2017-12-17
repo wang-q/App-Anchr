@@ -1,0 +1,44 @@
+[% INCLUDE header.tt2 %]
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statCanu.md
+printf "|:--|--:|--:|--:|\n" >> statCanu.md
+
+if [ -e 1_genome/genome.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statCanu.md
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statCanu.md
+fi
+
+parallel --no-run-if-empty -k -j 2 "
+    stat_format () {
+        echo \$(faops n50 -H -N 50 -S -C \$@) \
+            | perl -nla -MNumber::Format -e '
+                printf qq{%d\t%s\t%d\n}, \$F[0], Number::Format::format_bytes(\$F[1], base => 1000,), \$F[2];
+            '
+    }
+
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo X{1}.{2}.corrected;
+            stat_format \
+                5_canu_X{1}-{2}/[% opt.basename %].correctedReads.fasta.gz;
+        )
+    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %] \
+    >> statCanu.md
+
+parallel --no-run-if-empty -k -j 2 "
+    printf \"| %s | %s | %s | %s |\n\" \
+        \$(
+            echo X{1}.{2}.contig;
+            faops n50 -H -S -C \
+                5_canu_X{1}-{2}/[% opt.basename %].contigs.fasta;
+        )
+    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %] \
+    >> statCanu.md
+
+cat statCanu.md

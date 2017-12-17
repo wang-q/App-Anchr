@@ -22,6 +22,7 @@ sub opt_spec {
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
         [ "separate",     "separate each Qual-Len groups", ],
         [ "coverage3=s",  "down sampling coverage of PacBio reads", ],
+        [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         { show_defaults => 1, }
     );
@@ -102,6 +103,12 @@ sub execute {
 
     # mergeAnchors
     $self->gen_mergeAnchors( $opt, $args );
+
+    # canu
+    $self->gen_canu( $opt, $args );
+
+    # statCanu
+    $self->gen_statCanu( $opt, $args );
 
 }
 
@@ -191,14 +198,29 @@ sub gen_trimlong {
     my $template;
     my $sh_name;
 
-    if ( $opt->{coverage3} ) {
-        $sh_name = "3_trimlong.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
+    return unless $opt->{coverage3};
+
+    $sh_name = "3_trimlong.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
 cd [% args.0 %]
 
 for X in [% opt.coverage3 %]; do
     printf "==> Coverage: %s\n" ${X}
+
+    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
+        echo "  pacbio.X${X}.raw.fasta presents"
+    fi
+
+    # shortcut if coverage3 == all
+    if [[ ${X} == "all" ]]; then
+        pushd 3_pacbio > /dev/null
+
+        ln -s pacbio.fasta pacbio.X${X}.raw.fasta
+
+        popd > /dev/null
+        continue;
+    fi
 
     faops split-about -m 1 -l 0 \
         3_pacbio/pacbio.fasta \
@@ -211,20 +233,23 @@ done
 for X in  [% opt.coverage3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
+    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
+        echo "  pacbio.X${X}.trim.fasta presents"
+    fi
+
     anchr trimlong --parallel [% opt.parallel2 %] -v \
         "3_pacbio/pacbio.X${X}.raw.fasta" \
         -o "3_pacbio/pacbio.X${X}.trim.fasta"
 done
 
 EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
@@ -621,6 +646,116 @@ sub gen_mergeAnchors {
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+}
+
+sub gen_canu {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{coverage3};
+
+    if ( !$opt->{separate} ) {
+        $sh_name = "5_canu.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    echo >&2 '==> Group X{1}-{2}'
+
+    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta ]; then
+        echo >&2 '  3_pacbio/pacbio.X{1}.{2}.fasta not exists'
+        exit;
+    fi
+
+    if [ -e 5_canu_X{1}-{2}/*.contigs.fasta ]; then
+        echo >&2 '  5_canu_X{1}-{2}/contigs.fasta already presents'
+        exit;
+    fi
+
+    canu \
+        -p [% opt.basename %] \
+        -d 5_canu_X{1}-{2} \
+        gnuplotTested=true \
+        useGrid=false \
+        genomeSize=[% opt.genome %] \
+        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
+    " ::: [% opt.coverage3 %] ::: [% opt.qual3 %]
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+    else {
+        for my $cov ( grep {defined} split /\s+/, $opt->{coverage3} ) {
+            for my $qual ( grep {defined} split /\s+/, $opt->{qual3} ) {
+                $sh_name = "5_canu_X${cov}-${qual}.sh";
+                print "Create $sh_name\n";
+                $template = <<'EOF';
+cd [% args.0 %]
+
+echo >&2 '==> Group X[% cov %]-[% qual %]'
+
+if [ ! -e 3_pacbio/pacbio.X[% cov %].[% qual %].fasta ]; then
+    echo >&2 '  3_pacbio/pacbio.X{[% cov %].[% qual %].fasta not exists'
+    exit;
+fi
+
+if [ -e 5_canu_X[% cov %]-[% qual %]/*.contigs.fasta ]; then
+    echo >&2 '  5_canu_X[% cov %]-[% qual %]/contigs.fasta already presents'
+    exit;
+fi
+
+canu \
+    -p [% opt.basename %] \
+    -d 5_canu_X[% cov %]-[% qual %] \
+    gnuplotTested=true \
+    useGrid=false \
+    genomeSize=[% opt.genome %] \
+    -pacbio-raw 3_pacbio/pacbio.X[% cov %].[% qual %].fasta
+
+EOF
+                $tt->process(
+                    \$template,
+                    {   args => $args,
+                        opt  => $opt,
+                        cov  => $cov,
+                        qual => $qual,
+                    },
+                    Path::Tiny::path( $args->[0], $sh_name )->stringify
+                ) or die Template->error;
+            }
+
+        }
+    }
+
+}
+
+sub gen_statCanu {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statCanu.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statCanu.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 }
 
 1;
