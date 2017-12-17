@@ -729,10 +729,12 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
 
 # down sampling
 rm -fr 4_Q{15,20,25,30,35}*
-rm -fr 4_kunitigs_Q{15,20,25,30,35}*
+find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta" | xargs rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | xargs rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam" | xargs rm
 
-rm -fr mergeQ*
-rm -fr mergeL*
+# tempdir
+find . -type d -name "\?" | xargs rm -fr
 
 # canu
 find . -type d -name "correction" -path "*5_canu_*" | xargs rm -fr
