@@ -1,0 +1,75 @@
+[% INCLUDE header.tt2 %]
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statFinal.md
+printf "|:--|--:|--:|--:|\n" >> statFinal.md
+
+# genome
+if [ -e 1_genome/genome.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statFinal.md
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statFinal.md
+fi
+
+# anchors
+if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "anchors";   faops n50 -H -S -C 6_mergeAnchors/anchor.merge.fasta;) >> statFinal.md
+fi
+if [ -e 6_mergeAnchors/others.non-contained.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "others";   faops n50 -H -S -C 6_mergeAnchors/others.non-contained.fasta;) >> statFinal.md
+fi
+
+if [ -e anchorLong/contig.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> statFinal.md
+fi
+if [ -e contigTrim/contig.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> statFinal.md
+fi
+
+# canu
+[% FOREACH cov IN opt.coverage3.split('\s+') -%]
+[% FOREACH qual IN opt.qual3.split('\s+') -%]
+if [ -e 5_canu_X[% cov %]-[% qual %]/[% opt.basename %].contigs.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "canu_X[% cov %]-[% qual %]"; faops n50 -H -S -C 5_canu_X[% cov %]-[% qual %]/[% opt.basename %].contigs.fasta;) >> statFinal.md
+fi
+[% END -%]
+[% END -%]
+
+# spades
+if [ -e 8_spades/contigs.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> statFinal.md
+fi
+if [ -e 8_spades/scaffolds.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> statFinal.md
+fi
+if [ -e 8_spades/spades.non-contained.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/spades.non-contained.fasta;) >> statFinal.md
+fi
+
+# platanus
+if [ -e 8_platanus/out_contig.fa ]; then
+	printf "| %s | %s | %s | %s |\n" \
+	    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> statFinal.md
+fi
+if [ -e 8_platanus/out_gapClosed.fa ]; then
+	printf "| %s | %s | %s | %s |\n" \
+	    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> statFinal.md
+fi
+if [ -e 8_platanus/platanus.non-contained.fasta ]; then
+	printf "| %s | %s | %s | %s |\n" \
+	    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/platanus.non-contained.fasta;) >> statFinal.md
+fi
+
+cat statFinal.md

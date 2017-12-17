@@ -113,6 +113,9 @@ sub execute {
     # quast
     $self->gen_quast( $opt, $args );
 
+    # statFinal
+    $self->gen_statFinal( $opt, $args );
+
 }
 
 sub gen_fastqc {
@@ -773,6 +776,25 @@ sub gen_quast {
 
     $tt->process(
         '9_quast.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_statFinal {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statFinal.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statFinal.tt2',
         {   args => $args,
             opt  => $opt,
         },
