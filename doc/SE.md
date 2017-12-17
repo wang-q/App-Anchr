@@ -237,8 +237,8 @@ cd ${WORKING_DIR}/${BASE_NAME}
 
 spades.py \
     -t 16 \
-    -k 21,33,55,77 \
     --only-assembler \
+    -k 21,33,55,77 \
     -s 2_illumina/Q25L60/R1.sickle.fq.gz \
     -o 8_spades
 
