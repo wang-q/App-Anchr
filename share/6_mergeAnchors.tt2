@@ -16,8 +16,10 @@ DIR_PREFIX=$1
 # merge anchors
 #----------------------------#
 mkdir -p 6_mergeAnchors
+
+# reverse sort files, so that Q30L60X80 will be infile_0
 anchr contained \
-    $( find . -type f -name "anchor.fasta" -path "*${DIR_PREFIX}*" | sort ) \
+    $( find . -type f -name "anchor.fasta" -path "*${DIR_PREFIX}*" | sort -r ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin 6_mergeAnchors/anchor.non-contained.fasta
@@ -39,7 +41,7 @@ anchr contained \
 # merge others
 #----------------------------#
 anchr contained \
-    $( find . -type f -name "pe.others.fa" -path "*${DIR_PREFIX}*" | sort ) \
+    $( find . -type f -name "pe.others.fa" -path "*${DIR_PREFIX}*" | sort -r ) \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 500 -l 0 stdin 6_mergeAnchors/others.non-contained.fasta
