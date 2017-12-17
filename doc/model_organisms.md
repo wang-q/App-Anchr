@@ -13,7 +13,7 @@
     - [e_coli: quorum](#e-coli-quorum)
     - [e_coli: down sampling, k-unitigs and anchors](#e-coli-down-sampling-k-unitigs-and-anchors)
     - [e_coli: merge anchors](#e-coli-merge-anchors)
-    - [e_coli: 3GS](#e-coli-3gs)
+    - [e_coli: canu](#e-coli-canu)
     - [e_coli: expand anchors](#e-coli-expand-anchors)
     - [e_coli: spades](#e-coli-spades)
     - [e_coli: platanus](#e-coli-platanus)
@@ -203,9 +203,6 @@ bax2bam --help
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
-REAL_G=4641652
-IS_EUK="false"
-COVERAGE3="40 80"
 EXPAND_WITH="80"
 
 ```
@@ -409,87 +406,15 @@ mv anchor.sort.ps 6_mergeAnchors/
 minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
     | minidot - > 6_mergeAnchors/anchor.minidot.eps
 
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    $(
-        if [ "${IS_EUK}" = "true" ]; then
-            echo "--eukaryote --no-icarus"
-        fi
-    ) \
-    -R 1_genome/genome.fa \
-    6_mergeAnchors/anchor.merge.fasta \
-    6_mergeAnchors/others.non-contained.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,others,paralogs" \
-    -o 9_qa
-
 ```
 
-## e_coli: 3GS
+## e_coli: canu
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    echo >&2 '==> Group X{1}-{2}'
-
-    if [ ! -e  3_pacbio/pacbio.X{1}.{2}.fasta ]; then
-        echo >&2 '    3_pacbio/pacbio.X{1}.{2}.fasta not exists'
-        exit;
-    fi
-
-    if [ -e canu-X{1}-{2}/*.contigs.fasta ]; then
-        echo >&2 '    contigs.fasta already presents'
-        exit;
-    fi
-
-    canu \
-        -p ${BASE_NAME} -d canu-X{1}-{2} \
-        gnuplot=\$(brew --prefix)/Cellar/\$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-        genomeSize=${REAL_G} \
-        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
-    " ::: ${COVERAGE3} ::: raw trim
-
-# canu
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3GS.md
-printf "|:--|--:|--:|--:|\n" >> stat3GS.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3GS.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3GS.md
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo X{1}.{2}.corrected;
-            faops n50 -H -S -C \
-                canu-X{1}-{2}/${BASE_NAME}.correctedReads.fasta.gz;
-        )
-    " ::: ${COVERAGE3} ::: raw trim \
-    >> stat3GS.md
-
-parallel --no-run-if-empty -k -j 3 "
-    printf \"| %s | %s | %s | %s |\n\" \
-        \$( 
-            echo X{1}.{2};
-            faops n50 -H -S -C \
-                canu-X{1}-{2}/${BASE_NAME}.contigs.fasta;
-        )
-    " ::: ${COVERAGE3} ::: raw trim \
-    >> stat3GS.md
-
-cat stat3GS.md
-
-# minidot
-minimap canu-X40-raw/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-X40-raw/minidot.eps
-
-minimap canu-X40-trim/${BASE_NAME}.contigs.fasta 1_genome/genome.fa \
-    | minidot - > canu-X40-trim/minidot.eps
+bash 5_canu.sh
+bash 9_statCanu.sh
 
 ```
 
@@ -759,46 +684,11 @@ anchr contained \
 
 ## e_coli: final stats
 
-* Stats
-
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor";   faops n50 -H -S -C 6_mergeAnchors/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others";   faops n50 -H -S -C 6_mergeAnchors/others.non-contained.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X${EXPAND_WITH}-raw"; faops n50 -H -S -C canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "canu-X${EXPAND_WITH}-trim"; faops n50 -H -S -C canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.contig"; faops n50 -H -S -C 8_spades/contigs.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.scaffold"; faops n50 -H -S -C 8_spades/scaffolds.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/spades.non-contained.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.contig"; faops n50 -H -S -C 8_platanus/out_contig.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.scaffold"; faops n50 -H -S -C 8_platanus/out_gapClosed.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/platanus.non-contained.fasta;) >> stat3.md
-
-cat stat3.md
+bash 9_statFinal.sh
+bash 9_quast.sh
 
 ```
 
@@ -818,65 +708,6 @@ cat stat3.md
 | platanus.contig        |   15090 | 4683012 | 1069 |
 | platanus.scaffold      |  133014 | 4575941 |  137 |
 | platanus.non-contained |  133014 | 4559275 |   63 |
-
-* quast
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-QUAST_TARGET=
-QUAST_LABEL=
-
-if [ -e 1_genome/genome.fa ]; then
-    QUAST_TARGET+=" -R 1_genome/genome.fa "
-fi
-if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
-    QUAST_LABEL+="merge,"
-fi
-if [ -e anchorLong/contig.fasta ]; then
-    QUAST_TARGET+=" anchorLong/contig.fasta "
-    QUAST_LABEL+="anchorLong,"
-fi
-if [ -e contigTrim/contig.fasta ]; then
-    QUAST_TARGET+=" contigTrim/contig.fasta "
-    QUAST_LABEL+="contigTrim,"
-fi
-if [ -e canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta ]; then
-    QUAST_TARGET+=" canu-X${EXPAND_WITH}-raw/${BASE_NAME}.contigs.fasta "
-    QUAST_LABEL+="canu-X${EXPAND_WITH}-raw,"
-fi
-if [ -e canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta ]; then
-    QUAST_TARGET+=" canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta "
-    QUAST_LABEL+="canu-X${EXPAND_WITH}-trim,"
-fi
-if [ -e 8_spades/spades.non-contained.fasta ]; then
-    QUAST_TARGET+=" 8_spades/spades.non-contained.fasta "
-    QUAST_LABEL+="spades,"
-fi
-if [ -e 8_platanus/platanus.non-contained.fasta ]; then
-    QUAST_TARGET+=" 8_platanus/platanus.non-contained.fasta "
-    QUAST_LABEL+="platanus,"
-fi
-if [ -e 1_genome/paralogs.fas ]; then
-    QUAST_TARGET+=" 1_genome/paralogs.fas "
-    QUAST_LABEL+="paralogs,"
-fi
-
-QUAST_LABEL=$( echo "${QUAST_LABEL}" | sed 's/,$//' )
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    $(
-        if [ "${IS_EUK}" = "true" ]; then
-            echo "--eukaryote --no-icarus"
-        fi
-    ) \
-    ${QUAST_TARGET} \
-    --label ${QUAST_LABEL} \
-    -o 9_qa_contig
-
-```
 
 ## e_coli: clear intermediate files
 
@@ -904,9 +735,9 @@ rm -fr mergeQ*
 rm -fr mergeL*
 
 # canu
-find . -type d -name "correction" -path "*canu-*" | xargs rm -fr
-find . -type d -name "trimming"   -path "*canu-*" | xargs rm -fr
-find . -type d -name "unitigging" -path "*canu-*" | xargs rm -fr
+find . -type d -name "correction" -path "*5_canu_*" | xargs rm -fr
+find . -type d -name "trimming"   -path "*5_canu_*" | xargs rm -fr
+find . -type d -name "unitigging" -path "*5_canu_*" | xargs rm -fr
 
 # spades
 find . -type d -path "*8_spades/*" | xargs rm -fr
