@@ -15,12 +15,12 @@ sub opt_spec {
         [ "is_euk",     "eukaryotes or not", ],
         [ "tmp=s",      "user defined tempdir", ],
         [ "se",         "single end mode for Illumina", ],
+        [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
         [ "trim2=s",      "steps for trimming Illumina reads",         { default => "--uniq" }, ],
         [ "sample2=i",    "total sampling coverage of Illumina reads", ],
         [ "coverage2=s",  "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
-        [ "separate",     "separate each Qual-Len groups", ],
         [ "coverage3=s",  "down sampling coverage of PacBio reads", ],
         [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
@@ -109,6 +109,9 @@ sub execute {
 
     # statCanu
     $self->gen_statCanu( $opt, $args );
+
+    # quast
+    $self->gen_quast( $opt, $args );
 
 }
 
@@ -751,6 +754,25 @@ sub gen_statCanu {
 
     $tt->process(
         '9_statCanu.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_quast {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_quast.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_quast.tt2',
         {   args => $args,
             opt  => $opt,
         },
