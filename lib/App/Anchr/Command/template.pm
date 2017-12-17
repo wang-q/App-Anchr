@@ -133,6 +133,10 @@ cd [% args.0 %]
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
 
+if [ -e R1_fastqc.html ]; then
+    exit;
+fi
+
 fastqc -t [% opt.parallel %] \
     ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
     -o .
@@ -161,6 +165,10 @@ cd [% args.0 %]
 
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
+
+if [ -e R1.dat.pdf ]; then
+    exit;
+fi
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
