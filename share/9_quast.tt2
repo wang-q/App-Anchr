@@ -29,11 +29,6 @@ fi
 [% END -%]
 [% END -%]
 
-if [ -e canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta ]; then
-    QUAST_TARGET+=" canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta "
-    QUAST_LABEL+="canu-X${EXPAND_WITH}-trim,"
-fi
-
 if [ -e 8_spades/spades.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_spades/spades.non-contained.fasta "
     QUAST_LABEL+="spades,"
