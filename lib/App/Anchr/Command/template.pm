@@ -223,7 +223,8 @@ for X in [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
     if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
-        echo "  pacbio.X${X}.raw.fasta presents"
+        echo "  pacbio.X${X}.raw.fasta presents";
+        continue;
     fi
 
     # shortcut if cov3 == all
@@ -248,7 +249,8 @@ for X in  [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
     if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
-        echo "  pacbio.X${X}.trim.fasta presents"
+        echo "  pacbio.X${X}.trim.fasta presents";
+        continue;
     fi
 
     anchr trimlong --parallel [% opt.parallel2 %] -v \
