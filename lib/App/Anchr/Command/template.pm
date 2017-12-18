@@ -116,6 +116,12 @@ sub execute {
     # anchorFill
     $self->gen_anchorFill( $opt, $args );
 
+    # spades
+    $self->gen_spades( $opt, $args );
+
+    # platanus
+    $self->gen_platanus( $opt, $args );
+
     # quast
     $self->gen_quast( $opt, $args );
 
@@ -819,6 +825,44 @@ sub gen_anchorFill {
 
     $tt->process(
         '6_anchorFill.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_spades {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "8_spades.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '8_spades.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_platanus {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "8_platanus.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '8_platanus.tt2',
         {   args => $args,
             opt  => $opt,
         },

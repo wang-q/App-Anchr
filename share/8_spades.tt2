@@ -1,0 +1,35 @@
+[% INCLUDE header.tt2 %]
+
+if [ -e 8_spades/spades.non-contained.fasta ]; then
+    echo >&2 "8_spades/spades.non-contained.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 DIR_PREFIX"
+
+DIR_PREFIX=${1:-"2_illumina/Q25L60"}
+
+#----------------------------#
+# spades
+#----------------------------#
+spades.py \
+    -t [% opt.parallel %] \
+    --only-assembler \
+    -k 21,33,55,77 \
+[% IF not opt.se -%]
+    -1 ${DIR_PREFIX}/R1.sickle.fq.gz \
+    -2 ${DIR_PREFIX}/R2.sickle.fq.gz \
+    -s ${DIR_PREFIX}/Rs.sickle.fq.gz \
+[% ELSE -%]
+    -s ${DIR_PREFIX}/R1.sickle.fq.gz \
+[% END -%]
+    -o 8_spades
+
+anchr contained \
+    8_spades/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
