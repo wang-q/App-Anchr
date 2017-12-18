@@ -8,17 +8,7 @@
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [e_coli: download](#e-coli-download)
-    - [e_coli: template](#e-coli-template)
-    - [e_coli: preprocessing](#e-coli-preprocessing)
-    - [e_coli: quorum](#e-coli-quorum)
-    - [e_coli: down sampling, k-unitigs and anchors](#e-coli-down-sampling-k-unitigs-and-anchors)
-    - [e_coli: merge anchors](#e-coli-merge-anchors)
-    - [e_coli: canu](#e-coli-canu)
-    - [e_coli: expand anchors](#e-coli-expand-anchors)
-    - [e_coli: spades](#e-coli-spades)
-    - [e_coli: platanus](#e-coli-platanus)
-    - [e_coli: final stats](#e-coli-final-stats)
-    - [e_coli: clear intermediate files](#e-coli-clear-intermediate-files)
+    - [e_coli: run](#e-coli-run)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
     - [s288c: preprocess Illumina reads](#s288c-preprocess-illumina-reads)
@@ -278,7 +268,7 @@ cat fasta/m141013.fasta \
 
 ```
 
-## e_coli: template
+## e_coli: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -298,7 +288,7 @@ anchr template \
 
 ```
 
-## e_coli: preprocessing
+* preprocessing
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -337,7 +327,7 @@ bash 9_statReads.sh
 | Xall.raw  |   13982 | 748.51M |    87225 |
 | Xall.trim |   13646 | 689.43M |    77693 |
 
-## e_coli: quorum
+* quorum
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -352,7 +342,7 @@ bash 9_statQuorum.sh
 | Q25L60 | 228.8 |  215.5 |   5.815% |     133 | "83" | 4.64M | 4.57M |     0.99 | 0:02'27'' |
 | Q30L60 | 199.7 |  194.8 |   2.483% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:02'10'' |
 
-## e_coli: down sampling, k-unitigs and anchors
+* down sampling, k-unitigs and anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -383,7 +373,7 @@ bash 9_statAnchors.sh
 | Q30L60X80P000 |   80.0 |     48126 | 4.48M | 161 |       960 | 34.34K | 38 |   78.0 | 5.0 |  21.0 | 139.5 | "31,41,51,61,71,81" | 0:01'42'' | 0:01'00'' |
 | Q30L60X80P001 |   80.0 |     48133 | 4.51M | 167 |       936 | 28.75K | 32 |   78.0 | 5.0 |  21.0 | 139.5 | "31,41,51,61,71,81" | 0:01'42'' | 0:01'00'' |
 
-## e_coli: merge anchors
+* merge anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -408,7 +398,7 @@ minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
 
 ```
 
-## e_coli: canu
+* canu
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -418,20 +408,24 @@ bash 9_statCanu.sh
 
 ```
 
-| Name               |     N50 |       Sum |     # |
-|:-------------------|--------:|----------:|------:|
-| Genome             | 4641652 |   4641652 |     1 |
-| Paralogs           |    1934 |    195673 |   106 |
-| X40.raw.corrected  |   13465 | 150999437 | 17096 |
-| X40.trim.corrected |   13372 | 148630560 | 16928 |
-| X80.raw.corrected  |   16977 | 174462103 | 10692 |
-| X80.trim.corrected |   16820 | 175594582 | 10873 |
-| X40.raw            | 4674150 |   4674150 |     1 |
-| X40.trim           | 4674046 |   4674046 |     1 |
-| X80.raw            | 4658166 |   4658166 |     1 |
-| X80.trim           | 4657933 |   4657933 |     1 |
+| Name                |     N50 |     Sum |     # |
+|:--------------------|--------:|--------:|------:|
+| Genome              | 4641652 | 4641652 |     1 |
+| Paralogs            |    1934 |  195673 |   106 |
+| X40.raw.corrected   |   13465 |    151M | 17096 |
+| X40.trim.corrected  |   13372 | 148.63M | 16928 |
+| X80.raw.corrected   |   16977 | 174.46M | 10692 |
+| X80.trim.corrected  |   16820 | 175.59M | 10873 |
+| Xall.raw.corrected  |   20324 | 171.35M |  8305 |
+| Xall.trim.corrected |   20143 | 173.96M |  8468 |
+| X40.raw.contig      | 4674150 | 4674150 |     1 |
+| X40.trim.contig     | 4674046 | 4674046 |     1 |
+| X80.raw.contig      | 4658166 | 4658166 |     1 |
+| X80.trim.contig     | 4657933 | 4657933 |     1 |
+| Xall.raw.contig     | 4670118 | 4670118 |     1 |
+| Xall.trim.contig    | 4670240 | 4670240 |     1 |
 
-## e_coli: expand anchors
+* expand anchors
 
 三代 reads 里有一个常见的错误, 即单一 ZMW 里的测序结果中, 接头序列部分的测序结果出现了较多的错误,
 因此并没有将接头序列去除干净, 形成的 subreads 里含有多份基因组上同一片段, 它们之间以接头序列为间隔.
@@ -617,7 +611,7 @@ cat \
 
 ```
 
-## e_coli: spades
+* spades
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -639,7 +633,7 @@ anchr contained \
 
 ```
 
-## e_coli: platanus
+* platanus
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -682,7 +676,7 @@ anchr contained \
 
 ```
 
-## e_coli: final stats
+* final stats
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -690,64 +684,30 @@ cd ${WORKING_DIR}/${BASE_NAME}
 bash 9_statFinal.sh
 bash 9_quast.sh
 
+#bash 0_cleanup.sh
+
 ```
 
 | Name                   |     N50 |     Sum |    # |
 |:-----------------------|--------:|--------:|-----:|
 | Genome                 | 4641652 | 4641652 |    1 |
 | Paralogs               |    1934 |  195673 |  106 |
-| anchor                 |   63501 | 4534356 |  120 |
-| others                 |     941 |  122752 |  129 |
+| anchors                |   63638 | 4528128 |  123 |
+| others                 |     980 |  117228 |  125 |
 | anchorLong             |   82828 | 4532095 |  102 |
 | contigTrim             | 1047591 | 4604252 |    9 |
-| canu-X80-raw           | 4658166 | 4658166 |    1 |
-| canu-X80-trim          | 4657933 | 4657933 |    1 |
-| spades.contig          |  133059 | 4588342 |  169 |
-| spades.scaffold        |  148513 | 4588382 |  165 |
-| spades.non-contained   |  133059 | 4563262 |   74 |
-| platanus.contig        |   15090 | 4683012 | 1069 |
-| platanus.scaffold      |  133014 | 4575941 |  137 |
-| platanus.non-contained |  133014 | 4559275 |   63 |
-
-## e_coli: clear intermediate files
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-# bax2bam
-rm -fr 3_pacbio/bam/*
-rm -fr 3_pacbio/fasta/*
-rm -fr 3_pacbio/untar/*
-
-# quorum
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
-
-# down sampling
-rm -fr 4_Q{15,20,25,30,35}*
-find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta" | xargs rm
-find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | xargs rm
-find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam" | xargs rm
-
-# tempdir
-find . -type d -name "\?" | xargs rm -fr
-
-# canu
-find . -type d -name "correction" -path "*5_canu_*" | xargs rm -fr
-find . -type d -name "trimming"   -path "*5_canu_*" | xargs rm -fr
-find . -type d -name "unitigging" -path "*5_canu_*" | xargs rm -fr
-
-# spades
-find . -type d -path "*8_spades/*" | xargs rm -fr
-
-# platanus
-find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
-
-```
+| canu_X40-raw           | 4674150 | 4674150 |    1 |
+| canu_X40-trim          | 4674046 | 4674046 |    1 |
+| canu_X80-raw           | 4658166 | 4658166 |    1 |
+| canu_X80-trim          | 4657933 | 4657933 |    1 |
+| canu_Xall-raw          | 4670118 | 4670118 |    1 |
+| canu_Xall-trim         | 4670240 | 4670240 |    1 |
+| spades.contig          |  117644 | 4665624 |  332 |
+| spades.scaffold        |  132608 | 4665674 |  327 |
+| spades.non-contained   |  125811 | 4582613 |   93 |
+| platanus.contig        |   16442 | 4673967 | 1016 |
+| platanus.scaffold      |  133012 | 4576193 |  141 |
+| platanus.non-contained |  133012 | 4559199 |   63 |
 
 # *Saccharomyces cerevisiae* S288c
 
