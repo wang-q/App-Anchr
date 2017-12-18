@@ -768,6 +768,8 @@ sub gen_statCanu {
     my $template;
     my $sh_name;
 
+    return unless $opt->{cov3};
+
     $sh_name = "9_statCanu.sh";
     print "Create $sh_name\n";
 
