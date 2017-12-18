@@ -119,6 +119,9 @@ sub execute {
     # cleanup
     $self->gen_cleanup( $opt, $args );
 
+    # master
+    $self->gen_master( $opt, $args );
+
 }
 
 sub gen_fastqc {
@@ -863,6 +866,25 @@ find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
 EOF
     $tt->process(
         \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_master {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "0_master.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '0_master.tt2',
         {   args => $args,
             opt  => $opt,
         },

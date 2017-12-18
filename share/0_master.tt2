@@ -1,0 +1,93 @@
+[% INCLUDE header.tt2 %]
+
+#----------------------------#
+# preprocessing
+#----------------------------#
+if [ -e 2_fastqc.sh ]; then
+    bash 2_fastqc.sh;
+fi   
+if [ -e 2_kmergenie.sh ]; then
+    bash 2_kmergenie.sh;
+fi   
+if [ -e 2_trim.sh ]; then
+    bash 2_trim.sh;
+fi   
+if [ -e 3_trimlong.sh ]; then
+    bash 3_trimlong.sh;
+fi   
+if [ -e 9_statReads.sh ]; then
+    bash 9_statReads.sh;
+fi   
+
+#----------------------------#
+# quorum
+#----------------------------#
+if [ -e 2_quorum.sh ]; then
+    bash 2_quorum.sh;
+fi   
+if [ -e 9_statQuorum.sh ]; then
+    bash 9_statQuorum.sh;
+fi   
+
+#----------------------------#
+# down sampling, k-unitigs and anchors
+#----------------------------#
+if [ -e 4_downSampling.sh ]; then
+    bash 4_downSampling.sh;
+fi   
+if [ -e 4_kunitigs.sh ]; then
+    bash 4_kunitigs.sh;
+fi   
+if [ -e 4_anchors.sh ]; then
+    bash 4_anchors.sh;
+fi   
+if [ -e 9_statAnchors.sh ]; then
+    bash 9_statAnchors.sh;
+fi   
+
+#----------------------------#
+# merge anchors
+#----------------------------#
+if [ -e 6_mergeAnchors.sh ]; then
+    bash 6_mergeAnchors.sh 4_kunitigs_Q;
+fi   
+if [ -e 1_genome/genome.fa ]; then
+
+    # anchor sort on ref
+    bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
+        6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
+    nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
+    mummerplot --postscript out.delta -p anchor.sort --small
+
+    # mummerplot files
+    rm *.[fr]plot
+    rm out.delta
+    rm *.gp
+    mv anchor.sort.ps 6_mergeAnchors/
+
+    # minidot
+    minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
+        | minidot - > 6_mergeAnchors/anchor.minidot.eps
+
+fi   
+
+#----------------------------#
+# canu
+#----------------------------#
+if [ -e 5_canu.sh ]; then
+    bash 5_canu.sh;
+fi   
+if [ -e 9_statCanu.sh ]; then
+    bash 9_statCanu.sh;
+fi   
+
+#----------------------------#
+# final stats
+#----------------------------#
+if [ -e 9_statFinal.sh ]; then
+    bash 9_statFinal.sh;
+fi   
+if [ -e 9_quast.sh ]; then
+    bash 9_quast.sh;
+fi   
+
