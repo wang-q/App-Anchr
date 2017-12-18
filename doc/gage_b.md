@@ -292,7 +292,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 #bash 0_cleanup.sh
 
@@ -452,7 +452,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 #bash 0_cleanup.sh
 
@@ -610,7 +610,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 #bash 0_cleanup.sh
 
@@ -748,7 +748,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 # quast
 rm -fr 9_quast_competitor
@@ -909,7 +909,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 # quast
 rm -fr 9_quast_competitor
@@ -1070,7 +1070,7 @@ anchr template \
     --parallel 24
 
 # run
-bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
 # quast
 rm -fr 9_quast_competitor
