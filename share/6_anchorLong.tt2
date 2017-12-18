@@ -1,0 +1,133 @@
+[% INCLUDE header.tt2 %]
+
+if [ -e 6_anchorLong/contig.fasta ]; then
+    echo >&2 "6_anchorLong/contig.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 FILE_ANCHOR FILE_LONG GAP_COV"
+
+if [ "$#" -lt 2 ]; then
+    echo >&2 "$USAGE"
+    exit 1
+fi
+
+FILE_ANCHOR=$1
+FILE_LONG=$2
+GAP_COV=${3:-2}
+
+#----------------------------#
+# merge anchors
+#----------------------------#
+mkdir -p 6_anchorLong
+
+log_info "overlap: between anchor-long"
+
+anchr overlap2 \
+    --parallel [% opt.parallel %] \
+    ${FILE_ANCHOR} \
+    ${FILE_LONG} \
+    -d 6_anchorLong \
+    -b 50 --len 1000 --idt 0.98 --all
+
+cd 6_anchorLong
+
+log_info "cover: trusted regions of anchors"
+anchr cover \
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+    --len 1000 --idt 0.98 -c ${GAP_COV} \
+    anchorLong.ovlp.tsv \
+    -o anchorLong.cover.json
+cat anchorLong.cover.json | jq "." > environment.json
+
+log_info "overlap: within anhcors"
+anchr overlap \
+    anchor.fasta \
+    --serial --len 30 --idt 0.9999 \
+    -o stdout \
+    | perl -nla -e '
+        BEGIN {
+            our %seen;
+            our %count_of;
+        }
+
+        @F == 13 or next;
+        $F[3] > 0.9999 or next;
+
+        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
+        next if $seen{$pair};
+        $seen{$pair} = $_;
+
+        $count_of{ $F[0] }++;
+        $count_of{ $F[1] }++;
+
+        END {
+            for my $pair ( keys %seen ) {
+                my ($f_id, $g_id) = split "-", $pair;
+                next if $count_of{$f_id} > 2;
+                next if $count_of{$g_id} > 2;
+                print $seen{$pair};
+            }
+        }
+    ' \
+    | sort -k 1n,1n -k 2n,2n \
+    > anchor.ovlp.tsv
+
+
+log_info "group: anchor-long"
+rm -fr group
+anchr group \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --oa anchor.ovlp.tsv \
+    --parallel [% opt.parallel %] \
+    --range $(cat environment.json | jq -r '.TRUSTED') \
+    --len 1000 --idt 0.98 --max "-30" -c ${GAP_COV}
+
+log_info "Processing each groups"
+cat group/groups.txt \
+    | parallel --no-run-if-empty --linebuffer -k -j [% opt.parallel2 %] '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.98 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.98 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr overlap --len 30 --idt 0.9999 \
+            group/{}.strand.fasta \
+            -o stdout \
+            | perl -nla -e '\''
+                @F == 13 or next;
+                $F[3] > 0.9999 or next;
+                $F[9] == 0 or next;
+                $F[5] > 0 and $F[6] == $F[7] or next;
+                /anchor.+anchor/ or next;
+                print;
+            '\'' \
+            > group/{}.anchor.ovlp.tsv
+            
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            --oa group/{}.anchor.ovlp.tsv \
+            -o group/{}.contig.fasta
+    '
+
+log_info "Build contigs"
+cat \
+   group/non_grouped.fasta \
+   group/*.contig.fasta \
+   | faops filter -l 0 -a 1000 stdin contig.fasta
