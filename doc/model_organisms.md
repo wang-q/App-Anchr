@@ -12,20 +12,8 @@
     - [e_coli: run](#e-coli-run)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
-    - [s288c: preprocess Illumina reads](#s288c-preprocess-illumina-reads)
-    - [s288c: preprocess PacBio reads](#s288c-preprocess-pacbio-reads)
-    - [s288c: reads stats](#s288c-reads-stats)
-    - [s288c: spades](#s288c-spades)
-    - [s288c: platanus](#s288c-platanus)
-    - [s288c: quorum](#s288c-quorum)
-    - [s288c: adapter filtering](#s288c-adapter-filtering)
-    - [s288c: down sampling](#s288c-down-sampling)
-    - [s288c: k-unitigs and anchors (sampled)](#s288c-k-unitigs-and-anchors-sampled)
-    - [s288c: merge anchors](#s288c-merge-anchors)
-    - [s288c: 3GS](#s288c-3gs)
-    - [s288c: expand anchors](#s288c-expand-anchors)
-    - [s288c: final stats](#s288c-final-stats)
-    - [s288c: clear intermediate files](#s288c-clear-intermediate-files)
+    - [s288c: template](#s288c-template)
+    - [s288c: run](#s288c-run)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
     - [iso_1: preprocess Illumina reads](#iso-1-preprocess-illumina-reads)
@@ -509,23 +497,16 @@ bash 9_quast.sh
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=s288c
-REAL_G=12157105
-IS_EUK="true"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
 * Reference genome
 
 ```bash
-BASE_NAME=s288c
-mkdir -p ${HOME}/data/anchr/${BASE_NAME}
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${WORKING_DIR}/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 1_genome
 cd 1_genome
@@ -543,8 +524,7 @@ cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_gen
     PRJNA340312, SRX2058864
 
 ```bash
-BASE_NAME=s288c
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${WORKING_DIR}/${BASE_NAME}
 
 mkdir -p 2_illumina
 cd 2_illumina
@@ -578,8 +558,8 @@ ln -s SRR522246_2.fastq.gz R2.fq.gz
     with RS II and P6C4.
 
 ```bash
-mkdir -p ~/data/anchr/s288c/3_pacbio
-cd ~/data/anchr/s288c/3_pacbio
+mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
 
 # download from sra
 cat <<EOF > hdf5.txt
@@ -623,88 +603,153 @@ cat 3_pacbio/fasta/*.fasta \
 
 ```
 
-* FastQC
+* 在酿酒酵母中, 有下列几组完全相同的序列, 它们都是新近发生的片段重复:
 
-* kmergenie
+    * I:216563-218385, VIII:537165-538987
+    * I:223713-224783, VIII:550350-551420
+    * IV:528442-530427, IV:532327-534312, IV:536212-538197
+    * IV:530324-531519, IV:534209-535404
+    * IV:5645-7725, X:738076-740156
+    * IV:7810-9432, X:736368-737990
+    * IX:9683-11043, X:9666-11026
+    * IV:1244112-1245373, XV:575980-577241
+    * VIII:212266-214124, VIII:214264-216122
+    * IX:11366-14953, X:11349-14936
+    * XII:468935-470576, XII:472587-474228, XII:482167-483808, XII:485819-487460,
+    * XII:483798-485798, XII:487450-489450
 
-## s288c: preprocess Illumina reads
+* 对真核生物尽量不要使用 `scythe`
+
+## s288c: template
+
+* Rsync to hpcc
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-cd 2_illumina
-
-anchr trim \
-    --uniq \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+rsync -avP \
+    --exclude="*_hdf5.tgz" \
+    ~/data/anchr/s288c/ \
+    wangq@202.119.37.251:data/anchr/s288c
 
 ```
 
-## s288c: preprocess PacBio reads
+* template
 
-## s288c: reads stats
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=s288c
 
-| Name     |    N50 |        Sum |        # |
-|:---------|-------:|-----------:|---------:|
-| Genome   | 924431 |   12157105 |       17 |
-| Paralogs |   3851 |    1059148 |      366 |
-| Illumina |    151 | 2939081214 | 19464114 |
-| uniq     |    151 | 2778772064 | 18402464 |
-| Q25L60   |    151 | 2502621682 | 16817924 |
-| Q30L60   |    151 | 2442383221 | 16630313 |
-| PacBio   |   8412 |  820962526 |   177100 |
-| X40.raw  |   8344 |  486285507 |   108074 |
-| X40.trim |   7743 |  373850168 |    64169 |
-| X80.raw  |   8412 |  820962526 |   177100 |
-| X80.trim |   7829 |  626413879 |   106381 |
+cd ${WORKING_DIR}/${BASE_NAME}
 
-## s288c: spades
+anchr template \
+    . \
+    --basename s288c \
+    --genome 12157105 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "all" \
+    --qual3 "trim" \
+    --parallel 24
 
-## s288c: platanus
+```
 
-## s288c: quorum
+## s288c: run
 
-| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
-|:-------|------:|------:|-------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
-| Q25L60 |  2.5G | 205.9 |   2.2G |  181.2 |  11.967% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:07'55'' |
-| Q30L60 | 2.44G | 201.0 |  2.18G |  179.5 |  10.664% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:07'41'' |
+```bash
+# Illumina QC
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
-## s288c: adapter filtering
+# preprocess Illumina reads
+bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+
+# preprocess PacBio reads
+bsub -q largemem -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
+
+# reads stats
+bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+
+# spades and platanus
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q largemem -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
+
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q largemem -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
+
+# quorum
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q largemem -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
+bsub -w "done(${BASE_NAME}-2_quorum)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
+
+# down sampling, k-unitigs and anchors
+bsub -w "done(${BASE_NAME}-2_quorum)" \
+    -q largemem -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
+    -q largemem -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
+bsub -w "done(${BASE_NAME}-4_kunitigs)" \
+    -q largemem -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
+bsub -w "done(${BASE_NAME}-4_anchors)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+
+# merge anchors
+bsub -w "done(${BASE_NAME}-4_anchors)" \
+    -q largemem -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+
+# canu
+bsub -w "done(${BASE_NAME}-3_trimlong)" \
+    -q largemem -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
+bsub -w "done(${BASE_NAME}-5_canu)" \
+    -q largemem -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
+
+# expand anchors
+bsub -w "done(${BASE_NAME}-4_anchors) && done(${BASE_NAME}-5_canu)" \
+    -q largemem -n 24 -J "${BASE_NAME}-6_anchorLong" \
+    "bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
+
+bsub -w "done(${BASE_NAME}-6_anchorLong)" \
+    -q largemem -n 24 -J "${BASE_NAME}-6_anchorFill" \
+    "bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
+
+```
+
+```bash
+# stats
+bash 9_statFinal.sh
+
+bash -q largemem -n 24 -J "${BASE_NAME}-6_anchorFill" "bash 9_quast.sh"
+
+# false strands of anchorLong
+cat 6_anchorLong/group/*.ovlp.tsv \
+    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
+    | sort | uniq -c
+    
+#bash 0_cleanup.sh
+
+```
+
+| Name      |    N50 |      Sum |        # |
+|:----------|-------:|---------:|---------:|
+| Genome    | 924431 | 12157105 |       17 |
+| Paralogs  |   3851 |  1059148 |      366 |
+| Illumina  |    151 |    2.94G | 19464114 |
+| uniq      |    151 |    2.78G | 18402464 |
+| Q25L60    |    151 |     2.5G | 16817924 |
+| Q30L60    |    151 |    2.44G | 16630313 |
+| PacBio    |   8412 |  820.96M |   177100 |
+| Xall.raw  |   8412 |  820.96M |   177100 |
+| Xall.trim |   7829 |  626.41M |   106381 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
+| Q25L60 | 205.9 |  180.6 |  12.291% |     149 | "105" | 12.16M | 12.16M |     1.00 | 0:04'27'' |
+| Q30L60 | 201.0 |  178.9 |  10.986% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:04'20'' |
 
 ```text
-#File	2_illumina/Q25L60/pe.cor.raw
+#File	pe.cor.raw
 #Total	14763763
 #Matched	56909	0.38546%
 #Name	Reads	ReadsPct
@@ -712,89 +757,68 @@ I5_Nextera_Transposase_1	31974	0.21657%
 I7_Nextera_Transposase_1	24866	0.16843%
 I7_Primer_Nextera_XT_and_Nextera_Enrichment_N712	49	0.00033%
 I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]507	20	0.00014%
+
+#File	pe.cor.raw
+#Total	14841476
+#Matched	56695	0.38200%
+#Name	Reads	ReadsPct
+I5_Nextera_Transposase_1	33136	0.22327%
+I7_Nextera_Transposase_1	23482	0.15822%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N712	45	0.00030%
+I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]507	20	0.00013%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N704	4	0.00003%
+I7_Primer_Nextera_XT_Index_Kit_v2_N714	4	0.00003%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N703	1	0.00001%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N707	1	0.00001%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N711	1	0.00001%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N706	1	0.00001%
+
 ```
 
-## s288c: down sampling
+| Name          | CovCor | N50Anchor |    Sum |    # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|-------:|-----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |     12071 |   9.8M | 1402 |      1013 | 502.43K | 513 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:02'25'' | 0:01'30'' |
+| Q25L60X40P001 |   40.0 |     12556 | 10.07M | 1412 |       996 | 453.64K | 482 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'23'' | 0:01'30'' |
+| Q25L60X40P002 |   40.0 |     13165 | 10.17M | 1356 |       993 |  437.3K | 453 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'24'' | 0:01'32'' |
+| Q25L60X40P003 |   40.0 |     13142 | 10.15M | 1367 |      1023 | 481.82K | 498 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'25'' | 0:01'32'' |
+| Q25L60X80P000 |   80.0 |     10813 |  9.79M | 1554 |       990 | 463.46K | 491 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:03'55'' | 0:01'28'' |
+| Q25L60X80P001 |   80.0 |     11358 |  10.2M | 1544 |       973 | 464.78K | 502 |   70.0 | 8.0 |  15.3 | 140.0 | "31,41,51,61,71,81" | 0:03'56'' | 0:01'29'' |
+| Q30L60X40P000 |   40.0 |     12586 |  10.2M | 1378 |       964 | 457.74K | 490 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'25'' | 0:01'30'' |
+| Q30L60X40P001 |   40.0 |     13453 | 10.14M | 1351 |       990 | 459.04K | 485 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'23'' | 0:01'33'' |
+| Q30L60X40P002 |   40.0 |     13164 | 10.11M | 1305 |       987 | 424.69K | 447 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:02'24'' | 0:01'33'' |
+| Q30L60X40P003 |   40.0 |     13661 | 10.43M | 1319 |       975 | 410.42K | 450 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 0:02'24'' | 0:01'29'' |
+| Q30L60X80P000 |   80.0 |     12472 |  9.88M | 1454 |       992 | 451.54K | 478 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:03'55'' | 0:01'31'' |
+| Q30L60X80P001 |   80.0 |     11951 | 10.34M | 1465 |       952 | 439.16K | 485 |   71.0 | 8.0 |  15.7 | 142.0 | "31,41,51,61,71,81" | 0:03'54'' | 0:01'32'' |
 
-## s288c: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |    Sum |    # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|-------:|-----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 | 486.28M |   40.0 |     12071 |   9.8M | 1403 |      1013 | 502.32K | 513 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:05'51'' | 0:01'44'' |
-| Q25L60X40P001 | 486.28M |   40.0 |     12488 | 10.06M | 1415 |       995 |  452.8K | 483 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:05'52'' | 0:01'48'' |
-| Q25L60X40P002 | 486.28M |   40.0 |     13165 | 10.17M | 1356 |       993 |  437.3K | 453 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:06'05'' | 0:01'47'' |
-| Q25L60X40P003 | 486.28M |   40.0 |     13115 | 10.15M | 1369 |      1028 | 484.47K | 499 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:06'04'' | 0:01'46'' |
-| Q25L60X80P000 | 972.57M |   80.0 |     10872 |  9.78M | 1554 |       990 | 463.46K | 491 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:09'49'' | 0:01'44'' |
-| Q25L60X80P001 | 972.57M |   80.0 |     11356 |  10.2M | 1545 |       973 | 464.78K | 502 |   70.0 | 8.0 |  15.3 | 140.0 | "31,41,51,61,71,81" | 0:09'47'' | 0:01'46'' |
-| Q30L60X40P000 | 486.28M |   40.0 |     12586 |  10.2M | 1378 |       964 | 457.74K | 490 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:05'49'' | 0:01'46'' |
-| Q30L60X40P001 | 486.28M |   40.0 |     13250 | 10.13M | 1353 |       990 | 455.94K | 483 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:05'50'' | 0:01'47'' |
-| Q30L60X40P002 | 486.28M |   40.0 |     13163 | 10.11M | 1303 |       986 | 425.13K | 448 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:05'44'' | 0:01'48'' |
-| Q30L60X40P003 | 486.28M |   40.0 |     13645 | 10.43M | 1318 |       975 | 410.44K | 450 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 0:05'47'' | 0:01'43'' |
-| Q30L60X80P000 | 972.57M |   80.0 |     12351 |  9.83M | 1455 |       992 | 451.54K | 478 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:09'40'' | 0:01'49'' |
-| Q30L60X80P001 | 972.57M |   80.0 |     11951 | 10.34M | 1467 |       947 | 434.72K | 483 |   71.0 | 8.0 |  15.7 | 142.0 | "31,41,51,61,71,81" | 0:09'43'' | 0:01'49'' |
-
-## s288c: merge anchors
-
-## s288c: 3GS
-
-| Name               |    N50 |       Sum |     # |
-|:-------------------|-------:|----------:|------:|
-| Genome             | 924431 |  12157105 |    17 |
-| Paralogs           |   3851 |   1059148 |   366 |
-| X40.raw.corrected  |   7382 | 297595242 | 53773 |
-| X40.trim.corrected |   7456 | 308765772 | 54958 |
-| X80.raw.corrected  |   7385 | 440867536 | 79638 |
-| X80.trim.corrected |   7965 | 450502473 | 66099 |
-| X40.raw            | 498694 |  12267418 |    48 |
-| X40.trim           | 551422 |  12193990 |    47 |
-| X80.raw            | 604680 |  12351131 |    37 |
-| X80.trim           | 813374 |  12360766 |    26 |
-
-## s288c: expand anchors
-
-在酿酒酵母中, 有下列几组完全相同的序列, 它们都是新近发生的片段重复:
-
-* I:216563-218385, VIII:537165-538987
-* I:223713-224783, VIII:550350-551420
-* IV:528442-530427, IV:532327-534312, IV:536212-538197
-* IV:530324-531519, IV:534209-535404
-* IV:5645-7725, X:738076-740156
-* IV:7810-9432, X:736368-737990
-* IX:9683-11043, X:9666-11026
-* IV:1244112-1245373, XV:575980-577241
-* VIII:212266-214124, VIII:214264-216122
-* IX:11366-14953, X:11349-14936
-* XII:468935-470576, XII:472587-474228, XII:482167-483808, XII:485819-487460,
-* XII:483798-485798, XII:487450-489450
-
-* anchorLong
-
-* contigTrim
-
-## s288c: final stats
-
-* Stats
+| Name                |    N50 |      Sum |     # |
+|:--------------------|-------:|---------:|------:|
+| Genome              | 924431 | 12157105 |    17 |
+| Paralogs            |   3851 |  1059148 |   366 |
+| Xall.trim.corrected |   7965 |   450.5M | 66099 |
+| Xall.trim.contig    | 813374 | 12360766 |    26 |
 
 | Name                   |    N50 |      Sum |    # |
 |:-----------------------|-------:|---------:|-----:|
 | Genome                 | 924431 | 12157105 |   17 |
 | Paralogs               |   3851 |  1059148 |  366 |
-| anchor                 |  26624 | 11199635 |  786 |
-| others                 |   1188 |  1526877 | 1367 |
-| anchorLong             |  40449 | 11027419 |  540 |
-| contigTrim             | 253177 | 11213678 |   82 |
-| canu-X40-raw           | 498694 | 12267418 |   48 |
-| canu-X40-trim          | 551422 | 12193990 |   47 |
-| spades.contig          |  89836 | 11731746 | 1189 |
-| spades.scaffold        |  98572 | 11732702 | 1167 |
-| spades.non-contained   |  91619 | 11544360 |  291 |
+| anchors                |  26702 | 11261198 |  784 |
+| others                 |   1188 |  1524190 | 1365 |
+| anchorLong             |  40449 | 11172421 |  545 |
+| anchorFill             | 253179 | 11276561 |   74 |
+| canu_Xall-trim         | 813374 | 12360766 |   26 |
+| spades.contig          |  83977 | 11775064 | 1710 |
+| spades.scaffold        |  93363 | 11775854 | 1676 |
+| spades.non-contained   |  85760 | 11511681 |  296 |
 | platanus.contig        |   5983 | 12437850 | 7727 |
 | platanus.scaffold      |  55443 | 12073445 | 4735 |
 | platanus.non-contained |  59263 | 11404921 |  360 |
 
-* quast
+* Rsync back to local
 
-## s288c: clear intermediate files
+```bash
+rsync -avP wangq@202.119.37.251:data/anchr/s288c/ ~/data/anchr/s288c
+
+```
 
 # *Drosophila melanogaster* iso-1
 
