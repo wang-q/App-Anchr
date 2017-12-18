@@ -5,15 +5,7 @@
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [SE: download](#se-download)
     - [SE: template](#se-template)
-    - [SE: preprocessing](#se-preprocessing)
-    - [SE: quorum](#se-quorum)
-    - [SE: down sampling, k-unitigs and anchors](#se-down-sampling-k-unitigs-and-anchors)
-    - [SE: merge anchors](#se-merge-anchors)
-    - [SE: canu](#se-canu)
-    - [SE: spades](#se-spades)
-    - [SE: platanus](#se-platanus)
-    - [SE: final stats](#se-final-stats)
-    - [SE: clear intermediate files](#se-clear-intermediate-files)
+    - [SE: run](#se-run)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -53,16 +45,6 @@ cp ../../e_coli/2_illumina/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz R1.fq.gz
 
 ```
 
-* PacBio
-
-```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
-cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
-
-cp ../../e_coli/3_pacbio/pacbio.fasta .
-
-```
-
 ## SE: template
 
 ```bash
@@ -71,6 +53,9 @@ rsync -avP ~/data/anchr/SE/ wangq@202.119.37.251:data/anchr/SE
 ```
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=SE
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
@@ -82,30 +67,19 @@ anchr template \
     --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --cov3 "80" \
-    --qual3 "trim" \
     --parallel 24
 
 ```
 
-## SE: preprocessing
+## SE: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-# Illumina QC
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-# preprocess Illumina reads
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
-
-# preprocess PacBio reads
-bsub -q largemem -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
-
-# reads stats
-bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+#bash 0_cleanup.sh
 
 ```
 
@@ -119,21 +93,6 @@ bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
 | scythe   |     151 | 715.94M | 4752465 |
 | Q25L60   |     151 | 603.36M | 4434322 |
 | Q30L60   |     138 | 520.27M | 4122960 |
-| PacBio   |   13982 | 748.51M |   87225 |
-| X80.raw  |   13990 | 371.34M |   44005 |
-| X80.trim |   13632 | 339.51M |   38725 |
-
-## SE: quorum
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
-
-bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
-
-```
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
@@ -154,24 +113,6 @@ TruSeq_Adapter_Index_22	1	0.00002%
 
 ```
 
-## SE: down sampling, k-unitigs and anchors
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bsub -q largemem -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
-
-bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q largemem -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
-
-bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q largemem -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
-
-bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
-
-```
-
 | Name           | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
 | Q25L60X40P000  |   40.0 |     38676 | 4.52M | 199 |       847 | 25.98K | 31 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'00'' | 0:00'57'' |
@@ -184,103 +125,6 @@ bsub -w "done(${BASE_NAME}-4_anchors)" \
 | Q30L60X80P000  |   80.0 |     50795 | 4.52M | 157 |      1138 | 34.48K | 32 |   79.0 | 3.0 |  23.3 | 132.0 | "31,41,51,61,71,81" | 0:00'01'' | 0:01'03'' |
 | Q30L60XallP000 |  108.5 |     49198 | 4.53M | 158 |      1054 | 31.67K | 27 |  107.0 | 3.0 |  32.7 | 174.0 | "31,41,51,61,71,81" | 0:01'43'' | 0:01'06'' |
 
-## SE: merge anchors
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bsub -q largemem -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
-
-# In a local machine
-# anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
-    6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
-nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
-mummerplot --postscript out.delta -p anchor.sort --small
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-mv anchor.sort.ps 6_mergeAnchors/
-
-```
-
-## SE: canu
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bsub -q largemem -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
-
-bsub -w "done(${BASE_NAME}-5_canu)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
-
-```
-
-| Name               |     N50 |     Sum |     # |
-|:-------------------|--------:|--------:|------:|
-| Genome             | 4641652 | 4641652 |     1 |
-| Paralogs           |    1934 |  195673 |   106 |
-| X80.trim.corrected |   16820 | 175.59M | 10873 |
-| X80.trim.contig    | 4657933 | 4657933 |     1 |
-
-## SE: spades
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-spades.py \
-    -t 16 \
-    --only-assembler \
-    -k 21,33,55,77 \
-    -s 2_illumina/Q25L60/R1.sickle.fq.gz \
-    -o 8_spades
-
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
-
-```
-
-## SE: platanus
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-mkdir -p 8_platanus
-cd 8_platanus
-
-if [ ! -e se.fa ]; then
-    faops interleave \
-        -p se \
-        ../2_illumina/Q30L60/R1.sickle.fq.gz \
-        > se.fa
-fi
-
-platanus assemble -t 16 -m 100 \
-    -f se.fa \
-    2>&1 | tee ass_log.txt
-
-anchr contained \
-    out_contig.fa out_contigBubble.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
-
-```
-
-## SE: final stats
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bash 9_statFinal.sh
-bash 9_quast.sh
-
-```
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
@@ -288,12 +132,8 @@ bash 9_quast.sh
 | Paralogs               |    1934 |  195673 | 106 |
 | anchors                |   63440 | 4532169 | 123 |
 | others                 |    1096 |   68234 |  61 |
-| canu_X80-trim          | 4657933 | 4657933 |   1 |
-| spades.contig          |   97656 | 4646879 | 271 |
-| spades.scaffold        |  112078 | 4647379 | 266 |
-| spades.non-contained   |  106190 | 4577172 | 104 |
-| platanus.contig        |   29376 | 4612136 | 961 |
-| platanus.non-contained |   29673 | 4517996 | 253 |
-
-## SE: clear intermediate files
-
+| spades.contig          |   97656 | 4646773 | 272 |
+| spades.scaffold        |  112078 | 4647273 | 267 |
+| spades.non-contained   |  106190 | 4575960 | 104 |
+| platanus.contig        |   43810 | 4612793 | 837 |
+| platanus.non-contained |   44625 | 4523974 | 188 |
