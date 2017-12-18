@@ -113,6 +113,9 @@ sub execute {
     # anchorLong
     $self->gen_anchorLong( $opt, $args );
 
+    # anchorFill
+    $self->gen_anchorFill( $opt, $args );
+
     # quast
     $self->gen_quast( $opt, $args );
 
@@ -917,6 +920,25 @@ sub gen_anchorLong {
 
     $tt->process(
         '6_anchorLong.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_anchorFill {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "6_anchorFill.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '6_anchorFill.tt2',
         {   args => $args,
             opt  => $opt,
         },

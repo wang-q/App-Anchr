@@ -1,0 +1,79 @@
+[% INCLUDE header.tt2 %]
+
+if [ -e 6_anchorFill/contig.fasta ]; then
+    echo >&2 "6_anchorFill/contig.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 FILE_ANCHOR FILE_LONG GAP_COV"
+
+if [ "$#" -lt 2 ]; then
+    echo >&2 "$USAGE"
+    exit 1
+fi
+
+FILE_ANCHOR=$1
+FILE_LONG=$2
+GAP_COV=${3:-1}
+
+#----------------------------#
+# merge anchors
+#----------------------------#
+mkdir -p 6_anchorFill
+
+log_info "overlap: between anchor-long"
+
+anchr overlap2 \
+    --parallel [% opt.parallel %] \
+    ${FILE_ANCHOR} \
+    ${FILE_LONG} \
+    -d 6_anchorFill \
+    -b 50 --len 1000 --idt 0.995 --all
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
+log_debug "contigs: ${CONTIG_COUNT}"
+
+cd 6_anchorFill
+
+log_info "group: anchor-long"
+rm -fr group
+anchr group \
+    anchorLong.db \
+    anchorLong.ovlp.tsv \
+    --parallel [% opt.parallel %] \
+    --keep \
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max 5000 -c ${GAP_COV}
+
+log_info "Processing each groups"
+cat group/groups.txt \
+    | parallel --no-run-if-empty --linebuffer -k -j [% opt.parallel2 %] '
+        echo {};
+        anchr orient \
+            --len 1000 --idt 0.995 \
+            group/{}.anchor.fasta \
+            group/{}.long.fasta \
+            -r group/{}.restrict.tsv \
+            -o group/{}.strand.fasta;
+
+        anchr overlap --len 1000 --idt 0.995 --all \
+            group/{}.strand.fasta \
+            -o stdout \
+            | anchr restrict \
+                stdin group/{}.restrict.tsv \
+                -o group/{}.ovlp.tsv;
+
+        anchr layout \
+            group/{}.ovlp.tsv \
+            group/{}.relation.tsv \
+            group/{}.strand.fasta \
+            -o group/{}.contig.fasta
+    '
+   
+log_info "Build contigs"
+cat \
+   group/non_grouped.fasta \
+   group/*.contig.fasta \
+   | faops filter -l 0 -a 1000 stdin contig.fasta
