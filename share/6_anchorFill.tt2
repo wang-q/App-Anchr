@@ -33,10 +33,10 @@ anchr overlap2 \
     -d 6_anchorFill \
     -b 50 --len 1000 --idt 0.995 --all
 
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
-log_debug "contigs: ${CONTIG_COUNT}"
-
 cd 6_anchorFill
+
+CONTIG_COUNT=$(faops n50 -H -N 0 -C anchor.fasta)
+log_debug "contigs: ${CONTIG_COUNT}"
 
 log_info "group: anchor-long"
 rm -fr group
