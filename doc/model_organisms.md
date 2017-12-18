@@ -16,50 +16,16 @@
     - [s288c: run](#s288c-run)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
-    - [iso_1: preprocess Illumina reads](#iso-1-preprocess-illumina-reads)
-    - [iso_1: preprocess PacBio reads](#iso-1-preprocess-pacbio-reads)
-    - [iso_1: reads stats](#iso-1-reads-stats)
-    - [iso_1: spades](#iso-1-spades)
-    - [iso_1: platanus](#iso-1-platanus)
-    - [iso_1: quorum](#iso-1-quorum)
-    - [iso_1: down sampling](#iso-1-down-sampling)
-    - [iso_1: k-unitigs and anchors (sampled)](#iso-1-k-unitigs-and-anchors-sampled)
-    - [iso_1: merge anchors](#iso-1-merge-anchors)
-    - [iso_1: 3GS](#iso-1-3gs)
-    - [iso_1: expand anchors](#iso-1-expand-anchors)
-    - [iso_1: final stats](#iso-1-final-stats)
-    - [iso_1: clear intermediate files](#iso-1-clear-intermediate-files)
+    - [iso_1: template](#iso-1-template)
+    - [iso_1: run](#iso-1-run)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
-    - [n2: preprocess Illumina reads](#n2-preprocess-illumina-reads)
-    - [n2: preprocess PacBio reads](#n2-preprocess-pacbio-reads)
-    - [n2: reads stats](#n2-reads-stats)
-    - [n2: spades](#n2-spades)
-    - [n2: platanus](#n2-platanus)
-    - [n2: quorum](#n2-quorum)
-    - [n2: adapter filtering](#n2-adapter-filtering)
-    - [n2: down sampling](#n2-down-sampling)
-    - [n2: k-unitigs and anchors (sampled)](#n2-k-unitigs-and-anchors-sampled)
-    - [n2: merge anchors](#n2-merge-anchors)
-    - [n2: 3GS](#n2-3gs)
-    - [n2: expand anchors](#n2-expand-anchors)
-    - [n2: final stats](#n2-final-stats)
-    - [n2: clear intermediate files](#n2-clear-intermediate-files)
+    - [n2: template](#n2-template)
+    - [n2: run](#n2-run)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [col_0: download](#col-0-download)
-    - [col_0: preprocess Illumina reads](#col-0-preprocess-illumina-reads)
-    - [col_0: preprocess PacBio reads](#col-0-preprocess-pacbio-reads)
-    - [col_0: reads stats](#col-0-reads-stats)
-    - [col_0: spades](#col-0-spades)
-    - [col_0: platanus](#col-0-platanus)
-    - [col_0: quorum](#col-0-quorum)
-    - [col_0: down sampling](#col-0-down-sampling)
-    - [col_0: k-unitigs and anchors (sampled)](#col-0-k-unitigs-and-anchors-sampled)
-    - [col_0: merge anchors](#col-0-merge-anchors)
-    - [col_0: 3GS](#col-0-3gs)
-    - [col_0: expand anchors](#col-0-expand-anchors)
-    - [col_0: final stats](#col-0-final-stats)
-    - [col_0: clear intermediate files](#col-0-clear-intermediate-files)
+    - [col_0: template](#col-0-template)
+    - [col_0: run](#col-0-run)
 
 
 # More tools on downloading and preprocessing data
@@ -642,7 +608,7 @@ cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
-    --basename s288c \
+    --basename ${BASE_NAME} \
     --genome 12157105 \
     --is_euk \
     --trim2 "--uniq " \
@@ -659,59 +625,59 @@ anchr template \
 
 ```bash
 # Illumina QC
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
 # preprocess Illumina reads
-bsub -q largemem -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
 # preprocess PacBio reads
-bsub -q largemem -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
+bsub -q mpi -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
 
 # reads stats
 bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
 # spades and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q largemem -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
 
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q largemem -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
 
 # quorum
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q largemem -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
 
 # down sampling, k-unitigs and anchors
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q largemem -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q largemem -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q largemem -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q largemem -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+    -q mpi -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
 
 # canu
 bsub -w "done(${BASE_NAME}-3_trimlong)" \
-    -q largemem -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
 bsub -w "done(${BASE_NAME}-5_canu)" \
-    -q largemem -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
+    -q mpi -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
 
 # expand anchors
 bsub -w "done(${BASE_NAME}-4_anchors) && done(${BASE_NAME}-5_canu)" \
-    -q largemem -n 24 -J "${BASE_NAME}-6_anchorLong" \
+    -q mpi -n 24 -J "${BASE_NAME}-6_anchorLong" \
     "bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
 
 bsub -w "done(${BASE_NAME}-6_anchorLong)" \
-    -q largemem -n 24 -J "${BASE_NAME}-6_anchorFill" \
+    -q mpi -n 24 -J "${BASE_NAME}-6_anchorFill" \
     "bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
 
 ```
@@ -720,7 +686,7 @@ bsub -w "done(${BASE_NAME}-6_anchorLong)" \
 # stats
 bash 9_statFinal.sh
 
-bash -q largemem -n 24 -J "${BASE_NAME}-6_anchorFill" "bash 9_quast.sh"
+bash -q mpi -n 24 -J "${BASE_NAME}-6_anchorFill" "bash 9_quast.sh"
 
 # false strands of anchorLong
 cat 6_anchorLong/group/*.ovlp.tsv \
@@ -830,13 +796,8 @@ rsync -avP wangq@202.119.37.251:data/anchr/s288c/ ~/data/anchr/s288c
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=iso_1
-REAL_G=137567477
-COVERAGE2="30 40 50 60 80 90"
-COVERAGE3="40"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
@@ -960,69 +921,45 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-* FastQC
+## iso_1: template
 
-* kmergenie
-
-## iso_1: preprocess Illumina reads
+* Rsync to hpcc
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
-
-cat ${HOME}/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-    > 2_illumina/illumina_adapters.fa
-echo ">TruSeq_Adapter_Index_5" >> 2_illumina/illumina_adapters.fa
-echo "GATCGGAAGAGCACACGTCTGAACTCCAGTCACACAGTGATCTCGTATGC" >> 2_illumina/illumina_adapters.fa
-echo ">Illumina_Single_End_PCR_Primer_1" >> 2_illumina/illumina_adapters.fa
-echo "GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG" >> 2_illumina/illumina_adapters.fa
-
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.uniq.fq.gz \
-            -q sanger \
-            -a 2_illumina/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
-
-parallel --no-run-if-empty -j 3 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+rsync -avP \
+    --exclude="ERR70*" \
+    --exclude="*.tgz" \
+    ~/data/anchr/iso_1/ \
+    wangq@202.119.37.251:data/anchr/iso_1
 
 ```
 
-## iso_1: preprocess PacBio reads
+* template
 
-## iso_1: reads stats
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=iso_1
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 137567477 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 50 60 70 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "all" \
+    --qual3 "trim" \
+    --parallel 24
+
+```
+
+## iso_1: run
+
+Same as [s288c: run](#s288c-run)
 
 | Name     |      N50 |         Sum |         # |
 |:---------|---------:|------------:|----------:|
@@ -1036,20 +973,10 @@ parallel --no-run-if-empty -j 3 "
 | X40.raw  |    13724 |  5502707116 |    616212 |
 | X40.trim |    13587 |  5110432584 |    529483 |
 
-## iso_1: spades
-
-## iso_1: platanus
-
-## iso_1: quorum
-
 | Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
 |:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
 | Q25L60 | 14.64G | 106.4 |  13.3G |   96.7 |   9.144% |      99 | "71" | 137.57M | 126.99M |     0.92 | 1:08'40'' |
 | Q30L60 | 13.94G | 101.4 |    13G |   94.5 |   6.768% |      99 | "71" | 137.57M |  126.3M |     0.92 | 0:01'43'' |
-
-## iso_1: down sampling
-
-## iso_1: k-unitigs and anchors (sampled)
 
 | Name          | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |   Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------:|----------:|:----------|
@@ -1072,10 +999,6 @@ parallel --no-run-if-empty -j 3 "
 | Q30L60X80P000 | 11.01G |   80.0 | 12558 | 120.36M | 20179 |     13107 | 115.53M | 15329 |       870 | 4.83M | 4850 | "31,41,51,61,71,81" | 3:40'45'' | 0:15'59'' |
 | Q30L60X90P000 | 12.38G |   90.0 | 12064 | 120.37M | 20697 |     12543 | 115.46M | 15729 |       866 | 4.91M | 4968 | "31,41,51,61,71,81" | 3:42'05'' | 0:19'02'' |
 
-## iso_1: merge anchors
-
-## iso_1: 3GS
-
 | Name               |      N50 |        Sum |      # |
 |:-------------------|---------:|-----------:|-------:|
 | Genome             | 25286936 |  137567477 |      8 |
@@ -1084,16 +1007,6 @@ parallel --no-run-if-empty -j 3 "
 | X40.trim.corrected |    13405 | 4247295356 | 432489 |
 | X40.raw            | 13356203 |  149005475 |    425 |
 | X40.trim           |  8097152 |  149602462 |    446 |
-
-## iso_1: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## iso_1: final stats
-
-* Stats
 
 | Name                   |      N50 |       Sum |      # |
 |:-----------------------|---------:|----------:|-------:|
@@ -1111,10 +1024,6 @@ parallel --no-run-if-empty -j 3 "
 | platanus.scaffold      |   146404 | 129134232 |  71416 |
 | platanus.non-contained |   161200 | 119999445 |   3216 |
 
-* quast
-
-## iso_1: clear intermediate files
-
 # *Caenorhabditis elegans* N2
 
 * Genome: [Ensembl 82](http://sep2015.archive.ensembl.org/Caenorhabditis_elegans/Info/Index)
@@ -1125,14 +1034,8 @@ parallel --no-run-if-empty -j 3 "
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=n2
-REAL_G=100286401
-IS_EUK="true"
-COVERAGE2="30 40 50 60 70"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
@@ -1222,58 +1125,46 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 ```
 
-* FastQC
+## n2: template
 
-* kmergenie
-
-## n2: preprocess Illumina reads
+* Rsync to hpcc
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-cd 2_illumina
-
-anchr trim \
-    --uniq \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+rsync -avP \
+    --exclude="SRR15*" \
+    --exclude="*.tgz" \
+    ~/data/anchr/n2/ \
+    wangq@202.119.37.251:data/anchr/n2
 
 ```
 
-## n2: preprocess PacBio reads
+* template
 
-## n2: reads stats
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=n2
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 100286401 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 50 60 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "all" \
+    --qual3 "trim" \
+    --parallel 24
+
+```
+
+## n2: run
+
+Same as [s288c: run](#s288c-run)
+
 
 | Name     |      N50 |         Sum |         # |
 |:---------|---------:|------------:|----------:|
@@ -1289,18 +1180,11 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X80.raw  |    16578 |  8022917144 |    731704 |
 | X80.trim |    16240 |  7584684643 |    666119 |
 
-## n2: spades
-
-## n2: platanus
-
-## n2: quorum
 
 | Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|-------:|---------:|----------:|
 | Q25L60 | 9.88G |  98.5 |  6.38G |   63.6 |  35.443% |      97 | "71" | 100.29M | 98.89M |     0.99 | 0:53'22'' |
 | Q30L60 | 8.88G |  88.5 |  7.42G |   73.9 |  16.455% |      91 | "69" | 100.29M | 98.82M |     0.99 | 0:51'43'' |
-
-## n2: adapter filtering
 
 ```text
 #File	2_illumina/Q30L60/pe.cor.raw
@@ -1319,9 +1203,6 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 
 ```
 
-## n2: down sampling
-
-## n2: k-unitigs and anchors (sampled)
 
 | Name          | SumCor | CovCor | N50Anchor |    Sum |     # | N50Others |    Sum |     # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|----------:|-------:|------:|----------:|-------:|------:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
@@ -1337,10 +1218,6 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 | Q30L60X60P000 |  6.02G |   60.0 |     12866 | 87.15M | 12913 |      1004 | 15.55M | 13274 |   43.0 | 7.0 |  11.0 |  86.0 | "31,41,51,61,71,81" | 2:12'26'' | 1:11'02'' |
 | Q30L60X70P000 |  7.02G |   70.0 |     13064 | 87.19M | 12674 |      1046 | 14.88M | 12249 |   49.0 | 8.0 |  12.5 |  98.0 | "31,41,51,61,71,81" | 2:14'34'' | 1:04'45'' |
 
-## n2: merge anchors
-
-## n2: 3GS
-
 | Name               |      N50 |        Sum |      # |
 |:-------------------|---------:|-----------:|-------:|
 | Genome             | 17493829 |  100286401 |      7 |
@@ -1353,16 +1230,6 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 | X40.trim           |  2965260 |  106522712 |    153 |
 | X80.raw            |  2922642 |  107417644 |    114 |
 | X80.trim           |  3084499 |  107369523 |    116 |
-
-## n2: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## n2: final stats
-
-* Stats
 
 | Name                   |      N50 |       Sum |      # |
 |:-----------------------|---------:|----------:|-------:|
@@ -1380,10 +1247,6 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 | platanus.scaffold      |    28158 |  99589056 |  35182 |
 | platanus.non-contained |    30510 |  94099392 |   7644 |
 
-* quast
-
-## n2: clear intermediate files
-
 # *Arabidopsis thaliana* Col-0
 
 * Genome: [Ensembl Genomes](http://plants.ensembl.org/Arabidopsis_thaliana/Info/Index)
@@ -1394,14 +1257,8 @@ RNA_PCR_Primer_Index_38_(RPI38)	1	0.00000%
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=col_0
-REAL_G=119667750
-IS_EUK="true"
-COVERAGE2="30 40 50 60 70"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="80"
 
 ```
 
@@ -1620,74 +1477,46 @@ faops filter -l 0 pacbio.fq.gz pacbio.fasta
 
 ```
 
-* FastQC
+## col_0: template
 
-* kmergenie
-
-## col_0: preprocess Illumina reads
+* Rsync to hpcc
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-cd 2_illumina
-
-cat <<EOF > illumina_adapters.fa
->multiplexing-forward
-GATCGGAAGAGCACACGTCT
->truseq-forward-contam
-AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
->truseq-reverse-contam
-AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA
-
->TruSeq_Adapter_Index_7
-GATCGGAAGAGCACACGTCTGAACTCCAGTCACCAGATCATCTCGTATGC
->Illumina_Single_End_PCR_Primer_1
-GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCG
-
-EOF
-
-anchr trim \
-    --uniq \
-    --scythe -a illumina_adapters.fa \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
-
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
-
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+rsync -avP \
+    --exclude="SRR340*" \
+    --exclude="SRR61*" \
+    --exclude="*.tgz" \
+    ~/data/anchr/col_0/ \
+    wangq@202.119.37.251:data/anchr/col_0
 
 ```
 
-## col_0: preprocess PacBio reads
+* template
 
-## col_0: reads stats
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=col_0
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 119667750 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 50 60 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "all" \
+    --qual3 "trim" \
+    --parallel 24
+
+```
+
+## col_0: run
+
+Same as [s288c: run](#s288c-run)
 
 | Name            |      N50 |         Sum |        # |
 |:----------------|---------:|------------:|---------:|
@@ -1704,22 +1533,10 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | PacBio.80x      |     7448 |  9473394614 |  2600000 |
 | PacBio.80x.trim |     6975 |  3942522483 |   729527 |
 
-## col_0: spades
-
-## col_0: platanus
-
-## col_0: quorum
-
 | Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead |  Kmer |   RealG |    EstG | Est/Real |   RunTime |
 |:-------|-------:|------:|-------:|-------:|---------:|--------:|------:|--------:|--------:|---------:|----------:|
 | Q25L60 | 11.81G |  98.7 |  8.44G |   70.6 |  28.507% |     236 | "127" | 119.67M | 125.42M |     1.05 | 0:31'28'' |
 | Q30L60 | 10.36G |  86.6 |  8.74G |   73.0 |  15.659% |     218 | "127" | 119.67M | 119.18M |     1.00 | 0:28'04'' |
-
-* Clear intermediate files.
-
-## col_0: down sampling
-
-## col_0: k-unitigs and anchors (sampled)
 
 | Name          | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |   Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------:|----------:|:----------|
@@ -1736,10 +1553,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | Q30L60X60P000 |  7.18G |   60.0 | 20774 | 112.22M | 15522 |     21760 | 107.72M | 10130 |       790 | 4.49M | 5392 | "31,41,51,61,71,81" | 1:46'11'' | 0:17'48'' |
 | Q30L60X70P000 |  8.38G |   70.0 | 20201 |  112.3M | 15810 |     21326 | 107.73M | 10254 |       786 | 4.57M | 5556 | "31,41,51,61,71,81" | 2:05'08'' | 0:18'35'' |
 
-## col_0: merge anchors
-
-## col_0: 3GS
-
 | Name               |      N50 |        Sum |      # |
 |:-------------------|---------:|-----------:|-------:|
 | Genome             | 23459830 |  119667750 |      7 |
@@ -1752,16 +1565,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X40.trim           |   160979 |  113324147 |   1251 |
 | X80.raw            |   496472 |  119336133 |    699 |
 | X80.trim           |  3410906 |  120074130 |    336 |
-
-## col_0: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## col_0: final stats
-
-* Stats
 
 | Name                   |      N50 |       Sum |      # |
 |:-----------------------|---------:|----------:|-------:|
@@ -1778,8 +1581,4 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | platanus.contig        |    15019 | 139807772 | 106870 |
 | platanus.scaffold      |   192019 | 128497152 |  67429 |
 | platanus.non-contained |   217851 | 116431399 |   2050 |
-
-* quast
-
-## col_0: clear intermediate files
 
