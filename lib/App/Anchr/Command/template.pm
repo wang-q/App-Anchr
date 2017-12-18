@@ -116,6 +116,9 @@ sub execute {
     # statFinal
     $self->gen_statFinal( $opt, $args );
 
+    # cleanup
+    $self->gen_cleanup( $opt, $args );
+
 }
 
 sub gen_fastqc {
@@ -805,6 +808,61 @@ sub gen_statFinal {
 
     $tt->process(
         '9_statFinal.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_cleanup {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "0_cleanup.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+cd [% args.0 %]
+
+# bax2bam
+rm -fr 3_pacbio/bam/*
+rm -fr 3_pacbio/fasta/*
+rm -fr 3_pacbio/untar/*
+
+# quorum
+find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
+find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
+find 2_illumina -type f -name "*.tmp"            | xargs rm
+find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+
+# down sampling
+rm -fr 4_Q{15,20,25,30,35}*
+find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta" | xargs rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | xargs rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam" | xargs rm
+
+# tempdir
+find . -type d -name "\?" | xargs rm -fr
+
+# canu
+find . -type d -name "correction" -path "*5_canu_*" | xargs rm -fr
+find . -type d -name "trimming"   -path "*5_canu_*" | xargs rm -fr
+find . -type d -name "unitigging" -path "*5_canu_*" | xargs rm -fr
+
+# spades
+find . -type d -path "*8_spades/*" | xargs rm -fr
+
+# platanus
+find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
+
+EOF
+    $tt->process(
+        \$template,
         {   args => $args,
             opt  => $opt,
         },
