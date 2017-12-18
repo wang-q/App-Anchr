@@ -4,31 +4,24 @@
 - [Assemble four genomes from GAGE-B data sets by ANCHR](#assemble-four-genomes-from-gage-b-data-sets-by-anchr)
 - [*Bacillus cereus* ATCC 10987](#bacillus-cereus-atcc-10987)
     - [Bcer: download](#bcer-download)
-    - [Bcer: template](#bcer-template)
     - [Bcer: run](#bcer-run)
 - [*Rhodobacter sphaeroides* 2.4.1](#rhodobacter-sphaeroides-241)
     - [Rsph: download](#rsph-download)
-    - [Rsph: template](#rsph-template)
     - [Rsph: run](#rsph-run)
 - [*Mycobacterium abscessus* 6G-0125-R](#mycobacterium-abscessus-6g-0125-r)
     - [Mabs: download](#mabs-download)
-    - [Mabs: template](#mabs-template)
     - [Mabs: run](#mabs-run)
 - [*Vibrio cholerae* CP1032(5)](#vibrio-cholerae-cp10325)
     - [Vcho: download](#vcho-download)
-    - [Vcho: template](#vcho-template)
     - [Vcho: run](#vcho-run)
-- [*Mycobacterium abscessus* 6G-0125-R Full](#mycobacterium-abscessus-6g-0125-r-full)
-    - [MabsF: download](#mabsf-download)
-    - [MabsF: template](#mabsf-template)
-    - [MabsF: run](#mabsf-run)
 - [*Rhodobacter sphaeroides* 2.4.1 Full](#rhodobacter-sphaeroides-241-full)
     - [RsphF: download](#rsphf-download)
-    - [RsphF: template](#rsphf-template)
     - [RsphF: run](#rsphf-run)
+- [*Mycobacterium abscessus* 6G-0125-R Full](#mycobacterium-abscessus-6g-0125-r-full)
+    - [MabsF: download](#mabsf-download)
+    - [MabsF: run](#mabsf-run)
 - [*Vibrio cholerae* CP1032(5) Full](#vibrio-cholerae-cp10325-full)
     - [VchoF: download](#vchof-download)
-    - [VchoF: template](#vchof-template)
     - [VchoF: run](#vchof-run)
 
 
@@ -117,7 +110,7 @@ tar xvfz B_cereus_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
-## Bcer: template
+## Bcer: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -132,54 +125,13 @@ anchr template \
     --len2 "60" \
     --parallel 16
 
-```
+# run
+bash 0_master.sh
 
-## Bcer: run
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-# Illumina QC
-bash 2_fastqc.sh
-bash 2_kmergenie.sh
-
-# preprocess Illumina reads
-bash 2_trim.sh
-
-# reads stats
-bash 9_statReads.sh
-
-# quorum
-bash 2_quorum.sh
-bash 9_statQuorum.sh
-
-# down sampling, k-unitigs and anchors
-bash 4_downSampling.sh
-bash 4_kunitigs.sh
-bash 4_anchors.sh
-bash 9_statAnchors.sh
-
-# merge anchors
-bash 6_mergeAnchors.sh 4_kunitigs_Q
-
-# anchor sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
-    6_mergeAnchors/anchor.merge.fasta 1_genome/genome.fa 6_mergeAnchors/anchor.sort
-nucmer -l 200 1_genome/genome.fa 6_mergeAnchors/anchor.sort.fa
-mummerplot --postscript out.delta -p anchor.sort --small
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-mv anchor.sort.ps 6_mergeAnchors/
-
-# minidot
-minimap 6_mergeAnchors/anchor.sort.fa 1_genome/genome.fa \
-    | minidot - > 6_mergeAnchors/anchor.minidot.eps
+#bash 0_cleanup.sh
 
 # quast
-rm -fr 9_qa
+rm -fr 9_quast_competitor
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     8_competitor/abyss_ctg.fasta \
@@ -194,9 +146,7 @@ quast --no-check --threads 16 \
     6_mergeAnchors/others.non-contained.fasta \
     1_genome/paralogs.fas \
     --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
-    -o 9_qa
-
-bash 9_statFinal.sh
+    -o 9_quast_competitor
 
 ```
 
@@ -326,7 +276,7 @@ tar xvfz R_sphaeroides_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
-## Rsph: template
+## Rsph: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -339,11 +289,32 @@ anchr template \
     --cov2 "all" \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+#bash 0_cleanup.sh
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
 
 ```
-
-## Rsph: run
 
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
@@ -465,7 +436,7 @@ tar xvfz M_abscessus_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
-## Mabs: template
+## Mabs: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -478,11 +449,32 @@ anchr template \
     --cov2 "40 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+#bash 0_cleanup.sh
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
 
 ```
-
-## Mabs: run
 
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
@@ -602,7 +594,7 @@ tar xvfz V_cholerae_MiSeq.tar.gz velvet_ctg.fasta
 
 ```
 
-## Vcho: template
+## Vcho: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -615,11 +607,32 @@ anchr template \
     --cov2 "40 50 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+#bash 0_cleanup.sh
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
 
 ```
-
-## Vcho: run
 
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
@@ -652,6 +665,166 @@ anchr template \
 | Paralogs |    3483 |  114707 |  48 |
 | anchors  |   33126 | 3804516 | 227 |
 | others   |     947 |  114363 | 120 |
+
+# *Rhodobacter sphaeroides* 2.4.1 Full
+
+## RsphF: download
+
+* Settings
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=RsphF
+
+```
+
+* Reference genome
+
+```bash
+mkdir -p ${HOME}/data/anchr/${BASE_NAME}
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 1_genome
+cd 1_genome
+
+cp ~/data/anchr/Rsph/1_genome/genome.fa .
+cp ~/data/anchr/Rsph/1_genome/paralogs.fas .
+
+```
+
+* Illumina
+
+    SRX160386, SRR522246
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR522/SRR522246/SRR522246_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR522/SRR522246/SRR522246_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+a29e463504252388f9f381bd8659b084 SRR522246_1.fastq.gz
+0e44d585f34c41681a7dcb25960ee273 SRR522246_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR522246_1.fastq.gz R1.fq.gz
+ln -s SRR522246_2.fastq.gz R2.fq.gz
+```
+
+* GAGE-B assemblies
+
+```bash
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 8_competitor
+cd 8_competitor
+
+cp ~/data/anchr/Rsph/8_competitor/* .
+
+```
+
+## RsphF: run
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 4602977 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
+
+#bash 0_cleanup.sh
+
+```
+
+| Name     |     N50 |     Sum |        # |
+|:---------|--------:|--------:|---------:|
+| Genome   | 3188524 | 4602977 |        7 |
+| Paralogs |    2337 |  147155 |       66 |
+| Illumina |     251 |   4.24G | 16881336 |
+| uniq     |     251 |    4.2G | 16731106 |
+| shuffle  |     251 |    4.2G | 16731106 |
+| scythe   |     251 |   3.23G | 16731106 |
+| Q25L60   |     134 |   1.36G | 10770880 |
+| Q30L60   |     117 |   1.18G | 10775485 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 294.9 |  281.8 |   4.447% |     126 | "35" |  4.6M | 4.59M |     1.00 | 0:03'10'' |
+| Q30L60 | 257.2 |  250.9 |   2.467% |     111 | "31" |  4.6M | 4.55M |     0.99 | 0:02'50'' |
+
+```text
+#File	pe.cor.raw
+#Total	10535189
+#Matched	23	0.00022%
+#Name	Reads	ReadsPct
+Reverse_adapter	18	0.00017%
+TruSeq_Adapter_Index_2	5	0.00005%
+```
+
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |     19434 | 4.07M | 370 |      3627 |  504.3K | 223 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'52'' |
+| Q25L60X40P001 |   40.0 |     18906 | 4.01M | 371 |      4313 | 662.85K | 261 |   35.0 | 3.0 |   8.7 |  66.0 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'54'' |
+| Q25L60X40P002 |   40.0 |     19316 | 4.01M | 361 |      5366 | 606.14K | 219 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'54'' |
+| Q25L60X40P003 |   40.0 |     17657 | 4.05M | 388 |      4329 | 567.83K | 242 |   35.0 | 3.0 |   8.7 |  66.0 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'52'' |
+| Q25L60X40P004 |   40.0 |     17674 | 4.08M | 395 |      3964 | 494.73K | 216 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'51'' |
+| Q25L60X40P005 |   40.0 |     17401 | 4.04M | 395 |      4781 | 643.51K | 240 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'53'' |
+| Q25L60X40P006 |   40.0 |     18457 |    4M | 370 |      5506 | 659.47K | 246 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'53'' |
+| Q25L60X80P000 |   80.0 |     23147 | 4.09M | 340 |      2826 | 560.86K | 280 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'22'' | 0:00'57'' |
+| Q25L60X80P001 |   80.0 |     20101 | 4.07M | 347 |      3212 | 587.45K | 283 |   70.0 | 6.0 |  17.3 | 132.0 | "31,41,51,61,71,81" | 0:01'21'' | 0:00'57'' |
+| Q25L60X80P002 |   80.0 |     18458 | 4.09M | 359 |      3005 | 531.51K | 276 |   69.0 | 7.0 |  16.0 | 135.0 | "31,41,51,61,71,81" | 0:01'22'' | 0:00'56'' |
+| Q30L60X40P000 |   40.0 |     11753 | 3.93M | 511 |      6624 | 694.42K | 256 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'48'' |
+| Q30L60X40P001 |   40.0 |     12538 | 3.94M | 498 |      6931 | 663.08K | 252 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'50'' |
+| Q30L60X40P002 |   40.0 |     12203 | 3.94M | 496 |      7403 | 702.06K | 251 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'51'' |
+| Q30L60X40P003 |   40.0 |     11427 | 3.93M | 535 |      7435 | 660.51K | 255 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'49'' |
+| Q30L60X40P004 |   40.0 |     13076 | 3.95M | 502 |      7475 | 656.23K | 241 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'49'' |
+| Q30L60X40P005 |   40.0 |      2485 | 1.34M | 559 |      2841 | 821.09K | 410 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'46'' |
+| Q30L60X80P000 |   80.0 |     18709 | 3.99M | 358 |      8988 | 681.02K | 198 |   69.0 | 7.0 |  16.0 | 135.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:00'54'' |
+| Q30L60X80P001 |   80.0 |     17339 |    4M | 380 |      7523 | 668.36K | 205 |   69.0 | 7.0 |  16.0 | 135.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:00'54'' |
+| Q30L60X80P002 |   80.0 |     18900 | 3.63M | 351 |      9408 | 806.51K | 208 |   70.0 | 3.0 |  20.3 | 118.5 | "31,41,51,61,71,81" | 0:01'16'' | 0:00'54'' |
+
+| Name     |     N50 |     Sum |   # |
+|:---------|--------:|--------:|----:|
+| Genome   | 3188524 | 4602977 |   7 |
+| Paralogs |    2337 |  147155 |  66 |
+| anchors  |   43717 | 4173866 | 231 |
+| others   |    3458 | 1660354 | 742 |
 
 # *Mycobacterium abscessus* 6G-0125-R Full
 
@@ -720,7 +893,7 @@ cp ~/data/anchr/Mabs/8_competitor/* .
 
 ```
 
-## MabsF: template
+## MabsF: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -733,11 +906,32 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
+
+#bash 0_cleanup.sh
 
 ```
-
-## MabsF: run
 
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
@@ -752,8 +946,8 @@ anchr template \
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 210.7 |  176.0 |  16.486% |     160 | "43" | 5.09M | 5.49M |     1.08 | 0:05'38'' |
-| Q30L60 | 185.9 |  161.9 |  12.893% |     151 | "39" | 5.09M | 5.41M |     1.06 | 0:04'25'' |
+| Q25L60 | 210.7 |  176.0 |  16.486% |     159 | "43" | 5.09M | 5.49M |     1.08 | 0:01'56'' |
+| Q30L60 | 185.9 |  161.9 |  12.893% |     151 | "39" | 5.09M | 5.41M |     1.06 | 0:01'43'' |
 
 ```text
 #File	pe.cor.raw
@@ -764,168 +958,37 @@ Reverse_adapter	28	0.00050%
 TruSeq_Adapter_Index_11	3	0.00005%
 I7_Primer_Nextera_XT_Index_Kit_v2_N715	1	0.00002%
 
+#File	pe.cor.raw
+#Total	5660521
+#Matched	89	0.00157%
+#Name	Reads	ReadsPct
+TruSeq_Adapter_Index_11	59	0.00104%
+Reverse_adapter	29	0.00051%
+RNA_PCR_Primer_Index_11_(RPI11)	1	0.00002%
+
 ```
 
 | Name          | CovCor | N50Anchor |   Sum |    # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|----------:|------:|-----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |   40.0 |      5981 | 4.46M | 1050 |      1034 | 324.26K | 319 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:02'02'' | 0:00'56'' |
-| Q25L60X40P001 |   40.0 |      5974 | 4.28M | 1036 |      1067 | 397.31K | 378 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:01'57'' | 0:00'56'' |
-| Q25L60X40P002 |   40.0 |      6272 | 4.38M | 1007 |      1027 | 335.33K | 330 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:02'06'' | 0:00'57'' |
-| Q25L60X40P003 |   40.0 |      6453 |  4.5M | 1035 |      1014 | 313.46K | 312 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:01'59'' | 0:00'57'' |
-| Q25L60X80P000 |   80.0 |      3553 | 4.36M | 1517 |       917 | 605.17K | 691 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:03'04'' | 0:01'00'' |
-| Q25L60X80P001 |   80.0 |      3665 | 4.26M | 1458 |       925 | 613.19K | 691 |   71.0 | 6.0 |  17.7 | 133.5 | "31,41,51,61,71,81" | 0:03'02'' | 0:01'01'' |
-| Q30L60X40P000 |   40.0 |      7930 | 4.37M |  874 |      1086 | 275.84K | 259 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:02'01'' | 0:01'00'' |
-| Q30L60X40P001 |   40.0 |      7807 | 4.34M |  842 |      1020 | 257.99K | 259 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:02'05'' | 0:00'59'' |
-| Q30L60X40P002 |   40.0 |      8291 | 4.41M |  847 |      1080 | 252.33K | 236 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'02'' |
-| Q30L60X40P003 |   40.0 |     12279 | 4.77M |  610 |       963 | 105.81K | 109 |   38.0 | 2.0 |  10.7 |  66.0 | "31,41,51,61,71,81" | 0:02'14'' | 0:01'03'' |
-| Q30L60X80P000 |   80.0 |      5007 | 4.62M | 1240 |       928 | 394.71K | 443 |   72.0 | 7.0 |  17.0 | 139.5 | "31,41,51,61,71,81" | 0:03'01'' | 0:01'01'' |
-| Q30L60X80P001 |   80.0 |      6397 | 4.82M | 1098 |       927 | 269.15K | 302 |   73.0 | 5.0 |  19.3 | 132.0 | "31,41,51,61,71,81" | 0:03'12'' | 0:01'02'' |
+| Q25L60X40P000 |   40.0 |      5996 | 4.35M | 1028 |      1020 | 311.52K | 314 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'56'' | 0:00'51'' |
+| Q25L60X40P001 |   40.0 |      6252 | 4.32M |  994 |      1039 | 356.74K | 344 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'56'' | 0:00'51'' |
+| Q25L60X40P002 |   40.0 |      5970 |  4.3M | 1037 |      1015 | 321.27K | 318 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'55'' | 0:00'50'' |
+| Q25L60X40P003 |   40.0 |      6323 | 4.42M | 1028 |      1026 | 321.29K | 310 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'56'' | 0:00'50'' |
+| Q25L60X80P000 |   80.0 |      3611 | 4.39M | 1478 |       901 | 568.25K | 661 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'29'' | 0:00'49'' |
+| Q25L60X80P001 |   80.0 |      3674 | 4.39M | 1502 |       929 | 595.02K | 668 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'30'' | 0:00'49'' |
+| Q30L60X40P000 |   40.0 |      7737 | 4.39M |  840 |      1114 | 266.97K | 249 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'54'' |
+| Q30L60X40P001 |   40.0 |      8381 | 4.36M |  833 |      1026 | 237.69K | 234 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'53'' |
+| Q30L60X40P002 |   40.0 |      7820 | 4.31M |  854 |      1058 | 268.32K | 259 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'55'' | 0:00'54'' |
+| Q30L60X40P003 |   40.0 |     12190 |  4.8M |  615 |       944 | 118.77K | 121 |   38.0 | 2.0 |  10.7 |  66.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'54'' |
+| Q30L60X80P000 |   80.0 |      4876 | 4.43M | 1221 |       949 | 409.66K | 446 |   73.0 | 6.0 |  18.3 | 136.5 | "31,41,51,61,71,81" | 0:01'28'' | 0:00'52'' |
+| Q30L60X80P001 |   80.0 |      5832 | 4.85M | 1121 |       894 | 276.06K | 309 |   74.0 | 5.0 |  19.7 | 133.5 | "31,41,51,61,71,81" | 0:01'27'' | 0:00'54'' |
 
 | Name     |     N50 |     Sum |    # |
 |:---------|--------:|--------:|-----:|
 | Genome   | 5067172 | 5090491 |    2 |
 | Paralogs |    1580 |   83364 |   53 |
-| anchors  |   61650 | 5225223 |  182 |
-| others   |    1143 | 1825529 | 1656 |
-
-# *Rhodobacter sphaeroides* 2.4.1 Full
-
-## RsphF: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=RsphF
-
-```
-
-* Reference genome
-
-```bash
-mkdir -p ${HOME}/data/anchr/${BASE_NAME}
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 1_genome
-cd 1_genome
-
-cp ~/data/anchr/Rsph/1_genome/genome.fa .
-cp ~/data/anchr/Rsph/1_genome/paralogs.fas .
-
-```
-
-* Illumina
-
-    SRX160386, SRR522246
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 2_illumina
-cd 2_illumina
-
-cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR522/SRR522246/SRR522246_1.fastq.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR522/SRR522246/SRR522246_2.fastq.gz
-EOF
-
-aria2c -x 9 -s 3 -c -i sra_ftp.txt
-
-cat << EOF > sra_md5.txt
-a29e463504252388f9f381bd8659b084 SRR522246_1.fastq.gz
-0e44d585f34c41681a7dcb25960ee273 SRR522246_2.fastq.gz
-EOF
-
-md5sum --check sra_md5.txt
-
-ln -s SRR522246_1.fastq.gz R1.fq.gz
-ln -s SRR522246_2.fastq.gz R2.fq.gz
-```
-
-* GAGE-B assemblies
-
-```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-mkdir -p 8_competitor
-cd 8_competitor
-
-cp ~/data/anchr/Rsph/8_competitor/* .
-
-```
-
-## RsphF: template
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-anchr template \
-    . \
-    --basename ${BASE_NAME} \
-    --genome 4602977 \
-    --trim2 "--uniq --shuffle --scythe " \
-    --cov2 "40 80" \
-    --qual2 "25 30" \
-    --len2 "60" \
-    --parallel 16
-
-```
-
-## RsphF: run
-
-| Name     |     N50 |     Sum |        # |
-|:---------|--------:|--------:|---------:|
-| Genome   | 3188524 | 4602977 |        7 |
-| Paralogs |    2337 |  147155 |       66 |
-| Illumina |     251 |   4.24G | 16881336 |
-| uniq     |     251 |    4.2G | 16731106 |
-| shuffle  |     251 |    4.2G | 16731106 |
-| scythe   |     251 |   3.23G | 16731106 |
-| Q25L60   |     134 |   1.36G | 10770880 |
-| Q30L60   |     117 |   1.18G | 10775485 |
-
-| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 294.9 |  281.8 |   4.447% |     126 | "35" |  4.6M | 4.59M |     1.00 | 0:03'10'' |
-| Q30L60 | 257.2 |  250.9 |   2.467% |     111 | "31" |  4.6M | 4.55M |     0.99 | 0:02'50'' |
-
-```text
-#File	pe.cor.raw
-#Total	10535189
-#Matched	23	0.00022%
-#Name	Reads	ReadsPct
-Reverse_adapter	18	0.00017%
-TruSeq_Adapter_Index_2	5	0.00005%
-```
-
-| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |   40.0 |     19163 | 4.08M | 375 |      4630 | 575.56K | 223 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:01'07'' | 0:00'47'' |
-| Q25L60X40P001 |   40.0 |     18719 | 4.01M | 363 |      5155 | 618.63K | 234 |   35.0 | 3.0 |   8.7 |  66.0 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'47'' |
-| Q25L60X40P002 |   40.0 |     17655 | 3.99M | 364 |      6322 | 643.42K | 230 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'48'' |
-| Q25L60X40P003 |   40.0 |     18618 | 4.08M | 380 |      4329 | 536.59K | 218 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'48'' |
-| Q25L60X40P004 |   40.0 |     18719 | 4.07M | 388 |      4060 | 557.39K | 236 |   35.0 | 4.0 |   7.7 |  70.0 | "31,41,51,61,71,81" | 0:01'05'' | 0:00'49'' |
-| Q25L60X40P005 |   40.0 |     17278 | 4.02M | 388 |      4329 | 554.12K | 238 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'47'' |
-| Q25L60X40P006 |   40.0 |     18218 | 4.01M | 385 |      4736 | 586.36K | 239 |   34.0 | 3.0 |   8.3 |  64.5 | "31,41,51,61,71,81" | 0:01'06'' | 0:00'48'' |
-| Q25L60X80P000 |   80.0 |     19091 | 4.09M | 361 |      2945 | 549.67K | 281 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'45'' | 0:00'52'' |
-| Q25L60X80P001 |   80.0 |     20844 | 4.09M | 340 |      3300 | 560.67K | 273 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'45'' | 0:00'53'' |
-| Q25L60X80P002 |   80.0 |     18672 | 4.09M | 373 |      2889 | 460.52K | 252 |   70.0 | 7.0 |  16.3 | 136.5 | "31,41,51,61,71,81" | 0:01'45'' | 0:00'51'' |
-| Q30L60X40P000 |   40.0 |     12244 | 3.93M | 510 |      8202 |  677.3K | 233 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:01'02'' | 0:00'45'' |
-| Q30L60X40P001 |   40.0 |     11487 | 3.95M | 534 |      6099 | 603.96K | 230 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'46'' |
-| Q30L60X40P002 |   40.0 |     11611 | 3.92M | 525 |      7444 |  727.9K | 262 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'45'' |
-| Q30L60X40P003 |   40.0 |     11234 | 3.93M | 529 |      5247 | 595.93K | 251 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'44'' |
-| Q30L60X40P004 |   40.0 |     11867 | 3.93M | 526 |      5221 |  554.6K | 245 |   34.0 | 4.0 |   7.3 |  68.0 | "31,41,51,61,71,81" | 0:01'03'' | 0:00'45'' |
-| Q30L60X40P005 |   40.0 |      2501 | 1.34M | 561 |      2795 | 816.68K | 396 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:01'01'' | 0:00'42'' |
-| Q30L60X80P000 |   80.0 |     17201 |    4M | 387 |      9830 | 601.35K | 182 |   69.0 | 7.0 |  16.0 | 135.0 | "31,41,51,61,71,81" | 0:01'39'' | 0:00'50'' |
-| Q30L60X80P001 |   80.0 |     16490 | 3.99M | 391 |      7475 | 614.62K | 197 |   69.0 | 7.0 |  16.0 | 135.0 | "31,41,51,61,71,81" | 0:01'49'' | 0:00'51'' |
-| Q30L60X80P002 |   80.0 |     18894 | 3.63M | 363 |      9846 | 750.56K | 203 |   70.0 | 3.0 |  20.3 | 118.5 | "31,41,51,61,71,81" | 0:01'38'' | 0:00'48'' |
-
-| Name     |     N50 |     Sum |   # |
-|:---------|--------:|--------:|----:|
-| Genome   | 3188524 | 4602977 |   7 |
-| Paralogs |    2337 |  147155 |  66 |
-| anchors  |   44106 | 4179622 | 237 |
-| others   |    3595 | 1759608 | 777 |
+| anchors  |   66219 | 5243156 |  164 |
+| others   |    1082 | 1735580 | 1604 |
 
 # *Vibrio cholerae* CP1032(5) Full
 
@@ -991,7 +1054,7 @@ cp ~/data/anchr/Vcho/8_competitor/* .
 
 ```
 
-## VchoF: template
+## VchoF: run
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -1004,11 +1067,32 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --parallel 16
+    --parallel 24
+
+# run
+bsub -q largemem -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+# quast
+rm -fr 9_quast_competitor
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    8_competitor/abyss_ctg.fasta \
+    8_competitor/cabog_ctg.fasta \
+    8_competitor/mira_ctg.fasta \
+    8_competitor/msrca_ctg.fasta \
+    8_competitor/sga_ctg.fasta \
+    8_competitor/soap_ctg.fasta \
+    8_competitor/spades_ctg.fasta \
+    8_competitor/velvet_ctg.fasta \
+    6_mergeAnchors/anchor.merge.fasta \
+    6_mergeAnchors/others.non-contained.fasta \
+    1_genome/paralogs.fas \
+    --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
+    -o 9_quast_competitor
+
+#bash 0_cleanup.sh
 
 ```
-
-## VchoF: run
 
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
@@ -1028,6 +1112,15 @@ anchr template \
 
 ```text
 #File	pe.cor.raw
+#Total	5269158
+#Matched	85	0.00161%
+#Name	Reads	ReadsPct
+Reverse_adapter	58	0.00110%
+TruSeq_Adapter_Index_6	20	0.00038%
+TruSeq_Adapter_Index_5	6	0.00011%
+I7_Primer_Nextera_XT_Index_Kit_v2_N715	1	0.00002%
+
+#File	pe.cor.raw
 #Total	5225156
 #Matched	255	0.00488%
 #Name	Reads	ReadsPct
@@ -1043,24 +1136,24 @@ I7_Primer_Nextera_XT_Index_Kit_v2_N715	1	0.00002%
 
 | Name          | CovCor | N50Anchor |   Sum |    # | N50Others |     Sum |    # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|----------:|------:|-----:|----------:|--------:|-----:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |   40.0 |      3016 | 2.99M | 1165 |       921 | 674.57K |  747 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'36'' |
-| Q25L60X40P001 |   40.0 |      3246 | 2.93M | 1107 |       923 | 720.47K |  783 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'35'' |
-| Q25L60X40P002 |   40.0 |      3103 | 2.94M | 1140 |       936 | 732.92K |  791 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'35'' |
-| Q25L60X40P003 |   40.0 |      3106 | 2.98M | 1161 |       921 | 699.26K |  770 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'36'' |
-| Q25L60X40P004 |   40.0 |      2911 | 3.01M | 1197 |       901 | 689.38K |  757 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'35'' |
-| Q25L60X80P000 |   80.0 |      2119 | 2.48M | 1256 |       855 |   1.17M | 1415 |   65.0 |  9.0 |  12.7 | 130.0 | "31,41,51,61,71,81" | 0:01'37'' | 0:00'35'' |
-| Q25L60X80P001 |   80.0 |      2141 | 2.44M | 1240 |       852 |   1.18M | 1430 |   65.0 |  9.0 |  12.7 | 130.0 | "31,41,51,61,71,81" | 0:01'37'' | 0:00'36'' |
-| Q30L60X40P000 |   40.0 |      7054 | 3.42M |  716 |       916 |    258K |  272 |   35.0 |  5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'36'' |
-| Q30L60X40P001 |   40.0 |      7414 | 3.45M |  672 |       914 | 250.05K |  258 |   35.0 |  6.0 |   5.7 |  70.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'36'' |
-| Q30L60X40P002 |   40.0 |      6919 | 3.44M |  712 |      1011 |  280.6K |  269 |   35.5 |  4.5 |   7.3 |  71.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'36'' |
-| Q30L60X40P003 |   40.0 |      6914 | 3.55M |  731 |       911 | 199.53K |  209 |   36.0 |  5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'37'' |
-| Q30L60X40P004 |   40.0 |      7142 | 3.43M |  709 |       932 | 239.48K |  249 |   35.0 |  5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'36'' |
-| Q30L60X80P000 |   80.0 |      4316 |  3.4M |  991 |       875 | 411.15K |  471 |   70.0 | 10.0 |  13.3 | 140.0 | "31,41,51,61,71,81" | 0:01'35'' | 0:00'37'' |
-| Q30L60X80P001 |   80.0 |      4132 | 3.46M | 1040 |       904 | 366.77K |  403 |   71.0 | 10.0 |  13.7 | 142.0 | "31,41,51,61,71,81" | 0:01'36'' | 0:00'37'' |
+| Q25L60X40P000 |   40.0 |      3067 | 2.97M | 1126 |       922 | 717.92K |  781 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'40'' |
+| Q25L60X40P001 |   40.0 |      2981 | 2.98M | 1165 |       917 | 691.01K |  772 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'40'' |
+| Q25L60X40P002 |   40.0 |      3086 | 2.97M | 1154 |       921 | 723.39K |  789 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'47'' | 0:00'40'' |
+| Q25L60X40P003 |   40.0 |      3040 | 2.98M | 1150 |       913 | 694.99K |  754 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'41'' |
+| Q25L60X40P004 |   40.0 |      3058 | 2.99M | 1135 |       910 | 694.13K |  767 |   34.0 |  5.0 |   6.3 |  68.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'41'' |
+| Q25L60X80P000 |   80.0 |      2085 | 2.46M | 1257 |       839 |   1.17M | 1448 |   65.0 |  9.0 |  12.7 | 130.0 | "31,41,51,61,71,81" | 0:01'15'' | 0:00'40'' |
+| Q25L60X80P001 |   80.0 |      2179 | 2.45M | 1237 |       851 |   1.21M | 1448 |   65.0 |  9.0 |  12.7 | 130.0 | "31,41,51,61,71,81" | 0:01'15'' | 0:00'39'' |
+| Q30L60X40P000 |   40.0 |      7099 | 3.54M |  709 |       994 | 256.83K |  245 |   36.0 |  5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'43'' |
+| Q30L60X40P001 |   40.0 |      7030 |  3.5M |  715 |       892 | 219.85K |  238 |   36.0 |  5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'41'' |
+| Q30L60X40P002 |   40.0 |      6980 | 3.44M |  722 |       921 | 235.97K |  251 |   35.0 |  5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'41'' |
+| Q30L60X40P003 |   40.0 |      7268 | 3.56M |  712 |       894 | 225.02K |  240 |   36.0 |  5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'40'' |
+| Q30L60X40P004 |   40.0 |      7231 | 3.42M |  688 |       964 | 264.06K |  259 |   35.0 |  6.0 |   5.7 |  70.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'41'' |
+| Q30L60X80P000 |   80.0 |      4369 | 3.46M | 1016 |       867 | 374.81K |  440 |   71.0 | 10.0 |  13.7 | 142.0 | "31,41,51,61,71,81" | 0:01'14'' | 0:00'42'' |
+| Q30L60X80P001 |   80.0 |      4268 | 3.47M | 1027 |       858 | 353.68K |  412 |   71.0 | 10.0 |  13.7 | 142.0 | "31,41,51,61,71,81" | 0:01'15'' | 0:00'41'' |
 
 | Name     |     N50 |     Sum |    # |
 |:---------|--------:|--------:|-----:|
 | Genome   | 2961149 | 4033464 |    2 |
 | Paralogs |    3483 |  114707 |   48 |
-| anchors  |   48130 | 3919105 |  249 |
-| others   |    1000 | 2951176 | 2904 |
+| anchors  |   52850 | 3920732 |  242 |
+| others   |     984 | 2942347 | 2934 |
