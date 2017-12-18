@@ -956,7 +956,9 @@ find . -type d -name "trimming"   -path "*5_canu_*" | parallel --no-run-if-empty
 find . -type d -name "unitigging" -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
 
 # anchorLong and anchorFill
-find . -type d -name "group" -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type d -name "group"         -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type f -name "long.fasta"    -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name ".anchorLong.*" -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm
 
 # spades
 find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
