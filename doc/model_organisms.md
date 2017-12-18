@@ -8,6 +8,7 @@
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [e_coli: download](#e-coli-download)
+    - [e_coli: template](#e-coli-template)
     - [e_coli: run](#e-coli-run)
 - [*Saccharomyces cerevisiae* S288c](#saccharomyces-cerevisiae-s288c)
     - [s288c: download](#s288c-download)
@@ -193,7 +194,6 @@ bax2bam --help
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
-EXPAND_WITH="80"
 
 ```
 
@@ -268,7 +268,7 @@ cat fasta/m141013.fasta \
 
 ```
 
-## e_coli: run
+## e_coli: template
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
@@ -287,6 +287,8 @@ anchr template \
     --parallel 16
 
 ```
+
+## e_coli: run
 
 * preprocessing
 
@@ -440,174 +442,17 @@ bash 9_statCanu.sh
       ===
 ```
 
-* anchorLong
-
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-rm -fr anchorLong
-anchr overlap2 \
-    --parallel 16 \
-    merge/anchor.merge.fasta \
-    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.correctedReads.fasta.gz \
-    -d anchorLong \
-    -b 50 --len 1000 --idt 0.98 --all
-
-pushd anchorLong
-
-anchr cover \
-    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
-    --len 1000 --idt 0.98 -c 2 \
-    anchorLong.ovlp.tsv \
-    -o anchor.cover.json
-cat anchor.cover.json | jq "." > environment.json
-
-anchr overlap \
-    anchor.fasta \
-    --serial --len 30 --idt 0.9999 \
-    -o stdout \
-    | perl -nla -e '
-        BEGIN {
-            our %seen;
-            our %count_of;
-        }
-
-        @F == 13 or next;
-        $F[3] > 0.9999 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        $count_of{ $F[0] }++;
-        $count_of{ $F[1] }++;
-
-        END {
-            for my $pair ( keys %seen ) {
-                my ($f_id, $g_id) = split "-", $pair;
-                next if $count_of{$f_id} > 2;
-                next if $count_of{$g_id} > 2;
-                print $seen{$pair};
-            }
-        }
-    ' \
-    | sort -k 1n,1n -k 2n,2n \
-    > anchor.ovlp.tsv
-
-rm -fr group
-anchr group \
-    anchorLong.db \
-    anchorLong.ovlp.tsv \
-    --oa anchor.ovlp.tsv \
-    --parallel 16 \
-    --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.98 --max "-30" -c 2
-
-cat group/groups.txt \
-    | parallel --no-run-if-empty --linebuffer -k -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.98 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.98 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr overlap --len 30 --idt 0.9999 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | perl -nla -e '\''
-                @F == 13 or next;
-                $F[3] > 0.9999 or next;
-                $F[9] == 0 or next;
-                $F[5] > 0 and $F[6] == $F[7] or next;
-                /anchor.+anchor/ or next;
-                print;
-            '\'' \
-            > group/{}.anchor.ovlp.tsv
-            
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            --oa group/{}.anchor.ovlp.tsv \
-            -o group/{}.contig.fasta
-    '
-popd
+bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz
 
 # false strand
-cat anchorLong/group/*.ovlp.tsv \
+cat 6_anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-cat \
-   anchorLong/group/non_grouped.fasta \
-   anchorLong/group/*.contig.fasta \
-   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
-
-```
-
-* contigTrim
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-rm -fr contigTrim
-anchr overlap2 \
-    --parallel 16 \
-    anchorLong/contig.fasta \
-    canu-X${EXPAND_WITH}-trim/${BASE_NAME}.contigs.fasta \
-    -d contigTrim \
-    -b 50 --len 1000 --idt 0.995 --all
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
-echo ${CONTIG_COUNT}
-
-rm -fr contigTrim/group
-anchr group \
-    --parallel 16 \
-    --keep \
-    contigTrim/anchorLong.db \
-    contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max 5000 -c 1
-
-pushd contigTrim
-cat group/groups.txt \
-    | parallel --no-run-if-empty --linebuffer -k -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.995 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.995 --all \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-cat \
-    contigTrim/group/non_grouped.fasta \
-    contigTrim/group/*.contig.fasta \
-    >  contigTrim/contig.fasta
+bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta
 
 ```
 
@@ -694,8 +539,8 @@ bash 9_quast.sh
 | Paralogs               |    1934 |  195673 |  106 |
 | anchors                |   63638 | 4528128 |  123 |
 | others                 |     980 |  117228 |  125 |
-| anchorLong             |   82828 | 4532095 |  102 |
-| contigTrim             | 1047591 | 4604252 |    9 |
+| anchorLong             |   82617 | 4526627 |  108 |
+| anchorFill             |  512598 | 4032118 |   15 |
 | canu_X40-raw           | 4674150 | 4674150 |    1 |
 | canu_X40-trim          | 4674046 | 4674046 |    1 |
 | canu_X80-raw           | 4658166 | 4658166 |    1 |
