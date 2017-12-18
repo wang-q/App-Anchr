@@ -82,6 +82,16 @@ if [ -e 9_statCanu.sh ]; then
 fi   
 
 #----------------------------#
+# spades and platanus
+#----------------------------#
+if [ -e 8_spades.sh ]; then
+    bash 8_spades.sh;
+fi   
+if [ -e 8_platanus.sh ]; then
+    bash 8_platanus.sh;
+fi   
+
+#----------------------------#
 # final stats
 #----------------------------#
 if [ -e 9_statFinal.sh ]; then
