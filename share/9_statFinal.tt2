@@ -25,13 +25,13 @@ if [ -e 6_mergeAnchors/others.non-contained.fasta ]; then
         $(echo "others";   faops n50 -H -S -C 6_mergeAnchors/others.non-contained.fasta;) >> statFinal.md
 fi
 
-if [ -e anchorLong/contig.fasta ]; then
+if [ -e 6_anchorLong/contig.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> statFinal.md
+        $(echo "anchorLong"; faops n50 -H -S -C 6_anchorLong/contig.fasta;) >> statFinal.md
 fi
-if [ -e contigTrim/contig.fasta ]; then
+if [ -e 6_anchorFill/contig.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> statFinal.md
+        $(echo "anchorFill"; faops n50 -H -S -C 6_anchorFill/contig.fasta;) >> statFinal.md
 fi
 
 # canu

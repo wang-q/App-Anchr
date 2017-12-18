@@ -11,13 +11,13 @@ if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="merge,"
 fi
-if [ -e anchorLong/contig.fasta ]; then
-    QUAST_TARGET+=" anchorLong/contig.fasta "
+if [ -e 6_anchorLong/contig.fasta ]; then
+    QUAST_TARGET+=" 6_anchorLong/contig.fasta "
     QUAST_LABEL+="anchorLong,"
 fi
-if [ -e contigTrim/contig.fasta ]; then
-    QUAST_TARGET+=" contigTrim/contig.fasta "
-    QUAST_LABEL+="contigTrim,"
+if [ -e 6_anchorFill/contig.fasta ]; then
+    QUAST_TARGET+=" 6_anchorFill/contig.fasta "
+    QUAST_LABEL+="anchorFill,"
 fi
 
 [% FOREACH cov IN opt.cov3.split('\s+') -%]

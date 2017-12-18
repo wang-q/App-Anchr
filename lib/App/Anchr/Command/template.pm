@@ -788,6 +788,44 @@ sub gen_statCanu {
     ) or die Template->error;
 }
 
+sub gen_anchorLong {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "6_anchorLong.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '6_anchorLong.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_anchorFill {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "6_anchorFill.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '6_anchorFill.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
 sub gen_quast {
     my ( $self, $opt, $args ) = @_;
 
@@ -873,6 +911,9 @@ find . -type d -name "correction" -path "*5_canu_*" | parallel --no-run-if-empty
 find . -type d -name "trimming"   -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
 find . -type d -name "unitigging" -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
 
+# anchorLong and anchorFill
+find . -type d -name "group" -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm -fr
+
 # spades
 find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
 
@@ -901,44 +942,6 @@ sub gen_master {
 
     $tt->process(
         '0_master.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-}
-
-sub gen_anchorLong {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "6_anchorLong.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '6_anchorLong.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-}
-
-sub gen_anchorFill {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "6_anchorFill.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '6_anchorFill.tt2',
         {   args => $args,
             opt  => $opt,
         },
