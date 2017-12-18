@@ -457,6 +457,7 @@ bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.con
 ```
 
 * spades
+* spades and platanus
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
