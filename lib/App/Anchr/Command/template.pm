@@ -837,33 +837,41 @@ rm -fr 3_pacbio/bam/*
 rm -fr 3_pacbio/fasta/*
 rm -fr 3_pacbio/untar/*
 
+# illumina
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
+        rm 2_illumina/{1}.{2}.fq.gz;
+        touch 2_illumina/{1}.{2}.fq.gz;
+    fi
+    " ::: R1 R2  ::: uniq shuffle sample scythe
+
 # quorum
-find 2_illumina -type f -name "quorum_mer_db.jf" | xargs rm
-find 2_illumina -type f -name "k_u_hash_0"       | xargs rm
-find 2_illumina -type f -name "*.tmp"            | xargs rm
-find 2_illumina -type f -name "pe.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "se.renamed.fastq" | xargs rm
-find 2_illumina -type f -name "pe.cor.sub.fa"    | xargs rm
+find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "k_u_hash_0"       | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "*.tmp"            | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "pe.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "se.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j 1 rm
 
 # down sampling
 rm -fr 4_Q{15,20,25,30,35}*
-find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta" | xargs rm
-find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | xargs rm
-find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam" | xargs rm
+find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
 
 # tempdir
 find . -type d -name "\?" | xargs rm -fr
 
 # canu
-find . -type d -name "correction" -path "*5_canu_*" | xargs rm -fr
-find . -type d -name "trimming"   -path "*5_canu_*" | xargs rm -fr
-find . -type d -name "unitigging" -path "*5_canu_*" | xargs rm -fr
+find . -type d -name "correction" -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type d -name "trimming"   -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type d -name "unitigging" -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
 
 # spades
-find . -type d -path "*8_spades/*" | xargs rm -fr
+find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
 
 # platanus
-find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | xargs rm
+find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
 
 EOF
     $tt->process(
