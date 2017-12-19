@@ -146,6 +146,7 @@ sub gen_fastqc {
     $sh_name = "2_fastqc.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 2_fastqc.sh
 
 cd [% args.0 %]
@@ -181,6 +182,7 @@ sub gen_kmergenie {
     $sh_name = "2_kmergenie.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 2_kmergenie.sh
 
 cd [% args.0 %]
@@ -239,6 +241,7 @@ sub gen_trimlong {
     $sh_name = "3_trimlong.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 3_trimlong.sh
 
 cd [% args.0 %]
@@ -323,6 +326,7 @@ sub gen_quorum {
         $sh_name = "2_quorum.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 2_quorum.sh
 
 cd [% args.0 %]
@@ -372,6 +376,7 @@ EOF
                 $sh_name = "2_quorum_Q${qual}L${len}.sh";
                 print "Create $sh_name\n";
                 $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 2_quorum.sh
 
 cd [% args.0 %]
@@ -469,6 +474,7 @@ sub gen_kunitigs {
         $sh_name = "4_kunitigs.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 4_kunitigs.sh
 
 cd [% args.0 %]
@@ -514,6 +520,7 @@ EOF
                     $sh_name = "4_kunitigs_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 4_kunitigs.sh
 
 cd [% args.0 %]
@@ -570,6 +577,7 @@ sub gen_anchors {
         $sh_name = "4_anchors.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 4_anchors.sh
 
 cd [% args.0 %]
@@ -615,6 +623,7 @@ EOF
                     $sh_name = "4_anchors_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 4_anchors.sh
 
 cd [% args.0 %]
@@ -713,6 +722,7 @@ sub gen_canu {
         $sh_name = "5_canu.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 5_canu.sh
 
 cd [% args.0 %]
@@ -754,6 +764,7 @@ EOF
                 $sh_name = "5_canu_X${cov}-${qual}.sh";
                 print "Create $sh_name\n";
                 $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 5_canu.sh
 
 cd [% args.0 %]
@@ -940,6 +951,7 @@ sub gen_cleanup {
     $sh_name = "0_cleanup.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+[% INCLUDE header.tt2 %]
 log_warn 0_cleanup.sh
 
 cd [% args.0 %]
