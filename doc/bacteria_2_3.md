@@ -55,6 +55,20 @@
     - [lambda: clear intermediate files](#lambda-clear-intermediate-files)
 
 
+* Rsync to hpc
+
+```bash
+for D in Vpar Lpne Ngon Nmen Bper Cdif Cdip Cjej Ftul Hinf Lmon Ngon Nmen Sfle; do
+    rsync -avP \
+        --exclude="*_hdf5.tgz" \
+        ~/data/anchr/${D}/ \
+        wangq@202.119.37.251:data/anchr/${D}
+done
+
+# rsync -avP wangq@202.119.37.251:data/anchr/ ~/data/anchr
+
+```
+
 # Vibrio parahaemolyticus ATCC BAA-239, 副溶血弧菌
 
 Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
