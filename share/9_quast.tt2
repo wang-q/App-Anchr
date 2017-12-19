@@ -1,4 +1,5 @@
 [% INCLUDE header.tt2 %]
+log_warn 9_quast.sh
 
 QUAST_TARGET=
 QUAST_LABEL=

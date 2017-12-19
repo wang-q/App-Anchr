@@ -146,6 +146,8 @@ sub gen_fastqc {
     $sh_name = "2_fastqc.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+log_warn 2_fastqc.sh
+
 cd [% args.0 %]
 
 mkdir -p 2_illumina/fastqc
@@ -179,6 +181,8 @@ sub gen_kmergenie {
     $sh_name = "2_kmergenie.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+log_warn 2_kmergenie.sh
+
 cd [% args.0 %]
 
 mkdir -p 2_illumina/kmergenie
@@ -235,6 +239,8 @@ sub gen_trimlong {
     $sh_name = "3_trimlong.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+log_warn 3_trimlong.sh
+
 cd [% args.0 %]
 
 for X in [% opt.cov3 %]; do
@@ -317,6 +323,8 @@ sub gen_quorum {
         $sh_name = "2_quorum.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+log_warn 2_quorum.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
@@ -364,6 +372,8 @@ EOF
                 $sh_name = "2_quorum_Q${qual}L${len}.sh";
                 print "Create $sh_name\n";
                 $template = <<'EOF';
+log_warn 2_quorum.sh
+
 cd [% args.0 %]
 
 cd 2_illumina/Q[% qual %]L[% len %]
@@ -459,6 +469,8 @@ sub gen_kunitigs {
         $sh_name = "4_kunitigs.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+log_warn 4_kunitigs.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
@@ -502,6 +514,8 @@ EOF
                     $sh_name = "4_kunitigs_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
+log_warn 4_kunitigs.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
@@ -556,6 +570,8 @@ sub gen_anchors {
         $sh_name = "4_anchors.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+log_warn 4_anchors.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
@@ -599,6 +615,8 @@ EOF
                     $sh_name = "4_anchors_Q${qual}L${len}X${cov}.sh";
                     print "Create $sh_name\n";
                     $template = <<'EOF';
+log_warn 4_anchors.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
@@ -695,6 +713,8 @@ sub gen_canu {
         $sh_name = "5_canu.sh";
         print "Create $sh_name\n";
         $template = <<'EOF';
+log_warn 5_canu.sh
+
 cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
@@ -734,6 +754,8 @@ EOF
                 $sh_name = "5_canu_X${cov}-${qual}.sh";
                 print "Create $sh_name\n";
                 $template = <<'EOF';
+log_warn 5_canu.sh
+
 cd [% args.0 %]
 
 echo >&2 '==> Group X[% cov %]-[% qual %]'
@@ -918,6 +940,8 @@ sub gen_cleanup {
     $sh_name = "0_cleanup.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
+log_warn 0_cleanup.sh
+
 cd [% args.0 %]
 
 # bax2bam
