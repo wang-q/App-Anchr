@@ -966,6 +966,28 @@ find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
 # platanus
 find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
 
+# cat all .md
+if [ -e statReads.md ]; then
+    cat statReads.md;
+    echo;
+fi
+if [ -e statQuorum.md ]; then
+    cat statQuorum.md;
+    echo;
+fi
+if [ -e statAnchors.md ]; then
+    cat statAnchors.md;
+    echo;
+fi
+if [ -e statCanu.md ]; then
+    cat statCanu.md;
+    echo;
+fi
+if [ -e statFinal.md ]; then
+    cat statFinal.md;
+    echo;
+fi
+
 EOF
     $tt->process(
         \$template,
