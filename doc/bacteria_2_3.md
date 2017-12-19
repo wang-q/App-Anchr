@@ -61,14 +61,6 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Vpar: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Vpar
-
-```
-
 * Reference genome
 
     * Strain: Vibrio parahaemolyticus RIMD 2210633
@@ -269,14 +261,6 @@ bsub -w "done(${BASE_NAME}-0_master)" \
 Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Lpne: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Lpne
-
-```
 
 * Reference genome
 
@@ -481,14 +465,6 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Ngon: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Ngon
-
-```
-
 * Reference genome
 
     * Strain: Neisseria gonorrhoeae FA 1090
@@ -686,16 +662,6 @@ bsub -w "done(${BASE_NAME}-0_master)" \
 Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 
 ## Nmen: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Nmen
-REAL_G=2272360
-IS_EUK="false"
-
-```
 
 * Reference genome
 
@@ -901,18 +867,6 @@ bsub -w "done(${BASE_NAME}-0_master)" \
 
 ## Bper: download
 
-* Settings
-
-```bash
-BASE_NAME=Bper
-REAL_G=4086189
-IS_EUK="false"
-COVERAGE2="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-
-```
-
 * Reference genome
 
     * Strain: Bordetella pertussis Tohama I
@@ -970,107 +924,77 @@ gzip -d -c SRR427151{1,0}_2.fastq.gz | pigz -p 8 -c > R2.fq.gz
 
 ```
 
-* FastQC
-
-* kmergenie
-
-## Bper: preprocess Illumina reads
+## Bper: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Bper
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 4086189 \
+    --trim2 "--uniq " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
 
-## Bper: reads stats
+| Name     |     N50 |     Sum |        # |
+|:---------|--------:|--------:|---------:|
+| Genome   | 4086189 | 4086189 |        1 |
+| Paralogs |    1033 |  322667 |      278 |
+| Illumina |     101 |   1.67G | 16564638 |
+| uniq     |     101 |   1.66G | 16389214 |
+| shuffle  |     101 |   1.66G | 16389214 |
+| sample   |     101 |   1.23G | 12137196 |
+| scythe   |     101 |   1.18G | 12137196 |
+| Q25L60   |     101 | 781.08M |  8068656 |
+| Q30L60   |     101 | 622.84M |  6849732 |
 
-* Stats
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 191.2 |  175.1 |   8.388% |      97 | "33" | 4.09M | 4.36M |     1.07 | 0:01'29'' |
+| Q30L60 | 152.9 |  142.2 |   6.991% |      93 | "31" | 4.09M | 4.21M |     1.03 | 0:01'15'' |
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 4086189 |    4086189 |        1 |
-| Paralogs |    1033 |     322667 |      278 |
-| Illumina |     101 | 1673028438 | 16564638 |
-| uniq     |     101 | 1655310614 | 16389214 |
-| sample   |     101 |  817237864 |  8091464 |
-| Q25L60   |     101 |  521485739 |  5386482 |
-| Q30L60   |     101 |  415585395 |  4569799 |
+| Name          | CovCor | N50Anchor |   Sum |    # | N50Others |   Sum |    # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|-----:|----------:|------:|-----:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |      2291 | 2.12M | 1000 |      1010 | 1.12M | 1076 |   40.0 | 11.0 |   2.3 |  80.0 | "31,41,51,61,71,81" | 0:00'38'' | 0:00'44'' |
+| Q25L60X40P001 |   40.0 |      2326 | 2.18M | 1018 |      1042 | 1.21M | 1131 |   40.0 | 11.0 |   2.3 |  80.0 | "31,41,51,61,71,81" | 0:00'36'' | 0:00'43'' |
+| Q25L60X40P002 |   40.0 |      2300 | 2.09M |  982 |      1016 | 1.17M | 1111 |   40.0 | 11.0 |   2.3 |  80.0 | "31,41,51,61,71,81" | 0:00'38'' | 0:00'44'' |
+| Q25L60X40P003 |   40.0 |      2539 | 2.26M | 1005 |       962 | 1.05M | 1039 |   41.0 | 11.0 |   2.7 |  82.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'44'' |
+| Q25L60X80P000 |   80.0 |      2391 | 2.29M | 1047 |      1031 | 1.16M | 1092 |   77.0 | 22.0 |   3.7 | 154.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'47'' |
+| Q25L60X80P001 |   80.0 |      2418 | 2.28M | 1043 |      1060 | 1.21M | 1116 |   77.0 | 22.0 |   3.7 | 154.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'46'' |
+| Q30L60X40P000 |   40.0 |      1944 | 1.66M |  874 |      1310 | 1.44M | 1214 |   40.0 | 12.0 |   2.0 |  80.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'42'' |
+| Q30L60X40P001 |   40.0 |      2010 | 1.65M |  854 |      1259 |  1.4M | 1203 |   40.0 | 12.0 |   2.0 |  80.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'41'' |
+| Q30L60X40P002 |   40.0 |      1861 | 1.48M |  814 |      1286 | 1.54M | 1314 |   41.0 | 11.0 |   2.7 |  82.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'40'' |
+| Q30L60X80P000 |   80.0 |      2156 | 1.84M |  914 |      1412 | 1.26M | 1039 |   77.0 | 25.0 |   2.0 | 154.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'46'' |
 
-## Bper: quorum
-
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 521.49M | 127.6 | 476.13M |  116.5 |   8.696% |      97 | "33" | 4.09M |  3.9M |     0.95 | 0:01'19'' |
-| Q30L60 | 416.83M | 102.0 | 386.41M |   94.6 |   7.298% |      91 | "31" | 4.09M | 3.78M |     0.93 | 0:01'10'' |
-
-## Bper: adapter filtering
-
-## Bper: down sampling
-
-## Bper: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |   Sum |    # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|------:|----:|----------:|------:|-----:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 | 163.45M |   40.0 |      2265 | 2.01M | 964 |      1029 | 1.18M | 1124 |   40.0 | 11.0 |   2.3 |  80.0 | "31,41,51,61,71,81" | 0:01'34'' | 0:00'51'' |
-| Q25L60X40P001 | 163.45M |   40.0 |      2449 | 2.19M | 996 |       995 |  1.1M | 1064 |   41.0 | 11.0 |   2.7 |  82.0 | "31,41,51,61,71,81" | 0:01'32'' | 0:00'52'' |
-| Q25L60X80P000 |  326.9M |   80.0 |      2468 | 2.24M | 992 |      1143 | 1.18M | 1064 |   78.0 | 22.0 |   4.0 | 156.0 | "31,41,51,61,71,81" | 0:02'19'' | 0:00'53'' |
-| Q30L60X40P000 | 163.45M |   40.0 |      1840 | 1.44M | 801 |      1330 | 1.67M | 1392 |   40.0 | 13.0 |   2.0 |  80.0 | "31,41,51,61,71,81" | 0:01'31'' | 0:00'48'' |
-| Q30L60X40P001 | 163.45M |   40.0 |      2009 | 1.68M | 856 |      1219 | 1.36M | 1192 |   41.0 | 11.0 |   2.7 |  82.0 | "31,41,51,61,71,81" | 0:01'19'' | 0:00'49'' |
-| Q30L60X80P000 |  326.9M |   80.0 |      2155 |  1.8M | 898 |      1516 | 1.37M | 1077 |   78.0 | 24.0 |   2.0 | 156.0 | "31,41,51,61,71,81" | 0:01'30'' | 0:00'52'' |
-
-## Bper: merge anchors
-
-## Bper: final stats
-
-* Stats
-
-| Name     |     N50 |     Sum |    # |
-|:---------|--------:|--------:|-----:|
-| Genome   | 4086189 | 4086189 |    1 |
-| Paralogs |    1033 |  322667 |  278 |
-| anchor   |    2886 | 2719158 | 1095 |
-| others   |    1392 | 2874462 | 2343 |
-
-## Bper: clear intermediate files
-
+| Name                   |     N50 |     Sum |    # |
+|:-----------------------|--------:|--------:|-----:|
+| Genome                 | 4086189 | 4086189 |    1 |
+| Paralogs               |    1033 |  322667 |  278 |
+| anchors                |    3223 | 2967583 | 1124 |
+| others                 |    1353 | 3646765 | 2998 |
+| anchorLong             |       0 |       0 |    0 |
+| anchorFill             |       0 |       0 |    0 |
+| spades.contig          |    3370 | 5569080 | 5081 |
+| spades.scaffold        |    3358 | 5574494 | 4685 |
+| spades.non-contained   |    6149 | 3817307 |  961 |
+| platanus.contig        |    1816 | 3271727 | 4241 |
+| platanus.scaffold      |    2939 | 3132346 | 2085 |
+| platanus.non-contained |    3452 | 2691276 |  940 |
 
 # Corynebacterium diphtheriae FDAARGOS_197, 白喉杆菌
 
@@ -1081,20 +1005,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 * BioSample: [SAMN04875534](https://www.ncbi.nlm.nih.gov/biosample/SAMN04875534)
 
 ## Cdip: download
-
-* Settings
-
-```bash
-BASE_NAME=Cdip
-REAL_G=2488635
-IS_EUK="false"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
-
-```
 
 * Reference genome
 
@@ -1194,59 +1104,35 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-* FastQC
-
-* kmergenie
-
-## Cdip: preprocess Illumina reads
+## Cdip: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Cdip
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 2488635 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
 
-## Cdip: preprocess PacBio reads
-
-## Cdip: reads stats
 
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
@@ -1263,22 +1149,12 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X80.raw  |    8781 |  199091231 |    33954 |
 | X80.trim |    7824 |  153762465 |    25880 |
 
-## Cdip: spades
-
-## Cdip: platanus
-
-## Cdip: quorum
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
 | Q25L60 | 360.56M | 144.9 | 328.88M |  132.2 |   8.785% |      97 | "51" | 2.49M | 2.46M |     0.99 | 0:00'54'' |
 | Q30L60 | 300.05M | 120.6 | 280.32M |  112.6 |   6.578% |      93 | "43" | 2.49M | 2.45M |     0.99 | 0:00'46'' |
 
-## Cdip: adapter filtering
-
-## Cdip: down sampling
-
-## Cdip: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |  # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|------:|---:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
@@ -1290,9 +1166,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | Q30L60X40P001 |  99.55M |   40.0 |     93641 | 2.44M | 67 |       886 |  34.7K | 37 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'49'' |
 | Q30L60X80P000 | 199.09M |   80.0 |     97954 | 2.44M | 58 |       880 | 15.41K | 15 |   73.0 | 8.0 |  16.3 | 145.5 | "31,41,51,61,71,81" | 0:01'00'' | 0:00'55'' |
 
-## Cdip: merge anchors
-
-## Cdip: 3GS
 
 | Name               |     N50 |      Sum |     # |
 |:-------------------|--------:|---------:|------:|
@@ -1306,16 +1179,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X40.trim           | 2500316 |  2500316 |     1 |
 | X80.raw            | 2502286 |  2502286 |     1 |
 | X80.trim           | 2502151 |  2502151 |     1 |
-
-## Cdip: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Cdip: final stats
-
-* Stats
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
@@ -1334,10 +1197,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | platanus.scaffold      |  177061 | 2463217 | 123 |
 | platanus.non-contained |  177061 | 2445888 |  23 |
 
-* quast
-
-## Cdip: clear intermediate files
-
 # Francisella tularensis FDAARGOS_247, 土拉热弗朗西斯氏菌
 
 * Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
@@ -1347,20 +1206,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 * BioSample: [SAMN04875573](https://www.ncbi.nlm.nih.gov/biosample/SAMN04875573)
 
 ## Ftul: download
-
-* Settings
-
-```bash
-BASE_NAME=Ftul
-REAL_G=1892775
-IS_EUK="false"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
-
-```
 
 * Reference genome
 
@@ -1460,59 +1305,34 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-* FastQC
-
-* kmergenie
-
-## Ftul: preprocess Illumina reads
+## Ftul: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Ftul
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 1892775 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
-
-## Ftul: preprocess PacBio reads
-
-## Ftul: reads stats
 
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
@@ -1529,20 +1349,12 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X80.raw  |   10012 |  151423072 |    19828 |
 | X80.trim |    9130 |  133365407 |    17725 |
 
-## Ftul: spades
-
-## Ftul: platanus
-
-## Ftul: quorum
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|-----:|---------:|----------:|
 | Q25L60 | 358.29M | 189.3 | 342.66M |  181.0 |   4.363% |     100 | "71" | 1.89M | 1.8M |     0.95 | 0:01'35'' |
 | Q30L60 | 349.08M | 184.4 | 336.67M |  177.9 |   3.554% |      99 | "71" | 1.89M | 1.8M |     0.95 | 0:01'15'' |
 
-## Ftul: down sampling
-
-## Ftul: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50SR |   Sum |  # | N50Anchor |   Sum |  # | N50Others |    Sum | # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|------:|------:|---:|----------:|------:|---:|----------:|-------:|--:|--------------------:|----------:|:----------|
@@ -1558,20 +1370,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | Q30L60X40P003 |  75.71M |   40.0 | 32741 |  1.8M | 75 |     32741 |  1.8M | 74 |       865 |    865 | 1 | "31,41,51,61,71,81" | 0:01'13'' | 0:00'45'' |
 | Q30L60X80P000 | 151.42M |   80.0 | 32751 |  1.8M | 74 |     32751 |  1.8M | 73 |       865 |    865 | 1 | "31,41,51,61,71,81" | 0:01'49'' | 0:01'08'' |
 | Q30L60X80P001 | 151.42M |   80.0 | 32751 |  1.8M | 74 |     32751 |  1.8M | 73 |       865 |    865 | 1 | "31,41,51,61,71,81" | 0:01'50'' | 0:01'12'' |
-
-## Ftul: merge anchors
-
-## Ftul: 3GS
-
-## Ftul: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Ftul: final stats
-
-* Stats
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
@@ -1589,10 +1387,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | platanus.contig        |   35258 | 1807536 | 121 |
 | platanus.scaffold      |   37800 | 1804173 |  92 |
 | platanus.non-contained |   37800 | 1798153 |  65 |
-
-* quast
-
-## Ftul: clear intermediate files
 
 # Shigella flexneri NCTC0001, 福氏志贺氏菌
 
@@ -1704,96 +1498,32 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 rm -fr ~/data/anchr/Sfle/3_pacbio/untar
 ```
 
-## Sfle: combinations of different quality values and read lengths
-
-* qual: 20, 25, and 30
-* len: 60 and 90
+## Sfle: run
 
 ```bash
-BASE_DIR=$HOME/data/anchr/Sfle
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Sfle
 
-cd ${BASE_DIR}
-if [ ! -e 2_illumina/R1.uniq.fq.gz ]; then
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i 2_illumina/R1.fq.gz \
-        -j 2_illumina/R2.fq.gz \
-        -o 2_illumina/R1.uniq.fq \
-        -p 2_illumina/R2.uniq.fq
-    
-    parallel --no-run-if-empty -j 2 "
-            pigz -p 4 2_illumina/{}.uniq.fq
-        " ::: R1 R2
-fi
+cd ${WORKING_DIR}/${BASE_NAME}
 
-cd ${BASE_DIR}
-if [ ! -e 2_illumina/R1.scythe.fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
-            2_illumina/{}.uniq.fq.gz \
-            -q sanger \
-            -a /home/wangq/.plenv/versions/5.18.4/lib/perl5/site_perl/5.18.4/auto/share/dist/App-Anchr/illumina_adapters.fa \
-            --quiet \
-            | pigz -p 4 -c \
-            > 2_illumina/{}.scythe.fq.gz
-        " ::: R1 R2
-fi
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 4828820 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "all" \
+    --qual3 "trim" \
+    --parallel 24
 
-cd ${BASE_DIR}
-parallel --no-run-if-empty -j 4 "
-    mkdir -p 2_illumina/Q{1}L{2}
-    cd 2_illumina/Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        --noscythe \
-        -q {1} -l {2} \
-        ../R1.scythe.fq.gz ../R2.scythe.fq.gz \
-        -o stdout \
-        | bash
-    " ::: 20 25 30 ::: 60 90
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
-```
-
-* Stats
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat.md
-printf "|:--|--:|--:|--:|\n" >> stat.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Illumina"; faops n50 -H -S -C 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "PacBio";   faops n50 -H -S -C 3_pacbio/pacbio.fasta;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "uniq";   faops n50 -H -S -C 2_illumina/R1.uniq.fq.gz 2_illumina/R2.uniq.fq.gz;) >> stat.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "scythe";   faops n50 -H -S -C 2_illumina/R1.scythe.fq.gz 2_illumina/R2.scythe.fq.gz;) >> stat.md
-
-for qual in 20 25 30; do
-    for len in 60 90; do
-        DIR_COUNT="${BASE_DIR}/2_illumina/Q${qual}L${len}"
-
-        printf "| %s | %s | %s | %s |\n" \
-            $(echo "Q${qual}L${len}"; faops n50 -H -S -C ${DIR_COUNT}/R1.fq.gz  ${DIR_COUNT}/R2.fq.gz;) \
-            >> stat.md
-    done
-done
-
-cat stat.md
 ```
 
 | Name     |     N50 |       Sum |       # |
@@ -1810,208 +1540,6 @@ cat stat.md
 | Q25L90   |     150 | 313056345 | 2098682 |
 | Q30L60   |     150 | 299305225 | 2026998 |
 | Q30L90   |     150 | 292247140 | 1962820 |
-
-## Sfle: down sampling
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-ARRAY=(
-    "2_illumina/Q20L60:Q20L60"
-    "2_illumina/Q20L90:Q20L90"
-    "2_illumina/Q25L60:Q25L60"
-    "2_illumina/Q25L90:Q25L90"
-    "2_illumina/Q30L60:Q30L60"
-    "2_illumina/Q30L90:Q30L90"
-)
-
-for group in "${ARRAY[@]}" ; do
-    
-    GROUP_DIR=$(group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[0];')
-    GROUP_ID=$( group=${group} perl -e '@p = split q{:}, $ENV{group}; print $p[1];')
-    printf "==> %s \t %s\n" "$GROUP_DIR" "$GROUP_ID"
-
-    echo "==> Group ${GROUP_ID}"
-    DIR_COUNT="${BASE_DIR}/${GROUP_ID}"
-    mkdir -p ${DIR_COUNT}
-    
-    if [ -e ${DIR_COUNT}/R1.fq.gz ]; then
-        continue     
-    fi
-    
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R1.fq.gz ${DIR_COUNT}/R1.fq.gz
-    ln -s ${BASE_DIR}/${GROUP_DIR}/R2.fq.gz ${DIR_COUNT}/R2.fq.gz
-
-done
-```
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-head -n 160000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.40x.fasta
-faops n50 -S -C 3_pacbio/pacbio.40x.fasta
-
-head -n 320000 3_pacbio/pacbio.fasta > 3_pacbio/pacbio.80x.fasta
-faops n50 -S -C 3_pacbio/pacbio.80x.fasta
-
-```
-
-## Sfle: generate super-reads
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-        
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            echo '    directory not exists'
-            exit;
-        fi        
-
-        if [ -e ${BASE_DIR}/{}/k_unitigs.fasta ]; then
-            echo '    k_unitigs.fasta already presents'
-            exit;
-        fi
-
-        cd ${BASE_DIR}/{}
-        anchr superreads \
-            R1.fq.gz R2.fq.gz \
-            --nosr -p 8 \
-            --kmer 41,61,81,101,121 \
-           -o superreads.sh
-        bash superreads.sh
-    "
-
-```
-
-Clear intermediate files.
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-find . -type f -name "quorum_mer_db.jf"          | xargs rm
-find . -type f -name "k_u_hash_0"                | xargs rm
-find . -type f -name "readPositionsInSuperReads" | xargs rm
-find . -type f -name "*.tmp"                     | xargs rm
-find . -type f -name "pe.renamed.fastq"          | xargs rm
-find . -type f -name "pe.cor.sub.fa"             | xargs rm
-```
-
-## Sfle: create anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel --no-run-if-empty -j 3 "
-        echo '==> Group {}'
-
-        if [ -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        rm -fr ${BASE_DIR}/{}/anchor
-        bash ~/Scripts/cpan/App-Anchr/share/anchor.sh ${BASE_DIR}/{} 8 false
-    "
-
-```
-
-## Sfle: results
-
-* Stats of super-reads
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-REAL_G=4607202
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 header \
-    > ${BASE_DIR}/stat1.md
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 4 "
-        if [ ! -d ${BASE_DIR}/{} ]; then
-            exit;
-        fi
-
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 1 ${BASE_DIR}/{} ${REAL_G}
-    " >> ${BASE_DIR}/stat1.md
-
-cat stat1.md
-```
-
-* Stats of anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 header \
-    > ${BASE_DIR}/stat2.md
-
-perl -e '
-    for my $n (
-        qw{
-        Q20L60 Q20L90
-        Q25L60 Q25L90
-        Q30L60 Q30L90
-        }
-        )
-    {
-        printf qq{%s\n}, $n;
-    }
-    ' \
-    | parallel -k --no-run-if-empty -j 8 "
-        if [ ! -e ${BASE_DIR}/{}/anchor/pe.anchor.fa ]; then
-            exit;
-        fi
-
-        bash ~/Scripts/cpan/App-Anchr/share/sr_stat.sh 2 ${BASE_DIR}/{}
-    " >> ${BASE_DIR}/stat2.md
-
-cat stat2.md
-```
 
 | Name   |   SumFq | CovFq | AvgRead |               Kmer |   SumFa | Discard% | RealG |  EstG | Est/Real | SumKU | SumSR |   RunTime |
 |:-------|--------:|------:|--------:|-------------------:|--------:|---------:|------:|------:|---------:|------:|------:|----------:|
@@ -2031,318 +1559,6 @@ cat stat2.md
 | Q30L60 | 29285 | 4.22M | 316 |     29285 | 4.18M | 264 |       760 | 37.42K |  52 | 0:00'57'' |
 | Q30L90 | 29285 | 4.22M | 314 |     29570 | 4.18M | 261 |       760 | 37.88K |  53 | 0:00'56'' |
 
-## Sfle: merge anchors
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-# merge anchors
-mkdir -p merge
-anchr contained \
-    Q20L60/anchor/pe.anchor.fa \
-    Q20L90/anchor/pe.anchor.fa \
-    Q25L60/anchor/pe.anchor.fa \
-    Q25L90/anchor/pe.anchor.fa \
-    Q30L60/anchor/pe.anchor.fa \
-    Q30L90/anchor/pe.anchor.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.contained.fasta
-anchr orient merge/anchor.contained.fasta --len 1000 --idt 0.98 -o merge/anchor.orient.fasta
-anchr merge merge/anchor.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/anchor.merge.fasta
-
-# merge others
-anchr contained \
-    Q20L60/anchor/pe.others.fa \
-    Q20L90/anchor/pe.others.fa \
-    Q25L60/anchor/pe.others.fa \
-    Q25L90/anchor/pe.others.fa \
-    Q30L60/anchor/pe.others.fa \
-    Q30L90/anchor/pe.others.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.contained.fasta
-anchr orient merge/others.contained.fasta --len 1000 --idt 0.98 -o merge/others.orient.fasta
-anchr merge merge/others.orient.fasta --len 1000 --idt 0.999 -o stdout \
-    | faops filter -a 1000 -l 0 stdin merge/others.merge.fasta
-
-# sort on ref
-bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh merge/anchor.merge.fasta 1_genome/genome.fa merge/anchor.sort
-nucmer -l 200 1_genome/genome.fa merge/anchor.sort.fa
-mummerplot -png out.delta -p anchor.sort --large
-
-# mummerplot files
-rm *.[fr]plot
-rm out.delta
-rm *.gp
-
-mv anchor.sort.png merge/
-
-# quast
-rm -fr 9_qa
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/others.merge.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,others,paralogs" \
-    -o 9_qa
-
-```
-
-## Sfle: 3GS
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-canu \
-    -p Sfle -d canu-raw-40x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw 3_pacbio/pacbio.40x.fasta
-
-canu \
-    -p Sfle -d canu-raw-80x \
-    gnuplot=$(brew --prefix)/Cellar/$(brew list --versions gnuplot | sed 's/ /\//')/bin/gnuplot \
-    genomeSize=4.8m \
-    -pacbio-raw 3_pacbio/pacbio.80x.fasta
-
-faops n50 -S -C canu-raw-40x/Sfle.trimmedReads.fasta.gz
-faops n50 -S -C canu-raw-80x/Sfle.trimmedReads.fasta.gz
-
-```
-
-## Sfle: expand anchors
-
-* anchorLong
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-anchr cover \
-    --parallel 16 \
-    -c 2 -m 40 \
-    -b 20 --len 1000 --idt 0.9 \
-    merge/anchor.merge.fasta \
-    canu-raw-40x/Sfle.trimmedReads.fasta.gz \
-    -o merge/anchor.cover.fasta
-
-rm -fr anchorLong
-anchr overlap2 \
-    --parallel 16 \
-    merge/anchor.cover.fasta \
-    canu-raw-40x/Sfle.trimmedReads.fasta.gz \
-    -d anchorLong \
-    -b 20 --len 1000 --idt 0.98
-
-anchr overlap \
-    merge/anchor.cover.fasta \
-    --serial --len 10 --idt 0.9999 \
-    -o stdout \
-    | perl -nla -e '
-        BEGIN {
-            our %seen;
-            our %count_of;
-        }
-
-        @F == 13 or next;
-        $F[3] > 0.9999 or next;
-
-        my $pair = join( "-", sort { $a <=> $b } ( $F[0], $F[1], ) );
-        next if $seen{$pair};
-        $seen{$pair} = $_;
-
-        $count_of{ $F[0] }++;
-        $count_of{ $F[1] }++;
-
-        END {
-            for my $pair ( keys %seen ) {
-                my ($f_id, $g_id) = split "-", $pair;
-                next if $count_of{$f_id} > 2;
-                next if $count_of{$g_id} > 2;
-                print $seen{$pair};
-            }
-        }
-    ' \
-    | sort -k 1n,1n -k 2n,2n \
-    > anchorLong/anchor.ovlp.tsv
-
-ANCHOR_COUNT=$(faops n50 -H -N 0 -C anchorLong/anchor.fasta)
-echo ${ANCHOR_COUNT}
-
-rm -fr anchorLong/group
-anchr group \
-    anchorLong/anchorLong.db \
-    anchorLong/anchorLong.ovlp.tsv \
-    --oa anchorLong/anchor.ovlp.tsv \
-    --parallel 16 \
-    --range "1-${ANCHOR_COUNT}" --len 1000 --idt 0.98 --max "-14" -c 4 --png
-
-pushd ${BASE_DIR}/anchorLong
-cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.98 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.98 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr overlap --len 10 --idt 0.9999 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | perl -nla -e '\''
-                @F == 13 or next;
-                $F[3] > 0.98 or next;
-                $F[9] == 0 or next;
-                $F[5] > 0 and $F[6] == $F[7] or next;
-                /anchor.+anchor/ or next;
-                print;
-            '\'' \
-            > group/{}.anchor.ovlp.tsv
-            
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            --oa group/{}.anchor.ovlp.tsv \
-            --png \
-            -o group/{}.contig.fasta
-    '
-popd
-
-# false strand
-cat anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-cat \
-   anchorLong/group/non_grouped.fasta\
-   anchorLong/group/*.contig.fasta \
-   | faops filter -l 0 -a 1000 stdin anchorLong/contig.fasta
-
-```
-
-* contigTrim
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-rm -fr contigTrim
-anchr overlap2 \
-    --parallel 16 \
-    anchorLong/contig.fasta \
-    canu-raw-40x/Sfle.contigs.fasta \
-    -d contigTrim \
-    -b 20 --len 1000 --idt 0.98 --all
-
-CONTIG_COUNT=$(faops n50 -H -N 0 -C contigTrim/anchor.fasta)
-echo ${CONTIG_COUNT}
-
-rm -fr contigTrim/group
-anchr group \
-    --parallel 16 \
-    --keep \
-    contigTrim/anchorLong.db \
-    contigTrim/anchorLong.ovlp.tsv \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.98 --max 20000 -c 1
-
-pushd ${BASE_DIR}/contigTrim
-cat group/groups.txt \
-    | parallel --no-run-if-empty -j 8 '
-        echo {};
-        anchr orient \
-            --len 1000 --idt 0.98 \
-            group/{}.anchor.fasta \
-            group/{}.long.fasta \
-            -r group/{}.restrict.tsv \
-            -o group/{}.strand.fasta;
-
-        anchr overlap --len 1000 --idt 0.98 \
-            group/{}.strand.fasta \
-            -o stdout \
-            | anchr restrict \
-                stdin group/{}.restrict.tsv \
-                -o group/{}.ovlp.tsv;
-
-        anchr layout \
-            group/{}.ovlp.tsv \
-            group/{}.relation.tsv \
-            group/{}.strand.fasta \
-            -o group/{}.contig.fasta
-    '
-popd
-
-cat \
-    contigTrim/group/non_grouped.fasta \
-    contigTrim/group/*.contig.fasta \
-    >  contigTrim/contig.fasta
-
-```
-
-* quast
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-rm -fr 9_qa_contig
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    merge/anchor.merge.fasta \
-    merge/anchor.cover.fasta \
-    anchorLong/contig.fasta \
-    contigTrim/contig.fasta \
-    canu-raw-40x/Sfle.contigs.fasta \
-    canu-raw-80x/Sfle.contigs.fasta \
-    1_genome/paralogs.fas \
-    --label "merge,cover,contig,contigTrim,canu-40x,canu-80x,paralogs" \
-    -o 9_qa_contig
-
-```
-
-* Stats
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > stat3.md
-printf "|:--|--:|--:|--:|\n" >> stat3.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "Paralogs";   faops n50 -H -S -C 1_genome/paralogs.fas;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.merge"; faops n50 -H -S -C merge/anchor.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "others.merge"; faops n50 -H -S -C merge/others.merge.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchor.cover"; faops n50 -H -S -C merge/anchor.cover.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "anchorLong"; faops n50 -H -S -C anchorLong/contig.fasta;) >> stat3.md
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "contigTrim"; faops n50 -H -S -C contigTrim/contig.fasta;) >> stat3.md
-
-cat stat3.md
-```
-
 | Name         |     N50 |     Sum |   # |
 |:-------------|--------:|--------:|----:|
 | Genome       | 4607202 | 4828820 |   2 |
@@ -2352,16 +1568,6 @@ cat stat3.md
 | anchor.cover |   21445 | 4065033 | 337 |
 | anchorLong   |   21727 | 4064559 | 333 |
 | contigTrim   |   59768 | 4286051 | 140 |
-
-* Clear QxxLxxx.
-
-```bash
-BASE_DIR=$HOME/data/anchr/Sfle
-cd ${BASE_DIR}
-
-rm -fr 2_illumina/Q{20,25,30}L*
-rm -fr Q{20,25,30}L*
-```
 
 # Haemophilus influenzae FDAARGOS_199, 流感嗜血杆菌
 
@@ -2466,59 +1672,34 @@ ln -s SRR4123929.fasta pacbio.fasta
 
 ```
 
-* FastQC
-
-* kmergenie
-
-## Hinf: preprocess Illumina reads
+## Hinf: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Hinf
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 1830138 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
-
-## Hinf: preprocess PacBio reads
-
-## Hinf: reads stats
 
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
@@ -2535,22 +1716,12 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X80.raw  |   11062 |  146420707 |    62532 |
 | X80.trim |   12100 |   70301992 |     7562 |
 
-## Hinf: spades
-
-## Hinf: platanus
-
-## Hinf: quorum
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|-----:|---------:|----------:|
 | Q25L60 |  336.2M | 183.7 | 319.81M |  174.7 |   4.876% |     100 | "71" | 1.83M | 1.8M |     0.98 | 0:01'03'' |
 | Q30L60 | 319.47M | 174.6 | 307.56M |  168.1 |   3.728% |      98 | "71" | 1.83M | 1.8M |     0.98 | 0:01'08'' |
 
-## Hinf: adapter filtering
-
-## Hinf: down sampling
-
-## Hinf: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |  # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|------:|---:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
@@ -2567,9 +1738,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | Q30L60X80P000 | 146.41M |   80.0 |     58229 | 1.77M | 52 |      1634 | 18.55K | 14 |   78.0 | 7.0 |  19.0 | 148.5 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'42'' |
 | Q30L60X80P001 | 146.41M |   80.0 |     58229 | 1.77M | 49 |      3503 | 17.15K | 12 |   79.5 | 7.5 |  19.0 | 153.0 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'42'' |
 
-## Hinf: merge anchors
-
-## Hinf: 3GS
 
 | Name               |     N50 |      Sum |    # |
 |:-------------------|--------:|---------:|-----:|
@@ -2584,15 +1752,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | X80.raw            |         |          |      |
 | X80.trim           | 1838071 |  1851226 |    2 |
 
-## Hinf: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Hinf: final stats
-
-* Stats
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
@@ -2611,9 +1770,6 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | platanus.scaffold      |  161477 | 1799094 |  83 |
 | platanus.non-contained |  161477 | 1789782 |  21 |
 
-* quast
-
-## Hinf: clear intermediate files
 
 # Listeria monocytogenes FDAARGOS_351, 单核细胞增生李斯特氏菌
 
@@ -2692,57 +1848,32 @@ ln -s SRR5427943_2.fastq.gz R2.fq.gz
 
     * [SRX2717966](https://www.ncbi.nlm.nih.gov/sra/SRX2717966) SRR5427942
 
-* FastQC
-
-* kmergenie
-
-## Lmon: preprocess Illumina reads
+## Lmon: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Lmon
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 2944528 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
-
-## Lmon: reads stats
 
 | Name     |     N50 |        Sum |        # |
 |:---------|--------:|-----------:|---------:|
@@ -2754,33 +1885,12 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
 | Q25L60   |     151 |  457352457 |  3268580 |
 | Q30L60   |     151 |  442570581 |  3281099 |
 
-## Lmon: spades
-
-## Lmon: platanus
-
-## Lmon: quorum
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead |  Kmer | RealG | EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|------:|------:|-----:|---------:|----------:|
 | Q25L60 | 457.35M | 155.3 | 362.25M |  123.0 |  20.794% |     143 | "105" | 2.94M | 5.5M |     1.87 | 0:01'17'' |
 | Q30L60 | 443.02M | 150.5 | 378.29M |  128.5 |  14.611% |     139 |  "91" | 2.94M | 5.4M |     1.84 | 0:01'17'' |
 
-## Lmon: adapter filtering
-
-```text
-#File	2_illumina/Q25L60/pe.cor.raw
-#Total	2563156
-#Matched	828	0.03230%
-#Name	Reads	ReadsPct
-Reverse_adapter	824	0.03215%
-PCR_Primers	2	0.00008%
-TruSeq_Adapter_Index_3	1	0.00004%
-pcr_dimer	1	0.00004%
-```
-
-## Lmon: down sampling
-
-## Lmon: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |    Sum |   # | N50Others |    Sum |    # | median |  MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|-------:|----:|----------:|-------:|-----:|-------:|-----:|------:|------:|--------------------:|----------:|----------:|
@@ -2792,12 +1902,6 @@ pcr_dimer	1	0.00004%
 | Q30L60X40P001 | 117.78M |   40.0 |      2534 | 37.38K |  17 |     58800 |  3.02M |  216 |   14.0 | 12.0 |   2.0 |  28.0 | "31,41,51,61,71,81" | 0:01'50'' | 0:00'47'' |
 | Q30L60X40P002 | 117.78M |   40.0 |     57689 |  2.93M |  99 |       603 | 51.95K |   81 |   31.5 | 13.5 |   2.0 |  63.0 | "31,41,51,61,71,81" | 0:01'56'' | 0:00'44'' |
 | Q30L60X80P000 | 235.56M |   80.0 |      1168 | 57.15K |  46 |     21762 |   3.6M | 1055 |    4.0 |  1.0 |   2.0 |   8.0 | "31,41,51,61,71,81" | 0:02'06'' | 0:00'44'' |
-
-## Lmon: merge anchors
-
-## Lmon: final stats
-
-* Stats
 
 | Name                   |     N50 |     Sum |    # |
 |:-----------------------|--------:|--------:|-----:|
@@ -2815,10 +1919,6 @@ pcr_dimer	1	0.00004%
 | platanus.contig        |  289999 | 2969795 |  101 |
 | platanus.scaffold      |  557585 | 2960623 |   32 |
 | platanus.non-contained |  557585 | 2956610 |   15 |
-
-* quast
-
-## Lmon: clear intermediate files
 
 # Clostridioides difficile 630
 
@@ -2900,13 +2000,32 @@ ln -s SRR4125185_2.fastq.gz R2.fq.gz
 
     * [SRX2104759](https://www.ncbi.nlm.nih.gov/sra/SRX2104759) SRR4125184
 
-* FastQC
+## Cdif: run
 
-* kmergenie
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Cdif
 
-## Cdif: preprocess Illumina reads
+cd ${WORKING_DIR}/${BASE_NAME}
 
-## Cdif: reads stats
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 4298133 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
+
+```
 
 | Name     |     N50 |     Sum |        # |
 |:---------|--------:|--------:|---------:|
@@ -2919,22 +2038,12 @@ ln -s SRR4125185_2.fastq.gz R2.fq.gz
 | Q25L60   |     101 |  787.8M |  7855952 |
 | Q30L60   |     101 | 771.97M |  7785648 |
 
-## Cdif: spades
-
-## Cdif: platanus
-
-## Cdif: quorum
 
 | Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|-----:|---------:|----------:|
 | Q25L60 |  787.8M | 183.3 | 740.76M |  172.3 |   5.971% |     100 | "71" |  4.3M | 4.2M |     0.98 | 0:03'34'' |
 | Q30L60 | 772.47M | 179.7 | 736.69M |  171.4 |   4.631% |      99 | "71" |  4.3M | 4.2M |     0.98 | 0:03'18'' |
 
-## Cdif: adapter filtering
-
-## Cdif: down sampling
-
-## Cdif: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
@@ -2951,12 +2060,6 @@ ln -s SRR4125185_2.fastq.gz R2.fq.gz
 | Q30L60X80P000 | 343.85M |   80.0 |    105540 | 4.14M | 103 |      7659 | 41.42K | 23 |   78.0 | 8.0 |  18.0 | 153.0 | "31,41,51,61,71,81" | 0:04'15'' | 0:02'01'' |
 | Q30L60X80P001 | 343.85M |   80.0 |    105540 | 4.15M | 104 |      5646 | 39.41K | 22 |   79.0 | 7.0 |  19.3 | 150.0 | "31,41,51,61,71,81" | 0:04'20'' | 0:01'52'' |
 
-## Cdif: merge anchors
-
-## Cdif: final stats
-
-* Stats
-
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
 | Genome                 | 4290252 | 4298133 |   2 |
@@ -2969,10 +2072,6 @@ ln -s SRR4125185_2.fastq.gz R2.fq.gz
 | platanus.contig        |  104398 | 4271640 | 680 |
 | platanus.scaffold      |  225728 | 4236396 | 416 |
 | platanus.non-contained |  225728 | 4181483 |  49 |
-
-* quast
-
-## Cdif: clear intermediate files
 
 # Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌
 
@@ -3054,13 +2153,32 @@ ln -s SRR4125016_2.fastq.gz R2.fq.gz
 
     * [SRX2107011](https://www.ncbi.nlm.nih.gov/sra/SRX2107011) SRR4125017
 
-* FastQC
+## Cjej: run
 
-* kmergenie
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Cjej
 
-## Cjej: preprocess Illumina reads
+cd ${WORKING_DIR}/${BASE_NAME}
 
-## Cjej: reads stats
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 1641481 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --parallel 24
+
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
+
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
+
+```
 
 | Name     |     N50 |     Sum |        # |
 |:---------|--------:|--------:|---------:|
@@ -3072,22 +2190,12 @@ ln -s SRR4125016_2.fastq.gz R2.fq.gz
 | Q25L60   |     101 | 307.44M |  3062540 |
 | Q30L60   |     101 | 296.61M |  2990738 |
 
-## Cjej: spades
-
-## Cjej: platanus
-
-## Cjej: quorum
 
 | Name   |   SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|--------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
 | Q25L60 | 307.44M | 187.3 | 291.4M |  177.5 |   5.218% |     100 | "71" | 1.64M | 1.62M |     0.99 | 0:02'44'' |
 | Q30L60 | 296.72M | 180.8 | 284.1M |  173.1 |   4.253% |      99 | "71" | 1.64M | 1.62M |     0.99 | 0:02'31'' |
 
-## Cjej: adapter filtering
-
-## Cjej: down sampling
-
-## Cjej: k-unitigs and anchors (sampled)
 
 | Name          |  SumCor | CovCor | N50Anchor |  Sum |  # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|--------:|-------:|----------:|-----:|---:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
@@ -3104,11 +2212,6 @@ ln -s SRR4125016_2.fastq.gz R2.fq.gz
 | Q30L60X80P000 | 131.32M |   80.0 |     79987 | 1.6M | 47 |      2340 | 14.82K | 11 |   76.0 | 4.0 |  21.3 | 132.0 | "31,41,51,61,71,81" | 0:02'54'' | 0:00'56'' |
 | Q30L60X80P001 | 131.32M |   80.0 |     80036 | 1.6M | 43 |      1122 | 16.86K | 13 |   77.0 | 4.0 |  21.7 | 133.5 | "31,41,51,61,71,81" | 0:02'57'' | 0:00'57'' |
 
-## Cjej: merge anchors
-
-## Cjej: final stats
-
-* Stats
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
@@ -3122,10 +2225,6 @@ ln -s SRR4125016_2.fastq.gz R2.fq.gz
 | platanus.contig        |  112542 | 1629204 | 124 |
 | platanus.scaffold      |  153889 | 1622715 |  70 |
 | platanus.non-contained |  153889 | 1611433 |  20 |
-
-* quast
-
-## Cjej: clear intermediate files
 
 # Escherichia virus Lambda
 
