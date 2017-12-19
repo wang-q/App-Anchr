@@ -749,6 +749,9 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
     " ::: [% opt.cov3 %] ::: [% opt.qual3 %]
 
+# sometimes canu failed
+exit;
+
 EOF
         $tt->process(
             \$template,
@@ -788,6 +791,9 @@ canu \
     useGrid=false \
     genomeSize=[% opt.genome %] \
     -pacbio-raw 3_pacbio/pacbio.X[% cov %].[% qual %].fasta
+
+# sometimes canu failed
+exit;
 
 EOF
                 $tt->process(
