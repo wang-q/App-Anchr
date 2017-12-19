@@ -4,67 +4,16 @@
 - [Bacteria 2+3](#bacteria-23)
 - [Vibrio parahaemolyticus ATCC BAA-239, 副溶血弧菌](#vibrio-parahaemolyticus-atcc-baa-239-副溶血弧菌)
     - [Vpar: download](#vpar-download)
-    - [Vpar: preprocess Illumina reads](#vpar-preprocess-illumina-reads)
-    - [Vpar: preprocess PacBio reads](#vpar-preprocess-pacbio-reads)
-    - [Vpar: reads stats](#vpar-reads-stats)
-    - [Vpar: spades](#vpar-spades)
-    - [Vpar: platanus](#vpar-platanus)
-    - [Vpar: quorum](#vpar-quorum)
-    - [Vpar: adapter filtering](#vpar-adapter-filtering)
-    - [Vpar: down sampling](#vpar-down-sampling)
-    - [Vpar: k-unitigs and anchors (sampled)](#vpar-k-unitigs-and-anchors-sampled)
-    - [Vpar: merge anchors](#vpar-merge-anchors)
-    - [Vpar: 3GS](#vpar-3gs)
-    - [Vpar: expand anchors](#vpar-expand-anchors)
-    - [Vpar: final stats](#vpar-final-stats)
-    - [Vpar: clear intermediate files](#vpar-clear-intermediate-files)
+    - [Vpar: run](#vpar-run)
 - [Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1, 嗜肺军团菌](#legionella-pneumophila-subsp-pneumophila-atcc-33152d-5-philadelphia-1-嗜肺军团菌)
     - [Lpne: download](#lpne-download)
-    - [Lpne: preprocess Illumina reads](#lpne-preprocess-illumina-reads)
-    - [Lpne: preprocess PacBio reads](#lpne-preprocess-pacbio-reads)
-    - [Lpne: reads stats](#lpne-reads-stats)
-    - [Lpne: spades](#lpne-spades)
-    - [Lpne: platanus](#lpne-platanus)
-    - [Lpne: quorum](#lpne-quorum)
-    - [Lpne: down sampling](#lpne-down-sampling)
-    - [Lpne: k-unitigs and anchors (sampled)](#lpne-k-unitigs-and-anchors-sampled)
-    - [Lpne: merge anchors](#lpne-merge-anchors)
-    - [Lpne: 3GS](#lpne-3gs)
-    - [Lpne: expand anchors](#lpne-expand-anchors)
-    - [Lpne: final stats](#lpne-final-stats)
-    - [Lpne: clear intermediate files](#lpne-clear-intermediate-files)
+    - [Lpne: run](#lpne-run)
 - [Neisseria gonorrhoeae FDAARGOS_207, 淋病奈瑟氏菌](#neisseria-gonorrhoeae-fdaargos-207-淋病奈瑟氏菌)
     - [Ngon: download](#ngon-download)
-    - [Ngon: preprocess Illumina reads](#ngon-preprocess-illumina-reads)
-    - [Ngon: preprocess PacBio reads](#ngon-preprocess-pacbio-reads)
-    - [Ngon: reads stats](#ngon-reads-stats)
-    - [Ngon: spades](#ngon-spades)
-    - [Ngon: platanus](#ngon-platanus)
-    - [Ngon: quorum](#ngon-quorum)
-    - [Ngon: adapter filtering](#ngon-adapter-filtering)
-    - [Ngon: down sampling](#ngon-down-sampling)
-    - [Ngon: k-unitigs and anchors (sampled)](#ngon-k-unitigs-and-anchors-sampled)
-    - [Ngon: merge anchors](#ngon-merge-anchors)
-    - [Ngon: 3GS](#ngon-3gs)
-    - [Ngon: expand anchors](#ngon-expand-anchors)
-    - [Ngon: final stats](#ngon-final-stats)
-    - [Ngon: clear intermediate files](#ngon-clear-intermediate-files)
+    - [Ngon: run](#ngon-run)
 - [Neisseria meningitidis FDAARGOS_209, 脑膜炎奈瑟氏菌](#neisseria-meningitidis-fdaargos-209-脑膜炎奈瑟氏菌)
     - [Nmen: download](#nmen-download)
-    - [Nmen: preprocess Illumina reads](#nmen-preprocess-illumina-reads)
-    - [Nmen: preprocess PacBio reads](#nmen-preprocess-pacbio-reads)
-    - [Nmen: reads stats](#nmen-reads-stats)
-    - [Nmen: spades](#nmen-spades)
-    - [Nmen: platanus](#nmen-platanus)
-    - [Nmen: quorum](#nmen-quorum)
-    - [Nmen: adapter filtering](#nmen-adapter-filtering)
-    - [Nmen: down sampling](#nmen-down-sampling)
-    - [Nmen: k-unitigs and anchors (sampled)](#nmen-k-unitigs-and-anchors-sampled)
-    - [Nmen: merge anchors](#nmen-merge-anchors)
-    - [Nmen: 3GS](#nmen-3gs)
-    - [Nmen: expand anchors](#nmen-expand-anchors)
-    - [Nmen: final stats](#nmen-final-stats)
-    - [Nmen: clear intermediate files](#nmen-clear-intermediate-files)
+    - [Nmen: run](#nmen-run)
 - [Bordetella pertussis FDAARGOS_195, 百日咳博德特氏杆菌](#bordetella-pertussis-fdaargos-195-百日咳博德特氏杆菌)
     - [Bper: download](#bper-download)
     - [Bper: preprocess Illumina reads](#bper-preprocess-illumina-reads)
@@ -161,11 +110,32 @@
     - [Cdif: clear intermediate files](#cdif-clear-intermediate-files)
 - [Campylobacter jejuni subsp. jejuni ATCC 700819, 空肠弯曲杆菌](#campylobacter-jejuni-subsp-jejuni-atcc-700819-空肠弯曲杆菌)
     - [Cjej: download](#cjej-download)
+    - [Cjej: preprocess Illumina reads](#cjej-preprocess-illumina-reads)
+    - [Cjej: reads stats](#cjej-reads-stats)
+    - [Cjej: spades](#cjej-spades)
+    - [Cjej: platanus](#cjej-platanus)
+    - [Cjej: quorum](#cjej-quorum)
+    - [Cjej: adapter filtering](#cjej-adapter-filtering)
+    - [Cjej: down sampling](#cjej-down-sampling)
+    - [Cjej: k-unitigs and anchors (sampled)](#cjej-k-unitigs-and-anchors-sampled)
+    - [Cjej: merge anchors](#cjej-merge-anchors)
+    - [Cjej: final stats](#cjej-final-stats)
+    - [Cjej: clear intermediate files](#cjej-clear-intermediate-files)
 - [Escherichia virus Lambda](#escherichia-virus-lambda)
     - [lambda: download](#lambda-download)
+    - [lambda: preprocess Illumina reads](#lambda-preprocess-illumina-reads)
     - [lambda: preprocess PacBio reads](#lambda-preprocess-pacbio-reads)
     - [lambda: reads stats](#lambda-reads-stats)
+    - [lambda: spades](#lambda-spades)
+    - [lambda: platanus](#lambda-platanus)
+    - [lambda: quorum](#lambda-quorum)
+    - [lambda: adapter filtering](#lambda-adapter-filtering)
+    - [lambda: down sampling](#lambda-down-sampling)
+    - [lambda: k-unitigs and anchors (sampled)](#lambda-k-unitigs-and-anchors-sampled)
+    - [lambda: merge anchors](#lambda-merge-anchors)
     - [lambda: 3GS](#lambda-3gs)
+    - [lambda: final stats](#lambda-final-stats)
+    - [lambda: clear intermediate files](#lambda-clear-intermediate-files)
 
 
 # Vibrio parahaemolyticus ATCC BAA-239, 副溶血弧菌
@@ -177,14 +147,8 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Vpar
-REAL_G=5165770
-IS_EUK="false"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
@@ -290,113 +254,98 @@ faops n50 3_pacbio/pacbio.fasta
 rm -fr ~/data/anchr/Vpar/3_pacbio/untar
 ```
 
-* FastQC
+## Vpar: run
 
-* kmergenie
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Vpar
 
-## Vpar: preprocess Illumina reads
+cd ${WORKING_DIR}/${BASE_NAME}
 
-## Vpar: preprocess PacBio reads
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 5165770 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-## Vpar: reads stats
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 3288558 |    5165770 |        2 |
-| Paralogs |    3333 |     155714 |       62 |
-| Illumina |     101 | 1368727962 | 13551762 |
-| uniq     |     101 | 1361783404 | 13483004 |
-| shuffle  |     101 | 1361783404 | 13483004 |
-| scythe   |     101 | 1344854680 | 13483004 |
-| Q25L60   |     101 | 1200258254 | 12011424 |
-| Q30L60   |     101 | 1141298554 | 11613013 |
-| PacBio   |   11771 | 1228497092 |   143537 |
-| X40.raw  |   11816 |  206635364 |    24145 |
-| X40.trim |   10545 |  173840405 |    20555 |
-| X80.raw  |   11822 |  413261717 |    48766 |
-| X80.trim |   10678 |  355440531 |    41795 |
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
-## Vpar: spades
+```
 
-## Vpar: platanus
+| Name      |     N50 |     Sum |        # |
+|:----------|--------:|--------:|---------:|
+| Genome    | 3288558 | 5165770 |        2 |
+| Paralogs  |    3333 |  155714 |       62 |
+| Illumina  |     101 |   1.37G | 13551762 |
+| uniq      |     101 |   1.36G | 13483004 |
+| shuffle   |     101 |   1.36G | 13483004 |
+| scythe    |     101 |   1.34G | 13483004 |
+| Q25L60    |     101 |    1.2G | 12011424 |
+| Q30L60    |     101 |   1.14G | 11613013 |
+| PacBio    |   11771 |   1.23G |   143537 |
+| X80.raw   |   11822 | 413.26M |    48766 |
+| X80.trim  |   10678 | 355.44M |    41795 |
+| Xall.raw  |   11771 |   1.23G |   143537 |
+| Xall.trim |   10770 |   1.08G |   125808 |
 
-## Vpar: quorum
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 232.3 |  216.3 |   6.910% |     100 | "71" | 5.17M | 5.48M |     1.06 | 0:02'15'' |
+| Q30L60 | 221.1 |  207.1 |   6.299% |      99 | "71" | 5.17M | 5.42M |     1.05 | 0:02'09'' |
 
-| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 |  1.2G | 232.3 |  1.12G |  216.3 |   6.910% |     100 | "71" | 5.17M | 5.48M |     1.06 | 0:02'41'' |
-| Q30L60 | 1.14G | 221.1 |  1.07G |  207.1 |   6.299% |      99 | "71" | 5.17M | 5.42M |     1.05 | 0:02'36'' |
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |     86651 | 5.04M | 104 |       784 | 34.27K | 46 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'58'' |
+| Q25L60X40P001 |   40.0 |     82844 | 5.04M | 112 |       710 | 27.27K | 39 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'51'' | 0:00'57'' |
+| Q25L60X40P002 |   40.0 |     91439 | 5.05M | 105 |       745 | 25.48K | 36 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'51'' | 0:00'57'' |
+| Q25L60X40P003 |   40.0 |     99617 | 5.04M | 102 |       770 | 30.01K | 41 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'56'' |
+| Q25L60X40P004 |   40.0 |     95315 | 5.04M | 106 |       721 | 27.68K | 40 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'51'' | 0:00'55'' |
+| Q25L60X80P000 |   80.0 |     65575 | 5.04M | 147 |       762 | 18.59K | 26 |   78.0 | 8.0 |  18.0 | 153.0 | "31,41,51,61,71,81" | 0:01'19'' | 0:00'51'' |
+| Q25L60X80P001 |   80.0 |     75731 | 5.05M | 136 |       729 | 19.23K | 27 |   78.0 | 8.0 |  18.0 | 153.0 | "31,41,51,61,71,81" | 0:01'18'' | 0:00'51'' |
+| Q30L60X40P000 |   40.0 |    105193 | 5.04M |  86 |       763 | 32.79K | 44 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:01'03'' |
+| Q30L60X40P001 |   40.0 |    139690 | 5.04M |  84 |       749 | 32.32K | 44 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:01'04'' |
+| Q30L60X40P002 |   40.0 |    105203 | 5.04M |  81 |       710 | 35.06K | 50 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'51'' | 0:01'07'' |
+| Q30L60X40P003 |   40.0 |    128439 | 5.04M |  83 |       710 |  26.7K | 38 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'51'' | 0:01'03'' |
+| Q30L60X40P004 |   40.0 |    105203 | 5.04M |  89 |       762 | 23.93K | 33 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:01'01'' |
+| Q30L60X80P000 |   80.0 |    104258 | 5.04M |  95 |       710 | 19.57K | 28 |   76.0 | 8.0 |  17.3 | 150.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:01'03'' |
+| Q30L60X80P001 |   80.0 |     99705 | 5.05M |  95 |       762 | 20.08K | 28 |   77.0 | 8.0 |  17.7 | 151.5 | "31,41,51,61,71,81" | 0:01'16'' | 0:01'00'' |
 
-## Vpar: adapter filtering
-
-## Vpar: down sampling
-
-## Vpar: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 | 206.63M |   40.0 |     81937 | 5.04M | 112 |       789 | 29.24K | 39 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'16'' | 0:01'09'' |
-| Q25L60X40P001 | 206.63M |   40.0 |     82846 | 5.05M | 104 |       713 | 31.81K | 44 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'15'' | 0:01'06'' |
-| Q25L60X40P002 | 206.63M |   40.0 |     95853 | 5.04M | 106 |       784 | 31.33K | 42 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'13'' | 0:01'12'' |
-| Q25L60X40P003 | 206.63M |   40.0 |     96694 | 5.04M | 105 |       762 | 27.37K | 37 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'06'' |
-| Q25L60X40P004 | 206.63M |   40.0 |     95833 | 5.04M | 102 |       735 |  27.7K | 39 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'23'' | 0:01'07'' |
-| Q25L60X80P000 | 413.26M |   80.0 |     63768 | 5.04M | 138 |       750 | 20.82K | 29 |   77.5 | 8.5 |  17.3 | 154.5 | "31,41,51,61,71,81" | 0:03'09'' | 0:00'59'' |
-| Q25L60X80P001 | 413.26M |   80.0 |     65072 | 5.05M | 149 |       729 | 18.28K | 26 |   78.0 | 8.0 |  18.0 | 153.0 | "31,41,51,61,71,81" | 0:03'02'' | 0:01'02'' |
-| Q30L60X40P000 | 206.63M |   40.0 |    143227 | 5.04M |  84 |       790 |  30.4K | 41 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'20'' | 0:01'13'' |
-| Q30L60X40P001 | 206.63M |   40.0 |    123767 | 5.04M |  82 |       754 | 27.56K | 38 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'10'' | 0:01'09'' |
-| Q30L60X40P002 | 206.63M |   40.0 |    143237 | 5.04M |  83 |       762 | 27.68K | 38 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'12'' | 0:01'09'' |
-| Q30L60X40P003 | 206.63M |   40.0 |    142864 | 5.04M |  88 |       697 | 23.22K | 34 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'09'' | 0:01'12'' |
-| Q30L60X40P004 | 206.63M |   40.0 |    146947 | 5.04M |  84 |       804 | 30.12K | 40 |   38.0 | 4.0 |   8.7 |  75.0 | "31,41,51,61,71,81" | 0:02'12'' | 0:01'11'' |
-| Q30L60X80P000 | 413.26M |   80.0 |    104258 | 5.04M |  96 |       710 | 19.32K | 27 |   75.0 | 7.0 |  18.0 | 144.0 | "31,41,51,61,71,81" | 0:03'09'' | 0:01'06'' |
-| Q30L60X80P001 | 413.26M |   80.0 |    104258 | 5.04M |  95 |       710 |  19.7K | 28 |   76.0 | 7.0 |  18.3 | 145.5 | "31,41,51,61,71,81" | 0:03'12'' | 0:01'09'' |
-
-## Vpar: merge anchors
-
-## Vpar: 3GS
-
-| Name               |     N50 |       Sum |     # |
-|:-------------------|--------:|----------:|------:|
-| Genome             | 3288558 |   5165770 |     2 |
-| Paralogs           |    3333 |    155714 |    62 |
-| X40.raw.corrected  |   10645 | 142920341 | 16613 |
-| X40.trim.corrected |   10455 | 139373803 | 16359 |
-| X80.raw.corrected  |   12302 | 202279213 | 17129 |
-| X80.trim.corrected |   11981 | 201858628 | 17420 |
-| X40.raw            | 1697538 |   5188544 |     7 |
-| X40.trim           | 1697335 |   5182144 |     6 |
-| X80.raw            | 3318284 |   5205189 |     2 |
-| X80.trim           | 3316838 |   5204553 |     2 |
-
-## Vpar: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Vpar: final stats
-
-* Stats
+| Name                |     N50 |     Sum |     # |
+|:--------------------|--------:|--------:|------:|
+| Genome              | 3288558 | 5165770 |     2 |
+| Paralogs            |    3333 |  155714 |    62 |
+| X80.trim.corrected  |   11981 | 201.86M | 17420 |
+| Xall.trim.corrected |   19088 | 201.72M | 10514 |
+| X80.trim.contig     | 3316838 | 5204553 |     2 |
+| Xall.trim.contig    | 3292632 | 5188352 |     2 |
 
 | Name                   |     N50 |     Sum |    # |
 |:-----------------------|--------:|--------:|-----:|
 | Genome                 | 3288558 | 5165770 |    2 |
 | Paralogs               |    3333 |  155714 |   62 |
-| anchor                 |  179336 | 5051715 |   72 |
-| others                 |     823 |   89935 |  114 |
-| anchorLong             |  208183 | 5041631 |   57 |
-| contigTrim             | 1017789 | 5086016 |   15 |
-| canu-X40-raw           | 1697538 | 5188544 |    7 |
-| canu-X40-trim          | 1697335 | 5182144 |    6 |
-| spades.contig          |  256618 | 6556836 | 3899 |
-| spades.scaffold        |  373514 | 6566166 | 3637 |
-| spades.non-contained   |  288633 | 5164547 |  125 |
+| anchors                |  179336 | 5060549 |   71 |
+| others                 |     837 |   98682 |  128 |
+| anchorLong             |  208183 | 5059783 |   59 |
+| anchorFill             |  561554 | 5107574 |   15 |
+| canu_X80-trim          | 3316838 | 5204553 |    2 |
+| canu_Xall-trim         | 3292632 | 5188352 |    2 |
+| spades.contig          |  256618 | 6578108 | 3933 |
+| spades.scaffold        |  373514 | 6587153 | 3680 |
+| spades.non-contained   |  288633 | 5166143 |  126 |
 | platanus.contig        |  196706 | 5152580 |  619 |
 | platanus.scaffold      |  339534 | 5134547 |  434 |
 | platanus.non-contained |  426844 | 5061526 |   34 |
 
-* quast
-
-## Vpar: clear intermediate files
 
 # Legionella pneumophila subsp. pneumophila ATCC 33152D-5; Philadelphia-1, 嗜肺军团菌
 
@@ -407,13 +356,8 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Lpne
-REAL_G=3397754
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
@@ -520,135 +464,99 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-* FastQC
-
-* kmergenie
-
-## Lpne: preprocess Illumina reads
+## Lpne: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Lpne
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 3397754 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
 
-## Lpne: preprocess PacBio reads
+| Name      |     N50 |     Sum |        # |
+|:----------|--------:|--------:|---------:|
+| Genome    | 3397754 | 3397754 |        1 |
+| Paralogs  |    2793 |  100722 |       43 |
+| Illumina  |     101 |   1.06G | 10498482 |
+| uniq      |     101 |   1.06G | 10458252 |
+| shuffle   |     101 |   1.06G | 10458252 |
+| sample    |     101 |   1.02G | 10092338 |
+| scythe    |     101 |   1.01G | 10092338 |
+| Q25L60    |     101 | 876.86M |  8805342 |
+| Q30L60    |     101 | 804.43M |  8293117 |
+| PacBio    |    8538 | 287.32M |    56763 |
+| X80.raw   |    8542 | 271.82M |    53600 |
+| X80.trim  |    8354 | 232.88M |    39020 |
+| Xall.raw  |    8538 | 287.32M |    56763 |
+| Xall.trim |    8357 | 246.63M |    41404 |
 
-## Lpne: reads stats
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 258.1 |  238.1 |   7.748% |      99 | "71" |  3.4M | 3.43M |     1.01 | 0:01'39'' |
+| Q30L60 | 236.9 |  222.0 |   6.289% |      98 | "71" |  3.4M | 3.41M |     1.00 | 0:01'32'' |
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 3397754 |    3397754 |        1 |
-| Paralogs |    2793 |     100722 |       43 |
-| Illumina |     101 | 1060346682 | 10498482 |
-| uniq     |     101 | 1056283452 | 10458252 |
-| sample   |     101 |  679550826 |  6728226 |
-| Q25L60   |     101 |  585067867 |  5874622 |
-| Q30L60   |     101 |  536510199 |  5530505 |
-| PacBio   |    8538 |  287320468 |    56763 |
-| X40.raw  |    8671 |  135913310 |    26008 |
-| X40.trim |    8378 |  114584028 |    18809 |
-| X80.raw  |    8542 |  271822256 |    53600 |
-| X80.trim |    8354 |  232880224 |    39020 |
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |    101461 | 3.36M |  78 |       874 | 39.55K | 47 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'46'' |
+| Q25L60X40P001 |   40.0 |     95305 | 3.36M |  82 |       874 | 45.62K | 52 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'48'' |
+| Q25L60X40P002 |   40.0 |     79418 | 3.36M |  78 |       912 | 37.59K | 42 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'46'' |
+| Q25L60X40P003 |   40.0 |     78859 | 3.35M |  73 |       864 |  44.7K | 54 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'44'' |
+| Q25L60X40P004 |   40.0 |     77744 | 3.36M |  82 |       763 | 37.56K | 47 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'46'' |
+| Q25L60X80P000 |   80.0 |     40955 | 3.36M | 126 |      1776 | 63.28K | 47 |   78.0 | 3.0 |  23.0 | 130.5 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'40'' |
+| Q25L60X80P001 |   80.0 |     57937 | 3.37M | 115 |      3850 | 65.16K | 37 |   78.0 | 3.0 |  23.0 | 130.5 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'43'' |
+| Q30L60X40P000 |   40.0 |    107125 | 3.36M |  61 |       839 | 36.82K | 44 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'34'' | 0:00'47'' |
+| Q30L60X40P001 |   40.0 |    120743 | 3.36M |  65 |       964 | 43.39K | 47 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'48'' |
+| Q30L60X40P002 |   40.0 |    118594 | 3.35M |  62 |       848 | 43.51K | 50 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'34'' | 0:00'49'' |
+| Q30L60X40P003 |   40.0 |    142178 | 3.36M |  60 |       813 | 35.57K | 43 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'49'' |
+| Q30L60X40P004 |   40.0 |    118512 | 3.36M |  62 |       839 | 38.13K | 47 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'34'' | 0:00'45'' |
+| Q30L60X80P000 |   80.0 |     91387 | 3.36M |  73 |      2043 | 61.06K | 44 |   78.0 | 4.0 |  22.0 | 135.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'48'' |
+| Q30L60X80P001 |   80.0 |     96162 | 3.36M |  67 |      1762 | 52.37K | 38 |   78.0 | 4.0 |  22.0 | 135.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'49'' |
 
-## Lpne: spades
-
-## Lpne: platanus
-
-## Lpne: quorum
-
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 585.07M | 172.2 | 539.55M |  158.8 |   7.779% |      99 | "71" |  3.4M | 3.41M |     1.00 | 0:01'20'' |
-| Q30L60 | 536.95M | 158.0 | 503.09M |  148.1 |   6.306% |      97 | "71" |  3.4M | 3.41M |     1.00 | 0:01'15'' |
-
-## Lpne: down sampling
-
-## Lpne: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 | 135.91M |   40.0 |     72356 | 3.36M |  75 |       768 | 41.85K | 55 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'27'' | 0:00'54'' |
-| Q25L60X40P001 | 135.91M |   40.0 |    105396 | 3.36M |  71 |       801 | 38.91K | 49 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:01'26'' | 0:00'55'' |
-| Q25L60X40P002 | 135.91M |   40.0 |    103006 | 3.36M |  70 |       801 | 34.63K | 41 |   39.0 | 1.0 |  12.0 |  63.0 | "31,41,51,61,71,81" | 0:01'42'' | 0:00'54'' |
-| Q25L60X80P000 | 271.82M |   80.0 |     64229 | 3.36M | 101 |      1834 | 60.85K | 48 |   78.0 | 3.0 |  23.0 | 130.5 | "31,41,51,61,71,81" | 0:01'56'' | 0:00'48'' |
-| Q30L60X40P000 | 135.91M |   40.0 |    118569 | 3.36M |  61 |       839 | 39.87K | 49 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'19'' | 0:00'57'' |
-| Q30L60X40P001 | 135.91M |   40.0 |    177814 | 3.36M |  58 |       847 | 46.05K | 55 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'24'' | 0:00'54'' |
-| Q30L60X40P002 | 135.91M |   40.0 |     98154 | 3.36M |  62 |       839 | 42.17K | 52 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:01'28'' | 0:00'55'' |
-| Q30L60X80P000 | 271.82M |   80.0 |    132984 | 3.35M |  60 |      1776 | 59.61K | 45 |   78.0 | 4.0 |  22.0 | 135.0 | "31,41,51,61,71,81" | 0:01'37'' | 0:00'54'' |
-
-## Lpne: merge anchors
-
-## Lpne: 3GS
-
-## Lpne: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Lpne: final stats
-
-* Stats
+| Name                |     N50 |     Sum |     # |
+|:--------------------|--------:|--------:|------:|
+| Genome              | 3397754 | 3397754 |     1 |
+| Paralogs            |    2793 |  100722 |    43 |
+| X80.trim.corrected  |    9535 | 135.09M | 14652 |
+| Xall.trim.corrected |    9848 |  135.1M | 13992 |
+| X80.trim.contig     | 3403179 | 3403179 |     1 |
+| Xall.trim.contig    | 3417657 | 3431477 |     2 |
 
 | Name                   |     N50 |     Sum |   # |
 |:-----------------------|--------:|--------:|----:|
 | Genome                 | 3397754 | 3397754 |   1 |
 | Paralogs               |    2793 |  100722 |  43 |
-| anchor                 |  248586 | 3357462 |  39 |
-| others                 |     948 |  123612 | 119 |
-| anchorLong             |  261851 | 3355708 |  32 |
-| contigTrim             |  479110 | 1448795 |   4 |
-| canu-X40-raw           | 3415718 | 3415718 |   1 |
-| canu-X40-trim          | 3393633 | 3393633 |   1 |
-| spades.contig          |  431777 | 3485427 | 293 |
-| spades.scaffold        |  431777 | 3485527 | 292 |
-| spades.non-contained   |  431777 | 3408065 |  28 |
-| platanus.contig        |  198660 | 3392691 | 209 |
-| platanus.scaffold      |  363087 | 3385711 | 144 |
+| anchors                |  248586 | 3357856 |  38 |
+| others                 |    1037 |  157285 | 132 |
+| anchorLong             |  261851 | 3355839 |  32 |
+| anchorFill             | 1750060 | 3379069 |   6 |
+| canu_X80-trim          | 3403179 | 3403179 |   1 |
+| canu_Xall-trim         | 3417657 | 3431477 |   2 |
+| spades.contig          |  363158 | 3481811 | 291 |
+| spades.scaffold        |  363158 | 3481911 | 290 |
+| spades.non-contained   |  363158 | 3406998 |  28 |
+| platanus.contig        |  198660 | 3392651 | 209 |
+| platanus.scaffold      |  363087 | 3385715 | 144 |
 | platanus.non-contained |  363087 | 3364434 |  22 |
-
-* quast
-
-## Lpne: clear intermediate files
 
 # Neisseria gonorrhoeae FDAARGOS_207, 淋病奈瑟氏菌
 
@@ -659,14 +567,8 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Ngon
-REAL_G=2153922
-IS_EUK="false"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="80"
 
 ```
 
@@ -770,160 +672,97 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-## Ngon: preprocess Illumina reads
+## Ngon: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Ngon
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 2153922 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
 
-## Ngon: preprocess PacBio reads
+| Name      |     N50 |     Sum |        # |
+|:----------|--------:|--------:|---------:|
+| Genome    | 2153922 | 2153922 |        1 |
+| Paralogs  |    4318 |  142093 |       53 |
+| Illumina  |     101 |   1.49G | 14768158 |
+| uniq      |     101 |   1.49G | 14707416 |
+| shuffle   |     101 |   1.49G | 14707416 |
+| sample    |     101 | 646.18M |  6397788 |
+| scythe    |     101 | 632.67M |  6397788 |
+| Q25L60    |     101 | 462.08M |  4729016 |
+| Q30L60    |     101 | 385.02M |  4141949 |
+| PacBio    |   11808 |   1.19G |   137516 |
+| X80.raw   |   11668 | 172.32M |    20331 |
+| X80.trim  |    9976 | 136.79M |    17440 |
+| Xall.raw  |   11808 |   1.19G |   137516 |
+| Xall.trim |   10448 | 985.14M |   119743 |
 
-## Ngon: reads stats
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 214.5 |  196.9 |   8.194% |      98 | "51" | 2.15M | 2.07M |     0.96 | 0:00'58'' |
+| Q30L60 | 179.1 |  167.8 |   6.337% |      95 | "47" | 2.15M | 2.05M |     0.95 | 0:00'47'' |
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 2153922 |    2153922 |        1 |
-| Paralogs |    4318 |     142093 |       53 |
-| Illumina |     101 | 1491583958 | 14768158 |
-| uniq     |     101 | 1485449016 | 14707416 |
-| scythe   |     101 | 1460356291 | 14707416 |
-| Q25L60   |     101 | 1062429395 | 10873960 |
-| Q30L60   |     101 |  884852448 |  9519518 |
-| PacBio   |   11808 | 1187845820 |   137516 |
-| X40.raw  |   11588 |   86161380 |    10392 |
-| X40.trim |   10011 |   68381718 |     8716 |
-| X80.raw  |   11668 |  172317459 |    20331 |
-| X80.trim |    9976 |  136791162 |    17440 |
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |     14803 | 1.95M | 205 |       935 | 120.27K | 130 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'40'' |
+| Q25L60X40P001 |   40.0 |     14424 | 1.93M | 199 |       942 | 136.59K | 141 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'22'' | 0:00'40'' |
+| Q25L60X40P002 |   40.0 |     15734 | 1.94M | 204 |       904 | 135.75K | 144 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'22'' | 0:00'40'' |
+| Q25L60X40P003 |   40.0 |     14216 | 1.96M | 212 |       902 | 136.35K | 151 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'38'' |
+| Q25L60X80P000 |   80.0 |     13659 | 1.94M | 219 |      1024 |  82.57K |  82 |   75.0 | 6.0 |  19.0 | 139.5 | "31,41,51,61,71,81" | 0:00'32'' | 0:00'38'' |
+| Q25L60X80P001 |   80.0 |     15012 | 1.96M | 221 |       983 |   72.2K |  74 |   76.0 | 7.0 |  18.3 | 145.5 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'37'' |
+| Q30L60X40P000 |   40.0 |     15645 | 1.85M | 201 |       924 | 204.57K | 213 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'43'' |
+| Q30L60X40P001 |   40.0 |     14272 | 1.82M | 203 |       947 | 219.54K | 223 |   37.0 | 4.0 |   8.3 |  73.5 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'42'' |
+| Q30L60X40P002 |   40.0 |     14804 | 1.83M | 198 |       902 | 199.38K | 205 |   36.0 | 5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'22'' | 0:00'41'' |
+| Q30L60X40P003 |   40.0 |     14413 | 1.92M | 202 |       871 | 231.37K | 258 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:00'22'' | 0:00'42'' |
+| Q30L60X80P000 |   80.0 |     17020 | 1.85M | 173 |      1096 | 106.16K |  98 |   73.0 | 8.0 |  16.3 | 145.5 | "31,41,51,61,71,81" | 0:00'34'' | 0:00'42'' |
+| Q30L60X80P001 |   80.0 |     19975 | 1.92M | 166 |       912 | 108.29K | 111 |   75.0 | 7.0 |  18.0 | 144.0 | "31,41,51,61,71,81" | 0:00'33'' | 0:00'42'' |
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 2153922 |    2153922 |        1 |
-| Paralogs |    4318 |     142093 |       53 |
-| Illumina |     101 | 1491583958 | 14768158 |
-| uniq     |     101 | 1485449016 | 14707416 |
-| sample   |     101 |  430784392 |  4265192 |
-| Q25L60   |     101 |  308531626 |  3157908 |
-| Q30L60   |     101 |  256799891 |  2762357 |
-| PacBio   |   11808 | 1187845820 |   137516 |
-| X40.raw  |   11588 |   86161380 |    10392 |
-| X40.trim |   10011 |   68381718 |     8716 |
-| X80.raw  |   11668 |  172317459 |    20331 |
-| X80.trim |    9976 |  136791162 |    17440 |
+| Name                |     N50 |     Sum |    # |
+|:--------------------|--------:|--------:|-----:|
+| Genome              | 2153922 | 2153922 |    1 |
+| Paralogs            |    4318 |  142093 |   53 |
+| X80.trim.corrected  |   10333 |  81.38M | 8342 |
+| Xall.trim.corrected |   19826 |  80.18M | 4138 |
+| X80.trim.contig     | 2205541 | 2205541 |    1 |
+| Xall.trim.contig    | 2207006 | 2207006 |    1 |
 
-## Ngon: spades
-
-## Ngon: platanus
-
-## Ngon: quorum
-
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 308.53M | 143.2 | 282.93M |  131.4 |   8.299% |      97 | "51" | 2.15M | 2.05M |     0.95 | 0:00'44'' |
-| Q30L60 | 257.31M | 119.5 | 240.89M |  111.8 |   6.381% |      93 | "59" | 2.15M | 2.04M |     0.95 | 0:00'40'' |
-
-## Ngon: adapter filtering
-
-## Ngon: down sampling
-
-## Ngon: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |  86.16M |   40.0 |     15975 | 1.91M | 198 |       890 | 145.19K | 158 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'45'' |
-| Q25L60X40P001 |  86.16M |   40.0 |     15416 | 1.94M | 193 |       932 | 118.75K | 127 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'53'' | 0:00'46'' |
-| Q25L60X40P002 |  86.16M |   40.0 |     18560 | 1.95M | 175 |       948 | 133.59K | 132 |   38.0 | 3.0 |   9.7 |  70.5 | "31,41,51,61,71,81" | 0:00'56'' | 0:00'45'' |
-| Q25L60X80P000 | 172.31M |   80.0 |     16569 | 1.94M | 196 |      1096 |  79.09K |  79 |   76.0 | 6.0 |  19.3 | 141.0 | "31,41,51,61,71,81" | 0:01'11'' | 0:00'45'' |
-| Q30L60X40P000 |  86.16M |   40.0 |     13959 | 1.82M | 208 |       920 | 221.97K | 231 |   37.0 | 5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'48'' |
-| Q30L60X40P001 |  86.16M |   40.0 |     17714 | 1.87M | 192 |       986 | 212.44K | 206 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'47'' |
-| Q30L60X80P000 | 172.31M |   80.0 |     19456 | 1.85M | 165 |      1052 | 117.38K | 110 |   73.0 | 9.0 |  15.3 | 146.0 | "31,41,51,61,71,81" | 0:00'48'' | 0:00'50'' |
-
-## Ngon: merge anchors
-
-## Ngon: 3GS
-
-| Name               |     N50 |      Sum |    # |
-|:-------------------|--------:|---------:|-----:|
-| Genome             | 2153922 |  2153922 |    1 |
-| Paralogs           |    4318 |   142093 |   53 |
-| X40.raw.corrected  |    9847 | 55682989 | 7133 |
-| X40.trim.corrected |    9713 | 54697518 | 7101 |
-| X80.raw.corrected  |   10551 | 81435212 | 8177 |
-| X80.trim.corrected |   10333 | 81378927 | 8342 |
-| X40.raw            | 2199421 |  2199421 |    1 |
-| X40.trim           | 2201340 |  2201340 |    1 |
-| X80.raw            | 2201886 |  2201886 |    1 |
-| X80.trim           | 2205541 |  2205541 |    1 |
-
-## Ngon: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Ngon: final stats
-
-* Stats
-
-| Name                   |     N50 |     Sum |    # |
-|:-----------------------|--------:|--------:|-----:|
-| Genome                 | 2153922 | 2153922 |    1 |
-| Paralogs               |    4318 |  142093 |   53 |
-| anchor                 |   22866 | 1959665 |  139 |
-| others                 |     951 |  353848 |  353 |
-| anchorLong             |   37026 | 1401673 |   76 |
-| contigTrim             |   63364 | 1408234 |   54 |
-| canu-X80-raw           | 2201886 | 2201886 |    1 |
-| canu-X80-trim          | 2205541 | 2205541 |    1 |
-| spades.contig          |   46882 | 2420345 | 1298 |
-| spades.scaffold        |   49686 | 2420777 | 1263 |
-| spades.non-contained   |   57178 | 2062870 |   84 |
-| platanus.contig        |   20636 | 2140482 |  845 |
-| platanus.scaffold      |   46754 | 2104640 |  513 |
-| platanus.non-contained |   46992 | 2038450 |   86 |
-
-* quast
-
-## Ngon: clear intermediate files
+| Name                   |     N50 |     Sum |   # |
+|:-----------------------|--------:|--------:|----:|
+| Genome                 | 2153922 | 2153922 |   1 |
+| Paralogs               |    4318 |  142093 |  53 |
+| anchors                |   23012 | 1975640 | 138 |
+| others                 |     972 |  469746 | 460 |
+| anchorLong             |   38593 | 1405602 |  78 |
+| anchorFill             |   63364 | 1452098 |  56 |
+| canu_X80-trim          | 2205541 | 2205541 |   1 |
+| canu_Xall-trim         | 2207006 | 2207006 |   1 |
+| spades.contig          |   48627 | 2131951 | 422 |
+| spades.scaffold        |   50390 | 2132001 | 417 |
+| spades.non-contained   |   50390 | 2057475 |  80 |
+| platanus.contig        |   18587 | 2142101 | 954 |
+| platanus.scaffold      |   44069 | 2109271 | 548 |
+| platanus.non-contained |   46744 | 2035498 |  88 |
 
 # Neisseria meningitidis FDAARGOS_209, 脑膜炎奈瑟氏菌
 
@@ -934,14 +773,10 @@ Project [SRP040661](https://trace.ncbi.nlm.nih.gov/Traces/sra/?study=SRP040661)
 * Settings
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=Nmen
 REAL_G=2272360
 IS_EUK="false"
-COVERAGE2="40 80"
-COVERAGE3="40 80"
-READ_QUAL="25 30"
-READ_LEN="60"
-EXPAND_WITH="40"
 
 ```
 
@@ -1046,151 +881,98 @@ faops n50 3_pacbio/pacbio.fasta
 rm -fr ~/data/anchr/Nmen/3_pacbio/untar
 ```
 
-* FastQC
-
-* kmergenie
-
-## Nmen: preprocess Illumina reads
+## Nmen: run
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Nmen
 
-cd 2_illumina
+cd ${WORKING_DIR}/${BASE_NAME}
 
-anchr trim \
-    --uniq \
-    --sample $(( ${REAL_G} * 200 )) \
-    --nosickle \
-    R1.fq.gz R2.fq.gz \
-    -o trim.sh
-bash trim.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 2272360 \
+    --trim2 "--uniq --shuffle --scythe " \
+    --sample 300 \
+    --cov2 "40 80" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --cov3 "80 all" \
+    --qual3 "trim" \
+    --parallel 24
 
-parallel --no-run-if-empty --linebuffer -k -j 3 "
-    mkdir -p Q{1}L{2}
-    cd Q{1}L{2}
-    
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
-        exit;
-    fi
+# run
+bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
 
-    anchr trim \
-        -q {1} -l {2} \
-        \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz ../R2.scythe.fq.gz'
-            elif [ -e ../R1.sample.fq.gz ]; then
-                echo '../R1.sample.fq.gz ../R2.sample.fq.gz'
-            elif [ -e ../R1.shuffle.fq.gz ]; then
-                echo '../R1.shuffle.fq.gz ../R2.shuffle.fq.gz'
-            elif [ -e ../R1.uniq.fq.gz ]; then
-                echo '../R1.uniq.fq.gz ../R2.uniq.fq.gz'
-            else
-                echo '../R1.fq.gz ../R2.fq.gz'
-            fi
-        ) \
-         \
-        -o stdout \
-        | bash
-    " ::: ${READ_QUAL} ::: ${READ_LEN}
+bsub -w "done(${BASE_NAME}-0_master)" \
+    -q mpi -n 24 -J "${BASE_NAME}-0_cleanup" "bash 0_cleanup.sh"
 
 ```
 
-## Nmen: preprocess PacBio reads
+| Name      |     N50 |     Sum |        # |
+|:----------|--------:|--------:|---------:|
+| Genome    | 2272360 | 2272360 |        1 |
+| Paralogs  |       0 |       0 |        0 |
+| Illumina  |     101 |    1.4G | 13814390 |
+| uniq      |     101 |   1.39G | 13758358 |
+| shuffle   |     101 |   1.39G | 13758358 |
+| sample    |     101 | 681.71M |  6749584 |
+| scythe    |     101 | 668.08M |  6749584 |
+| Q25L60    |     101 | 495.41M |  5064564 |
+| Q30L60    |     101 | 416.64M |  4469142 |
+| PacBio    |    9603 | 402.17M |    58711 |
+| X80.raw   |    9605 | 181.79M |    26345 |
+| X80.trim  |    9133 | 163.29M |    21467 |
+| Xall.raw  |    9603 | 402.17M |    58711 |
+| Xall.trim |    9188 | 364.96M |    47561 |
 
-## Nmen: reads stats
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
+| Q25L60 | 218.0 |  200.7 |   7.929% |      98 | "71" | 2.27M | 3.45M |     1.52 | 0:01'03'' |
+| Q30L60 | 183.7 |  172.2 |   6.256% |      95 | "65" | 2.27M | 3.24M |     1.42 | 0:00'52'' |
 
-* Stats
+| Name          | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:--------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q25L60X40P000 |   40.0 |      7417 | 1.93M | 356 |       913 | 246.89K | 257 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'42'' |
+| Q25L60X40P001 |   40.0 |      7748 | 1.91M | 339 |       906 | 236.65K | 254 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'44'' |
+| Q25L60X40P002 |   40.0 |      7779 | 1.92M | 345 |       889 | 258.51K | 281 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'42'' |
+| Q25L60X40P003 |   40.0 |      7822 | 1.91M | 339 |       932 | 259.97K | 268 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'41'' |
+| Q25L60X40P004 |   40.0 |      8021 | 1.91M | 335 |       912 | 230.72K | 244 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'42'' |
+| Q25L60X80P000 |   80.0 |      7306 | 1.97M | 386 |       906 | 142.87K | 156 |   72.0 | 7.0 |  17.0 | 139.5 | "31,41,51,61,71,81" | 0:00'36'' | 0:00'38'' |
+| Q25L60X80P001 |   80.0 |      6819 | 1.97M | 393 |       960 | 130.88K | 138 |   72.0 | 7.0 |  17.0 | 139.5 | "31,41,51,61,71,81" | 0:00'36'' | 0:00'38'' |
+| Q30L60X40P000 |   40.0 |      7800 | 1.85M | 327 |       919 | 362.48K | 378 |   35.0 | 5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'44'' |
+| Q30L60X40P001 |   40.0 |      8184 | 1.84M | 310 |       935 | 392.17K | 405 |   35.0 | 5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'44'' |
+| Q30L60X40P002 |   40.0 |      8087 | 1.84M | 311 |       935 | 368.92K | 381 |   35.0 | 5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'24'' | 0:00'45'' |
+| Q30L60X40P003 |   40.0 |      8270 | 1.94M | 324 |       907 |    371K | 413 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'23'' | 0:00'44'' |
+| Q30L60X80P000 |   80.0 |      8421 | 1.83M | 285 |       936 | 205.02K | 210 |   69.0 | 9.0 |  14.0 | 138.0 | "31,41,51,61,71,81" | 0:00'35'' | 0:00'43'' |
+| Q30L60X80P001 |   80.0 |      9232 |  1.9M | 281 |       963 | 181.34K | 181 |   72.0 | 7.0 |  17.0 | 139.5 | "31,41,51,61,71,81" | 0:00'35'' | 0:00'44'' |
 
-| Name     |     N50 |        Sum |        # |
-|:---------|--------:|-----------:|---------:|
-| Genome   | 2272360 |    2272360 |        1 |
-| Paralogs |       0 |          0 |        0 |
-| Illumina |     101 | 1395253390 | 13814390 |
-| uniq     |     101 | 1389594158 | 13758358 |
-| sample   |     101 |  454472124 |  4499724 |
-| Q25L60   |     101 |  330689337 |  3380444 |
-| Q30L60   |     101 |  277862500 |  2980708 |
-| PacBio   |    9603 |  402166610 |    58711 |
-| X40.raw  |    9572 |   90903934 |    12719 |
-| X40.trim |    9017 |   80424232 |    10580 |
-| X80.raw  |    9605 |  181790161 |    26345 |
-| X80.trim |    9133 |  163286173 |    21467 |
-
-## Nmen: spades
-
-## Nmen: platanus
-
-## Nmen: quorum
-
-| Name   |   SumIn | CovIn |  SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
-|:-------|--------:|------:|--------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 | 330.69M | 145.5 |  302.6M |  133.2 |   8.493% |      97 | "71" | 2.27M | 2.77M |     1.22 | 0:00'47'' |
-| Q30L60 | 278.38M | 122.5 | 259.45M |  114.2 |   6.801% |      93 | "61" | 2.27M | 2.63M |     1.16 | 0:00'42'' |
-
-## Nmen: adapter filtering
-
-## Nmen: down sampling
-
-## Nmen: k-unitigs and anchors (sampled)
-
-| Name          |  SumCor | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:--------------|--------:|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000 |  90.89M |   40.0 |      8236 | 1.91M | 320 |       924 | 262.31K | 281 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'55'' | 0:00'49'' |
-| Q25L60X40P001 |  90.89M |   40.0 |      8387 | 1.94M | 311 |       907 | 218.09K | 238 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'49'' |
-| Q25L60X40P002 |  90.89M |   40.0 |      8369 | 1.93M | 309 |       949 | 227.07K | 230 |   36.0 | 3.0 |   9.0 |  67.5 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'50'' |
-| Q25L60X80P000 | 181.79M |   80.0 |      8730 | 1.94M | 310 |       981 | 138.14K | 138 |   73.0 | 6.0 |  18.3 | 136.5 | "31,41,51,61,71,81" | 0:01'17'' | 0:00'44'' |
-| Q30L60X40P000 |  90.89M |   40.0 |      7791 |  1.8M | 322 |       965 |  440.2K | 439 |   35.0 | 5.0 |   6.7 |  70.0 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'50'' |
-| Q30L60X40P001 |  90.89M |   40.0 |      8194 | 1.89M | 304 |       932 |  310.3K | 328 |   36.0 | 4.0 |   8.0 |  72.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'49'' |
-| Q30L60X80P000 | 181.79M |   80.0 |      8591 | 1.85M | 285 |       946 | 193.68K | 199 |   70.0 | 9.0 |  14.3 | 140.0 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'53'' |
-
-## Nmen: merge anchors
-
-## Nmen: 3GS
-
-| Name               |     N50 |      Sum |    # |
-|:-------------------|--------:|---------:|-----:|
-| Genome             | 2272360 |  2272360 |    1 |
-| Paralogs           |       0 |        0 |    0 |
-| X40.raw.corrected  |    9195 | 70449230 | 8878 |
-| X40.trim.corrected |    9030 | 68464011 | 8818 |
-| X80.raw.corrected  |   10640 | 90338570 | 8406 |
-| X80.trim.corrected |   10334 | 90084457 | 8603 |
-| X40.raw            | 2187325 |  2187325 |    1 |
-| X40.trim           | 2187256 |  2187256 |    1 |
-| X80.raw            | 2196467 |  2196467 |    1 |
-| X80.trim           | 2196486 |  2196486 |    1 |
-
-## Nmen: expand anchors
-
-* anchorLong
-
-* contigTrim
-
-## Nmen: final stats
-
-* Stats
+| Name                |     N50 |     Sum |    # |
+|:--------------------|--------:|--------:|-----:|
+| Genome              | 2272360 | 2272360 |    1 |
+| Paralogs            |       0 |       0 |    0 |
+| X80.trim.corrected  |   10334 |  90.08M | 8603 |
+| Xall.trim.corrected |   13769 |  90.06M | 6451 |
+| X80.trim.contig     | 2196486 | 2196486 |    1 |
+| Xall.trim.contig    | 2196899 | 2196899 |    1 |
 
 | Name                   |     N50 |     Sum |    # |
 |:-----------------------|--------:|--------:|-----:|
 | Genome                 | 2272360 | 2272360 |    1 |
 | Paralogs               |       0 |       0 |    0 |
-| anchor                 |   10021 | 2049680 |  284 |
-| others                 |     849 |  456918 |  545 |
-| anchorLong             |    6354 |  614844 |  139 |
-| contigTrim             |    6354 |  614844 |  139 |
-| canu-X40-raw           | 2187325 | 2187325 |    1 |
-| canu-X40-trim          | 2187256 | 2187256 |    1 |
-| spades.contig          |   31700 | 4457403 |  686 |
-| spades.scaffold        |   46528 | 4458223 |  626 |
-| spades.non-contained   |   31959 | 4374230 |  227 |
-| platanus.contig        |    8599 | 2277767 | 1568 |
-| platanus.scaffold      |   42293 | 2207891 |  819 |
-| platanus.non-contained |   42882 | 2094123 |   95 |
-
-* quast
-
-## Nmen: clear intermediate files
+| anchors                |   10008 | 2033312 |  281 |
+| others                 |     945 |  817066 |  845 |
+| anchorLong             |    7003 |  638163 |  145 |
+| anchorFill             |    7003 |  638163 |  145 |
+| canu_X80-trim          | 2196486 | 2196486 |    1 |
+| canu_Xall-trim         | 2196899 | 2196899 |    1 |
+| spades.contig          |    5434 | 4265303 | 2273 |
+| spades.scaffold        |    6292 | 4269939 | 2005 |
+| spades.non-contained   |   11953 | 3668996 |  878 |
+| platanus.contig        |    8377 | 2275487 | 1692 |
+| platanus.scaffold      |   42294 | 2205877 |  827 |
+| platanus.non-contained |   42337 | 2085352 |   99 |
 
 # Bordetella pertussis FDAARGOS_195, 百日咳博德特氏杆菌
 
@@ -3565,10 +3347,10 @@ faops filter -l 0 3_pacbio/SRR1796325.fastq.gz 3_pacbio/pacbio.fasta
 
 ## lambda: quorum
 
-| Name | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG | EstG | Est/Real | RunTime |
-|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
-| Q25L60 | 7.9M | 163.0 | 7.56M | 155.9 | 4.367% | 105 | "75" | 48.5K | 48.48K | 1.00 | 0:00'50'' |
-| Q30L60 | 7.51M | 154.8 | 7.26M | 149.8 | 3.240% | 102 | "75" | 48.5K | 48.48K | 1.00 | 0:00'18'' |
+| Name   | SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer | RealG |   EstG | Est/Real |   RunTime |
+|:-------|------:|------:|-------:|-------:|---------:|--------:|-----:|------:|-------:|---------:|----------:|
+| Q25L60 |  7.9M | 163.0 |  7.56M |  155.9 |   4.367% |     105 | "75" | 48.5K | 48.48K |     1.00 | 0:00'50'' |
+| Q30L60 | 7.51M | 154.8 |  7.26M |  149.8 |   3.240% |     102 | "75" | 48.5K | 48.48K |     1.00 | 0:00'18'' |
 
 ## lambda: adapter filtering
 
@@ -3638,3 +3420,4 @@ faops filter -l 0 3_pacbio/SRR1796325.fastq.gz 3_pacbio/pacbio.fasta
 * quast
 
 ## lambda: clear intermediate files
+
