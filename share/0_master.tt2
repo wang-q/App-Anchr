@@ -82,6 +82,16 @@ if [ -e 9_statCanu.sh ]; then
 fi   
 
 #----------------------------#
+# expand anchors
+#----------------------------#
+if [ -e 6_anchorLong.sh ]; then
+    bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
+fi
+if [ -e 6_anchorFill.sh ]; then
+    bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta
+fi
+
+#----------------------------#
 # spades and platanus
 #----------------------------#
 if [ -e 8_spades.sh ]; then
