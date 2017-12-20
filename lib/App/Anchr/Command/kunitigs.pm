@@ -14,7 +14,7 @@ sub opt_spec {
         [ 'jf=s',         'jellyfish hash size',                  { default => "auto", }, ],
         [ 'estsize=s',    'estimated genome size',                { default => "auto", }, ],
         [ 'kmer=s',       'kmer size to be used',                 { default => "31", }, ],
-        [ 'min=i',        'minimal length of k-unitigs',          { default => 500, }, ],
+        [ 'min=i',        'minimal length of k-unitigs',          { default => 1000, }, ],
         [ 'merge',        'merge k-unitigs from all kmers', ],
         [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
         { show_defaults => 1, }
