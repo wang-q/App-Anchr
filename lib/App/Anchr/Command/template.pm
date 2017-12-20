@@ -131,6 +131,9 @@ sub execute {
     # cleanup
     $self->gen_cleanup( $opt, $args );
 
+    # realClean
+    $self->gen_realClean( $opt, $args );
+
     # master
     $self->gen_master( $opt, $args );
 
@@ -1029,6 +1032,76 @@ if [ -e statFinal.md ]; then
     cat statFinal.md;
     echo;
 fi
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_realClean {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "0_realClean.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 0_cleanup.sh
+
+cd [% args.0 %]
+
+# illumina
+rm -fr 2_illumina/Q*/
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
+        rm 2_illumina/{1}.{2}.fq.gz;
+    fi
+    " ::: R1 R2  ::: uniq shuffle sample scythe
+
+# pacbio
+rm -fr 3_pacbio/bam
+rm -fr 3_pacbio/fasta
+rm -fr 3_pacbio/untar
+
+rm 3_pacbio/pacbio.X*.fasta
+
+# down sampling
+rm -fr 4_Q*
+rm -fr 4_kunitigs*
+
+# canu
+rm -fr 5_canu*
+
+# mergeAnchors, anchorLong and anchorFill
+rm -fr 6_merge*
+rm -fr 6_anchor*
+
+# spades
+rm -fr 8_spades*
+
+# platanus
+rm -fr 8_platanus*
+
+# tempdir
+find . -type d -name "\?" | xargs rm -fr
+
+# .md
+rm *.md
+
+# LSF logs
+rm output.*
+
+# bash
+rm *.sh
 
 EOF
     $tt->process(
