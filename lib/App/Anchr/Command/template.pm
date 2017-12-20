@@ -1091,6 +1091,9 @@ rm -fr 8_spades*
 # platanus
 rm -fr 8_platanus*
 
+# quast
+rm -fr 9_quast*
+
 # tempdir
 find . -type d -name "\?" | xargs rm -fr
 
