@@ -1054,7 +1054,7 @@ sub gen_realClean {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 0_cleanup.sh
+log_warn 0_realClean.sh
 
 cd [% args.0 %]
 
