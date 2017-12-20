@@ -361,6 +361,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         -o quorum.sh
     bash quorum.sh
 
+    find . -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "k_u_hash_0"       | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "*.tmp"            | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "pe.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "se.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j 1 rm
+
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
 
