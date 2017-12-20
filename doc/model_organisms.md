@@ -247,6 +247,9 @@ anchr template \
 * preprocessing
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=e_coli
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
 # Illumina QC
@@ -961,22 +964,63 @@ anchr template \
 
 Same as [s288c: run](#s288c-run)
 
-| Name     |      N50 |         Sum |         # |
-|:---------|---------:|------------:|----------:|
-| Genome   | 25286936 |   137567477 |         8 |
-| Paralogs |     4031 |    13665900 |      4492 |
-| Illumina |      101 | 18115734306 | 179363706 |
-| uniq     |      101 | 17595866904 | 174216504 |
-| Q25L60   |      101 | 14636451057 | 147068666 |
-| Q30L60   |      101 | 13929885386 | 142979844 |
-| PacBio   |    13704 |  5620710497 |    630193 |
-| X40.raw  |    13724 |  5502707116 |    616212 |
-| X40.trim |    13587 |  5110432584 |    529483 |
+The `meryl` step of `canu` failed in hpcc, run it locally.
 
-| Name   |  SumIn | CovIn | SumOut | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
-|:-------|-------:|------:|-------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
-| Q25L60 | 14.64G | 106.4 |  13.3G |   96.7 |   9.144% |      99 | "71" | 137.57M | 126.99M |     0.92 | 1:08'40'' |
-| Q30L60 | 13.94G | 101.4 |    13G |   94.5 |   6.768% |      99 | "71" | 137.57M |  126.3M |     0.92 | 0:01'43'' |
+| Name      |      N50 |       Sum |         # |
+|:----------|---------:|----------:|----------:|
+| Genome    | 25286936 | 137567477 |         8 |
+| Paralogs  |     4031 |  13665900 |      4492 |
+| Illumina  |      101 |    18.12G | 179363706 |
+| uniq      |      101 |     17.6G | 174216504 |
+| Q25L60    |      101 |    14.66G | 147178220 |
+| Q30L60    |      101 |    13.98G | 143634907 |
+| PacBio    |    13704 |     5.62G |    630193 |
+| Xall.raw  |    13704 |     5.62G |    630193 |
+| Xall.trim |    13572 |     5.22G |    541317 |
+
+| Name   | CovIn | CovOut | Discard% | AvgRead | Kmer |   RealG |    EstG | Est/Real |   RunTime |
+|:-------|------:|-------:|---------:|--------:|-----:|--------:|--------:|---------:|----------:|
+| Q25L60 | 106.5 |   96.4 |   9.510% |      99 | "71" | 137.57M | 127.11M |     0.92 | 0:27'57'' |
+| Q30L60 | 101.7 |   94.2 |   7.375% |      99 | "71" | 137.57M |  126.4M |     0.92 | 0:27'02'' |
+
+```text
+#File	pe.cor.raw
+#Total	133144953
+#Matched	5597	0.00420%
+#Name	Reads	ReadsPct
+Reverse_adapter	5472	0.00411%
+pcr_dimer	81	0.00006%
+PCR_Primers	34	0.00003%
+TruSeq_Adapter_Index_5	9	0.00001%
+RNA_PCR_Primer_Index_5_(RPI5)	1	0.00000%
+
+#File	pe.cor.raw
+#Total	132986954
+#Matched	21939	0.01650%
+#Name	Reads	ReadsPct
+Reverse_adapter	21644	0.01628%
+TruSeq_Adapter_Index_5	152	0.00011%
+pcr_dimer	65	0.00005%
+PCR_Primers	20	0.00002%
+RNA_PCR_Primer_Index_5_(RPI5)	31	0.00002%
+TruSeq_Adapter_Index_6	5	0.00000%
+TruSeq_Adapter_Index_15	3	0.00000%
+RNA_PCR_Primer_Index_44_(RPI44)	3	0.00000%
+I7_Nextera_Transposase_1	3	0.00000%
+I7_Primer_Nextera_XT_and_Nextera_Enrichment_N703	2	0.00000%
+I7_Primer_Nextera_XT_Index_Kit_v2_N721	1	0.00000%
+RNA_PCR_Primer_Index_18_(RPI18)	1	0.00000%
+RNA_PCR_Primer_Index_37_(RPI37)	1	0.00000%
+RNA_PCR_Primer_Index_48_(RPI48)	1	0.00000%
+TruSeq_Adapter_Index_23	1	0.00000%
+TruSeq_Adapter_Index_27	1	0.00000%
+I7_Primer_Nextera_XT_Index_Kit_v2_N714	1	0.00000%
+I7_Nextera_Transposase_2	1	0.00000%
+RNA_PCR_Primer_Index_34_(RPI34)	1	0.00000%
+RNA_PCR_Primer_Index_21_(RPI21)	1	0.00000%
+TruSeq_Adapter_Index_10	1	0.00000%
+
+```
 
 | Name          | SumCor | CovCor | N50SR |     Sum |     # | N50Anchor |     Sum |     # | N50Others |   Sum |    # |                Kmer | RunTimeKU | RunTimeAN |
 |:--------------|-------:|-------:|------:|--------:|------:|----------:|--------:|------:|----------:|------:|-----:|--------------------:|----------:|:----------|
