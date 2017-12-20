@@ -72,3 +72,5 @@ anchr contained \
     | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
 
 [% END -%]
+
+find . -type f -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
