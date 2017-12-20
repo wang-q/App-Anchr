@@ -24,7 +24,7 @@ for Q in [% opt.qual2 %]; do
             "Q${Q}L${L}" \
             $( perl -e "printf qq{%.1f}, ${SUM_IN} / [% opt.genome %];" ) \
             $( perl -e "printf qq{%.1f}, ${SUM_OUT} / [% opt.genome %];" ) \
-            $( perl -e "printf qq{%.3f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
+            $( perl -e "printf qq{%.2f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
             $( cat environment.json | jq '.PE_AVG_READ_LENGTH | tonumber' ) \
             $( cat environment.json | jq '.KMER' ) \
             $( perl -MNumber::Format -e "print Number::Format::format_bytes([% opt.genome %], base => 1000,);" ) \

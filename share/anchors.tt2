@@ -102,6 +102,17 @@ cat reads.coverage.tsv \
     ' \
     | jq "." > environment.json
 
+MAPPED_RATIO=$( 
+    perl -e '
+        my $mapped = -s q{mapped.sam};
+        my $unmapped = -s q{unmapped.sam};
+        print $mapped / ($mapped + $unmapped);
+        ' 
+)
+save MAPPED_RATIO
+rm mapped.sam
+rm unmapped.sam
+
 #----------------------------#
 # Properly covered parts of reads
 #----------------------------#
@@ -247,7 +258,7 @@ log_info "Merging anchors"
 anchr contained \
     pe.anchor.fa \
     pe.anchor2.fa \
-    --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel 8 \
+    --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o anchor.non-contained.fasta
 anchr orient \
     anchor.non-contained.fasta \
@@ -258,7 +269,7 @@ anchr merge \
     -o anchor.merge0.fasta
 anchr contained \
     anchor.merge0.fasta --len [% opt.min %] --idt 0.98 \
-    --proportion 0.99 --parallel 8 \
+    --proportion 0.99 --parallel [% opt.parallel %] \
     -o anchor.fasta
 
 #----------------------------#
