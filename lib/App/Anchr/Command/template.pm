@@ -1028,6 +1028,10 @@ find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | parallel --no-run-if-emp
 find . -type d -name "nucmer_output" | parallel --no-run-if-empty -j 1 rm -fr
 find . -type f -path "*contigs_reports/*" -name "*.stdout*" -or -name "*.stderr*" | parallel --no-run-if-empty -j 1 rm
 
+# LSF outputs and dumps
+find . -type f -name "output.*" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "core.*"   | parallel --no-run-if-empty -j 1 rm
+
 # cat all .md
 if [ -e statReads.md ]; then
     cat statReads.md;
