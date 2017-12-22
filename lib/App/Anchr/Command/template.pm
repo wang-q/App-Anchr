@@ -851,6 +851,8 @@ sub gen_anchorLong {
     my $template;
     my $sh_name;
 
+    return unless $opt->{cov3};
+
     $sh_name = "6_anchorLong.sh";
     print "Create $sh_name\n";
 
@@ -869,6 +871,8 @@ sub gen_anchorFill {
     my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
     my $template;
     my $sh_name;
+
+    return unless $opt->{cov3};
 
     $sh_name = "6_anchorFill.sh";
     print "Create $sh_name\n";
