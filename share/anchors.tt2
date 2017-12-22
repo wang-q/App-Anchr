@@ -110,8 +110,6 @@ MAPPED_RATIO=$(
         ' 
 )
 save MAPPED_RATIO
-rm mapped.sam
-rm unmapped.sam
 
 #----------------------------#
 # Properly covered parts of reads
@@ -203,8 +201,6 @@ cat reads.covered.csv \
     | sort -n \
     > anchor.txt
 
-#rm reads.covered.txt
-
 #----------------------------#
 # anchor2
 #----------------------------#
@@ -275,6 +271,10 @@ anchr contained \
 #----------------------------#
 # Done.
 #----------------------------#
+rm mapped.sam
+rm unmapped.sam
+rm basecov.txt
+
 touch anchor.success
 log_info "Done."
 
