@@ -367,6 +367,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     find . -type f -name "pe.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
     find . -type f -name "se.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
     find . -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j 1 rm
+    find . -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
 
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
@@ -992,6 +993,7 @@ find 2_illumina -type f -name "*.tmp"            | parallel --no-run-if-empty -j
 find 2_illumina -type f -name "pe.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
 find 2_illumina -type f -name "se.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
 find 2_illumina -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j 1 rm
+find 2_illumina -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
 
 # down sampling
 rm -fr 4_Q{15,20,25,30,35}*
