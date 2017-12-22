@@ -1116,13 +1116,14 @@ rm -fr 8_platanus*
 rm -fr 9_quast*
 
 # tempdir
-find . -type d -name "\?" | xargs rm -fr
+find . -type d -name "\?" | parallel --no-run-if-empty -j 1 rm -fr
+
+# LSF outputs and dumps
+find . -type f -name "output.*" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "core.*"   | parallel --no-run-if-empty -j 1 rm
 
 # .md
 rm *.md
-
-# LSF logs
-rm output.*
 
 # bash
 rm *.sh
