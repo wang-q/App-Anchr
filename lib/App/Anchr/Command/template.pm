@@ -730,6 +730,50 @@ EOF
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+    if ( $opt->{tadpole} ) {
+        $sh_name = "4_tadpoleAnchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 4_tadpoleAnchors.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 4_tadpole_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
+    cd 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
 }
 
 sub gen_statAnchors {
