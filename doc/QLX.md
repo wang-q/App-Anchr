@@ -699,19 +699,19 @@ BASE_NAME=QLX
 cd ${HOME}/data/anchr/${BASE_NAME}
 
 tadpole.sh \
-    in1=2_illumina/R1.fq.gz \
+    in=2_illumina/R1.fq.gz \
     in2=2_illumina/R2.fq.gz \
     out=2_illumina/contigs.raw.fa \
     overwrite=true
 
 tadpole.sh \
-    in1=2_illumina/Q25L60/R1.fq.gz \
+    in=2_illumina/Q25L60/R1.fq.gz \
     in2=2_illumina/Q25L60/R2.fq.gz \
     out=2_illumina/Q25L60/contigs.sickle.fa \
     overwrite=true
 
 tadpole.sh \
-    in1=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
+    in=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
     in2=2_illumina/Q25L60/R2.fq.gz \
     out=2_illumina/Q25L60/contigs.sickle2.fa \
     overwrite=true
