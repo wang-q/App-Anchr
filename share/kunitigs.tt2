@@ -51,11 +51,19 @@ log_info Creating k-unitigs
 
 [% FOREACH kmer IN opt.kmer -%]
     log_debug with k=[% kmer %]
+[% IF opt.tadpole -%]
+    tadpole.sh \
+        in=pe.cor.fa \
+        out=k_unitigs_K[% kmer %].fasta \
+        threads=[% opt.parallel %] \
+        k=[% kmer %] \
+        overwrite
+[% ELSE -%]
     create_k_unitigs_large_k -c $(([% kmer %]-1)) -t [% opt.parallel %] \
         -m [% kmer %] -n $ESTIMATED_GENOME_SIZE -l [% kmer %] -f 0.000001 \
         pe.cor.fa \
         > k_unitigs_K[% kmer %].fasta
-
+[% END -%]
 [% END -%]
 
 log_info Creating non-contained k-unitigs

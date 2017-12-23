@@ -22,6 +22,7 @@ sub opt_spec {
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
         [ "reads=s",      "how many reads to estimate insert size",    { default => "2000000" }, ],
+        [ 'tadpole',      'also use tadpole to create k-unitigs', ],
         [ "cov3=s",       "down sampling coverage of PacBio reads", ],
         [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
@@ -356,14 +357,14 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
 
     tadpole.sh \
-        in1=R1.sickle.fq.gz \
+        in=R1.sickle.fq.gz \
         in2=R2.sickle.fq.gz \
         out=tadpole.contig.fasta \
         threads=[% opt.parallel %] \
         overwrite
 
     bbmap.sh \
-        in1=R1.sickle.fq.gz \
+        in=R1.sickle.fq.gz \
         in2=R2.sickle.fq.gz \
         out=pe.sam.gz \
         ref=tadpole.contig.fasta \
@@ -632,6 +633,51 @@ EOF
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+
+    if ( $opt->{tadpole} ) {
+        $sh_name = "4_tadpole.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 4_tadpole.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 4_tadpole_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 4_tadpole_Q{1}L{2}X{3}P{4}
+    cd 4_tadpole_Q{1}L{2}X{3}P{4}
+
+    anchr kunitigs \
+        ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../4_Q{1}L{2}X{3}P{4}/environment.json \
+        -p [% opt.parallel %] \
+        --kmer 31,41,51,61,71,81 \
+        --tadpole \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
 
 }
 
