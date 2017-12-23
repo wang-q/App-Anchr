@@ -45,6 +45,16 @@ fi
 [% END -%]
 [% END -%]
 
+# tadpole
+[% FOREACH qual IN opt.qual2.split('\s+') -%]
+[% FOREACH len IN opt.len2.split('\s+') -%]
+if [ -e 2_illumina/Q25L60/tadpole.contig.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "tadpole.Q[% qual %]L[% len %]"; faops n50 -H -S -C 2_illumina/Q[% qual %]L[% len %]/tadpole.contig.fasta;) >> statFinal.md
+fi
+[% END -%]
+[% END -%]
+
 # spades
 if [ -e 8_spades/contigs.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
