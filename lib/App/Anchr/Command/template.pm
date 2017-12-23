@@ -382,6 +382,41 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
 
+    printf "| %s | %s | %s | %s | %s |\n" \
+        "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
+        > statInsertSize.md
+    printf "|:--|--:|--:|--:|--:|\n" >> statInsertSize.md
+
+#Mean	339.868
+#Median	312
+#Mode	251
+#STDev	134.676
+#PercentOfPairs	36.247
+
+for Q in [% opt.qual2 %]; do
+    for L in [% opt.len2 %]; do
+        printf "| %s " "Q${Q}L${L}" >> statInsertSize.md
+        cat 2_illumina/Q${Q}L${L}/ihist.txt \
+            | perl -nla -e '
+                BEGIN { our $stat = { }; };
+
+                m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
+                $stat->{$1} = $F[1];
+
+                END {
+                    printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
+                        $stat->{Mean},
+                        $stat->{Median},
+                        $stat->{STDev},
+                        $stat->{PercentOfPairs};
+                }
+                ' \
+            >> statInsertSize.md
+    done
+done
+
+cat statInsertSize.md
+
 EOF
     $tt->process(
         \$template,
