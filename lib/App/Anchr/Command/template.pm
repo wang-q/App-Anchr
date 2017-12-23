@@ -356,13 +356,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
 
     tadpole.sh \
-        in1=R1.sickle.fq.gz\$(
-            if [[ {1} -ge '30' ]]; then
-                if [ -e Rs.sickle.fq.gz ]; then
-                    echo ',Rs.sickle.fq.gz';
-                fi
-            fi
-        ) \
+        in1=R1.sickle.fq.gz \
         in2=R2.sickle.fq.gz \
         out=tadpole.contig.fasta \
         threads=[% opt.parallel %] \
