@@ -267,6 +267,9 @@ bash 3_trimlong.sh
 # reads stats
 bash 9_statReads.sh
 
+# insertSize
+bash 2_insertSize.sh
+
 ```
 
 | Name      |     N50 |     Sum |        # |
@@ -287,6 +290,11 @@ bash 9_statReads.sh
 | X80.trim  |   13632 | 339.51M |    38725 |
 | Xall.raw  |   13982 | 748.51M |    87225 |
 | Xall.trim |   13646 | 689.43M |    77693 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 297.6 |    298 |  20.5 |         42.38% |
+| Q30L60 | 297.6 |    298 |  20.2 |         45.33% |
 
 * quorum
 
@@ -636,6 +644,10 @@ bsub -q mpi -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 # preprocess Illumina reads
 bsub -q mpi -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
+# insert size
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q mpi -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+
 # preprocess PacBio reads
 bsub -q mpi -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
 
@@ -713,6 +725,11 @@ cat 6_anchorLong/group/*.ovlp.tsv \
 | PacBio    |   8412 |  820.96M |   177100 |
 | Xall.raw  |   8412 |  820.96M |   177100 |
 | Xall.trim |   7829 |  626.41M |   106381 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 339.9 |    312 | 134.7 |         36.25% |
+| Q30L60 | 338.4 |    311 | 133.6 |         37.26% |
 
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
