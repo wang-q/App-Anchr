@@ -18,6 +18,9 @@
     - [Local corrections](#local-corrections)
     - [kmc](#kmc)
     - [CalcUniqueness](#calcuniqueness)
+    - [tadpole](#tadpole)
+    - [callInsertions](#callinsertions)
+    - [Insert size](#insert-size)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -686,6 +689,224 @@ bbcountunique.sh \
 bbcountunique.sh \
     in=2_illumina/Q30L60/pe.cor.fa \
     out=2_illumina/Q30L60/histogram.txt
+
+```
+
+## tadpole
+
+```bash
+BASE_NAME=QLX
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+tadpole.sh \
+    in1=2_illumina/R1.fq.gz \
+    in2=2_illumina/R2.fq.gz \
+    out=2_illumina/contigs.raw.fa \
+    overwrite=true
+
+tadpole.sh \
+    in1=2_illumina/Q25L60/R1.fq.gz \
+    in2=2_illumina/Q25L60/R2.fq.gz \
+    out=2_illumina/Q25L60/contigs.sickle.fa \
+    overwrite=true
+
+tadpole.sh \
+    in1=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
+    in2=2_illumina/Q25L60/R2.fq.gz \
+    out=2_illumina/Q25L60/contigs.sickle2.fa \
+    overwrite=true
+
+tadpole.sh \
+    in=2_illumina/Q25L60/pe.cor.fa \
+    out=2_illumina/Q25L60/contigs.cor.fa \
+    overwrite=true
+
+faops n50 -S -C 2_illumina/contigs.raw.fa
+faops n50 -S -C 2_illumina/Q25L60/contigs.sickle.fa
+faops n50 -S -C 2_illumina/Q25L60/contigs.sickle2.fa
+faops n50 -S -C 2_illumina/Q25L60/contigs.cor.fa
+
+# quast
+rm -fr 9_quast_tadpole
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    2_illumina/contigs.raw.fa \
+    2_illumina/Q25L60/contigs.sickle.fa \
+    2_illumina/Q25L60/contigs.sickle2.fa \
+    2_illumina/Q25L60/contigs.cor.fa \
+    1_genome/paralogs.fas \
+    --label "raw,sickle,sickle2,cor,paralogs" \
+    -o 9_quast_tadpole
+
+```
+
+## callInsertions
+
+
+```bash
+BASE_NAME=QLX
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
+
+# Reorder reads for speed of subsequent phases
+clumpify.sh \
+    in1=2_illumina/R1.fq.gz \
+    in2=2_illumina/R2.fq.gz \
+    out=clumped.fq.gz \
+    dedupe optical
+
+# Remove low-quality reads by position
+filterbytile.sh in=clumped.fq.gz out=filtered_by_tile.fq.gz
+
+# Trim adapters and discard reads with Ns
+bbduk.sh \
+    in=filtered_by_tile.fq.gz \
+    out=trimmed.fq.gz \
+    ref=${BBTOOLS_PATH}/resources/adapters.fa \
+    maxns=0 ktrim=r k=23 mink=11 hdist=1 tbo tpe minlen=85 ftm=5 ordered
+
+# Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
+bbduk.sh \
+    in=trimmed.fq.gz \
+    out=filtered.fq.gz \
+    ref=${BBTOOLS_PATH}/resources/sequencing_artifacts.fa.gz,${BBTOOLS_PATH}/resources/phix174_ill.ref.fa.gz,${BBTOOLS_PATH}/resources/adapters.fa \
+    k=27 hdist=1 ordered \
+    overwrite=t \
+    stats=filtering.stats.txt 
+
+# Error-correct phase 1
+bbmerge.sh in=filtered.fq.gz out=ecco.fq.gz ecco mix vstrict ordered ihist=ihist_merge1.txt
+
+# Error-correct phase 2
+clumpify.sh in=ecco.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair
+
+# Error-correct phase 3
+tadpole.sh in=eccc.fq.gz out=ecct.fq.gz ecc ordered
+
+# Read extension
+tadpole.sh in=ecct.fq.gz out=extended.fq.gz ordered mode=extend el=20 er=20 k=62
+
+# Read merging
+bbmerge-auto.sh in=extended.fq.gz out=merged.fq.gz outu=unmerged.fq.gz rem k=81 extend2=120 zl=8 ordered
+
+# Alignment; only use merged reads
+bbmap.sh \
+    in=merged.fq.gz out=merged.sam.gz \
+    ref=1_genome/genome.fa \
+    nodisk slow bs=bs.sh pigz unpigz
+
+# Variant-calling; ploidy may need adjustment.  For a large dataset "prefilter" may be needed.
+# To call only insertions, "calldel=f callsub=f" can be added.  Not calling substitutions saves memory.
+callvariants.sh in=merged.sam.gz out=vars.txt vcf=vars.vcf.gz ref=1_genome/genome.fa ploidy=1
+
+# Generate a bam file, if viewing in IGV is desired.
+sh bs.sh
+
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $@) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statTadpole.md
+printf "|:--|--:|--:|--:|\n" >> statTadpole.md
+
+if [ -e 1_genome/genome.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statTadpole.md
+fi
+if [ -e 1_genome/paralogs.fas ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statTadpole.md
+fi
+
+if [ -e 2_illumina/R1.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> statTadpole.md
+fi
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "clumpify"; stat_format clumped.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "filterbytile"; stat_format filtered_by_tile.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "filtered"; stat_format filtered.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "ecco"; stat_format ecco.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "eccc"; stat_format eccc.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "ecct"; stat_format ecct.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "extended"; stat_format extended.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "merged"; stat_format merged.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "unmerged"; stat_format unmerged.fq.gz;) >> statTadpole.md
+
+fastqc -t 16 \
+    merged.fq.gz unmerged.fq.gz \
+    -o .
+
+```
+
+| Name         |     N50 |     Sum |        # |
+|:-------------|--------:|--------:|---------:|
+| Genome       | 4641652 | 4641652 |        1 |
+| Paralogs     |    1934 |  195673 |      106 |
+| Illumina     |     151 |   1.73G | 11458940 |
+| clumpify     |     151 |   1.73G | 11458216 |
+| filterbytile |     151 |   1.67G | 11083902 |
+| trimmed      |     150 |   1.66G | 11078196 |
+| filtered     |     150 |   1.66G | 11077638 |
+| ecco         |     150 |   1.66G | 11077638 |
+| eccc         |     150 |   1.66G | 11077638 |
+| ecct         |     150 |   1.66G | 11077638 |
+| extended     |     190 |   2.09G | 11077638 |
+| merged       |     339 |   1.72G |  5087635 |
+| unmerged     |     190 | 158.46M |   902368 |
+
+## Insert size
+
+```bash
+BASE_NAME=QLX
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
+
+tadpole.sh \
+    in1=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
+    in2=2_illumina/Q25L60/R2.fq.gz \
+    out=2_illumina/Q25L60/contigs.sickle2.fa \
+    overwrite=true
+
+bbmap.sh \
+    in1=2_illumina/Q25L60/R1.fq.gz \
+    in2=2_illumina/Q25L60/R2.fq.gz \
+    out=2_illumina/Q25L60/merged.sam.gz \
+    ref=2_illumina/Q25L60/contigs.sickle2.fa \
+    maxindel=0 strictmaxindel perfectmode \
+    nodisk pigz unpigz 
+
+reformat.sh \
+    in=2_illumina/Q25L60/merged.sam.gz \
+    ihist=ihist.sickle2.txt \
+    overwrite=true
 
 ```
 
