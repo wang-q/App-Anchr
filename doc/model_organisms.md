@@ -225,11 +225,13 @@ cat fasta/m141013.fasta \
 ## e_coli: template
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=e_coli
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
-    --basename e_coli \
+    --basename ${BASE_NAME} \
     --genome 4641652 \
     --trim2 "--uniq --shuffle --scythe " \
     --sample2 300 \
