@@ -1,6 +1,18 @@
 [% INCLUDE header.tt2 %]
 log_warn 9_statAnchors.sh
 
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 DIR_PREFIX"
+
+if [ "$#" -lt 1 ]; then
+echo >&2 "$USAGE"
+exit 1
+fi
+
+DIR_PREFIX=${1:-"4_kunitigs"}
+
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     "Name" "CovCor" "Mapped%" \
     "N50Anchor" "Sum" "#" \
@@ -15,11 +27,11 @@ for Q in [% opt.qual2 %]; do
     for L in [% opt.len2 %]; do
 	    for X in [% opt.cov2 %]; do
 		    for P in $(printf "%03d " {0..50}); do
-		        if [ ! -e 4_kunitigs_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
+		        if [ ! -e ${DIR_PREFIX}_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then
 			        continue;
 			    fi
 
-		        pushd 4_kunitigs_Q${Q}L${L}X${X}P${P}/ > /dev/null
+		        pushd ${DIR_PREFIX}_Q${Q}L${L}X${X}P${P}/ > /dev/null
 		
 		        SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
 		        MAPPED_RATIO=$( cat anchor/environment.json | jq '.MAPPED_RATIO | tonumber' )
