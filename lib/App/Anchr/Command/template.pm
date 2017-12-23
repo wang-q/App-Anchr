@@ -1100,6 +1100,9 @@ rm -fr 4_Q{15,20,25,30,35}*
 find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*4_tadpole_*" -name "k_unitigs_K*.fasta"   | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*4_tadpole_*/anchor*" -name "basecov.txt"  | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*4_tadpole_*/anchor*" -name "*.sam"        | parallel --no-run-if-empty -j 1 rm
 
 # tempdir
 find . -type d -name "\?" | xargs rm -fr
