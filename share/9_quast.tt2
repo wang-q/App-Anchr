@@ -8,10 +8,21 @@ if [ -e 1_genome/genome.fa ]; then
     QUAST_TARGET+=" -R 1_genome/genome.fa "
 fi
 
+if [ -e 6_mergeSuperReadsAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 6_mergeSuperReadsAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="mergeSuperReadsAnchors,"
+fi
+
+if [ -e 6_mergeTadpoleAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 6_mergeTadpoleAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="mergeTadpoleAnchors,"
+fi
+
 if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
-    QUAST_LABEL+="merge,"
+    QUAST_LABEL+="mergeAnchors,"
 fi
+
 if [ -e 6_anchorLong/contig.fasta ]; then
     QUAST_TARGET+=" 6_anchorLong/contig.fasta "
     QUAST_LABEL+="anchorLong,"
