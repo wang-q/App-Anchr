@@ -591,10 +591,9 @@ sub gen_kunitigs {
     my $template;
     my $sh_name;
 
-    if ( !$opt->{separate} ) {
-        $sh_name = "4_kunitigs.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
+    $sh_name = "4_kunitigs.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 4_kunitigs.sh
 
@@ -626,64 +625,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-    else {
-        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {defined} split /\s+/, $opt->{cov2} ) {
-                    $sh_name = "4_kunitigs_Q${qual}L${len}X${cov}.sh";
-                    print "Create $sh_name\n";
-                    $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 4_kunitigs.sh
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
-    if [ -e 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
-    cd 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}
-
-    anchr kunitigs \
-        ../4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa \
-        ../4_Q[% qual %]L[% len %]X[% cov %]P{}/environment.json \
-        -p [% opt.parallel %] \
-        --kmer 31,41,51,61,71,81 \
-        -o kunitigs.sh
-    bash kunitigs.sh
-    " ::: $(printf "%03d " {0..50})
-
-EOF
-                    $tt->process(
-                        \$template,
-                        {   args => $args,
-                            opt  => $opt,
-                            qual => $qual,
-                            len  => $len,
-                            cov  => $cov,
-                        },
-                        Path::Tiny::path( $args->[0], $sh_name )->stringify
-                    ) or die Template->error;
-                }
-            }
-        }
-    }
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
@@ -694,10 +642,9 @@ sub gen_anchors {
     my $template;
     my $sh_name;
 
-    if ( !$opt->{separate} ) {
-        $sh_name = "4_anchors.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
+    $sh_name = "4_anchors.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 4_anchors.sh
 
@@ -729,64 +676,13 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-    else {
-        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
-                for my $cov ( grep {defined} split /\s+/, $opt->{cov2} ) {
-                    $sh_name = "4_anchors_Q${qual}L${len}X${cov}.sh";
-                    print "Create $sh_name\n";
-                    $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 4_anchors.sh
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 4_Q[% qual %]L[% len %]X[% cov %]P{}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q[% qual %]L[% len %]X[% cov %]P{}'
-    if [ -e 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor/anchor.fasta ]; then
-        echo >&2 '    anchor.fasta already presents'
-        exit;
-    fi
-
-    rm -fr 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
-    mkdir -p 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
-    cd 4_kunitigs_Q[% qual %]L[% len %]X[% cov %]P{}/anchor
-
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        -p [% opt.parallel2 %] \
-        -o anchors.sh
-    bash anchors.sh
-    " ::: $(printf "%03d " {0..50})
-
-EOF
-                    $tt->process(
-                        \$template,
-                        {   args => $args,
-                            opt  => $opt,
-                            qual => $qual,
-                            len  => $len,
-                            cov  => $cov,
-                        },
-                        Path::Tiny::path( $args->[0], $sh_name )->stringify
-                    ) or die Template->error;
-                }
-            }
-        }
-    }
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
