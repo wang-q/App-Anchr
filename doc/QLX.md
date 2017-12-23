@@ -893,7 +893,7 @@ tadpole.sh \
     in1=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
     in2=2_illumina/Q25L60/R2.fq.gz \
     out=2_illumina/Q25L60/contigs.sickle2.fa \
-    overwrite=true
+    overwrite
 
 bbmap.sh \
     in1=2_illumina/Q25L60/R1.fq.gz \
@@ -901,12 +901,21 @@ bbmap.sh \
     out=2_illumina/Q25L60/merged.sam.gz \
     ref=2_illumina/Q25L60/contigs.sickle2.fa \
     maxindel=0 strictmaxindel perfectmode \
-    nodisk pigz unpigz 
+    reads=2000000 \
+    nodisk overwrite
 
 reformat.sh \
     in=2_illumina/Q25L60/merged.sam.gz \
     ihist=ihist.sickle2.txt \
-    overwrite=true
+    overwrite
+
+bbmerge.sh \
+    in1=2_illumina/Q25L60/R1.fq.gz \
+    in2=2_illumina/Q25L60/R2.fq.gz \
+    ihist=ihist.merge.txt \
+    reads=2000000 \
+    overwrite
+
 
 ```
 
