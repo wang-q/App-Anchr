@@ -21,6 +21,7 @@ sub opt_spec {
         [ "cov2=s",       "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
+        [ "reads=s",      "how many reads to estimate insert size",    { default => "2000000" }, ],
         [ "cov3=s",       "down sampling coverage of PacBio reads", ],
         [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
@@ -82,6 +83,9 @@ sub execute {
 
     # statReads
     $self->gen_statReads( $opt, $args );
+
+    # insertSize
+    $self->gen_insertSize( $opt, $args );
 
     # quorum
     $self->gen_quorum( $opt, $args );
@@ -316,6 +320,83 @@ sub gen_statReads {
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+}
+
+sub gen_insertSize {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return if $opt->{se};
+
+    $sh_name = "2_insertSize.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 2_insertSize.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    cd 2_illumina/Q{1}L{2}
+    echo >&2 '==> Qual-Len: Q{1}L{2} <=='
+
+    if [ ! -e R1.sickle.fq.gz ]; then
+        echo >&2 '    R1.sickle.fq.gz not exists'
+        exit;
+    fi
+
+    if [ -e ihist.txt ]; then
+        echo >&2 '    ihist.txt presents'
+        exit;
+    fi
+
+    BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
+
+    tadpole.sh \
+        in1=R1.sickle.fq.gz\$(
+            if [[ {1} -ge '30' ]]; then
+                if [ -e Rs.sickle.fq.gz ]; then
+                    echo ',Rs.sickle.fq.gz';
+                fi
+            fi
+        ) \
+        in2=R2.sickle.fq.gz \
+        out=tadpole.contig.fasta \
+        threads=[% opt.parallel %] \
+        overwrite
+
+    bbmap.sh \
+        in1=R1.sickle.fq.gz \
+        in2=R2.sickle.fq.gz \
+        out=pe.sam.gz \
+        ref=tadpole.contig.fasta \
+        threads=[% opt.parallel %] \
+        maxindel=0 strictmaxindel perfectmode \
+        reads=[% opt.reads %] \
+        nodisk overwrite
+
+    reformat.sh \
+        in=pe.sam.gz \
+        ihist=ihist.txt \
+        overwrite
+
+    find . -type f -name "pe.sam.gz" | parallel --no-run-if-empty -j 1 rm
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 sub gen_quorum {

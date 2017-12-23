@@ -20,6 +20,10 @@ if [ -e 9_statReads.sh ]; then
     bash 9_statReads.sh;
 fi
 
+if [ -e 2_insertSize.sh ]; then
+    bash 2_insertSize.sh;
+fi
+
 #----------------------------#
 # quorum
 #----------------------------#
