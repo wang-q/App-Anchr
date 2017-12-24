@@ -747,58 +747,78 @@ quast --no-check --threads 16 \
 BASE_NAME=QLX
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
+BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 
 # Reorder reads for speed of subsequent phases
 clumpify.sh \
-    in1=2_illumina/R1.fq.gz \
+    in=2_illumina/R1.fq.gz \
     in2=2_illumina/R2.fq.gz \
     out=clumped.fq.gz \
-    dedupe optical
+    dedupe optical overwrite
 
 # Remove low-quality reads by position
-filterbytile.sh in=clumped.fq.gz out=filtered_by_tile.fq.gz
+filterbytile.sh in=clumped.fq.gz out=filteredbytile.fq.gz overwrite
 
-# Trim adapters and discard reads with Ns
+# Trim 5' adapters and discard reads with Ns
+# Use bbduk.sh to quality and length trim the Illumina reads and remove adapter sequences
+# 1. ftm = 5, right trim read length to a multiple of 5
+# 2. k = 23, Kmer length used for finding contaminants
+# 3. ktrim=r, Trim reads to remove bases matching reference kmers to the right
+# 4. mink=7, look for shorter kmers at read tips down to 7 bps
+# 5. hdist=1, hamming distance for query kmers
+# 6. tbo, trim adapters based on where paired reads overlap
+# 7. tpe, when kmer right-trimming, trim both reads to the minimum length of either
+# 8. qtrim=r, trim read right ends to remove bases with low quality
+# 9. trimq=15, regions with average quality below 15 will be trimmed.
+# 10. minlen=60, reads shorter than 60 bps after trimming will be discarded.
 bbduk.sh \
-    in=filtered_by_tile.fq.gz \
+    in=filteredbytile.fq.gz \
     out=trimmed.fq.gz \
-    ref=${BBTOOLS_PATH}/resources/adapters.fa \
-    maxns=0 ktrim=r k=23 mink=11 hdist=1 tbo tpe minlen=85 ftm=5 ordered
+    ref=${BBTOOLS_RESOURCES}/adapters.fa \
+    maxns=0 ktrim=r k=23 mink=7 hdist=1 tbo tpe minlen=60 ftm=5 qtrim=r trimq=15 ordered overwrite
 
 # Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
 bbduk.sh \
     in=trimmed.fq.gz \
     out=filtered.fq.gz \
-    ref=${BBTOOLS_PATH}/resources/sequencing_artifacts.fa.gz,${BBTOOLS_PATH}/resources/phix174_ill.ref.fa.gz,${BBTOOLS_PATH}/resources/adapters.fa \
-    k=27 hdist=1 ordered \
-    overwrite=t \
+    ref=${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,${BBTOOLS_RESOURCES}/adapters.fa \
+    k=27 hdist=1 ordered overwrite \
     stats=filtering.stats.txt 
 
 # Error-correct phase 1
-bbmerge.sh in=filtered.fq.gz out=ecco.fq.gz ecco mix vstrict ordered ihist=ihist_merge1.txt
+bbmerge.sh \
+    in=filtered.fq.gz out=ecco.fq.gz \
+    ecco mix vstrict ordered overwrite \
+    ihist=ihist.merge.txt
 
 # Error-correct phase 2
-clumpify.sh in=ecco.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair
+clumpify.sh in=ecco.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair overwrite
 
 # Error-correct phase 3
-tadpole.sh in=eccc.fq.gz out=ecct.fq.gz ecc ordered
+tadpole.sh in=eccc.fq.gz out=ecct.fq.gz ecc ordered overwrite
 
 # Read extension
-tadpole.sh in=ecct.fq.gz out=extended.fq.gz ordered mode=extend el=20 er=20 k=62
+tadpole.sh \
+    in=ecct.fq.gz out=extended.fq.gz \
+    ordered mode=extend el=20 er=20 k=62 prefilter=2 overwrite
 
 # Read merging
-bbmerge-auto.sh in=extended.fq.gz out=merged.fq.gz outu=unmerged.fq.gz rem k=81 extend2=120 zl=8 ordered
+bbmerge-auto.sh \
+    in=extended.fq.gz out=merged.fq.gz outu=unmerged.fq.gz \
+    rem k=81 extend2=120 zl=8 ordered prefilter=2 overwrite
 
 # Alignment; only use merged reads
 bbmap.sh \
     in=merged.fq.gz out=merged.sam.gz \
     ref=1_genome/genome.fa \
-    nodisk slow bs=bs.sh pigz unpigz
+    nodisk slow bs=bs.sh overwrite
 
 # Variant-calling; ploidy may need adjustment.  For a large dataset "prefilter" may be needed.
 # To call only insertions, "calldel=f callsub=f" can be added.  Not calling substitutions saves memory.
-callvariants.sh in=merged.sam.gz out=vars.txt vcf=vars.vcf.gz ref=1_genome/genome.fa ploidy=1
+callvariants.sh \
+    in=merged.sam.gz out=vars.txt \
+    vcf=vars.vcf.gz ref=1_genome/genome.fa \
+    ploidy=1 overwrite
 
 # Generate a bam file, if viewing in IGV is desired.
 sh bs.sh
@@ -830,10 +850,10 @@ if [ -e 2_illumina/R1.fq.gz ]; then
 fi
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "clumpify"; stat_format clumped.fq.gz;) >> statTadpole.md
+    $(echo "clumped"; stat_format clumped.fq.gz;) >> statTadpole.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "filterbytile"; stat_format filtered_by_tile.fq.gz;) >> statTadpole.md
+    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statTadpole.md
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statTadpole.md
@@ -870,16 +890,16 @@ fastqc -t 16 \
 | Genome       | 4641652 | 4641652 |        1 |
 | Paralogs     |    1934 |  195673 |      106 |
 | Illumina     |     151 |   1.73G | 11458940 |
-| clumpify     |     151 |   1.73G | 11458216 |
-| filterbytile |     151 |   1.67G | 11083902 |
-| trimmed      |     150 |   1.66G | 11078196 |
-| filtered     |     150 |   1.66G | 11077638 |
-| ecco         |     150 |   1.66G | 11077638 |
-| eccc         |     150 |   1.66G | 11077638 |
-| ecct         |     150 |   1.66G | 11077638 |
-| extended     |     190 |   2.09G | 11077638 |
-| merged       |     339 |   1.72G |  5087635 |
-| unmerged     |     190 | 158.46M |   902368 |
+| clumped      |     151 |   1.73G | 11458216 |
+| filterbytile |     151 |   1.67G | 11082918 |
+| trimmed      |     147 |   1.43G | 10401386 |
+| filtered     |     147 |   1.42G | 10400878 |
+| ecco         |     147 |   1.42G | 10400878 |
+| eccc         |     147 |   1.42G | 10400878 |
+| ecct         |     147 |   1.42G | 10400878 |
+| extended     |     186 |   1.84G | 10400878 |
+| merged       |     339 |   1.74G |  5144147 |
+| unmerged     |     170 |  16.98M |   112584 |
 
 ## Insert size
 
