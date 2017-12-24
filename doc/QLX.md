@@ -747,99 +747,26 @@ quast --no-check --threads 16 \
 BASE_NAME=QLX
 cd ${HOME}/data/anchr/${BASE_NAME}
 
-BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
+mkdir -p mergereads
+cd mergereads
 
-rm temp.fq.gz;
-
-# Reorder reads for speed of subsequent phases
-clumpify.sh \
-    in=2_illumina/R1.fq.gz \
-    in2=2_illumina/R2.fq.gz \
-    out=clumped.fq.gz \
-    dedupe optical overwrite
-rm temp.fq.gz; ln -s clumped.fq.gz temp.fq.gz
-
-# Remove low-quality reads by position
-filterbytile.sh in=temp.fq.gz out=filteredbytile.fq.gz overwrite
-rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
-
-# Trim 5' adapters and discard reads with Ns
-# Use bbduk.sh to quality and length trim the Illumina reads and remove adapter sequences
-# 1. ftm = 5, right trim read length to a multiple of 5
-# 2. k = 23, Kmer length used for finding contaminants
-# 3. ktrim=r, Trim reads to remove bases matching reference kmers to the right
-# 4. mink=7, look for shorter kmers at read tips down to 7 bps
-# 5. hdist=1, hamming distance for query kmers
-# 6. tbo, trim adapters based on where paired reads overlap
-# 7. tpe, when kmer right-trimming, trim both reads to the minimum length of either
-# 8. qtrim=r, trim read right ends to remove bases with low quality
-# 9. trimq=15, regions with average quality below 15 will be trimmed.
-# 10. minlen=60, reads shorter than 60 bps after trimming will be discarded.
-bbduk.sh \
-    in=temp.fq.gz \
-    out=trimmed.fq.gz \
-    ref=${BBTOOLS_RESOURCES}/adapters.fa \
-    maxns=0 ktrim=r k=23 mink=7 hdist=1 tbo tpe minlen=60 ftm=5 qtrim=r trimq=15 ordered overwrite
-rm temp.fq.gz; ln -s trimmed.fq.gz temp.fq.gz
-
-# Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
-bbduk.sh \
-    in=temp.fq.gz \
-    out=filtered.fq.gz \
-    ref=${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,${BBTOOLS_RESOURCES}/adapters.fa \
-    k=27 hdist=1 ordered overwrite \
-    stats=filtering.stats.txt 
-rm temp.fq.gz; ln -s filtered.fq.gz temp.fq.gz
-
-# Error-correct phase 1
-bbmerge.sh \
-    in=temp.fq.gz out=ecco.fq.gz \
-    ihist=ihist.merge1.txt \
-    ecco mix vstrict ordered overwrite
-rm temp.fq.gz; ln -s ecco.fq.gz temp.fq.gz
-
-# Error-correct phase 2
-clumpify.sh in=temp.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair overwrite
-rm temp.fq.gz; ln -s eccc.fq.gz temp.fq.gz
-
-# Error-correct phase 3
-# Low-depth reads can be discarded here with the "tossjunk", "tossdepth", or "tossuncorrectable" flags.
-# For large genomes, tadpole and bbmerge (during the "Merge" phase) may need the flag 
-# "prefilter=1" or "prefilter=2" to avoid running out of memory.
-# "prefilter" makes these take twice as long though so don't use it if you have enough memory.
-tadpole.sh \
-    in=temp.fq.gz out=ecct.fq.gz \
-    ecc tossjunk tossdepth=3 prefilter=2 ordered overwrite
-rm temp.fq.gz; ln -s ecct.fq.gz temp.fq.gz
-
-# Read extension
-tadpole.sh \
-    in=temp.fq.gz out=extended.fq.gz \
-    ordered mode=extend el=20 er=20 k=62 prefilter=2 overwrite
-rm temp.fq.gz; ln -s extended.fq.gz temp.fq.gz
-
-# Read merging
-bbmerge-auto.sh \
-    in=temp.fq.gz out=merged.fq.gz outu=unmerged.raw.fq.gz \
-    ihist=ihist.merge.txt \
-    strict k=81 extend2=80 rem ordered prefilter=2 overwrite
-
-#Quality-trim the unmerged reads.
-bbduk.sh \
-    in=unmerged.raw.fq.gz out=unmerged.fq.gz \
-    qtrim=r trimq=15 minlen=60 ordered overwrite
+anchr mergereads \
+    ../2_illumina/R1.fq.gz ../2_illumina/R2.fq.gz \
+    --parallel 16 \
+    -o mergereads.sh
+bash mergereads.sh
 
 # Alignment; only use merged reads
 bbmap.sh \
     in=merged.fq.gz out=merged.sam.gz \
-    ref=1_genome/genome.fa \
+    ref=../1_genome/genome.fa \
     nodisk slow bs=bs.sh overwrite
 
 # Variant-calling; ploidy may need adjustment.  For a large dataset "prefilter" may be needed.
 # To call only insertions, "calldel=f callsub=f" can be added.  Not calling substitutions saves memory.
 callvariants.sh \
     in=merged.sam.gz out=vars.txt \
-    vcf=vars.vcf.gz ref=1_genome/genome.fa \
+    vcf=vars.vcf.gz ref=../1_genome/genome.fa \
     ploidy=1 overwrite
 
 # Generate a bam file, if viewing in IGV is desired.
@@ -854,55 +781,41 @@ stat_format () {
 
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-    > statTadpole.md
-printf "|:--|--:|--:|--:|\n" >> statTadpole.md
-
-if [ -e 1_genome/genome.fa ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statTadpole.md
-fi
-if [ -e 1_genome/paralogs.fas ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statTadpole.md
-fi
-
-if [ -e 2_illumina/R1.fq.gz ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz 2_illumina/R2.fq.gz;) >> statTadpole.md
-fi
+    > statMergeReads.md
+printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "clumped"; stat_format clumped.fq.gz;) >> statTadpole.md
+    $(echo "clumped"; stat_format clumped.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statTadpole.md
+    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statTadpole.md
+    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "filtered"; stat_format filtered.fq.gz;) >> statTadpole.md
+    $(echo "filtered"; stat_format filtered.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecco"; stat_format ecco.fq.gz;) >> statTadpole.md
+    $(echo "ecco"; stat_format ecco.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "eccc"; stat_format eccc.fq.gz;) >> statTadpole.md
+    $(echo "eccc"; stat_format eccc.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecct"; stat_format ecct.fq.gz;) >> statTadpole.md
+    $(echo "ecct"; stat_format ecct.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "extended"; stat_format extended.fq.gz;) >> statTadpole.md
+    $(echo "extended"; stat_format extended.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "merged"; stat_format merged.fq.gz;) >> statTadpole.md
+    $(echo "merged"; stat_format merged.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged"; stat_format unmerged.fq.gz;) >> statTadpole.md
+    $(echo "unmerged.raw"; stat_format unmerged.raw.fq.gz;) >> statMergeReads.md
 
 printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged.trim.fq.gz"; stat_format unmerged.trim.fq.gz;) >> statTadpole.md
+    $(echo "unmerged.fq.gz"; stat_format unmerged.fq.gz;) >> statMergeReads.md
 
 fastqc -t 16 \
     merged.fq.gz unmerged.fq.gz \
