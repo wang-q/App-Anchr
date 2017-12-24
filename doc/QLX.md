@@ -772,55 +772,6 @@ callvariants.sh \
 # Generate a bam file, if viewing in IGV is desired.
 sh bs.sh
 
-stat_format () {
-    echo $(faops n50 -H -N 50 -S -C $@) \
-        | perl -nla -MNumber::Format -e '
-            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
-        '
-}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > statMergeReads.md
-printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "clumped"; stat_format clumped.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "filtered"; stat_format filtered.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecco"; stat_format ecco.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "eccc"; stat_format eccc.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecct"; stat_format ecct.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "extended"; stat_format extended.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "merged"; stat_format merged.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged.raw"; stat_format unmerged.raw.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged.fq.gz"; stat_format unmerged.fq.gz;) >> statMergeReads.md
-
-fastqc -t 16 \
-    merged.fq.gz unmerged.fq.gz \
-    -o .
-
 ```
 
 | Name         |     N50 |     Sum |        # |
@@ -866,14 +817,6 @@ reformat.sh \
     in=2_illumina/Q25L60/merged.sam.gz \
     ihist=ihist.sickle2.txt \
     overwrite
-
-bbmerge.sh \
-    in1=2_illumina/Q25L60/R1.fq.gz \
-    in2=2_illumina/Q25L60/R2.fq.gz \
-    ihist=ihist.merge.txt \
-    reads=2000000 \
-    overwrite
-
 
 ```
 
