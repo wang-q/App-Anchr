@@ -354,8 +354,6 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         exit;
     fi
 
-    BBTOOLS_PATH=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')
-
     tadpole.sh \
         in=R1.sickle.fq.gz \
         in2=R2.sickle.fq.gz \
