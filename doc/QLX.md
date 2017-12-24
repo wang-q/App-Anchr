@@ -749,15 +749,19 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 
+rm temp.fq.gz;
+
 # Reorder reads for speed of subsequent phases
 clumpify.sh \
     in=2_illumina/R1.fq.gz \
     in2=2_illumina/R2.fq.gz \
     out=clumped.fq.gz \
     dedupe optical overwrite
+rm temp.fq.gz; ln -s clumped.fq.gz temp.fq.gz
 
 # Remove low-quality reads by position
-filterbytile.sh in=clumped.fq.gz out=filteredbytile.fq.gz overwrite
+filterbytile.sh in=temp.fq.gz out=filteredbytile.fq.gz overwrite
+rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 
 # Trim 5' adapters and discard reads with Ns
 # Use bbduk.sh to quality and length trim the Illumina reads and remove adapter sequences
@@ -772,40 +776,58 @@ filterbytile.sh in=clumped.fq.gz out=filteredbytile.fq.gz overwrite
 # 9. trimq=15, regions with average quality below 15 will be trimmed.
 # 10. minlen=60, reads shorter than 60 bps after trimming will be discarded.
 bbduk.sh \
-    in=filteredbytile.fq.gz \
+    in=temp.fq.gz \
     out=trimmed.fq.gz \
     ref=${BBTOOLS_RESOURCES}/adapters.fa \
     maxns=0 ktrim=r k=23 mink=7 hdist=1 tbo tpe minlen=60 ftm=5 qtrim=r trimq=15 ordered overwrite
+rm temp.fq.gz; ln -s trimmed.fq.gz temp.fq.gz
 
 # Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
 bbduk.sh \
-    in=trimmed.fq.gz \
+    in=temp.fq.gz \
     out=filtered.fq.gz \
     ref=${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,${BBTOOLS_RESOURCES}/adapters.fa \
     k=27 hdist=1 ordered overwrite \
     stats=filtering.stats.txt 
+rm temp.fq.gz; ln -s filtered.fq.gz temp.fq.gz
 
 # Error-correct phase 1
 bbmerge.sh \
-    in=filtered.fq.gz out=ecco.fq.gz \
-    ecco mix vstrict ordered overwrite \
-    ihist=ihist.merge.txt
+    in=temp.fq.gz out=ecco.fq.gz \
+    ihist=ihist.merge1.txt \
+    ecco mix vstrict ordered overwrite
+rm temp.fq.gz; ln -s ecco.fq.gz temp.fq.gz
 
 # Error-correct phase 2
-clumpify.sh in=ecco.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair overwrite
+clumpify.sh in=temp.fq.gz out=eccc.fq.gz passes=4 ecc unpair repair overwrite
+rm temp.fq.gz; ln -s eccc.fq.gz temp.fq.gz
 
 # Error-correct phase 3
-tadpole.sh in=eccc.fq.gz out=ecct.fq.gz ecc ordered overwrite
+# Low-depth reads can be discarded here with the "tossjunk", "tossdepth", or "tossuncorrectable" flags.
+# For large genomes, tadpole and bbmerge (during the "Merge" phase) may need the flag 
+# "prefilter=1" or "prefilter=2" to avoid running out of memory.
+# "prefilter" makes these take twice as long though so don't use it if you have enough memory.
+tadpole.sh \
+    in=temp.fq.gz out=ecct.fq.gz \
+    ecc tossjunk tossdepth=3 prefilter=2 ordered overwrite
+rm temp.fq.gz; ln -s ecct.fq.gz temp.fq.gz
 
 # Read extension
 tadpole.sh \
-    in=ecct.fq.gz out=extended.fq.gz \
+    in=temp.fq.gz out=extended.fq.gz \
     ordered mode=extend el=20 er=20 k=62 prefilter=2 overwrite
+rm temp.fq.gz; ln -s extended.fq.gz temp.fq.gz
 
 # Read merging
 bbmerge-auto.sh \
-    in=extended.fq.gz out=merged.fq.gz outu=unmerged.fq.gz \
-    rem k=81 extend2=120 zl=8 ordered prefilter=2 overwrite
+    in=temp.fq.gz out=merged.fq.gz outu=unmerged.raw.fq.gz \
+    ihist=ihist.merge.txt \
+    strict k=81 extend2=80 rem ordered prefilter=2 overwrite
+
+#Quality-trim the unmerged reads.
+bbduk.sh \
+    in=unmerged.raw.fq.gz out=unmerged.fq.gz \
+    qtrim=r trimq=15 minlen=60 ordered overwrite
 
 # Alignment; only use merged reads
 bbmap.sh \
@@ -878,6 +900,9 @@ printf "| %s | %s | %s | %s |\n" \
 
 printf "| %s | %s | %s | %s |\n" \
     $(echo "unmerged"; stat_format unmerged.fq.gz;) >> statTadpole.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "unmerged.trim.fq.gz"; stat_format unmerged.trim.fq.gz;) >> statTadpole.md
 
 fastqc -t 16 \
     merged.fq.gz unmerged.fq.gz \
