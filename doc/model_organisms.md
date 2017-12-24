@@ -672,6 +672,7 @@ anchr template \
     --qual3 "trim" \
     --parallel 24
 
+
 ```
 
 ## s288c: run
@@ -754,6 +755,92 @@ cat 6_anchorLong/group/*.ovlp.tsv \
 
 ```
 
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=s288c
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+mkdir -p 2_illumina/mergereads
+cd 2_illumina/mergereads
+
+anchr mergereads \
+    ../R1.fq.gz ../R2.fq.gz \
+    --parallel 16 \
+    -o mergereads.sh
+bash mergereads.sh
+
+stat_format () {
+    echo $(faops n50 -H -N 50 -S -C $@) \
+        | perl -nla -MNumber::Format -e '
+            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
+        '
+}
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statMergeReads.md
+printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "clumped"; stat_format clumped.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "filtered"; stat_format filtered.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "ecco"; stat_format ecco.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "eccc"; stat_format eccc.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "ecct"; stat_format ecct.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "extended"; stat_format extended.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "merged"; stat_format merged.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "unmerged.raw"; stat_format unmerged.raw.fq.gz;) >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo "unmerged"; stat_format unmerged.fq.gz;) >> statMergeReads.md
+
+fastqc -t 16 \
+    merged.fq.gz unmerged.fq.gz \
+    -o .
+
+spades.py \
+    -s merged.fq.gz --12 unmerged.fq.gz \
+    --only-assembler \
+    -k25,55,95,125 --phred-offset 33 \
+    -o spades_out
+
+anchr contained \
+    spades_out/contigs.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin spades_out/spades.non-contained.fasta
+
+rm -fr 9_quast_merge
+quast --no-check --threads 16 \
+    -R ../../1_genome/genome.fa \
+    spades_out/spades.non-contained.fasta \
+    ../../1_genome/paralogs.fas \
+    --label "spades,paralogs" \
+    -o 9_quast_merge
+
+```
+
 | Name      |    N50 |      Sum |        # |
 |:----------|-------:|---------:|---------:|
 | Genome    | 924431 | 12157105 |       17 |
@@ -765,6 +852,20 @@ cat 6_anchorLong/group/*.ovlp.tsv \
 | PacBio    |   8412 |  820.96M |   177100 |
 | Xall.raw  |   8412 |  820.96M |   177100 |
 | Xall.trim |   7829 |  626.41M |   106381 |
+
+| Name         | N50 |     Sum |        # |
+|:-------------|----:|--------:|---------:|
+| clumped      | 151 |   2.74G | 18146514 |
+| filterbytile |   0 |       0 |        0 |
+| trimmed      | 150 |   2.63G | 17918200 |
+| filtered     | 150 |   2.63G | 17916952 |
+| ecco         | 150 |   2.63G | 17916952 |
+| eccc         | 150 |   2.63G | 17916952 |
+| ecct         | 150 |   2.52G | 17195798 |
+| extended     | 190 |    3.2G | 17195798 |
+| merged       | 356 |   2.36G |  7176733 |
+| unmerged.raw | 190 | 525.95M |  2842332 |
+| unmerged     | 190 | 458.94M |  2551810 |
 
 | Group  |  Mean | Median | STDev | PercentOfPairs |
 |:-------|------:|-------:|------:|---------------:|
