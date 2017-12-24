@@ -11,12 +11,13 @@ use constant abstract => "merge reads with bbtools";
 sub opt_spec {
     return (
         [ "outfile|o=s", "output filename, [stdout] for screen", { default => "mergereads.sh" }, ],
-        [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
-        [ "prefilter=i",  "prefilter=N (1 or 2) for tadpole and bbmerge", ],
-        [ "trimq=i",      "quality score for 5' adapter trimming",     { default => 15 }, ],
-        [ "trimk=i",      "kmer for 5' adapter trimming",              { default => 23 }, ],
-        [ "matchk=i",     "kmer for decontamination",                  { default => 27 }, ],
-        [ "parallel|p=i", "number of threads",                         { default => 8 }, ],
+        [ "len|l=i", "filter reads less or equal to this length", { default => 60 }, ],
+        [ "tile",        "with normal Illumina names, processing tile based filtering", ],
+        [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
+        [ "trimq=i",      "quality score for 5' adapter trimming", { default => 15 }, ],
+        [ "trimk=i",      "kmer for 5' adapter trimming",          { default => 23 }, ],
+        [ "matchk=i",     "kmer for decontamination",              { default => 27 }, ],
+        [ "parallel|p=i", "number of threads",                     { default => 8 }, ],
         { show_defaults => 1, }
     );
 }
