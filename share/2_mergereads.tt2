@@ -4,6 +4,8 @@ log_warn 2_mergereads.sh
 mkdir -p 2_illumina/mergereads
 cd 2_illumina/mergereads
 
+log_info "mergereads.sh"
+
 anchr mergereads \
     ../R1.fq.gz ../R2.fq.gz \
 [% IF opt.tile -%]
@@ -16,7 +18,7 @@ anchr mergereads \
     -o mergereads.sh
 bash mergereads.sh
 
-
+log_info "stats of .fq.gz"
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > statMergeReads.md
@@ -30,8 +32,9 @@ for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended merged
 	printf "| %s | %s | %s | %s |\n" \
         $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
 done
+echo >> statMergeReads.md
 
-
+log_info "clear unneeded .fq.gz"
 for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended unmerged.raw; do
 	if [ ! -e ${NAME}.fq.gz ]; then
 	    continue;
@@ -40,8 +43,7 @@ for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended unmerg
 	rm ${NAME}.fq.gz
 done
 
-echo >> statMergeReads.md
-
+log_info "stats of insert sizes"
 printf "| %s | %s | %s | %s | %s |\n" \
     "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
     >> statMergeReads.md
