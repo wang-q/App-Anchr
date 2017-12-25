@@ -206,12 +206,13 @@ log_info Adapter filtering with bbtools.
 
 mv pe.cor.fa pe.cor.raw
 
+BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 bbduk.sh \
     in=pe.cor.raw \
     out=pe.cor.fa \
     outm=matched.fa \
     overwrite=t \
-    ref=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources/adapters.fa \
+    ref=${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,${BBTOOLS_RESOURCES}/adapters.fa \
     k=27 hdist=1 stats=filtering.stats.txt
 
 rm pe.cor.raw
