@@ -831,12 +831,52 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin spades_out/spades.non-contained.fasta
 
+megahit \
+    -r merged.fq.gz --12 unmerged.fq.gz \
+    --k-min 45 --k-max 225 \
+    --k-step 26 --min-count 2 \
+    -o megahit_out
+
+anchr contained \
+    megahit_out/final.contigs.fa \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin megahit_out/megahit.non-contained.fasta
+
+for K in 25 55 95 125; do
+    tadpole.sh in=merged.fq.gz,unmerged.fq.gz out=tadpole_out/contigs_K${K}.fa k=${K}
+done
+
+anchr contained \
+    $(
+        find tadpole_out -type f -name "contigs_K*" | sort -r
+    ) \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin tadpole_out/tadpole.non-contained.fasta
+anchr orient \
+    tadpole_out/tadpole.non-contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o tadpole_out/anchor.orient.fasta
+anchr merge \
+    tadpole_out/anchor.orient.fasta \
+    --len 1000 --idt 0.999 --parallel 16 \
+    -o tadpole_out/anchor.merge0.fasta
+anchr contained \
+    tadpole_out/anchor.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin tadpole_out/anchor.merge.fasta
+
 rm -fr 9_quast_merge
 quast --no-check --threads 16 \
     -R ../../1_genome/genome.fa \
     spades_out/spades.non-contained.fasta \
+    megahit_out/megahit.non-contained.fasta \
+    tadpole_out/tadpole.non-contained.fasta \
+    tadpole_out/anchor.merge.fasta \
     ../../1_genome/paralogs.fas \
-    --label "spades,paralogs" \
+    --label "spades,megahit,tadpole,tadpoleMerge,paralogs" \
     -o 9_quast_merge
 
 ```
