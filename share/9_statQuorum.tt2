@@ -39,11 +39,20 @@ done \
 echo >> statQuorum.md
 
 log_info "stats of filtered"
-cat filtering.stats.txt \
-    | perl -nla -e '
-        /^#/ and print;
-        $F[1] >= 10 and print;
-        ' \
-    >> statQuorum.md
+echo '```text' >> statQuorum.md
+for Q in [% opt.qual2 %]; do
+    for L in [% opt.len2 %]; do
+        echo "#Q${Q}L${L}"
+		cat 2_illumina/Q${Q}L${L}/filtering.stats.txt \
+		    | perl -nla -e '
+		        /^#(Matched|Name)/ and print and next;
+                /^#/ and next;
+		        $F[1] >= 100 and print;
+            '
+		echo   
+    done
+done \
+>> statQuorum.md
+echo '```' >> statQuorum.md
 
 cat statQuorum.md
