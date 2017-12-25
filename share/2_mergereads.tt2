@@ -1,0 +1,74 @@
+[% INCLUDE header.tt2 %]
+log_warn 2_mergereads.sh
+
+mkdir -p 2_illumina/mergereads
+cd 2_illumina/mergereads
+
+anchr mergereads \
+    ../R1.fq.gz ../R2.fq.gz \
+[% IF opt.tile -%]
+    --tile \
+[% END -%]
+[% IF opt.prefilter -%]
+    --prefilter [% opt.prefilter %] \
+[% END -%]
+    --parallel [% opt.parallel %] \
+    -o mergereads.sh
+bash mergereads.sh
+
+
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    > statMergeReads.md
+printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
+
+for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged; do
+	if [ ! -e ${NAME}.fq.gz ]; then
+	    continue;
+	fi
+	
+	printf "| %s | %s | %s | %s |\n" \
+        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
+done
+
+
+for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended unmerged.raw; do
+	if [ ! -e ${NAME}.fq.gz ]; then
+	    continue;
+	fi
+	
+	rm ${NAME}.fq.gz
+done
+
+echo >> statMergeReads.md
+
+printf "| %s | %s | %s | %s | %s |\n" \
+    "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
+    >> statMergeReads.md
+printf "|:--|--:|--:|--:|--:|\n" >> statMergeReads.md
+
+#Mean	339.868
+#Median	312
+#Mode	251
+#STDev	134.676
+#PercentOfPairs	36.247
+
+for NAME in ihist.merge1.txt ihist.merge.txt; do
+    printf "| %s " ${NAME} >> statMergeReads.md
+    cat ${NAME} \
+        | perl -nla -e '
+            BEGIN { our $stat = { }; };
+
+            m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
+            $stat->{$1} = $F[1];
+
+            END {
+                printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
+                    $stat->{Mean},
+                    $stat->{Median},
+                    $stat->{STDev},
+                    $stat->{PercentOfPairs};
+            }
+            ' \
+        >> statMergeReads.md
+done

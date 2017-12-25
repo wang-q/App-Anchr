@@ -16,16 +16,19 @@ sub opt_spec {
         [ "tmp=s",      "user defined tempdir", ],
         [ "se",         "single end mode for Illumina", ],
         [ "separate",   "separate each Qual-Len/Cov-Qual groups", ],
-        [ "trim2=s",      "steps for trimming Illumina reads",         { default => "--uniq" }, ],
-        [ "sample2=i",    "total sampling coverage of Illumina reads", ],
-        [ "cov2=s",       "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
-        [ "qual2=s",      "quality threshold",                         { default => "25 30" }, ],
-        [ "len2=s",       "filter reads less or equal to this length", { default => "60" }, ],
-        [ "reads=s",      "how many reads to estimate insert size",    { default => "2000000" }, ],
-        [ 'tadpole',      'also use tadpole to create k-unitigs', ],
-        [ "cov3=s",       "down sampling coverage of PacBio reads", ],
-        [ "qual3=s",      "raw and/or trim",                           { default => "trim" } ],
-        [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
+        [ "trim2=s",    "steps for trimming Illumina reads",         { default => "--uniq" }, ],
+        [ "sample2=i",  "total sampling coverage of Illumina reads", ],
+        [ "cov2=s",     "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
+        [ "qual2=s",    "quality threshold",                         { default => "25 30" }, ],
+        [ "len2=s",     "filter reads less or equal to this length", { default => "60" }, ],
+        [ "reads=s",    "how many reads to estimate insert size",    { default => "2000000" }, ],
+        [ 'tadpole',    'also use tadpole to create k-unitigs', ],
+        [ "cov3=s",     "down sampling coverage of PacBio reads", ],
+        [ "qual3=s",    "raw and/or trim",                           { default => "trim" } ],
+        [ 'mergereads', 'also run the mergereads approach', ],
+        [ "tile",        "with normal Illumina names, do tile based filtering", ],
+        [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
+        [ "parallel|p=i", "number of threads", { default => 16 }, ],
         { show_defaults => 1, }
     );
 }
@@ -75,6 +78,9 @@ sub execute {
 
     # kmergenie
     $self->gen_kmergenie( $opt, $args );
+
+    # kmergenie
+    $self->gen_mergereads( $opt, $args );
 
     # trim2
     $self->gen_trim( $opt, $args );
@@ -209,6 +215,29 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
 EOF
     $tt->process(
         \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_mergereads {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "2_mergereads.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '2_mergereads.tt2',
         {   args => $args,
             opt  => $opt,
         },
