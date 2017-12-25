@@ -1,6 +1,13 @@
 [% INCLUDE header.tt2 %]
 log_warn 2_mergereads.sh
 
+if [ ! -e 2_illumina/mergereads/merged.fq.gz ]; then
+    exit;
+fi
+
+#----------------------------#
+# run
+#----------------------------#
 mkdir -p 2_illumina/mergereads
 cd 2_illumina/mergereads
 
@@ -24,23 +31,21 @@ printf "| %s | %s | %s | %s |\n" \
     > statMergeReads.md
 printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
-for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged; do
-	if [ ! -e ${NAME}.fq.gz ]; then
-	    continue;
-	fi
-	
-	printf "| %s | %s | %s | %s |\n" \
+for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged; do
+    if [ ! -e ${NAME}.fq.gz ]; then
+        continue;
+    fi
+
+    printf "| %s | %s | %s | %s |\n" \
         $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
 done
 echo >> statMergeReads.md
 
 log_info "clear unneeded .fq.gz"
-for NAME in clumped filterbytile trimmed filtered ecco eccc ecct extended unmerged.raw; do
-	if [ ! -e ${NAME}.fq.gz ]; then
-	    continue;
-	fi
-	
-	rm ${NAME}.fq.gz
+for NAME in temp clumped filteredbytile trimmed filtered ecco eccc ecct extended unmerged.raw; do
+    if [ -e ${NAME}.fq.gz ]; then
+        rm ${NAME}.fq.gz
+    fi
 done
 
 log_info "stats of insert sizes"
