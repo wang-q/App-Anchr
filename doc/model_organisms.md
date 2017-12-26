@@ -670,8 +670,8 @@ anchr template \
     --len2 "60" \
     --cov3 "all" \
     --qual3 "trim" \
+    --mergereads \
     --parallel 24
-
 
 ```
 
@@ -681,6 +681,9 @@ anchr template \
 # Illumina QC
 bsub -q mpi -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
 bsub -q mpi -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+
+# merge reads
+bsub -q mpi -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
 
 # preprocess Illumina reads
 bsub -q mpi -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
@@ -764,57 +767,6 @@ cd ${WORKING_DIR}/${BASE_NAME}
 mkdir -p 2_illumina/mergereads
 cd 2_illumina/mergereads
 
-anchr mergereads \
-    ../R1.fq.gz ../R2.fq.gz \
-    --parallel 16 \
-    -o mergereads.sh
-bash mergereads.sh
-
-stat_format () {
-    echo $(faops n50 -H -N 50 -S -C $@) \
-        | perl -nla -MNumber::Format -e '
-            printf qq{%d\t%s\t%d\n}, $F[0], Number::Format::format_bytes($F[1], base => 1000,), $F[2];
-        '
-}
-
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    > statMergeReads.md
-printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "clumped"; stat_format clumped.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "filterbytile"; stat_format filteredbytile.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "trimmed"; stat_format trimmed.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "filtered"; stat_format filtered.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecco"; stat_format ecco.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "eccc"; stat_format eccc.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "ecct"; stat_format ecct.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "extended"; stat_format extended.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "merged"; stat_format merged.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged.raw"; stat_format unmerged.raw.fq.gz;) >> statMergeReads.md
-
-printf "| %s | %s | %s | %s |\n" \
-    $(echo "unmerged"; stat_format unmerged.fq.gz;) >> statMergeReads.md
-
 fastqc -t 16 \
     merged.fq.gz unmerged.fq.gz \
     -o .
@@ -893,24 +845,36 @@ quast --no-check --threads 16 \
 | Xall.raw  |   8412 |  820.96M |   177100 |
 | Xall.trim |   7829 |  626.41M |   106381 |
 
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q25L60 | 339.9 |    312 | 134.7 |         36.25% |
+| Q30L60 | 338.4 |    311 | 133.6 |         37.26% |
+
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
 | clumped      | 151 |   2.74G | 18146514 |
-| filterbytile |   0 |       0 |        0 |
 | trimmed      | 150 |   2.63G | 17918200 |
 | filtered     | 150 |   2.63G | 17916952 |
 | ecco         | 150 |   2.63G | 17916952 |
 | eccc         | 150 |   2.63G | 17916952 |
 | ecct         | 150 |   2.52G | 17195798 |
 | extended     | 190 |    3.2G | 17195798 |
-| merged       | 356 |   2.36G |  7176733 |
-| unmerged.raw | 190 | 525.95M |  2842332 |
-| unmerged     | 190 | 458.94M |  2551810 |
+| merged       | 356 |   2.36G |  7176703 |
+| unmerged.raw | 190 | 525.96M |  2842392 |
+| unmerged     | 190 | 458.96M |  2551918 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 339.9 |    312 | 134.7 |         36.25% |
-| Q30L60 | 338.4 |    311 | 133.6 |         37.26% |
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 209.9 |    220 |  52.9 |         39.07% |
+| ihist.merge.txt  | 328.1 |    325 |  94.9 |         83.47% |
+
+```text
+#mergeReads
+#Matched	695	0.00388%
+#Name	Reads	ReadsPct
+contam_135	521	0.00291%
+contam_159	156	0.00087%
+```
 
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
@@ -918,19 +882,17 @@ quast --no-check --threads 16 \
 | Q30L60 | 201.0 |  178.9 |  10.986% |     148 | "105" | 12.16M | 12.06M |     0.99 | 0:04'20'' |
 
 ```text
-#File	pe.cor.raw
-#Total	14763763
-#Matched	56909	0.38546%
-#Name	Reads	ReadsPct
-I5_Nextera_Transposase_1	31974	0.21657%
-I7_Nextera_Transposase_1	24866	0.16843%
+#Q25L60
+#Matched        56909   0.38546%
+#Name   Reads   ReadsPct
+I5_Nextera_Transposase_1        31974   0.21657%
+I7_Nextera_Transposase_1        24866   0.16843%
 
-#File	pe.cor.raw
-#Total	14841476
-#Matched	56695	0.38200%
-#Name	Reads	ReadsPct
-I5_Nextera_Transposase_1	33136	0.22327%
-I7_Nextera_Transposase_1	23482	0.15822%
+#Q30L60
+#Matched        56695   0.38200%
+#Name   Reads   ReadsPct
+I5_Nextera_Transposase_1        33136   0.22327%
+I7_Nextera_Transposase_1        23482   0.15822%
 
 ```
 
