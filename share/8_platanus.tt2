@@ -34,7 +34,12 @@ if [ ! -e pe.fa ]; then
 fi
 
 platanus assemble -t [% opt.parallel %] -m 100 \
-    -f pe.fa se.fa \
+    -f pe.fa \
+    $(
+        if [ ! -s se.fa ]; then
+            echo se.fa
+        fi
+    ) \
     2>&1 | tee ass_log.txt
 
 platanus scaffold -t [% opt.parallel %] \
