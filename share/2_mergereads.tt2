@@ -28,7 +28,7 @@ anchr mergereads \
     -o mergereads.sh
 bash mergereads.sh
 
-log_info "stats of .fq.gz"
+log_info "stats of all .fq.gz files"
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
     > statMergeReads.md
@@ -44,7 +44,7 @@ for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merg
 done
 echo >> statMergeReads.md
 
-log_info "clear unneeded .fq.gz"
+log_info "clear unneeded .fq.gz files"
 for NAME in temp clumped filteredbytile trimmed filtered ecco eccc ecct extended unmerged.raw; do
     if [ -e ${NAME}.fq.gz ]; then
         rm ${NAME}.fq.gz
@@ -84,7 +84,7 @@ for NAME in ihist.merge1.txt ihist.merge.txt; do
 done
 echo >> statMergeReads.md
 
-log_info "stats of filtered"
+log_info "stats of filtered reads"
 echo '```text' >> statMergeReads.md
 echo "#mergeReads"
 cat filtering.stats.txt \

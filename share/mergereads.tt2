@@ -62,7 +62,8 @@ bbduk.sh \
 rm temp.fq.gz; ln -s filtered.fq.gz temp.fq.gz
 
 [% FOREACH ecphase IN opt.ecphase -%]
-	log_debug Error-correct phase [% ecphase %]
+log_debug Error-correct phase [% ecphase %]
+
 [% IF ecphase == 1 -%]
 # Error-correct phase 1
 # error-correct via overlap
