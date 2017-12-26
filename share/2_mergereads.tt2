@@ -88,7 +88,7 @@ log_info "stats of filtered reads"
 echo '```text' >> statMergeReads.md
 echo "#mergeReads" >> statMergeReads.md
 cat filtering.stats.txt \
-	| perl -nla -e '
+	| perl -nla -F"\t" -e '
         /^#(Matched|Name)/ and print and next;
         /^#/ and next;
         $F[1] >= 100 and print;
