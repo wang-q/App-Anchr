@@ -86,7 +86,7 @@ echo >> statMergeReads.md
 
 log_info "stats of filtered reads"
 echo '```text' >> statMergeReads.md
-echo "#mergeReads"
+echo "#mergeReads" >> statMergeReads.md
 cat filtering.stats.txt \
 	| perl -nla -e '
         /^#(Matched|Name)/ and print and next;
