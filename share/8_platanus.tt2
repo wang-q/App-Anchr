@@ -36,7 +36,7 @@ fi
 platanus assemble -t [% opt.parallel %] -m 100 \
     -f pe.fa \
     $(
-        if [ ! -s se.fa ]; then
+        if [ -s se.fa ]; then
             echo se.fa
         fi
     ) \
