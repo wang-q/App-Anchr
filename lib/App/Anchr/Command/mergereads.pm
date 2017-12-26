@@ -14,9 +14,10 @@ sub opt_spec {
         [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
         [ "tile",         "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i",  "prefilter=N (1 or 2) for tadpole and bbmerge", ],
-        [ "trimq=i",      "quality score for 5' adapter trimming",     { default => 15 }, ],
+        [ "trimq=i",      "quality score for 5' adapter trimming",     { default => 20 }, ],
         [ "trimk=i",      "kmer for 5' adapter trimming",              { default => 23 }, ],
         [ "matchk=i",     "kmer for decontamination",                  { default => 27 }, ],
+        [ 'ecphase=s',    'Error-correct phases',                      { default => "1,2,3", }, ],
         [ "parallel|p=i", "number of threads",                         { default => 8 }, ],
         { show_defaults => 1, }
     );
@@ -53,6 +54,12 @@ sub validate_args {
             $self->usage_error("The adapter file [$opt->{adapter}] doesn't exist.");
         }
     }
+
+    unless ( $opt->{ecphase} =~ /^[\d,]+$/ ) {
+        $self->usage_error("Invalid ecphase [$opt->{ecphase}].");
+    }
+    $opt->{ecphase} = [ sort { $a <=> $b } grep {defined} split ",", $opt->{ecphase} ];
+
 }
 
 sub execute {

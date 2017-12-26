@@ -61,7 +61,11 @@ bbduk.sh \
     stats=filtering.stats.txt 
 rm temp.fq.gz; ln -s filtered.fq.gz temp.fq.gz
 
+[% FOREACH ecphase IN opt.ecphase -%]
+	log_debug Error-correct phase [% ecphase %]
+[% IF ecphase == 1 -%]
 # Error-correct phase 1
+# error-correct via overlap
 bbmerge.sh \
     in=temp.fq.gz out=ecco.fq.gz \
     ihist=ihist.merge1.txt \
@@ -71,14 +75,18 @@ bbmerge.sh \
 [% END -%]
     ecco mix vstrict ordered overwrite
 rm temp.fq.gz; ln -s ecco.fq.gz temp.fq.gz
+[% END -%]
 
+[% IF ecphase == 2 -%]
 # Error-correct phase 2
 clumpify.sh \
     in=temp.fq.gz out=eccc.fq.gz \
     threads=[% opt.parallel %] \
     passes=4 ecc unpair repair overwrite
 rm temp.fq.gz; ln -s eccc.fq.gz temp.fq.gz
+[% END -%]
 
+[% IF ecphase == 3 -%]
 # Error-correct phase 3
 # Low-depth reads can be discarded here with the "tossjunk", "tossdepth", or "tossuncorrectable" flags.
 # For large genomes, tadpole and bbmerge (during the "Merge" phase) may need the flag 
@@ -92,6 +100,9 @@ tadpole.sh \
 [% END -%]
     ecc tossjunk tossdepth=3 tossuncorrectable ordered overwrite
 rm temp.fq.gz; ln -s ecct.fq.gz temp.fq.gz
+[% END -%]
+
+[% END -%]
 
 # Read extension
 tadpole.sh \

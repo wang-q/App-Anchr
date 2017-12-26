@@ -28,7 +28,8 @@ sub opt_spec {
         [ 'mergereads', 'also run the mergereads approach', ],
         [ "tile",        "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
-        [ "parallel|p=i", "number of threads", { default => 16 }, ],
+        [ 'ecphase=s',    'Error-correct phases', { default => "1,2,3", }, ],
+        [ "parallel|p=i", "number of threads",    { default => 16 }, ],
         { show_defaults => 1, }
     );
 }
