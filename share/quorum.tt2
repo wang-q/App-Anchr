@@ -166,7 +166,6 @@ if [ ! -e pe.cor.fa ]; then
     log_info Error correct reads.
     quorum_error_correct_reads \
         -q $((MIN_Q_CHAR + 40)) \
-        --contaminant=[% opt.adapter %] \
         -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
         quorum_mer_db.jf \
         pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %]\
@@ -200,9 +199,9 @@ log_debug "You set ESTIMATED_GENOME_SIZE of $ESTIMATED_GENOME_SIZE"
 [% END -%]
 
 #----------------------------#
-# Adapter filtering with bbtools.
+# Filtering with bbduk.
 #----------------------------#
-log_info Adapter filtering with bbtools.
+log_info Filtering with bbduk.
 
 mv pe.cor.fa pe.cor.raw
 
@@ -212,7 +211,7 @@ bbduk.sh \
     out=pe.cor.fa \
     outm=matched.fa \
     overwrite=t \
-    ref=${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,${BBTOOLS_RESOURCES}/adapters.fa \
+    ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
     k=27 hdist=1 stats=filtering.stats.txt
 
 rm pe.cor.raw
