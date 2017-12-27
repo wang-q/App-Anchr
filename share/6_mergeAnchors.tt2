@@ -1,47 +1,43 @@
 [% INCLUDE header.tt2 %]
 log_warn 6_mergeAnchors.sh
 
-if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
-    echo >&2 "6_mergeAnchors/anchor.merge.fasta presents"
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 [DIR_PREFIX] [DIR_MERGE]"
+
+DIR_PREFIX=${1:-"4_kunitigs"}
+DIR_MERGE=${2:-"6_mergeAnchors"}
+
+if [ -e ${DIR_MERGE}/anchor.merge.fasta ]; then
+    echo >&2 "${DIR_MERGE}/anchor.merge.fasta presents"
     exit;
 fi
 
 #----------------------------#
-# set parameters
-#----------------------------#
-USAGE="Usage: $0 DIR_PREFIX"
-
-if [ "$#" -lt 1 ]; then
-    echo >&2 "$USAGE"
-    exit 1
-fi
-
-DIR_PREFIX=$1
-
-#----------------------------#
 # merge anchors
 #----------------------------#
-mkdir -p 6_mergeAnchors
+mkdir -p ${DIR_MERGE}
 
 # reverse sort files, so that Q30L60X80 will be infile_0
 anchr contained \
     $( find . -type f -name "anchor.fasta" -path "*${DIR_PREFIX}*" | sort -r ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin 6_mergeAnchors/anchor.non-contained.fasta
+    | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.non-contained.fasta
 anchr orient \
-    6_mergeAnchors/anchor.non-contained.fasta \
+    ${DIR_MERGE}/anchor.non-contained.fasta \
     --len 1000 --idt 0.98 --parallel [% opt.parallel %] \
-    -o 6_mergeAnchors/anchor.orient.fasta
+    -o ${DIR_MERGE}/anchor.orient.fasta
 anchr merge \
-    6_mergeAnchors/anchor.orient.fasta \
+    ${DIR_MERGE}/anchor.orient.fasta \
     --len 1000 --idt 0.999 --parallel [% opt.parallel %] \
-    -o 6_mergeAnchors/anchor.merge0.fasta
+    -o ${DIR_MERGE}/anchor.merge0.fasta
 anchr contained \
-    6_mergeAnchors/anchor.merge0.fasta \
+    ${DIR_MERGE}/anchor.merge0.fasta \
     --len 1000 --idt 0.98 --proportion 0.99 --parallel [% opt.parallel %] \
     -o stdout \
-    | faops filter -a 1000 -l 0 stdin 6_mergeAnchors/anchor.merge.fasta
+    | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.merge.fasta
 
 #----------------------------#
 # merge others
@@ -50,6 +46,6 @@ anchr contained \
     $( find . -type f -name "pe.others.fa" -path "*${DIR_PREFIX}*" | sort -r ) \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
-    | faops filter -a 500 -l 0 stdin 6_mergeAnchors/others.non-contained.fasta
+    | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.non-contained.fasta
 
 exit;
