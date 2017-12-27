@@ -713,9 +713,12 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix" \
+    --tadpole \
     --cov3 "all" \
     --qual3 "trim" \
     --mergereads \
+    --ecphase "1,2,3" \
     --parallel 24
 
 ```
@@ -730,19 +733,19 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 # preprocess Illumina reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
 
-# merge reads
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
-
-# insert size
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
-
 # preprocess PacBio reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
 
 # reads stats
 bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+
+# merge reads
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
+
+# insert size
+bsub -w "done(${BASE_NAME}-2_trim)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # spades and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
@@ -760,16 +763,30 @@ bsub -w "done(${BASE_NAME}-2_quorum)" \
 # down sampling, k-unitigs and anchors
 bsub -w "done(${BASE_NAME}-2_quorum)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 bsub -w "done(${BASE_NAME}-4_kunitigs)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
+
+bsub -w "done(${BASE_NAME}-4_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpole" "bash 4_tadpole.sh"
+bsub -w "done(${BASE_NAME}-4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_kunitigs" "bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors"
+
+bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_tadpole" "bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors"
+
+bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mergeAnchors_4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
 
 # canu
 bsub -w "done(${BASE_NAME}-3_trimlong)" \
@@ -778,7 +795,7 @@ bsub -w "done(${BASE_NAME}-5_canu)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
 
 # expand anchors
-bsub -w "done(${BASE_NAME}-4_anchors) && done(${BASE_NAME}-5_canu)" \
+bsub -w "done(${BASE_NAME}-6_mergeAnchors) && done(${BASE_NAME}-5_canu)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorLong" \
     "bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
 
@@ -792,13 +809,13 @@ bsub -w "done(${BASE_NAME}-6_anchorLong)" \
 # stats
 bash 9_statFinal.sh
 
-bash -q mpi -n 24 -J "${BASE_NAME}-6_anchorFill" "bash 9_quast.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorFill" "bash 9_quast.sh"
 
 # false strands of anchorLong
 cat 6_anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
-    
+
 #bash 0_cleanup.sh
 
 ```
