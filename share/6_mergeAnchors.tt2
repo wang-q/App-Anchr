@@ -21,7 +21,7 @@ mkdir -p ${DIR_MERGE}
 
 # reverse sort files, so that Q30L60X80 will be infile_0
 anchr contained \
-    $( find . -type f -name "anchor.fasta" -path "*${DIR_PREFIX}*" | sort -r ) \
+    $( find . -type f -path "*${DIR_PREFIX}*" -name "anchor.fasta" -or -name "anchor.merge.fasta" | sort -r ) \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.non-contained.fasta
@@ -43,7 +43,7 @@ anchr contained \
 # merge others
 #----------------------------#
 anchr contained \
-    $( find . -type f -name "pe.others.fa" -path "*${DIR_PREFIX}*" | sort -r ) \
+    $( find . -type f -path "*${DIR_PREFIX}*" -name "pe.others.fa" -or -name "others.non-contained.fasta" | sort -r ) \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.non-contained.fasta
