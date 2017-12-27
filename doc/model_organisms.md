@@ -560,8 +560,8 @@ EOF
 
 md5sum --check sra_md5.txt
 
-ln -s SRR522246_1.fastq.gz R1.fq.gz
-ln -s SRR522246_2.fastq.gz R2.fq.gz
+ln -s SRR4074255_1.fastq.gz R1.fq.gz
+ln -s SRR4074255_2.fastq.gz R2.fq.gz
 ```
 
 * PacBio
@@ -656,6 +656,7 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=s288c
+QUEUE_NAME=mpi
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
@@ -679,66 +680,66 @@ anchr template \
 
 ```bash
 # Illumina QC
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
-
-# merge reads
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
 
 # preprocess Illumina reads
-bsub -q mpi -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+
+# merge reads
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
 
 # insert size
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # preprocess PacBio reads
-bsub -q mpi -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
 
 # reads stats
 bsub -w "done(${BASE_NAME}-2_trim) && done(${BASE_NAME}-3_trimlong)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
 
 # spades and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
 
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
 
 # quorum
 bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q mpi -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
 
 # down sampling, k-unitigs and anchors
 bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
 bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
 bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q mpi -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors" "bash 9_statAnchors.sh"
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q mpi -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 4_kunitigs"
 
 # canu
 bsub -w "done(${BASE_NAME}-3_trimlong)" \
-    -q mpi -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
 bsub -w "done(${BASE_NAME}-5_canu)" \
-    -q mpi -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
 
 # expand anchors
 bsub -w "done(${BASE_NAME}-4_anchors) && done(${BASE_NAME}-5_canu)" \
-    -q mpi -n 24 -J "${BASE_NAME}-6_anchorLong" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorLong" \
     "bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
 
 bsub -w "done(${BASE_NAME}-6_anchorLong)" \
-    -q mpi -n 24 -J "${BASE_NAME}-6_anchorFill" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorFill" \
     "bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
 
 ```
