@@ -17,9 +17,9 @@ log_debug "SR sizes"
 faops size SR.fasta > sr.chr.sizes
 
 #----------------------------#
-# Mapping unambiguous reads
+# Mapping reads
 #----------------------------#
-log_info "Mapping unambiguous reads"
+log_info "Mapping reads"
 
 log_debug "bbmap"
 bbmap.sh \
@@ -112,7 +112,7 @@ MAPPED_RATIO=$(
 save MAPPED_RATIO
 
 #----------------------------#
-# Properly covered parts of reads
+# Properly covered regions by reads
 #----------------------------#
 # at least [% opt.reads %] reads covered
 # Pos is 0-based
@@ -181,71 +181,75 @@ cat basecov.txt \
             }
         }
     ' \
-    > reads.covered.txt
+    > contig.covered.txt
 
 #----------------------------#
 # anchor
 #----------------------------#
-log_info "anchor - 95% covered"
-jrunlist cover reads.covered.txt -o reads.covered.yml
-jrunlist stat sr.chr.sizes reads.covered.yml -o reads.covered.csv
+log_info "anchor - proper covered regions"
 
-cat reads.covered.csv \
-    | perl -nla -F"," -e '
-        $F[0] eq q{chr} and next;
-        $F[0] eq q{all} and next;
-        $F[2] < [% opt.min %] and next;
-        $F[3] < 0.95 and next;
-        print $F[0];
-    ' \
-    | sort -n \
-    > anchor.txt
+OPT_FILL=[% opt.fill %]
+OPT_MIN=[% opt.min %]
+save OPT_FILL
+save OPT_MIN
 
-#----------------------------#
-# anchor2
-#----------------------------#
-log_info "anchor2 - longest properly covered regions"
-jrunlist span reads.covered.yml --op fill -n 10 -o regions.fill.yml
-jrunlist span regions.fill.yml --op excise -n [% opt.min %] -o regions.parts.yml
-jrunlist some regions.parts.yml \
-    <(
-        cat sr.chr.sizes \
-            | cut -f 1 \
-            | grep -Fx -f anchor.txt -v
-    ) \
-    -o regions.some.yml
+jrunlist cover contig.covered.txt -o contig.covered.yml
+jrunlist span contig.covered.yml --op fill -n [% opt.fill %] -o contig.fill.yml
+jrunlist span contig.fill.yml --op excise -n [% opt.min %] -o contig.proper.yml
 
+jrunlist stat sr.chr.sizes contig.proper.yml -o contig.proper.csv
+
+[% IF opt.longest -%]
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
-    my $yml = YAML::Syck::LoadFile( q{regions.some.yml} );
+    my $yml = YAML::Syck::LoadFile( q{contig.proper.yml} );
 
     for my $key ( sort keys $yml ) {
         my $runlist = $yml->{$key};
         my $intspan = AlignDB::IntSpan->new($runlist);
-        next if $intspan->size < [% opt.min %];
-
         my @sets = sort { $b->size <=> $a->size } $intspan->sets;
-
-        next if $sets[0]->size < [% opt.min %];
-        printf "%s:%s\n", $key, $sets[0];
+        printf "%s:%s\n", $key, $sets[0]->runlist;
     }
     ' \
-    > anchor2.list
+    > longest.regions.txt
 
-cat sr.chr.sizes \
-    | cut -f 1 \
-    | grep -Fx -f anchor.txt -v \
-    | grep -Fx -f <( cut -d: -f 1 anchor2.list ) -v \
-    > others.txt
+jrunlist cover longest.regions.txt -o anchor.yml
+[% ELSE %]
+perl -MYAML::Syck -MAlignDB::IntSpan -e '
+    my $yml = YAML::Syck::LoadFile( q{contig.proper.yml} );
+
+    for my $key ( sort keys $yml ) {
+        my $runlist = $yml->{$key};
+        printf "%s:%s\n", $key, $runlist;
+    }
+    ' \
+    > anchor.regions.txt
+
+ln -s contig.proper.yml anchor.yml
+[% END -%]
+
+#----------------------------#
+# others
+#----------------------------#
+jrunlist genome sr.chr.sizes -o sr.chr.yml
+jrunlist compare sr.chr.yml anchor.yml --op diff -o others.yml
+
+perl -MYAML::Syck -MAlignDB::IntSpan -e '
+    my $yml = YAML::Syck::LoadFile( q{others.yml} );
+
+    for my $key ( sort keys $yml ) {
+        my $runlist = $yml->{$key};
+        printf "%s:%s\n", $key, $runlist;
+    }
+    ' \
+    > others.regions.txt
 
 #----------------------------#
 # Split SR.fasta to anchor and others
 #----------------------------#
 log_info "pe.anchor.fa & pe.others.fa"
-faops some -l 0 SR.fasta anchor.txt pe.anchor.fa
 
-faops region -l 0 SR.fasta anchor2.list pe.anchor2.fa
-
-faops some -l 0 SR.fasta others.txt pe.others.fa
+faops region -l 0 SR.fasta anchor.regions.txt pe.anchor.fa
+faops region -l 0 SR.fasta others.regions.txt pe.others.fa
 
 #----------------------------#
 # Merging anchors
@@ -253,7 +257,6 @@ faops some -l 0 SR.fasta others.txt pe.others.fa
 log_info "Merging anchors"
 anchr contained \
     pe.anchor.fa \
-    pe.anchor2.fa \
     --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o anchor.non-contained.fasta
 anchr orient \

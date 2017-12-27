@@ -6,21 +6,23 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "selete anchors from k-unitigs or superreads";
+use constant abstract => "select anchors (proper covered regions) from contigs";
 
 sub opt_spec {
     return (
-        [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "anchors.sh" }, ],
-        [ 'min=i',        'minimal length of anchors',            { default => 1000, }, ],
-        [ 'reads=i',      'minimal coverage of reads',            { default => 2, }, ],
-        [ 'scale=i',      'the scale factor',                     { default => 3, }, ],
-        [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
+        [ "outfile|o=s",  "output filename, [stdout] for screen",   { default => "anchors.sh" }, ],
+        [ 'min=i',        'minimal length of anchors',              { default => 1000, }, ],
+        [ 'reads=i',      'minimal coverage of reads',              { default => 2, }, ],
+        [ 'scale=i',      'the scale factor k for MAD',             { default => 3, }, ],
+        [ 'fill=i',       'fill holes short than or equal to this', { default => 30, }, ],
+        [ 'longest',      'only keep the longest proper region', ],
+        [ 'parallel|p=i', 'number of threads',                      { default => 8, }, ],
         { show_defaults => 1, }
     );
 }
 
 sub usage_desc {
-    return "anchr anchors [options] <k_unitigs.fasta> <pe.cor.fa>";
+    return "anchr anchors [options] <contig.fasta> <pe.cor.fa>";
 }
 
 sub description {
