@@ -239,9 +239,12 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix" \
     --tadpole \
     --cov3 "40 80 all" \
     --qual3 "raw trim" \
+    --mergereads \
+    --tile \
     --parallel 16
 
 ```
@@ -297,6 +300,41 @@ bash 2_insertSize.sh
 |:-------|------:|-------:|------:|---------------:|
 | Q25L60 | 297.6 |    298 |  20.5 |         42.38% |
 | Q30L60 | 297.6 |    298 |  20.2 |         45.33% |
+
+* mergereads
+
+```bash
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bash 2_mergereads.sh
+
+```
+
+| Name           | N50 |    Sum |        # |
+|:---------------|----:|-------:|---------:|
+| clumped        | 151 |  1.72G | 11411654 |
+| filteredbytile | 151 |  1.67G | 11046432 |
+| trimmed        | 147 |  1.42G | 10363642 |
+| filtered       | 147 |  1.42G | 10363140 |
+| ecco           | 147 |  1.42G | 10363140 |
+| eccc           | 147 |  1.42G | 10363140 |
+| ecct           | 147 |  1.41G | 10308638 |
+| extended       | 186 |  1.82G | 10308638 |
+| merged         | 339 |  1.72G |  5084831 |
+| unmerged.raw   | 174 | 20.16M |   138976 |
+| unmerged       | 165 |  14.5M |   102452 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 270.8 |    277 |  25.0 |          9.79% |
+| ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.65% |
+
+```text
+#mergeReads
+#Matched	502	0.00484%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	502	0.00484%
+```
 
 * quorum
 
