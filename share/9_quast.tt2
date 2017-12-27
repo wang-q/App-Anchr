@@ -8,9 +8,9 @@ if [ -e 1_genome/genome.fa ]; then
     QUAST_TARGET+=" -R 1_genome/genome.fa "
 fi
 
-if [ -e 6_mergeSuperReadsAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeSuperReadsAnchors/anchor.merge.fasta "
-    QUAST_LABEL+="mergeSuperReadsAnchors,"
+if [ -e 6_mergeKunitigsAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 6_mergeKunitigsAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="6_mergeKunitigsAnchors,"
 fi
 
 if [ -e 6_mergeTadpoleAnchors/anchor.merge.fasta ]; then
