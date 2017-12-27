@@ -11,8 +11,6 @@ use constant abstract => "Run quorum to discard bad reads";
 sub opt_spec {
     return (
         [ "outfile|o=s", "output filename, [stdout] for screen", { default => "quorum.sh" }, ],
-        [ 'size|s=i',    'fragment size',                        { default => 300, }, ],
-        [ 'std|d=i',     'fragment size standard deviation',     { default => 30, }, ],
         [ 'jf=i',        'jellyfish hash size',                  { default => 500_000_000, }, ],
         [ 'estsize=s',   'estimated genome size',                { default => "auto", }, ],
         [   "adapter|a=s", "adapter file",
