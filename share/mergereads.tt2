@@ -55,7 +55,7 @@ rm temp.fq.gz; ln -s trimmed.fq.gz temp.fq.gz
 bbduk.sh \
     in=temp.fq.gz \
     out=filtered.fq.gz \
-    ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
+    ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifact' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
     threads=[% opt.parallel %] \
     k=[% opt.matchk %] hdist=1 ordered overwrite \
     stats=filtering.stats.txt 
