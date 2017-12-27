@@ -21,6 +21,9 @@ anchr mergereads \
 [% IF opt.prefilter -%]
     --prefilter [% opt.prefilter %] \
 [% END -%]
+[% IF opt.filter -%]
+    --filter [% opt.filter %] \
+[% END -%]
 [% IF opt.ecphase -%]
     --ecphase [% opt.ecphase %] \
 [% END -%]
