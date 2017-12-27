@@ -4,9 +4,10 @@ log_warn 9_statAnchors.sh
 #----------------------------#
 # set parameters
 #----------------------------#
-USAGE="Usage: $0 DIR_PREFIX"
+USAGE="Usage: $0 [DIR_PREFIX] [FILENAME_MD]"
 
 DIR_PREFIX=${1:-"4_kunitigs"}
+FILENAME_MD=${2:-"statAnchors.md"}
 
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     "Name" "CovCor" "Mapped%" \
@@ -14,9 +15,9 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | 
     "N50Others" "Sum" "#" \
     "median" "MAD" "lower" "upper" \
     "Kmer" "RunTimeKU" "RunTimeAN" \
-    > statAnchors.md
+    > ${FILENAME_MD}
 printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
-    >> statAnchors.md
+    >> ${FILENAME_MD}
 
 for Q in [% opt.qual2 %]; do
     for L in [% opt.len2 %]; do
@@ -52,6 +53,6 @@ for Q in [% opt.qual2 %]; do
 	    done
     done
 done \
->> statAnchors.md
+>> ${FILENAME_MD}
 
-cat statAnchors.md
+cat ${FILENAME_MD}
