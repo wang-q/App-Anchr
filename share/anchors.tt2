@@ -193,10 +193,54 @@ OPT_MIN=[% opt.min %]
 save OPT_FILL
 save OPT_MIN
 
+# covered region
 jrunlist cover contig.covered.txt -o contig.covered.yml
-jrunlist span contig.covered.yml --op fill -n [% opt.fill %] -o contig.fill.yml
-jrunlist span contig.fill.yml --op excise -n [% opt.min %] -o contig.proper.yml
+jrunlist stat sr.chr.sizes contig.covered.yml -o contig.covered.csv
 
+# repeats on the edge hurt assembling mostly, so just fill holes
+
+# fill all holes of 95% covered contigs
+cat contig.covered.csv \
+    | perl -nla -F"," -e '
+        $F[0] eq q{chr} and next;
+        $F[0] eq q{all} and next;
+        $F[2] < [% opt.min %] and next;
+        $F[3] < [% opt.ratio %] and next;
+        print $F[0];
+    ' \
+    | sort -n \
+    > fill_all.txt
+
+jrunlist some contig.covered.yml fill_all.txt -o contig.fill_all.yml
+jrunlist span contig.fill_all.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
+jrunlist span contig.fill_all.1.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
+
+# fill small holes
+cat sr.chr.sizes \
+    | cut -f 1 \
+    | grep -Fx -f fill_all.txt -v \
+    > fill_hole.txt
+
+jrunlist some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
+jrunlist span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
+jrunlist span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill_hole.2.yml
+
+# get proper regions
+perl -MYAML::Syck -MAlignDB::IntSpan -e '
+    my $yml1 = YAML::Syck::LoadFile( q{contig.fill_all.2.yml} );
+    my $yml2 = YAML::Syck::LoadFile( q{contig.fill_hole.2.yml} );
+
+    my $yml = {};
+
+    for my $key ( sort keys $yml1 ) {
+        $yml->{$key} = $yml1->{$key};
+    }
+    for my $key ( sort keys $yml2 ) {
+        $yml->{$key} = $yml2->{$key};
+    }
+
+    YAML::Syck::DumpFile( q{contig.proper.yml}, $yml );
+    '
 jrunlist stat sr.chr.sizes contig.proper.yml -o contig.proper.csv
 
 [% IF opt.longest -%]
