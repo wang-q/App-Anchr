@@ -987,23 +987,27 @@ contam_159	127	0.00086%
 | Xall.trim.corrected |   7965 |   450.5M | 66099 |
 | Xall.trim.contig    | 813374 | 12360766 |    26 |
 
-| Name                   |    N50 |      Sum |    # |
-|:-----------------------|-------:|---------:|-----:|
-| Genome                 | 924431 | 12157105 |   17 |
-| Paralogs               |   3851 |  1059148 |  366 |
-| anchors                |  25677 | 11130765 |  825 |
-| others                 |   1419 |  3871035 | 3008 |
-| anchorLong             |  27634 | 11058259 |  719 |
-| anchorFill             | 259160 | 11320939 |   74 |
-| canu_Xall-trim         | 813374 | 12360766 |   26 |
-| tadpole.Q25L60         |   7705 | 11413019 | 3654 |
-| tadpole.Q30L60         |   8348 | 11410696 | 3501 |
-| spades.contig          |  83977 | 11775064 | 1710 |
-| spades.scaffold        |  93363 | 11775854 | 1676 |
-| spades.non-contained   |  85760 | 11511681 |  296 |
-| platanus.contig        |   5983 | 12437850 | 7727 |
-| platanus.scaffold      |  55443 | 12073445 | 4735 |
-| platanus.non-contained |  59263 | 11404921 |  360 |
+| Name                           |    N50 |      Sum |    # |
+|:-------------------------------|-------:|---------:|-----:|
+| Genome                         | 924431 | 12157105 |   17 |
+| Paralogs                       |   3851 |  1059148 |  366 |
+| 6_mergeKunitigsAnchors.anchors |  25677 | 11142463 |  826 |
+| 6_mergeKunitigsAnchors.others  |   1420 |  3869954 | 3007 |
+| 6_mergeTadpoleAnchors.anchors  |  23222 | 11111559 |  933 |
+| 6_mergeTadpoleAnchors.others   |   1386 |  3177801 | 2536 |
+| 6_mergeAnchors.anchors         |  25677 | 11130765 |  825 |
+| 6_mergeAnchors.others          |   1419 |  3871035 | 3008 |
+| anchorLong                     |  27634 | 11058259 |  719 |
+| anchorFill                     | 259160 | 11320939 |   74 |
+| canu_Xall-trim                 | 813374 | 12360766 |   26 |
+| tadpole.Q25L60                 |   7705 | 11413019 | 3654 |
+| tadpole.Q30L60                 |   8348 | 11410696 | 3501 |
+| spades.contig                  |  83977 | 11775064 | 1710 |
+| spades.scaffold                |  93363 | 11775854 | 1676 |
+| spades.non-contained           |  85760 | 11511681 |  296 |
+| platanus.contig                |   5983 | 12437850 | 7727 |
+| platanus.scaffold              |  55443 | 12073445 | 4735 |
+| platanus.non-contained         |  59263 | 11404921 |  360 |
 
 # *Drosophila melanogaster* iso-1
 
@@ -1152,6 +1156,7 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=iso_1
+QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
@@ -1164,8 +1169,12 @@ anchr template \
     --cov2 "40 50 60 70 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix" \
+    --tadpole \
     --cov3 "all" \
     --qual3 "trim" \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 ```
@@ -1237,24 +1246,27 @@ Reverse_adapter	21644	0.01628%
 | Xall.trim.corrected |    13405 |     4.25G | 433377 |
 | Xall.trim.contig    | 18542648 | 151436172 |    598 |
 
-
-| Name                   |      N50 |       Sum |      # |
-|:-----------------------|---------:|----------:|-------:|
-| Genome                 | 25286936 | 137567477 |      8 |
-| Paralogs               |     4031 |  13665900 |   4492 |
-| anchors                |    26562 | 117385710 |   9637 |
-| others                 |      890 |  15559454 |  17450 |
-| anchorLong             |    38892 | 113750098 |   7028 |
-| anchorFill             |   257427 | 113856141 |   1785 |
-| canu_Xall-trim         | 18542648 | 151436172 |    598 |
-| tadpole.Q25L60         |     5293 | 117636764 |  56413 |
-| tadpole.Q30L60         |     6462 | 117560164 |  51234 |
-| spades.contig          |   121722 | 135713005 | 120270 |
-| spades.scaffold        |   134650 | 135719566 | 119991 |
-| spades.non-contained   |   134650 | 121328458 |   3726 |
-| platanus.contig        |    11503 | 156820565 | 359399 |
-| platanus.scaffold      |   146404 | 129134232 |  71416 |
-| platanus.non-contained |   161200 | 119999445 |   3216 |
+| Name                           |      N50 |       Sum |      # |
+|:-------------------------------|---------:|----------:|-------:|
+| Genome                         | 25286936 | 137567477 |      8 |
+| Paralogs                       |     4031 |  13665900 |   4492 |
+| 6_mergeKunitigsAnchors.anchors |    30390 | 116413426 |   9012 |
+| 6_mergeKunitigsAnchors.others  |     1127 |   9854818 |   7645 |
+| 6_mergeTadpoleAnchors.anchors  |    27465 | 116048350 |   9646 |
+| 6_mergeTadpoleAnchors.others   |     1132 |   6422796 |   4742 |
+| 6_mergeAnchors.anchors         |    30394 | 116384236 |   9010 |
+| 6_mergeAnchors.others          |     1127 |   9857282 |   7647 |
+| anchorLong                     |    33534 | 113084526 |   7880 |
+| anchorFill                     |   259717 | 114600236 |   1848 |
+| canu_Xall-trim                 | 18542648 | 151436172 |    598 |
+| tadpole.Q25L60                 |     5293 | 117636764 |  56413 |
+| tadpole.Q30L60                 |     6462 | 117560164 |  51234 |
+| spades.contig                  |   121722 | 135713005 | 120270 |
+| spades.scaffold                |   134650 | 135719566 | 119991 |
+| spades.non-contained           |   134650 | 121328458 |   3726 |
+| platanus.contig                |    11503 | 156820565 | 359399 |
+| platanus.scaffold              |   146404 | 129134232 |  71416 |
+| platanus.non-contained         |   161200 | 119999445 |   3216 |
 
 # *Caenorhabditis elegans* N2
 
@@ -1262,14 +1274,6 @@ Reverse_adapter	21644	0.01628%
 * Proportion of paralogs (> 1000 bp): 0.0472
 
 ## n2: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=n2
-
-```
 
 * Reference genome
 
@@ -1389,8 +1393,12 @@ anchr template \
     --cov2 "40 50 60 all" \
     --qual2 "25 30" \
     --len2 "60" \
+    --filter "adapter,phix" \
+    --tadpole \
     --cov3 "all" \
     --qual3 "trim" \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 ```
@@ -1491,46 +1499,11 @@ BASE_NAME=col_0
 ```bash
 mkdir -p ~/data/anchr/col_0/1_genome
 cd ~/data/anchr/col_0/1_genome
+
 wget -N ftp://ftp.ensemblgenomes.org/pub/release-29/plants/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz
 faops order Arabidopsis_thaliana.TAIR10.29.dna_sm.toplevel.fa.gz \
     <(for chr in {1,2,3,4,5,Mt,Pt}; do echo $chr; done) \
     genome.fa
-```
-
-* Illumina HiSeq (100 bp)
-
-    [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246[accn])
-
-```bash
-# Downloading from ena with aria2
-mkdir -p ~/data/anchr/col_0/2_illumina
-cd ~/data/anchr/col_0/2_illumina
-
-cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
-ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR616/SRR616966
-EOF
-
-aria2c -x 9 -s 3 -c -i sra_ftp.txt
-
-cat << EOF > sra_md5.txt
-b884e83b47c485c9a07f732b3805e7cf    SRR611086
-102db119d1040c3bf85af5e4da6e456d    SRR616966
-EOF
-
-md5sum --check sra_md5.txt
-
-for sra in SRR61{1086,6966}; do
-    echo ${sra}
-    fastq-dump --split-files ./${sra}
-done
-
-cat SRR61{1086,6966}_1.fastq > R1.fq
-cat SRR61{1086,6966}_2.fastq > R2.fq
-
-find . -name "*.fq" | parallel -j 2 pigz -p 8
-rm *.fastq
-
 ```
 
 * Illumina MiSeq
@@ -1816,3 +1789,102 @@ Reverse_adapter	4012	0.00993%
 | platanus.contig        |    15019 | 139807772 | 106870 |
 | platanus.scaffold      |   192019 | 128497152 |  67429 |
 | platanus.non-contained |   217851 | 116431399 |   2050 |
+
+# col_0H
+
+## col_0H: download
+
+* Reference genome
+
+```bash
+mkdir -p ${HOME}/data/anchr/col_0H
+cd ${HOME}/data/anchr/col_0H
+
+mkdir -p 1_genome
+cd 1_genome
+
+cp ~/data/anchr/col_0/1_genome/genome.fa .
+cp ~/data/anchr/col_0/1_genome/paralogs.fas .
+
+```
+
+* Illumina HiSeq (100 bp)
+
+    [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246[accn])
+
+```bash
+cd ${HOME}/data/anchr/col_0H
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+# Downloading from ena with aria2
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR611/SRR611086
+ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR616/SRR616966
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+b884e83b47c485c9a07f732b3805e7cf    SRR611086
+102db119d1040c3bf85af5e4da6e456d    SRR616966
+EOF
+
+md5sum --check sra_md5.txt
+
+for sra in SRR61{1086,6966}; do
+    echo ${sra}
+    fastq-dump --split-files ./${sra}
+done
+
+cat SRR61{1086,6966}_1.fastq > R1.fq
+cat SRR61{1086,6966}_2.fastq > R2.fq
+
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+rm *.fastq
+
+```
+
+## col_0H: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/anchr/col_0H/ \
+    wangq@202.119.37.251:data/anchr/col_0H
+
+#rsync -avP wangq@202.119.37.251:data/anchr/col_0H/ ~/data/anchr/col_0H
+
+```
+
+* template
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=col_0H
+QUEUE_NAME=largemem
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 119667750 \
+    --is_euk \
+    --trim2 "--uniq " \
+    --cov2 "40 50 60 all" \
+    --qual2 "25 30" \
+    --len2 "60" \
+    --filter "adapter,phix" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,3" \
+    --parallel 24
+
+```
+
+## col_0H: run
+
+Same as [s288c: run](#s288c-run)
