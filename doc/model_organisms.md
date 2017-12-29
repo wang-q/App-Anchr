@@ -143,19 +143,14 @@ bax2bam --help
 
 ## e_coli: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=e_coli
-
-```
-
 * Reference genome
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
-cd ${WORKING_DIR}/${BASE_NAME}/1_genome
+mkdir -p ${HOME}/data/anchr/e_coli
+cd ${HOME}/data/anchr/e_coli
+
+mkdir -p 1_genome
+cd 1_genome
 
 curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=U00096.3&rettype=fasta&retmode=txt" \
     > U00096.fa
@@ -167,14 +162,16 @@ cat U00096.fa \
     ' \
     > genome.fa
 
-cp ${WORKING_DIR}/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
+cp ${HOME}/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
 ```
 
 * Illumina
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/2_illumina
-cd ${WORKING_DIR}/${BASE_NAME}/2_illumina
+cd ${HOME}/data/anchr/e_coli
+
+mkdir -p 2_illumina
+cd 2_illumina
 
 aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R1.fastq.gz
 aria2c -x 9 -s 3 -c ftp://webdata:webdata@ussd-ftp.illumina.com/Data/SequencingRuns/MG1655/MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz
@@ -191,8 +188,10 @@ ln -s MiSeq_Ecoli_MG1655_110721_PF_R2.fastq.gz R2.fq.gz
     reagent.
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
-cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${HOME}/data/anchr/e_coli
+
+mkdir -p 3_pacbio
+cd 3_pacbio
 
 aria2c -x 9 -s 3 -c https://s3.amazonaws.com/files.pacb.com/datasets/secondary-analysis/e-coli-k12-P6C4/p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
 
@@ -555,19 +554,11 @@ bash 9_quast.sh
 
 ## s288c: download
 
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=s288c
-
-```
-
 * Reference genome
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}
-cd ${WORKING_DIR}/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/s288c
+cd ${HOME}/data/anchr/s288c
 
 mkdir -p 1_genome
 cd 1_genome
@@ -585,7 +576,7 @@ cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_gen
     PRJNA340312, SRX2058864
 
 ```bash
-cd ${WORKING_DIR}/${BASE_NAME}
+cd ${HOME}/data/anchr/s288c
 
 mkdir -p 2_illumina
 cd 2_illumina
@@ -619,8 +610,10 @@ ln -s SRR4074255_2.fastq.gz R2.fq.gz
     with RS II and P6C4.
 
 ```bash
-mkdir -p ${WORKING_DIR}/${BASE_NAME}/3_pacbio
-cd ${WORKING_DIR}/${BASE_NAME}/3_pacbio
+cd ${HOME}/data/anchr/s288c
+
+mkdir -p 3_pacbio
+cd 3_pacbio
 
 # download from sra
 cat <<EOF > hdf5.txt
@@ -1018,14 +1011,6 @@ contam_159	127	0.00086%
 * Proportion of paralogs (> 1000 bp): 0.0661
 
 ## iso_1: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=iso_1
-
-```
 
 * Reference genome
 
