@@ -209,7 +209,6 @@ BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed '
 bbduk.sh \
     in=pe.cor.raw \
     out=pe.cor.fa \
-    outm=matched.fa \
     overwrite=t \
     ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifacts' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
     k=27 hdist=1 stats=filtering.stats.txt
