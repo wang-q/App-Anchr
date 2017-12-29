@@ -17,15 +17,18 @@ if [ -e 1_genome/paralogs.fas ]; then
 fi
 
 # anchors
-if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "anchors";   faops n50 -H -S -C 6_mergeAnchors/anchor.merge.fasta;) >> statFinal.md
-fi
-if [ -e 6_mergeAnchors/others.non-contained.fasta ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "others";   faops n50 -H -S -C 6_mergeAnchors/others.non-contained.fasta;) >> statFinal.md
-fi
+for D in 6_mergeKunitigsAnchors 6_mergeTadpoleAnchors 6_mergeAnchors; do
+    if [ -e ${D}/anchor.merge.fasta ]; then
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "${D}.anchors";   faops n50 -H -S -C ${D}/anchor.merge.fasta;) >> statFinal.md
+    fi
+    if [ -e ${D}/others.non-contained.fasta ]; then
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo "${D}.others";   faops n50 -H -S -C ${D}/others.non-contained.fasta;) >> statFinal.md
+    fi
+done
 
+# expanded anchors
 if [ -e 6_anchorLong/contig.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "anchorLong"; faops n50 -H -S -C 6_anchorLong/contig.fasta;) >> statFinal.md
