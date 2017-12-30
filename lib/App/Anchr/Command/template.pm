@@ -1245,6 +1245,7 @@ rm 3_pacbio/pacbio.X*.fasta
 # down sampling
 rm -fr 4_Q*
 rm -fr 4_kunitigs*
+rm -fr 4_tadpole*
 
 # canu
 rm -fr 5_canu*

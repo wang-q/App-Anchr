@@ -59,16 +59,15 @@ if [ -e 9_statAnchors.sh ]; then
     bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md
 fi
 
-if [ -e 4_kunitigs.sh ]; then
+if [ -e 4_tadpole.sh ]; then
     bash 4_tadpole.sh
 fi
-if [ -e 4_anchors.sh ]; then
+if [ -e 4_tadpoleAnchors.sh ]; then
     bash 4_tadpoleAnchors.sh
 fi
 if [ -e 9_statAnchors.sh ]; then
     bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md
 fi
-
 [% ELSE -%]
 if [ -e 9_statAnchors.sh ]; then
     bash 9_statAnchors.sh;
