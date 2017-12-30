@@ -48,7 +48,8 @@ bbduk.sh \
     out=trimmed.fq.gz \
     ref=${BBTOOLS_RESOURCES}/adapters.fa \
     maxns=0 ktrim=r k=[% opt.trimk %] mink=7 hdist=1 tbo tpe \
-    minlen=[% opt.len %] ftm=5 qtrim=r trimq=[% opt.trimq %] ordered overwrite
+    minlen=[% opt.len %] ftm=5 qtrim=r trimq=[% opt.trimq %] ordered overwrite \
+    stats=trimming.stats.txt
 rm temp.fq.gz; ln -s trimmed.fq.gz temp.fq.gz
 
 # Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
