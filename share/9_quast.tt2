@@ -10,7 +10,7 @@ fi
 
 if [ -e 6_mergeKunitigsAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 6_mergeKunitigsAnchors/anchor.merge.fasta "
-    QUAST_LABEL+="6_mergeKunitigsAnchors,"
+    QUAST_LABEL+="mergeKunitigsAnchors,"
 fi
 
 if [ -e 6_mergeTadpoleAnchors/anchor.merge.fasta ]; then
