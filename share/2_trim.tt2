@@ -34,8 +34,8 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     anchr trim \
         -q {1} -l {2} \
         \$(
-            if [ -e ../R1.scythe.fq.gz ]; then
-                echo '../R1.scythe.fq.gz [% IF not opt.se %]../R2.scythe.fq.gz[% END %]'
+            if [ -e ../R1.bbduk.fq.gz ]; then
+                echo '../R1.bbduk.fq.gz [% IF not opt.se %]../R2.bbduk.fq.gz[% END %]'
             elif [ -e ../R1.sample.fq.gz ]; then
                 echo '../R1.sample.fq.gz [% IF not opt.se %]../R2.sample.fq.gz[% END %]'
             elif [ -e ../R1.shuffle.fq.gz ]; then

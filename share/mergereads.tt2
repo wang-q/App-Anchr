@@ -23,7 +23,7 @@ clumpify.sh \
 rm temp.fq.gz; ln -s clumped.fq.gz temp.fq.gz
 
 [% IF opt.tile -%]
-# Remove low-quality reads by position
+# Remove low-quality reads by positions in flowcell
 filterbytile.sh \
     in=temp.fq.gz out=filteredbytile.fq.gz \
     threads=[% opt.parallel %] \

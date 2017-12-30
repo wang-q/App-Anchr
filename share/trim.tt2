@@ -112,29 +112,35 @@ fi
 [% prev = 'sample' -%]
 [% END -%]
 
-[% IF opt.scythe -%]
-[% current = 'scythe' -%]
+[% IF opt.bbduk -%]
+[% current = 'bbduk' -%]
 #----------------------------#
 # [% current %]
 #----------------------------#
 log_info "[% current %]"
 if [ ! -e R1.[% current %].fq.gz ]; then
-    parallel --no-run-if-empty -j 2 "
-        scythe \
+    bbduk.sh \
 [% IF prev -%]
-            {}.[% prev %].fq.gz \
-[% ELSE -%]
-            [% args.0 %] \
+        in=R1.[% prev %].fq.gz \
+[% IF args.1 -%]
+        in2=R2.[% prev %].fq.gz \
 [% END -%]
-            -q sanger \
-            -M [% opt.len %] \
-            -a [% opt.adapter %] \
-            --quiet \
-            | pigz -p [% opt.parallel %] -c \
-            > {}.[% current %].fq.gz
-        " ::: R1 [% IF args.1 %]R2[% END %]
+[% ELSE -%]
+        in=[% args.0 %] \
+[% IF args.1 -%]
+        in2=[% args.1 %] \
+[% END -%]
+[% END -%]
+        out=R1.[% current %].fq.gz \
+[% IF args.1 -%]
+        out2=R2.[% current %].fq.gz \
+[% END -%]
+        ref=[% opt.adapter %] \
+        threads=[% opt.parallel %] \
+        ktrim=r k=23 mink=7 hdist=1 tbo tpe \
+        ftm=5 ordered overwrite
 fi
-[% prev = 'scythe' -%]
+[% prev = 'bbduk' -%]
 [% END -%]
 
 [% IF not opt.nosickle -%]

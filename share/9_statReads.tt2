@@ -36,9 +36,9 @@ if [ -e 2_illumina/R1.sample.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz [% IF not opt.se %]2_illumina/R2.sample.fq.gz[% END %];) >> statReads.md
 fi
-if [ -e 2_illumina/R1.scythe.fq.gz ]; then
+if [ -e 2_illumina/R1.bbduk.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "scythe";  stat_format 2_illumina/R1.scythe.fq.gz [% IF not opt.se %]2_illumina/R2.scythe.fq.gz[% END %];) >> statReads.md
+        $(echo "bbduk";  stat_format 2_illumina/R1.bbduk.fq.gz [% IF not opt.se %]2_illumina/R2.bbduk.fq.gz[% END %];) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "

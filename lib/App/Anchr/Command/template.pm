@@ -1116,7 +1116,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         rm 2_illumina/{1}.{2}.fq.gz;
         touch 2_illumina/{1}.{2}.fq.gz;
     fi
-    " ::: R1 R2  ::: uniq shuffle sample scythe
+    " ::: R1 R2  ::: uniq shuffle sample bbduk
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
@@ -1233,7 +1233,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
         rm 2_illumina/{1}.{2}.fq.gz;
     fi
-    " ::: R1 R2  ::: uniq shuffle sample scythe
+    " ::: R1 R2  ::: uniq shuffle sample bbduk
 
 # pacbio
 rm -fr 3_pacbio/bam

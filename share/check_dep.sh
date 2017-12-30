@@ -29,12 +29,6 @@ hash sickle 2>/dev/null || {
     exit 1;
 }
 
-hash scythe 2>/dev/null || {
-    echo >&2 "scythe is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/scythe";
-    exit 1;
-}
-
 hash faops 2>/dev/null || {
     echo >&2 "faops is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install wang-q/tap/faops";

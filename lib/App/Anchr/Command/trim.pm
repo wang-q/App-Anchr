@@ -20,7 +20,7 @@ sub opt_spec {
         [ "uniq",     "the uniq step", ],
         [ "shuffle",  "the shuffle step", ],
         [ "sample=i", "the sample step", ],
-        [ "scythe",   "the scythe step", ],
+        [ "bbduk",    "the bbduk step", ],
         [ "nosickle", "skip the sickle step", ],
         [ "parallel|p=i", "number of threads", { default => 8 }, ],
         { show_defaults => 1, }
