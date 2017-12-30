@@ -1168,12 +1168,12 @@ if [ -e statReads.md ]; then
     cat statReads.md;
     echo;
 fi
-if [ -e 2_illumina/mergereads/statMergeReads.md ]; then
-    cat 2_illumina/mergereads/statMergeReads.md;
-    echo;
-fi
 if [ -e statInsertSize.md ]; then
     cat statInsertSize.md;
+    echo;
+fi
+if [ -e 2_illumina/mergereads/statMergeReads.md ]; then
+    cat 2_illumina/mergereads/statMergeReads.md;
     echo;
 fi
 if [ -e statQuorum.md ]; then
