@@ -1235,6 +1235,8 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
     " ::: R1 R2  ::: uniq shuffle sample bbduk
 
+rm -fr 2_illumina/mergereads/
+
 # pacbio
 rm -fr 3_pacbio/bam
 rm -fr 3_pacbio/fasta
