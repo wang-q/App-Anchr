@@ -210,13 +210,14 @@ cat contig.covered.csv \
     > fill_all.txt
 
 jrunlist some contig.covered.yml fill_all.txt -o contig.fill_all.yml
-ln -s contig.fill_all.yml contig.fill_all.temp.yml
+rm contig.fill_all.temp.yml; ln -s contig.fill_all.yml contig.fill_all.temp.yml
 
 if [ -s fill_all.txt ]; then
     jrunlist span contig.fill_all.temp.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
-    ln -s contig.fill_all.1.yml contig.fill_all.temp.yml
+    rm contig.fill_all.temp.yml; ln -s contig.fill_all.1.yml contig.fill_all.temp.yml
+
     jrunlist span contig.fill_all.temp.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
-    ln -s contig.fill_all.2.yml contig.fill_all.temp.yml
+    rm contig.fill_all.temp.yml; ln -s contig.fill_all.2.yml contig.fill_all.temp.yml
 fi
 
 # fill small holes
@@ -226,13 +227,20 @@ cat sr.chr.sizes \
     > fill_hole.txt
 
 jrunlist some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
-jrunlist span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
-jrunlist span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill_hole.2.yml
+rm contig.fill_hole.temp.yml; ln -s contig.fill_hole.yml contig.fill_hole.temp.yml
+
+if [ -s fill_hole.txt ]; then
+    jrunlist span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
+    rm contig.fill_hole.temp.yml; ln -s contig.fill_hole.1.yml contig.fill_hole.temp.yml
+
+    jrunlist span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill_hole.2.yml
+    rm contig.fill_hole.temp.yml; ln -s contig.fill_hole.2.yml contig.fill_hole.temp.yml
+fi
 
 # get proper regions
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml1 = YAML::Syck::LoadFile( q{contig.fill_all.temp.yml} );
-    my $yml2 = YAML::Syck::LoadFile( q{contig.fill_hole.2.yml} );
+    my $yml2 = YAML::Syck::LoadFile( q{contig.fill_hole.temp.yml} );
 
     my $yml = {};
 
