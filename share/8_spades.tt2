@@ -63,6 +63,7 @@ anchr anchors \
 [% ELSE -%]
     ${DIR_PREFIX}/R1.sickle.fq.gz \
 [% END -%]
-    -p [% opt.parallel2 %] \
+    -p [% opt.parallel %] \
+    --ratio 0.99 \
     -o anchors.sh
 bash anchors.sh
