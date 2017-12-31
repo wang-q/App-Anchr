@@ -55,7 +55,7 @@ mkdir -p 8_spades/anchor
 cd 8_spades/anchor
 
 anchr anchors \
-    ../spades.non-contained.fasta \
+    ../scaffolds.fasta \
 [% IF not opt.se -%]
     ${DIR_PREFIX}/R1.sickle.fq.gz \
     ${DIR_PREFIX}/R2.sickle.fq.gz \
@@ -64,6 +64,6 @@ anchr anchors \
     ${DIR_PREFIX}/R1.sickle.fq.gz \
 [% END -%]
     -p [% opt.parallel %] \
-    --ratio 0.99 \
+    --ratio 0.98 \
     -o anchors.sh
 bash anchors.sh
