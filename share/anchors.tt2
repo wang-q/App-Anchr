@@ -18,12 +18,14 @@ faops size SR.fasta > sr.chr.sizes
 log_info "Mapping reads"
 
 log_debug "bbmap"
-bbmap.sh \
+rm *.sam
+rm basecov.txt
+bbwrap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
     ambiguous=all \
-    nodisk \
-    ref=SR.fasta in=[% FOREACH file IN args.slice(1, -1) %][% file %],[% END %] \
+    nodisk append \
+    ref=SR.fasta in=[% args.slice(1, -1).join(",") %] \
     outm=mapped.sam outu=unmapped.sam \
     basecov=basecov.txt \
     1>bbmap.err 2>&1
