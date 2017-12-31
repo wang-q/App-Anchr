@@ -3,7 +3,7 @@
 #----------------------------#
 # Prepare SR
 #----------------------------#
-log_info Symlink/copy input files
+log_info Symlink input files
 
 if [ ! -e SR.fasta ]; then
     ln -s [% args.0 %] SR.fasta
@@ -27,7 +27,7 @@ bbmap.sh \
     threads=[% opt.parallel %] \
     ambiguous=all \
     nodisk \
-    ref=SR.fasta in=pe.cor.fa \
+    ref=SR.fasta in=[% FOREACH file IN args.slice(1, -1) %][% file %],[% END %] \
     outm=mapped.sam outu=unmapped.sam \
     basecov=basecov.txt \
     1>bbmap.err 2>&1
