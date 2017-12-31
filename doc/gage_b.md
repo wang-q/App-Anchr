@@ -294,7 +294,8 @@ contam_250	311	0.01659%
     * Proportion of paralogs (> 1000 bp): 0.0286
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Rsph
+cd ${HOME}/data/anchr/Rsph
 
 mkdir -p 1_genome
 cd 1_genome
@@ -323,7 +324,7 @@ cp ~/data/anchr/paralogs/gage/Results/Rsph/Rsph.multi.fas paralogs.fas
     Download from GAGE-B site.
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Rsph
 
 mkdir -p 2_illumina
 cd 2_illumina
@@ -347,7 +348,7 @@ rm -fr raw
 * GAGE-B assemblies
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Rsph
 
 mkdir -p 8_competitor
 cd 8_competitor
@@ -368,22 +369,27 @@ tar xvfz R_sphaeroides_MiSeq.tar.gz velvet_ctg.fasta
 ## Rsph: run
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Rsph
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
     --genome 4602977 \
-    --trim2 "--uniq --shuffle --scythe " \
-    --cov2 "all" \
+    --trim2 "--uniq --shuffle --bbduk" \
+    --cov2 "30 all" \
     --qual2 "20 25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,3" \
     --parallel 24
 
 # run
 bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
-
-#bash 0_cleanup.sh
 
 # quast
 rm -fr 9_quast_competitor
@@ -403,6 +409,8 @@ quast --no-check --threads 16 \
     --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
     -o 9_quast_competitor
 
+# bash 0_cleanup.sh
+
 ```
 
 | Name     |     N50 |     Sum |       # |
@@ -412,41 +420,101 @@ quast --no-check --threads 16 \
 | Illumina |     251 |  451.8M | 1800000 |
 | uniq     |     251 |  447.9M | 1784446 |
 | shuffle  |     251 |  447.9M | 1784446 |
-| scythe   |     251 | 343.91M | 1784446 |
-| Q20L60   |     145 | 174.27M | 1280932 |
-| Q25L60   |     134 | 144.87M | 1149640 |
-| Q30L60   |     117 | 126.09M | 1149405 |
+| bbduk    |     250 | 415.69M | 1704576 |
+| Q20L60   |     144 | 173.66M | 1285528 |
+| Q25L60   |     133 |  144.6M | 1153408 |
+| Q30L60   |     116 | 125.79M | 1150580 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q20L60 | 387.9 |    419 | 102.9 |         37.53% |
+| Q25L60 | 389.1 |    419 |  98.7 |         42.10% |
+| Q30L60 | 387.4 |    419 |  91.4 |         41.15% |
+
+| Name         | N50 |     Sum |       # |
+|:-------------|----:|--------:|--------:|
+| clumped      | 251 | 447.19M | 1781618 |
+| trimmed      | 148 |  200.1M | 1452703 |
+| filtered     | 148 |  200.1M | 1452699 |
+| ecco         | 148 |    200M | 1452698 |
+| ecct         | 148 | 198.77M | 1443497 |
+| extended     | 186 | 255.85M | 1443497 |
+| merged       | 456 | 170.89M |  405820 |
+| unmerged.raw | 175 | 104.98M |  631856 |
+| unmerged     | 158 |  86.04M |  590349 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 197.9 |    197 |  63.5 |          6.91% |
+| ihist.merge.txt  | 421.1 |    453 |  80.9 |         56.23% |
+
+```text
+#mergeReads
+#Matched	4	0.00028%
+#Name	Reads	ReadsPct
+```
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 |  37.9 |   33.7 |  11.120% |     137 | "37" |  4.6M | 4.55M |     0.99 | 0:00'29'' |
-| Q25L60 |  31.5 |   30.1 |   4.500% |     127 | "35" |  4.6M | 4.53M |     0.99 | 0:00'25'' |
-| Q30L60 |  27.4 |   26.8 |   2.454% |     112 | "31" |  4.6M | 4.52M |     0.98 | 0:00'24'' |
+| Q20L60 |  37.7 |   33.7 |   10.65% |     136 | "37" |  4.6M | 4.55M |     0.99 | 0:00'24'' |
+| Q25L60 |  31.4 |   30.0 |    4.43% |     126 | "33" |  4.6M | 4.53M |     0.98 | 0:00'21'' |
+| Q30L60 |  27.4 |   26.7 |    2.40% |     111 | "31" |  4.6M | 4.52M |     0.98 | 0:00'19'' |
 
-| Name           | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q20L60XallP000 |   33.7 |     22439 | 4.08M | 316 |      5013 | 502.59K | 188 |   29.0 | 3.0 |   6.7 |  57.0 | "31,41,51,61,71,81" | 0:01'02'' | 0:00'46'' |
-| Q25L60XallP000 |   30.1 |     16602 | 4.04M | 392 |      9581 | 602.48K | 193 |   26.0 | 3.0 |   5.7 |  52.0 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'45'' |
-| Q30L60XallP000 |   26.8 |      9711 | 3.95M | 593 |      7245 |  780.3K | 280 |   23.0 | 2.0 |   5.7 |  43.5 | "31,41,51,61,71,81" | 0:00'50'' | 0:00'43'' |
+```text
+#Q20L60
+#Matched	0	0.00000%
+#Name	Reads	ReadsPct
 
-| Name     |     N50 |     Sum |   # |
-|:---------|--------:|--------:|----:|
-| Genome   | 3188524 | 4602977 |   7 |
-| Paralogs |    2337 |  147155 |  66 |
-| anchors  |   28640 | 4093993 | 265 |
-| others   |    8984 |  914046 | 314 |
+#Q25L60
+#Matched	0	0.00000%
+#Name	Reads	ReadsPct
+
+#Q30L60
+#Matched	0	0.00000%
+#Name	Reads	ReadsPct
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X30P000  |   30.0 |  97.88% |     22125 | 4.05M | 332 |      5435 | 647.52K | 1311 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'55'' |
+| Q20L60XallP000 |   33.7 |  97.84% |     22587 | 4.05M | 310 |      7043 | 647.19K | 1251 |   29.0 | 2.0 |   7.7 |  52.5 | "31,41,51,61,71,81" | 0:00'49'' | 0:00'54'' |
+| Q25L60X30P000  |   30.0 |  98.30% |     16236 |    4M | 429 |      8835 | 759.77K | 1392 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'52'' |
+| Q25L60XallP000 |   30.0 |  98.29% |     16279 |    4M | 428 |      8835 | 759.73K | 1391 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'52'' |
+| Q30L60XallP000 |   26.7 |  98.02% |      9521 | 3.96M | 606 |      7245 | 830.37K | 1764 |   23.0 | 2.0 |   5.7 |  43.5 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'50'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X30P000  |   30.0 |  98.29% |     14955 | 4.03M | 468 |      8046 |  797.7K | 1640 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'53'' |
+| Q20L60XallP000 |   33.7 |  98.41% |     16866 | 4.02M | 418 |      7526 | 788.58K | 1567 |   29.0 | 2.0 |   7.7 |  52.5 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'55'' |
+| Q25L60X30P000  |   30.0 |  97.88% |      9768 | 3.94M | 633 |      6632 | 818.91K | 1833 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'50'' |
+| Q25L60XallP000 |   30.0 |  97.87% |      9776 | 3.94M | 633 |      6632 | 819.06K | 1836 |   26.0 | 2.0 |   6.7 |  48.0 | "31,41,51,61,71,81" | 0:00'38'' | 0:00'50'' |
+| Q30L60XallP000 |   26.7 |  96.89% |      6439 | 3.85M | 852 |      5804 | 854.41K | 2296 |   23.0 | 2.0 |   5.7 |  43.5 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'49'' |
+
+| Name                           |     N50 |     Sum |    # |
+|:-------------------------------|--------:|--------:|-----:|
+| Genome                         | 3188524 | 4602977 |    7 |
+| Paralogs                       |    2337 |  147155 |   66 |
+| 6_mergeKunitigsAnchors.anchors |   29426 | 4082400 |  264 |
+| 6_mergeKunitigsAnchors.others  |   12265 |  946155 |  212 |
+| 6_mergeTadpoleAnchors.anchors  |   30353 | 4094404 |  263 |
+| 6_mergeTadpoleAnchors.others   |   11818 | 1020180 |  263 |
+| 6_mergeAnchors.anchors         |   30353 | 4094404 |  263 |
+| 6_mergeAnchors.others          |   11818 | 1020180 |  263 |
+| tadpole.Q20L60                 |    9813 | 4520272 | 1076 |
+| tadpole.Q25L60                 |    7912 | 4515562 | 1304 |
+| tadpole.Q30L60                 |    3644 | 4500715 | 2517 |
+| spades.contig                  |   86457 | 4571770 |  159 |
+| spades.scaffold                |  130378 | 4572405 |  136 |
+| spades.non-contained           |   88009 | 4556507 |  104 |
+| platanus.contig                |    4863 | 4603873 | 3435 |
+| platanus.scaffold              |   37803 | 4533935 |  888 |
+| platanus.non-contained         |   38632 | 4403868 |  229 |
+
 
 # *Mycobacterium abscessus* 6G-0125-R
 
 ## Mabs: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Mabs
-
-```
 
 * Reference genome
 
@@ -459,7 +527,8 @@ BASE_NAME=Mabs
         * RefSeq assembly accession: GCF_000270985.1
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Mabs
+cd ${HOME}/data/anchr/Mabs
 
 mkdir -p 1_genome
 cd 1_genome
@@ -483,7 +552,7 @@ cp ~/data/anchr/paralogs/gage/Results/Mabs/Mabs.multi.fas paralogs.fas
     Download from GAGE-B site.
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${HOME}/data/anchr/Mabs
 
 mkdir -p 2_illumina
 cd 2_illumina
@@ -507,7 +576,7 @@ rm -fr raw
 * GAGE-B assemblies
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+cd ${HOME}/data/anchr/Mabs
 
 mkdir -p 8_competitor
 cd 8_competitor
@@ -528,22 +597,27 @@ tar xvfz M_abscessus_MiSeq.tar.gz velvet_ctg.fasta
 ## Mabs: run
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Mabs
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
     --genome 5090491 \
-    --trim2 "--uniq --shuffle --scythe " \
+    --trim2 "--uniq --shuffle --bbduk" \
     --cov2 "40 all" \
-    --qual2 "25 30" \
+    --qual2 "20 25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,2,3" \
     --parallel 24
 
 # run
 bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
-
-#bash 0_cleanup.sh
 
 # quast
 rm -fr 9_quast_competitor
@@ -563,6 +637,8 @@ quast --no-check --threads 16 \
     --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
     -o 9_quast_competitor
 
+# bash 0_cleanup.sh
+
 ```
 
 | Name     |     N50 |     Sum |       # |
@@ -572,39 +648,106 @@ quast --no-check --threads 16 \
 | Illumina |     251 |    512M | 2039840 |
 | uniq     |     251 | 511.87M | 2039330 |
 | shuffle  |     251 | 511.87M | 2039330 |
-| scythe   |     194 | 368.23M | 2039330 |
-| Q25L60   |     175 | 251.37M | 1563560 |
-| Q30L60   |     164 | 221.98M | 1502163 |
+| bbduk    |     197 | 384.97M | 2038412 |
+| Q20L60   |     178 | 290.75M | 1757516 |
+| Q25L60   |     173 | 250.53M | 1570422 |
+| Q30L60   |     163 | 220.91M | 1503261 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q20L60 | 189.4 |    185 |  47.7 |         38.94% |
+| Q25L60 | 191.4 |    187 |  51.8 |         44.04% |
+| Q30L60 | 191.8 |    187 |  62.0 |         46.74% |
+
+| Name         | N50 |     Sum |       # |
+|:-------------|----:|--------:|--------:|
+| clumped      | 251 | 510.77M | 2034942 |
+| trimmed      | 176 | 294.81M | 1802912 |
+| filtered     | 176 | 293.79M | 1798032 |
+| ecco         | 176 | 293.73M | 1798032 |
+| eccc         | 176 | 293.73M | 1798032 |
+| ecct         | 176 | 283.54M | 1739676 |
+| extended     | 213 | 352.67M | 1739676 |
+| merged       | 235 | 199.69M |  859906 |
+| unmerged.raw | 206 |   3.58M |   19864 |
+| unmerged     | 200 |   2.73M |   15656 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 190.0 |    185 |  46.5 |         92.23% |
+| ihist.merge.txt  | 232.2 |    226 |  51.6 |         98.86% |
+
+```text
+#mergeReads
+#Matched	4873	0.27028%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	4867	0.26995%
+```
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q25L60 |  49.4 |   41.4 |  16.151% |     160 | "43" | 5.09M | 5.21M |     1.02 | 0:00'37'' |
-| Q30L60 |  43.6 |   38.2 |  12.517% |     152 | "39" | 5.09M | 5.19M |     1.02 | 0:00'34'' |
+| Q20L60 |  57.1 |   44.7 |   21.65% |     165 | "45" | 5.09M | 5.23M |     1.03 | 0:00'36'' |
+| Q25L60 |  49.2 |   41.3 |   16.13% |     160 | "43" | 5.09M | 5.21M |     1.02 | 0:00'31'' |
+| Q30L60 |  43.4 |   38.0 |   12.55% |     151 | "39" | 5.09M | 5.19M |     1.02 | 0:00'29'' |
 
-| Name           | CovCor | N50Anchor |   Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|----------:|------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000  |   40.0 |      9688 |  4.6M | 757 |      1016 | 187.48K | 183 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:01'11'' | 0:00'46'' |
-| Q25L60XallP000 |   41.4 |      9149 | 4.46M | 770 |      1019 | 197.02K | 191 |   38.0 | 3.0 |   9.7 |  70.5 | "31,41,51,61,71,81" | 0:01'13'' | 0:00'47'' |
-| Q30L60XallP000 |   38.2 |     14605 | 4.56M | 571 |      1080 | 120.77K | 113 |   36.0 | 2.0 |  10.0 |  63.0 | "31,41,51,61,71,81" | 0:01'08'' | 0:00'47'' |
+```text
+#Q20L60
+#Matched	3152	0.22690%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	3152	0.22690%
 
-| Name     |     N50 |     Sum |   # |
-|:---------|--------:|--------:|----:|
-| Genome   | 5067172 | 5090491 |   2 |
-| Paralogs |    1580 |   83364 |  53 |
-| anchors  |   15457 | 4892459 | 576 |
-| others   |    1103 |  252534 | 228 |
+#Q25L60
+#Matched	3239	0.24280%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	3239	0.24280%
+
+#Q30L60
+#Matched	3137	0.23477%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	3137	0.23477%
+
+```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |    # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|-----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X40P000  |   40.0 |  96.05% |      6681 | 4.77M | 1053 |       948 |  378.5K | 2427 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'55'' | 0:00'53'' |
+| Q20L60XallP000 |   44.7 |  95.64% |      6025 |  4.7M | 1135 |       972 | 431.94K | 2506 |   41.0 | 3.0 |  10.7 |  75.0 | "31,41,51,61,71,81" | 0:00'59'' | 0:00'53'' |
+| Q25L60X40P000  |   40.0 |  97.33% |      8852 | 4.83M |  893 |       891 | 350.27K | 2204 |   37.0 | 3.0 |   9.3 |  69.0 | "31,41,51,61,71,81" | 0:00'56'' | 0:00'56'' |
+| Q25L60XallP000 |   41.3 |  97.30% |      8919 | 4.86M |  891 |       803 | 297.37K | 2176 |   39.0 | 3.0 |  10.0 |  72.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'54'' |
+| Q30L60XallP000 |   38.0 |  98.46% |     13943 |  4.9M |  710 |       988 | 345.07K | 1942 |   36.0 | 2.0 |  10.0 |  63.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'56'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X40P000  |   40.0 |  98.36% |     14262 | 4.85M | 735 |       999 | 464.65K | 2053 |   38.0 | 2.0 |  10.7 |  66.0 | "31,41,51,61,71,81" | 0:00'41'' | 0:01'00'' |
+| Q20L60XallP000 |   44.7 |  98.13% |     13013 | 4.95M | 685 |       792 |    275K | 1917 |   42.0 | 3.0 |  11.0 |  76.5 | "31,41,51,61,71,81" | 0:00'42'' | 0:00'56'' |
+| Q25L60X40P000  |   40.0 |  98.65% |     12984 | 4.78M | 808 |      1030 | 589.64K | 2253 |   38.0 | 2.0 |  10.7 |  66.0 | "31,41,51,61,71,81" | 0:00'41'' | 0:00'58'' |
+| Q25L60XallP000 |   41.3 |  98.56% |     12201 | 4.74M | 864 |      1040 | 643.26K | 2313 |   39.0 | 2.0 |  11.0 |  67.5 | "31,41,51,61,71,81" | 0:00'42'' | 0:01'00'' |
+| Q30L60XallP000 |   38.0 |  99.07% |     16495 | 4.83M | 727 |      1110 | 623.66K | 2212 |   36.5 | 1.5 |  10.7 |  61.5 | "31,41,51,61,71,81" | 0:00'43'' | 0:00'59'' |
+
+| Name                           |     N50 |     Sum |    # |
+|:-------------------------------|--------:|--------:|-----:|
+| Genome                         | 5067172 | 5090491 |    2 |
+| Paralogs                       |    1580 |   83364 |   53 |
+| 6_mergeKunitigsAnchors.anchors |   16594 | 5051518 |  589 |
+| 6_mergeKunitigsAnchors.others  |    1176 |  514971 |  449 |
+| 6_mergeTadpoleAnchors.anchors  |   28789 | 5114120 |  349 |
+| 6_mergeTadpoleAnchors.others   |    1290 |  955594 |  789 |
+| 6_mergeAnchors.anchors         |   28789 | 5114120 |  349 |
+| 6_mergeAnchors.others          |    1290 |  955594 |  789 |
+| tadpole.Q20L60                 |    5378 | 5238729 | 2113 |
+| tadpole.Q25L60                 |    6795 | 5223678 | 1789 |
+| tadpole.Q30L60                 |    8474 | 5201308 | 1454 |
+| spades.contig                  |  174287 | 5220387 |  270 |
+| spades.scaffold                |  232956 | 5220517 |  266 |
+| spades.non-contained           |  174287 | 5130469 |   46 |
+| platanus.contig                |   31929 | 5161063 |  460 |
+| platanus.scaffold              |   72495 | 5137530 |  212 |
+| platanus.non-contained         |   72495 | 5114644 |  140 |
+
 
 # *Vibrio cholerae* CP1032(5)
 
 ## Vcho: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=Vcho
-
-```
 
 * Reference genome
 
@@ -617,7 +760,8 @@ BASE_NAME=Vcho
         * RefSeq assembly accession: GCF_000279305.1
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Vcho
+cd ${HOME}/data/anchr/Vcho
 
 mkdir -p 1_genome
 cd 1_genome
@@ -641,7 +785,7 @@ cp ~/data/anchr/paralogs/gage/Results/Vcho/Vcho.multi.fas paralogs.fas
     Download from GAGE-B site.
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Vcho
 
 mkdir -p 2_illumina
 cd 2_illumina
@@ -665,7 +809,7 @@ rm -fr raw
 * GAGE-B assemblies
 
 ```bash
-cd ${HOME}/data/anchr/${BASE_NAME}
+mkdir -p ${HOME}/data/anchr/Vcho
 
 mkdir -p 8_competitor
 cd 8_competitor
@@ -686,22 +830,27 @@ tar xvfz V_cholerae_MiSeq.tar.gz velvet_ctg.fasta
 ## Vcho: run
 
 ```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=Vcho
+
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
     --genome 4033464 \
-    --trim2 "--uniq --shuffle --scythe " \
+    --trim2 "--uniq --shuffle --bbduk" \
     --cov2 "40 50 all" \
-    --qual2 "25 30" \
+    --qual2 "20 25 30" \
     --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,2,3" \
     --parallel 24
 
 # run
 bsub -q mpi -n 24 -J "${BASE_NAME}-0_master" "bash 0_master.sh"
-
-#bash 0_cleanup.sh
 
 # quast
 rm -fr 9_quast_competitor
@@ -721,6 +870,8 @@ quast --no-check --threads 16 \
     --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
     -o 9_quast_competitor
 
+# bash 0_cleanup.sh
+
 ```
 
 | Name     |     N50 |     Sum |       # |
@@ -730,42 +881,110 @@ quast --no-check --threads 16 \
 | Illumina |     251 |    400M | 1593624 |
 | uniq     |     251 | 397.99M | 1585616 |
 | shuffle  |     251 | 397.99M | 1585616 |
-| scythe   |     198 | 303.22M | 1585616 |
-| Q25L60   |     189 | 254.74M | 1415614 |
-| Q30L60   |     182 | 231.42M | 1354982 |
+| bbduk    |     197 | 304.63M | 1584348 |
+| Q20L60   |     190 | 274.56M | 1507602 |
+| Q25L60   |     187 | 252.78M | 1417550 |
+| Q30L60   |     180 |  229.6M | 1354637 |
+
+| Group  |  Mean | Median | STDev | PercentOfPairs |
+|:-------|------:|-------:|------:|---------------:|
+| Q20L60 | 196.8 |    190 |  55.1 |         38.49% |
+| Q25L60 | 198.5 |    192 |  52.1 |         42.39% |
+| Q30L60 | 199.0 |    192 |  54.4 |         45.66% |
+
+| Name         | N50 |     Sum |       # |
+|:-------------|----:|--------:|--------:|
+| clumped      | 251 | 390.94M | 1557536 |
+| trimmed      | 188 | 270.78M | 1502346 |
+| filtered     | 188 | 269.05M | 1494132 |
+| ecco         | 188 | 269.02M | 1494132 |
+| eccc         | 188 | 269.02M | 1494132 |
+| ecct         | 188 | 265.86M | 1476714 |
+| extended     | 226 | 324.66M | 1476714 |
+| merged       | 237 | 174.53M |  733052 |
+| unmerged.raw | 224 |   2.17M |   10610 |
+| unmerged     | 219 |   1.82M |    9190 |
+
+| Group            |  Mean | Median | STDev | PercentOfPairs |
+|:-----------------|------:|-------:|------:|---------------:|
+| ihist.merge1.txt | 195.9 |    190 |  44.4 |         95.04% |
+| ihist.merge.txt  | 238.1 |    230 |  51.2 |         99.28% |
+
+```text
+#mergeReads
+#Matched	8209	0.54641%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	8205	0.54615%
+```
 
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|------:|------:|---------:|----------:|
-| Q25L60 |  63.2 |   53.9 |  14.590% |     180 | "107" | 4.03M | 3.95M |     0.98 | 0:01'32'' |
-| Q30L60 |  57.4 |   50.9 |  11.268% |     174 | "103" | 4.03M | 3.94M |     0.98 | 0:01'08'' |
+| Q20L60 |  68.1 |   55.9 |   17.92% |     182 | "109" | 4.03M | 3.96M |     0.98 | 0:00'32'' |
+| Q25L60 |  62.7 |   54.0 |   13.76% |     178 | "107" | 4.03M | 3.95M |     0.98 | 0:00'29'' |
+| Q30L60 |  56.9 |   50.9 |   10.65% |     172 | "103" | 4.03M | 3.94M |     0.98 | 0:00'28'' |
 
-| Name           | CovCor | N50Anchor |   Sum |   # | N50Others |    Sum |   # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:---------------|-------:|----------:|------:|----:|----------:|-------:|----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q25L60X40P000  |   40.0 |     24211 | 3.55M | 272 |       861 | 92.06K | 105 |   35.0 | 6.0 |   5.7 |  70.0 | "31,41,51,61,71,81" | 0:02'15'' | 0:00'50'' |
-| Q25L60X50P000  |   50.0 |     20737 | 3.68M | 316 |       859 | 84.05K |  94 |   45.0 | 7.0 |   8.0 |  90.0 | "31,41,51,61,71,81" | 0:02'32'' | 0:00'49'' |
-| Q25L60XallP000 |   53.9 |     19534 | 3.72M | 328 |       855 | 81.64K |  93 |   49.0 | 8.0 |   8.3 |  98.0 | "31,41,51,61,71,81" | 0:02'35'' | 0:00'51'' |
-| Q30L60X40P000  |   40.0 |     26748 | 3.57M | 252 |       875 | 83.46K |  89 |   36.0 | 6.0 |   6.0 |  72.0 | "31,41,51,61,71,81" | 0:02'17'' | 0:00'52'' |
-| Q30L60X50P000  |   50.0 |     21087 | 3.75M | 285 |       925 | 90.57K |  94 |   46.0 | 7.0 |   8.3 |  92.0 | "31,41,51,61,71,81" | 0:02'22'' | 0:00'50'' |
-| Q30L60XallP000 |   50.9 |     21087 | 3.76M | 287 |       893 | 87.93K |  92 |   47.0 | 7.0 |   8.7 |  94.0 | "31,41,51,61,71,81" | 0:02'32'' | 0:00'49'' |
+```text
+#Q20L60
+#Matched	5385	0.43234%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	5385	0.43234%
 
-| Name     |     N50 |     Sum |   # |
-|:---------|--------:|--------:|----:|
-| Genome   | 2961149 | 4033464 |   2 |
-| Paralogs |    3483 |  114707 |  48 |
-| anchors  |   33126 | 3804516 | 227 |
-| others   |     947 |  114363 | 120 |
+#Q25L60
+#Matched	5505	0.44664%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	5505	0.44664%
 
-# *Rhodobacter sphaeroides* 2.4.1 Full
-
-## RsphF: download
-
-* Settings
-
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=RsphF
+#Q30L60
+#Matched	5490	0.44878%
+#Name	Reads	ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	5490	0.44878%
 
 ```
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X40P000  |   40.0 |  93.97% |      8875 | 3.68M | 668 |       921 | 185.62K | 1436 |   37.0 | 5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 0:00'46'' | 0:00'46'' |
+| Q20L60X50P000  |   50.0 |  93.55% |      8028 | 3.68M | 693 |       931 | 169.29K | 1476 |   47.0 | 6.0 |   9.7 |  94.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'45'' |
+| Q20L60XallP000 |   55.9 |  93.23% |      7463 | 3.67M | 720 |       906 | 171.71K | 1513 |   52.0 | 7.0 |  10.3 | 104.0 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'44'' |
+| Q25L60X40P000  |   40.0 |  96.58% |     25260 | 3.75M | 315 |      1056 | 137.06K |  782 |   37.0 | 5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 0:00'47'' | 0:00'48'' |
+| Q25L60X50P000  |   50.0 |  96.42% |     21724 | 3.77M | 325 |      1084 | 117.51K |  796 |   47.0 | 6.0 |   9.7 |  94.0 | "31,41,51,61,71,81" | 0:00'54'' | 0:00'46'' |
+| Q25L60XallP000 |   54.0 |  96.30% |     20565 | 3.78M | 341 |      1034 |  114.1K |  832 |   51.0 | 6.5 |  10.5 | 102.0 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'48'' |
+| Q30L60X40P000  |   40.0 |  96.97% |     28917 | 3.76M | 294 |      1047 | 135.35K |  747 |   37.0 | 5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 0:00'45'' | 0:00'48'' |
+| Q30L60X50P000  |   50.0 |  96.75% |     23646 | 3.78M | 286 |      1047 | 105.58K |  727 |   47.0 | 6.0 |   9.7 |  94.0 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'48'' |
+| Q30L60XallP000 |   50.9 |  96.77% |     23646 | 3.79M | 282 |      1057 | 102.24K |  722 |   48.0 | 6.0 |  10.0 |  96.0 | "31,41,51,61,71,81" | 0:00'52'' | 0:00'47'' |
+
+| Name           | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:---------------|-------:|--------:|----------:|------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| Q20L60X40P000  |   40.0 |  96.66% |     20243 | 3.77M | 385 |      1010 | 156.12K | 1037 |   37.0 | 5.0 |   7.3 |  74.0 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'48'' |
+| Q20L60X50P000  |   50.0 |  96.19% |     15734 | 3.77M | 431 |      1031 | 139.58K | 1059 |   47.0 | 6.0 |   9.7 |  94.0 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'48'' |
+| Q20L60XallP000 |   55.9 |  95.84% |     13441 | 3.77M | 475 |      1010 | 132.39K | 1110 |   53.0 | 7.0 |  10.7 | 106.0 | "31,41,51,61,71,81" | 0:00'40'' | 0:00'47'' |
+| Q25L60X40P000  |   40.0 |  97.57% |     42267 | 3.77M | 242 |      1177 | 162.26K |  755 |   36.0 | 5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'36'' | 0:00'51'' |
+| Q25L60X50P000  |   50.0 |  97.55% |     52730 | 3.81M | 208 |      1065 | 111.75K |  614 |   46.0 | 7.0 |   8.3 |  92.0 | "31,41,51,61,71,81" | 0:00'38'' | 0:00'52'' |
+| Q25L60XallP000 |   54.0 |  97.56% |     51785 | 3.81M | 206 |      1060 | 109.94K |  597 |   49.0 | 7.0 |   9.3 |  98.0 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'52'' |
+| Q30L60X40P000  |   40.0 |  97.74% |     46461 | 3.76M | 249 |      1167 | 185.25K |  793 |   36.0 | 5.0 |   7.0 |  72.0 | "31,41,51,61,71,81" | 0:00'37'' | 0:00'53'' |
+| Q30L60X50P000  |   50.0 |  97.66% |     51785 |  3.8M | 186 |      1126 | 125.99K |  613 |   46.0 | 6.0 |   9.3 |  92.0 | "31,41,51,61,71,81" | 0:00'39'' | 0:00'51'' |
+| Q30L60XallP000 |   50.9 |  97.68% |     52291 | 3.81M | 181 |      1125 | 114.38K |  598 |   47.0 | 6.0 |   9.7 |  94.0 | "31,41,51,61,71,81" | 0:00'38'' | 0:00'52'' |
+
+| Name                           |     N50 |     Sum |    # |
+|:-------------------------------|--------:|--------:|-----:|
+| Genome                         | 2961149 | 4033464 |    2 |
+| Paralogs                       |    3483 |  114707 |   48 |
+| 6_mergeKunitigsAnchors.anchors |   33102 | 3816570 |  223 |
+| 6_mergeKunitigsAnchors.others  |    1322 |  243213 |  192 |
+| 6_mergeTadpoleAnchors.anchors  |   69128 | 3850738 |  150 |
+| 6_mergeTadpoleAnchors.others   |    1399 |  318782 |  237 |
+| 6_mergeAnchors.anchors         |   69128 | 3850738 |  150 |
+| 6_mergeAnchors.others          |    1399 |  318782 |  237 |
+| tadpole.Q20L60                 |    6611 | 3942532 | 1232 |
+| tadpole.Q25L60                 |    7680 | 3937250 | 1096 |
+| tadpole.Q30L60                 |    9965 | 3926036 |  893 |
+| spades.contig                  |  246446 | 4116141 |  558 |
+| spades.scaffold                |  259375 | 4116341 |  556 |
+| spades.non-contained           |  246446 | 3929304 |   66 |
+| platanus.contig                |   49404 | 3992698 |  548 |
+| platanus.scaffold              |   55222 | 3941539 |  351 |
+| platanus.non-contained         |   58990 | 3880137 |  170 |
+
 
 * Reference genome
 
