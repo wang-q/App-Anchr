@@ -9,10 +9,6 @@ if [ ! -e SR.fasta ]; then
     ln -s [% args.0 %] SR.fasta
 fi
 
-if [ ! -e pe.cor.fa ]; then
-    ln -s [% args.1 %] pe.cor.fa
-fi
-
 log_debug "SR sizes"
 faops size SR.fasta > sr.chr.sizes
 

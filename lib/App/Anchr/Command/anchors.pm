@@ -47,6 +47,10 @@ sub validate_args {
             $self->usage_error("The input file [$_] doesn't exist.");
         }
     }
+
+    for my $infile ( @{$args} ) {
+        $infile = Path::Tiny::path($infile)->absolute->stringify;
+    }
 }
 
 sub execute {
