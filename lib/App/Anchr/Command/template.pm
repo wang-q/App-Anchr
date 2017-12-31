@@ -1150,7 +1150,7 @@ find . -type f -name "long.fasta"    -path "*6_anchor*" | parallel --no-run-if-e
 find . -type f -name ".anchorLong.*" -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm
 
 # spades
-find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type d -path "*8_spades/*" -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
 
 # platanus
 find . -type f -path "*8_platanus/*" -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
