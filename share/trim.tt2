@@ -137,7 +137,7 @@ if [ ! -e R1.[% current %].fq.gz ]; then
 [% END -%]
         ref=[% opt.adapter %] \
         threads=[% opt.parallel %] \
-        ktrim=r k=23 mink=7 hdist=1 tbo tpe \
+        ktrim=r k=23 mink=11 hdist=1 tbo tpe \
         ftm=5 ordered overwrite
 fi
 [% prev = 'bbduk' -%]
