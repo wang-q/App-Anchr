@@ -197,7 +197,7 @@ jrunlist stat sr.chr.sizes contig.covered.yml -o contig.covered.csv
 
 # repeats on the edge hurt assembling mostly, so just fill holes
 
-# fill all holes of 95% covered contigs
+# fill all holes of [% opt.ratio %] covered contigs
 cat contig.covered.csv \
     | perl -nla -F"," -e '
         $F[0] eq q{chr} and next;
@@ -210,8 +210,14 @@ cat contig.covered.csv \
     > fill_all.txt
 
 jrunlist some contig.covered.yml fill_all.txt -o contig.fill_all.yml
-jrunlist span contig.fill_all.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
-jrunlist span contig.fill_all.1.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
+ln -s contig.fill_all.yml contig.fill_all.temp.yml
+
+if [ -s fill_all.txt ]; then
+    jrunlist span contig.fill_all.temp.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
+    ln -s contig.fill_all.1.yml contig.fill_all.temp.yml
+    jrunlist span contig.fill_all.temp.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
+    ln -s contig.fill_all.2.yml contig.fill_all.temp.yml
+fi
 
 # fill small holes
 cat sr.chr.sizes \
@@ -225,7 +231,7 @@ jrunlist span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill
 
 # get proper regions
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
-    my $yml1 = YAML::Syck::LoadFile( q{contig.fill_all.2.yml} );
+    my $yml1 = YAML::Syck::LoadFile( q{contig.fill_all.temp.yml} );
     my $yml2 = YAML::Syck::LoadFile( q{contig.fill_hole.2.yml} );
 
     my $yml = {};
