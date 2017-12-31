@@ -1,8 +1,8 @@
 [% INCLUDE header.tt2 %]
 log_warn 8_spades.sh
 
-if [ -e 8_spades/spades.non-contained.fasta ]; then
-    echo >&2 "8_spades/spades.non-contained.fasta presents"
+if [ -e 8_spades/anchor/anchor.fasta ]; then
+    log_info "8_spades/anchor/anchor.fasta presents"
     exit;
 fi
 
@@ -13,26 +13,56 @@ USAGE="Usage: $0 DIR_PREFIX"
 
 DIR_PREFIX=${1:-"2_illumina/Q25L60"}
 
+DIR_PREFIX="$(cd "$(dirname "$DIR_PREFIX")"; pwd)/$(basename "$DIR_PREFIX")"
+
 #----------------------------#
 # spades
 #----------------------------#
-spades.py \
-    -t [% opt.parallel %] \
-    --only-assembler \
-    -k 21,33,55,77 \
+if [ -e 8_spades/spades.non-contained.fasta ]; then
+    log_info "8_spades/spades.non-contained.fasta presents"
+else
+    log_info "Run spades"
+
+    spades.py \
+        -t [% opt.parallel %] \
+        --only-assembler \
+        -k 21,33,55,77 \
 [% IF not opt.se -%]
-    -1 ${DIR_PREFIX}/R1.sickle.fq.gz \
-    -2 ${DIR_PREFIX}/R2.sickle.fq.gz \
-    -s ${DIR_PREFIX}/Rs.sickle.fq.gz \
+        -1 ${DIR_PREFIX}/R1.sickle.fq.gz \
+        -2 ${DIR_PREFIX}/R2.sickle.fq.gz \
+        -s ${DIR_PREFIX}/Rs.sickle.fq.gz \
 [% ELSE -%]
-    -s ${DIR_PREFIX}/R1.sickle.fq.gz \
+        -s ${DIR_PREFIX}/R1.sickle.fq.gz \
 [% END -%]
-    -o 8_spades
+        -o 8_spades
 
-anchr contained \
-    8_spades/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
+    anchr contained \
+        8_spades/contigs.fasta \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin 8_spades/spades.non-contained.fasta
+fi
 
-find . -type d -path "*8_spades/*" | parallel --no-run-if-empty -j 1 rm -fr
+log_info "Clear intermediate files"
+find . -type d -path "*8_spades/*" -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
+
+#----------------------------#
+# anchor
+#----------------------------#
+log_info "Create anchors"
+
+mkdir -p 8_spades/anchor
+cd 8_spades/anchor
+
+anchr anchors \
+    ../spades.non-contained.fasta \
+[% IF not opt.se -%]
+    ${DIR_PREFIX}/R1.sickle.fq.gz \
+    ${DIR_PREFIX}/R2.sickle.fq.gz \
+    ${DIR_PREFIX}/Rs.sickle.fq.gz \
+[% ELSE -%]
+    ${DIR_PREFIX}/R1.sickle.fq.gz \
+[% END -%]
+    -p [% opt.parallel2 %] \
+    -o anchors.sh
+bash anchors.sh
