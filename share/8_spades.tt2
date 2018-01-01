@@ -55,7 +55,7 @@ mkdir -p 8_spades/anchor
 cd 8_spades/anchor
 
 anchr anchors \
-    ../scaffolds.fasta \
+    ../spades.non-contained.fasta \
 [% IF not opt.se -%]
     ${DIR_PREFIX}/R1.sickle.fq.gz \
     ${DIR_PREFIX}/R2.sickle.fq.gz \

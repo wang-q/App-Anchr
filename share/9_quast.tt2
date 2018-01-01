@@ -47,12 +47,16 @@ if [ -e 8_spades/spades.non-contained.fasta ]; then
 fi
 if [ -e 8_spades/anchor/anchor.fasta ]; then
     QUAST_TARGET+=" 8_spades/anchor/anchor.fasta "
-    QUAST_LABEL+="spadesAnchors,"
+    QUAST_LABEL+="spades.anchor,"
 fi
 
 if [ -e 8_platanus/platanus.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_platanus/platanus.non-contained.fasta "
     QUAST_LABEL+="platanus,"
+fi
+if [ -e 8_platanus/anchor/anchor.fasta ]; then
+    QUAST_TARGET+=" 8_platanus/anchor/anchor.fasta "
+    QUAST_LABEL+="platanus.anchor,"
 fi
 
 if [ -e 1_genome/paralogs.fas ]; then

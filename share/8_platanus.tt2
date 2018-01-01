@@ -1,8 +1,8 @@
 [% INCLUDE header.tt2 %]
 log_warn 8_platanus.sh
 
-if [ -e 8_platanus/platanus.non-contained.fasta ]; then
-    echo >&2 "8_platanus/platanus.non-contained.fasta presents"
+if [ -e 8_platanus/anchor/anchor.fasta ]; then
+    log_info "8_platanus/anchor/anchor.fasta presents"
     exit;
 fi
 
@@ -13,69 +13,98 @@ USAGE="Usage: $0 DIR_PREFIX"
 
 DIR_PREFIX=${1:-"2_illumina/Q25L60"}
 
+DIR_PREFIX="$(cd "$(dirname "$DIR_PREFIX")"; pwd)/$(basename "$DIR_PREFIX")"
+
 #----------------------------#
 # platanus
 #----------------------------#
 mkdir -p 8_platanus
 cd 8_platanus
 
+if [ -e platanus.non-contained.fasta ]; then
+    log_info "platanus.non-contained.fasta presents"
+else
+    log_info "Run platanus"
+
 [% IF not opt.se -%]
-if [ ! -e pe.fa ]; then
-    faops interleave \
-        -p pe \
-        ../${DIR_PREFIX}/R1.sickle.fq.gz \
-        ../${DIR_PREFIX}/R2.sickle.fq.gz \
-        > pe.fa
-    
-    faops interleave \
-        -p se \
-        ../${DIR_PREFIX}/Rs.sickle.fq.gz \
-        > se.fa
-fi
+    if [ ! -e pe.fa ]; then
+        faops interleave \
+            -p pe \
+            ${DIR_PREFIX}/R1.sickle.fq.gz \
+            ${DIR_PREFIX}/R2.sickle.fq.gz \
+            > pe.fa
 
-platanus assemble -t [% opt.parallel %] -m 100 \
-    -f pe.fa \
-    $(
-        if [ -s se.fa ]; then
-            echo se.fa
-        fi
-    ) \
-    2>&1 | tee ass_log.txt
+        faops interleave \
+            -p se \
+            ${DIR_PREFIX}/Rs.sickle.fq.gz \
+            > se.fa
+    fi
 
-platanus scaffold -t [% opt.parallel %] \
-    -c out_contig.fa -b out_contigBubble.fa \
-    -ip1 pe.fa \
-    2>&1 | tee sca_log.txt
+    platanus assemble -t [% opt.parallel %] -m 100 \
+        -f pe.fa \
+        $(
+            if [ -s se.fa ]; then
+                echo se.fa
+            fi
+        ) \
+        2>&1 | tee ass_log.txt
 
-platanus gap_close -t [% opt.parallel %] \
-    -c out_scaffold.fa \
-    -ip1 pe.fa \
-    2>&1 | tee gap_log.txt
+    platanus scaffold -t [% opt.parallel %] \
+        -c out_contig.fa -b out_contigBubble.fa \
+        -ip1 pe.fa \
+        2>&1 | tee sca_log.txt
 
-anchr contained \
-    out_gapClosed.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
+    platanus gap_close -t [% opt.parallel %] \
+        -c out_scaffold.fa \
+        -ip1 pe.fa \
+        2>&1 | tee gap_log.txt
 
+    anchr contained \
+        out_gapClosed.fa \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
 [% ELSE -%]
-if [ ! -e se.fa ]; then
-    faops interleave \
-        -p se \
-        ../${DIR_PREFIX}/R1.sickle.fq.gz \
-        > se.fa
+    if [ ! -e se.fa ]; then
+        faops interleave \
+            -p se \
+            ${DIR_PREFIX}/R1.sickle.fq.gz \
+            > se.fa
+    fi
+
+    platanus assemble -t [% opt.parallel %] -m 100 \
+        -f se.fa \
+        2>&1 | tee ass_log.txt
+
+    anchr contained \
+        out_contig.fa out_contigBubble.fa \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
+[% END -%]
 fi
 
-platanus assemble -t [% opt.parallel %] -m 100 \
-    -f se.fa \
-    2>&1 | tee ass_log.txt
-
-anchr contained \
-    out_contig.fa out_contigBubble.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
-
-[% END -%]
-
+log_info "Clear intermediate files"
 find . -type f -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
+
+#----------------------------#
+# anchor
+#----------------------------#
+log_info "Create anchors"
+
+mkdir -p anchor
+cd anchor
+
+anchr anchors \
+    ../platanus.non-contained.fasta \
+[% IF not opt.se -%]
+    ${DIR_PREFIX}/R1.sickle.fq.gz \
+    ${DIR_PREFIX}/R2.sickle.fq.gz \
+    ${DIR_PREFIX}/Rs.sickle.fq.gz \
+[% ELSE -%]
+    ${DIR_PREFIX}/R1.sickle.fq.gz \
+[% END -%]
+    -p [% opt.parallel %] \
+    --ratio 0.98 \
+    -o anchors.sh
+bash anchors.sh
