@@ -16,7 +16,7 @@ sub opt_spec {
         [ "tmp=s",      "user defined tempdir", ],
         [ "se",         "single end mode for Illumina", ],
         [ "separate",   "separate each Qual-Len/Cov-Qual groups", ],
-        [ "trim2=s",    "steps for trimming Illumina reads",         { default => "--uniq" }, ],
+        [ "trim2=s",    "steps for trimming Illumina reads",         { default => "--uniq --bbduk" }, ],
         [ "sample2=i",  "total sampling coverage of Illumina reads", ],
         [ "cov2=s",     "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",    "quality threshold",                         { default => "25 30" }, ],

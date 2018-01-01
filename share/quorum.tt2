@@ -177,7 +177,10 @@ if [ ! -e pe.cor.fa ]; then
     }
     log_debug "Discard any reads with subs"
     mv pe.cor.fa pe.cor.sub.fa
-    cat pe.cor.sub.fa | grep -E '^>\w+\s*$' -A 1 | sed '/^--$/d' > pe.cor.fa
+    cat pe.cor.sub.fa \
+        | grep -E '^>\w+\s*$' -A 1 \
+        | sed '/^--$/d' \
+        > pe.cor.fa
 fi
 
 #----------------------------#
@@ -197,23 +200,6 @@ ESTIMATED_GENOME_SIZE=[% opt.estsize %]
 save ESTIMATED_GENOME_SIZE
 log_debug "You set ESTIMATED_GENOME_SIZE of $ESTIMATED_GENOME_SIZE"
 [% END -%]
-
-#----------------------------#
-# Filtering with bbduk.
-#----------------------------#
-log_info Filtering with bbduk.
-
-mv pe.cor.fa pe.cor.raw
-
-BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
-bbduk.sh \
-    in=pe.cor.raw \
-    out=pe.cor.fa \
-    overwrite=t \
-    ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifacts' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
-    k=27 hdist=1 stats=filtering.stats.txt
-
-rm pe.cor.raw
 
 log_debug "Reads stats with faops"
 SUM_IN=$( faops n50 -H -N 0 -S pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %])

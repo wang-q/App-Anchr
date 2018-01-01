@@ -13,7 +13,6 @@ sub opt_spec {
         [ "outfile|o=s",  "output filename, [stdout] for screen", { default => "quorum.sh" }, ],
         [ 'jf=i',         'jellyfish hash size',                  { default => 500_000_000, }, ],
         [ 'estsize=s',    'estimated genome size',                { default => "auto", }, ],
-        [ "filter=s",     "adapter, phix, artifact",              { default => "adapter" }, ],
         [ 'parallel|p=i', 'number of threads',                    { default => 8, }, ],
         { show_defaults => 1, }
     );
@@ -45,9 +44,6 @@ sub validate_args {
         }
     }
 
-    if ( $opt->{filter} ) {
-        $opt->{filter} = [ grep {defined} split ",", $opt->{filter} ];
-    }
 }
 
 sub execute {

@@ -38,21 +38,4 @@ done \
 >> statQuorum.md
 echo >> statQuorum.md
 
-log_info "stats of filtered"
-echo '```text' >> statQuorum.md
-for Q in [% opt.qual2 %]; do
-    for L in [% opt.len2 %]; do
-        echo "#Q${Q}L${L}"
-		cat 2_illumina/Q${Q}L${L}/filtering.stats.txt \
-		    | perl -nla -F"\t" -e '
-		        /^#(Matched|Name)/ and print and next;
-                /^#/ and next;
-		        $F[1] >= 100 and print;
-            '
-		echo   
-    done
-done \
->> statQuorum.md
-echo '```' >> statQuorum.md
-
 cat statQuorum.md
