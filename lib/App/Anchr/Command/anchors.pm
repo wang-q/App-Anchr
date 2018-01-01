@@ -12,7 +12,8 @@ sub opt_spec {
     return (
         [ "outfile|o=s",  "output filename, [stdout] for screen",   { default => "anchors.sh" }, ],
         [ 'min=i',        'minimal length of anchors',              { default => 1000, }, ],
-        [ 'reads=i',      'minimal coverage of reads',              { default => 2, }, ],
+        [ 'minreads=i',   'minimal coverage of reads',              { default => 2, }, ],
+        [ 'lower=i',      'lower limit of coverage ranges',         { default => 10, }, ],
         [ 'scale=i',      'the scale factor k for MAD',             { default => 3, }, ],
         [ 'ratio=f',      'consider as anchor',                     { default => 0.95, }, ],
         [ 'fill=i',       'fill holes short than or equal to this', { default => 30, }, ],

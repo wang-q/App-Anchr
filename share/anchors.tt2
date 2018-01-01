@@ -83,7 +83,8 @@ cat reads.coverage.tsv \
             my $k   = [% opt.scale %];   # the scale factor
 
             my $lower = ( $median - $k * $MAD ) / 3;
-            $lower = [% opt.reads %] if $lower < [% opt.reads %];
+            $lower = [% opt.minreads %] if $lower < [% opt.minreads %];
+            $lower = [% opt.lower %] if $lower > [% opt.lower %];
             my $upper = ( $median + $k * $MAD ) * 1.5;
             $upper = $median * 2 if $upper > $median * 2;
 
