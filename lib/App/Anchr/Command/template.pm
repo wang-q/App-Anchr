@@ -497,9 +497,6 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
                 fi
             fi
         ) \
-[% IF opt.filter -%]
-        --filter [% opt.filter %] \
-[% END -%]
         -p [% opt.parallel %] \
         -o quorum.sh
     bash quorum.sh
