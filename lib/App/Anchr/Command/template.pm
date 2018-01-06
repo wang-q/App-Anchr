@@ -134,6 +134,9 @@ sub execute {
     # spades
     $self->gen_spades( $opt, $args );
 
+    # megahit
+    $self->gen_megahit( $opt, $args );
+
     # platanus
     $self->gen_platanus( $opt, $args );
 
@@ -1249,6 +1252,25 @@ sub gen_spades {
 
     $tt->process(
         '8_spades.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_megahit {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "8_megahit.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '8_megahit.tt2',
         {   args => $args,
             opt  => $opt,
         },
