@@ -18,6 +18,11 @@ if [ -e 6_mergeTadpoleAnchors/anchor.merge.fasta ]; then
     QUAST_LABEL+="mergeTadpoleAnchors,"
 fi
 
+if [ -e 6_mergeSpadesAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 6_mergeSpadesAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="mergeSpadesAnchors,"
+fi
+
 if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeAnchors,"
