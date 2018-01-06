@@ -733,6 +733,9 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 4_spades_Q{1}L{2}X{3}P{4}
 
     ln -s ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa pe.cor.fa
+    cp ../4_Q{1}L{2}X{3}P{4}/environment.json environment.json
+
+    START_TIME=\$(date +%s)
 
     spades.py \
         -t [% opt.parallel %] \
@@ -748,6 +751,17 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
 
     find . -type d -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
+
+    END_TIME=\$(date +%s)
+    RUNTIME=\$((END_TIME-START_TIME))
+
+    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
+
+    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
 
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
