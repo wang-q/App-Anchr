@@ -17,6 +17,6 @@ like( $result->error, qr{doesn't exist}, 'infile not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(quorum t/R1.fq.gz t/R2.fq.gz -o stdout)] );
 ok( ( scalar grep {/\S/} split( /\n/, $result->stdout ) ) > 150, 'line count' );
-like( $result->stdout, qr{masurca.+Estimating}s, 'bash contents' );
+like( $result->stdout, qr{START_TIME.+END_TIME}s, 'bash contents' );
 
 done_testing();

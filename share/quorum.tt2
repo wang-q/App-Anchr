@@ -1,7 +1,7 @@
 [% INCLUDE header.tt2 %]
 
 #----------------------------#
-# masurca
+# Run
 #----------------------------#
 START_TIME=$(date +%s)
 save START_TIME
