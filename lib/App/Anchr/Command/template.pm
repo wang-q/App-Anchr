@@ -16,14 +16,15 @@ sub opt_spec {
         [ "tmp=s",      "user defined tempdir", ],
         [ "se",         "single end mode for Illumina", ],
         [ "separate",   "separate each Qual-Len/Cov-Qual groups", ],
-        [ "trim2=s",    "steps for trimming Illumina reads",         { default => "--uniq --bbduk" }, ],
-        [ "sample2=i",  "total sampling coverage of Illumina reads", ],
+        [ "trim2=s", "steps for trimming Illumina reads", { default => "--uniq --bbduk" }, ],
+        [ "sample2=i", "total sampling coverage of Illumina reads", ],
         [ "cov2=s",     "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",    "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",     "filter reads less or equal to this length", { default => "60" }, ],
         [ "reads=i",    "how many reads to estimate insert size",    { default => 2000000 }, ],
         [ "filter=s",   "adapter, phix, artifact",                   { default => "adapter" }, ],
         [ 'tadpole',    'also use tadpole to create k-unitigs', ],
+        [ 'spades',     'also use spades to create k-unitigs', ],
         [ "cov3=s",     "down sampling coverage of PacBio reads", ],
         [ "qual3=s",    "raw and/or trim",                           { default => "trim" } ],
         [ 'mergereads', 'also run the mergereads approach', ],
@@ -483,7 +484,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         exit;
     fi
 
-    if [-e pe.cor.fa.gz ]; then
+    if [ -e pe.cor.fa.gz ]; then
         echo >&2 '    pe.cor.fa.gz exists'
         exit;
     fi
@@ -694,6 +695,57 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         --tadpole \
         -o kunitigs.sh
     bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{spades} ) {
+        $sh_name = "4_spades.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 4_spades.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 4_spades_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 4_spades_Q{1}L{2}X{3}P{4}
+    cd 4_spades_Q{1}L{2}X{3}P{4}
+
+    spades.py \
+        -t [% opt.parallel %] \
+        --only-assembler \
+        -k 31,41,51,61,71,81 \
+        --12 ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        -o .
+
+    anchr contained \
+        contigs.fasta \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
+
+    find . -type d -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
 
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
