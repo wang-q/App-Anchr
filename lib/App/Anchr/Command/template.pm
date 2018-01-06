@@ -898,6 +898,8 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     anchr anchors \
         ../k_unitigs.fasta \
         ../pe.cor.fa \
+        --ratio 0.99 \
+        --fill 3 \
         -p [% opt.parallel2 %] \
         -o anchors.sh
     bash anchors.sh
