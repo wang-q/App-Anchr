@@ -483,8 +483,8 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         exit;
     fi
 
-    if [ -e pe.cor.fa ]; then
-        echo >&2 '    pe.cor.fa exists'
+    if [-e pe.cor.fa.gz ]; then
+        echo >&2 '    pe.cor.fa.gz exists'
         exit;
     fi
 
@@ -540,8 +540,8 @@ if [ ! -e R1.sickle.fq.gz ]; then
     exit;
 fi
 
-if [ -e pe.cor.fa ]; then
-    echo >&2 '    pe.cor.fa exists'
+if [ -e pe.cor.fa.gz ]; then
+    echo >&2 '    pe.cor.fa.gz exists'
     exit;
 fi
 

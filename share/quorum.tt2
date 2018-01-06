@@ -265,6 +265,8 @@ save SUM_IN
 SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
 save SUM_OUT
 
+pigz -p [% opt.parallel %] pe.cor.fa
+
 #----------------------------#
 # Done.
 #----------------------------#
