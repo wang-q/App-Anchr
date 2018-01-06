@@ -15,13 +15,13 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [[ {3} == "all" ]]; then
         mkdir -p 4_Q{1}L{2}XallP000
         cd 4_Q{1}L{2}XallP000
-        ln -s ../2_illumina/Q{1}L{2}/pe.cor.fa.gz pe.cor.fa.gz
+        gzip -d -c ../2_illumina/Q{1}L{2}/pe.cor.fa.gz > pe.cor.fa
         cp ../2_illumina/Q{1}L{2}/environment.json .
         exit;
     fi
 
     # actual sampling
-    faops split-about -l 0 \
+    faops split-about -l 0 -e \
         2_illumina/Q{1}L{2}/pe.cor.fa.gz \
         \$(( [% opt.genome %] * {3} )) \
         4_Q{1}L{2}X{3}
