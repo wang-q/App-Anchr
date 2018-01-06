@@ -60,6 +60,15 @@ if [ -e 8_spades/anchor/anchor.fasta ]; then
     QUAST_LABEL+="spades.anchor,"
 fi
 
+if [ -e 8_megahit/megahit.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_megahit/megahit.non-contained.fasta "
+    QUAST_LABEL+="megahit,"
+fi
+if [ -e 8_megahit/anchor/anchor.fasta ]; then
+    QUAST_TARGET+=" 8_megahit/anchor/anchor.fasta "
+    QUAST_LABEL+="megahit.anchor,"
+fi
+
 if [ -e 8_platanus/platanus.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_platanus/platanus.non-contained.fasta "
     QUAST_LABEL+="platanus,"
