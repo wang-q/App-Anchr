@@ -24,6 +24,7 @@ sub opt_spec {
         [ "reads=i",    "how many reads to estimate insert size",    { default => 2000000 }, ],
         [ "filter=s",   "adapter, phix, artifact",                   { default => "adapter" }, ],
         [ 'tadpole',    'also use tadpole to create k-unitigs', ],
+        [ 'megahit',    'also use megahit to create k-unitigs', ],
         [ 'spades',     'also use spades to create k-unitigs', ],
         [ "cov3=s",     "down sampling coverage of PacBio reads", ],
         [ "qual3=s",    "raw and/or trim",                           { default => "trim" } ],
@@ -709,6 +710,71 @@ EOF
         ) or die Template->error;
     }
 
+    if ( $opt->{megahit} ) {
+        $sh_name = "4_megahit.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 4_megahit.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 4_megahit_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 4_megahit_Q{1}L{2}X{3}P{4}
+    cd 4_megahit_Q{1}L{2}X{3}P{4}
+
+    ln -s ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa pe.cor.fa
+    cp ../4_Q{1}L{2}X{3}P{4}/environment.json environment.json
+
+    START_TIME=\$(date +%s)
+
+    megahit \
+        -t [% opt.parallel %] \
+        --k-list 31,41,51,61,71,81 \
+        --12 pe.cor.fa \
+        --min-count 3 \
+        -o megahit_out
+
+    anchr contained \
+        megahit_out/final.contigs.fa \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
+
+    END_TIME=\$(date +%s)
+    RUNTIME=\$((END_TIME-START_TIME))
+
+    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
+
+    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
     if ( $opt->{spades} ) {
         $sh_name = "4_spades.sh";
         print "Create $sh_name\n";
@@ -850,6 +916,50 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     rm -fr 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
     mkdir -p 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
     cd 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{megahit} ) {
+        $sh_name = "4_megahitAnchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 4_megahitAnchors.sh
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
+    if [ -e 4_megahit_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 4_megahit_Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 4_megahit_Q{1}L{2}X{3}P{4}/anchor
+    cd 4_megahit_Q{1}L{2}X{3}P{4}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
