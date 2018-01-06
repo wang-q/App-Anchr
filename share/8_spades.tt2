@@ -1,11 +1,6 @@
 [% INCLUDE header.tt2 %]
 log_warn 8_spades.sh
 
-if [ -e 8_spades/anchor/anchor.fasta ]; then
-    log_info "8_spades/anchor/anchor.fasta presents"
-    exit;
-fi
-
 #----------------------------#
 # set parameters
 #----------------------------#
@@ -14,6 +9,12 @@ USAGE="Usage: $0 DIR_PREFIX"
 DIR_PREFIX=${1:-"2_illumina/Q25L60"}
 
 DIR_PREFIX="$(cd "$(dirname "$DIR_PREFIX")"; pwd)/$(basename "$DIR_PREFIX")"
+
+
+if [ -e 8_spades/anchor/anchor.fasta ]; then
+    log_info "8_spades/anchor/anchor.fasta presents"
+    exit;
+fi
 
 #----------------------------#
 # spades
