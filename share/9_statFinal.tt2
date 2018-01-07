@@ -71,6 +71,24 @@ if [ -e 8_spades/spades.non-contained.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/spades.non-contained.fasta;) >> statFinal.md
 fi
+if [ -e 8_spades/anchor/anchor.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades.anchor"; faops n50 -H -S -C 8_spades/anchor/anchor.fasta;) >> statFinal.md
+fi
+
+# megahit
+if [ -e 8_megahit/final.contigs.fa ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "megahit.contig"; faops n50 -H -S -C 8_megahit/final.contigs.fa;) >> statFinal.md
+fi
+if [ -e 8_megahit/megahit.non-contained.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "megahit.non-contained"; faops n50 -H -S -C 8_megahit/megahit.non-contained.fasta;) >> statFinal.md
+fi
+if [ -e 8_megahit/anchor/anchor.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "megahit.anchor"; faops n50 -H -S -C 8_megahit/anchor/anchor.fasta;) >> statFinal.md
+fi
 
 # platanus
 if [ -e 8_platanus/out_contig.fa ]; then
@@ -84,6 +102,10 @@ fi
 if [ -e 8_platanus/platanus.non-contained.fasta ]; then
 	printf "| %s | %s | %s | %s |\n" \
 	    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/platanus.non-contained.fasta;) >> statFinal.md
+fi
+if [ -e 8_platanus/anchor/anchor.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "platanus.anchor"; faops n50 -H -S -C 8_platanus/anchor/anchor.fasta;) >> statFinal.md
 fi
 
 cat statFinal.md
