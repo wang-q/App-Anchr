@@ -136,10 +136,13 @@ if [ -e 6_anchorFill.sh ]; then
 fi
 
 #----------------------------#
-# spades and platanus
+# spades, megahit and platanus
 #----------------------------#
 if [ -e 8_spades.sh ]; then
     bash 8_spades.sh;
+fi
+if [ -e 8_megahit.sh ]; then
+    bash 8_megahit.sh;
 fi
 if [ -e 8_platanus.sh ]; then
     bash 8_platanus.sh;
