@@ -162,84 +162,84 @@ fi
 # remove `--no-discard`.
 # And we only want most reliable parts of the genome other than the whole genome, so dropping rare
 # k-mers is totally OK for us. Raise `-m` from 1 to 3, `-g` from 1 to 3, and `-a` from 1 to 4.
-if [ ! -e pe.cor.fa ]; then
-    log_info Error correct reads.
-    quorum_error_correct_reads \
-        -q $((MIN_Q_CHAR + 40)) \
-        -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
-        quorum_mer_db.jf \
-        pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %]\
-        -o pe.cor --verbose 1>quorum.err 2>&1 \
-    || {
-        mv pe.cor.fa pe.cor.fa.failed;
-        log_warn Error correction of reads failed. Check pe.cor.log.;
-        exit 1;
-    }
-    log_debug "Discard any reads with subs"
-    mv pe.cor.fa pe.cor.sub.fa
-    cat pe.cor.sub.fa \
-        | grep -E '^>\w+\s*$' -A 1 \
-        | sed '/^--$/d' \
-        | perl -nl -e '
-            BEGIN {
-                our $prev_name, $prev_idx, $prev_seq, $cur_name, $cur_idx, $cur_seq;
-            }
+log_info Error correct reads.
+quorum_error_correct_reads \
+    -q $((MIN_Q_CHAR + 40)) \
+    -m 3 -s 1 -g 3 -a 4 -t [% opt.parallel %] -w 10 -e 1 \
+    quorum_mer_db.jf \
+    pe.renamed.fastq [% IF args.size == 3 %]se.renamed.fastq [% END %]\
+    -o pe.cor --verbose 1>quorum.err 2>&1 \
+|| {
+    mv pe.cor.fa pe.cor.fa.failed;
+    log_warn Error correction of reads failed. Check pe.cor.log.;
+    exit 1;
+}
+log_debug "Discard any reads with subs"
+mv pe.cor.fa pe.cor.sub.fa
+cat pe.cor.sub.fa \
+    | grep -E '^>\w+\s*$' -A 1 \
+    | sed '/^--$/d' \
+    | perl -nl -e '
+        BEGIN {
+            our $prev_name, $prev_idx, $prev_seq, $cur_name, $cur_idx, $cur_seq;
+        }
 
-            if ( substr( $_, 0, 1 ) eq q{>} ) {
-                ($cur_name) = split /\s+/, $_;
-                $cur_name =~ s/^>//;
-                $cur_idx = substr $cur_name, 2;
-            }
-            else {
-                $cur_seq = $_;
+        if ( substr( $_, 0, 1 ) eq q{>} ) {
+            ($cur_name) = split /\s+/, $_;
+            $cur_name =~ s/^>//;
+            $cur_idx = substr $cur_name, 2;
+        }
+        else {
+            $cur_seq = $_;
 
-                if ( $cur_idx & 1 ) { # odd
-                    if ( defined $prev_name ) {
-                        if ( $cur_idx - $prev_idx == 1 ) {
-                            print qq{>$prev_name/1};
-                            print qq{$prev_seq};
-                            print qq{>$prev_name/2};
-                            print qq{$cur_seq};
-                        }
-                        else {
-                            print qq{>$prev_name/1};
-                            print qq{$prev_seq};
-                            print qq{>$prev_name/2};
-                            print qq{N};
-
-                            print qq{>$cur_name/1};
-                            print qq{N};
-                            print qq{>$cur_name/2};
-                            print qq{$cur_seq};
-                        }
-
-                        undef $prev_name;
-                        undef $prev_idx;
-                        undef $prev_seq;
+            if ( $cur_idx & 1 ) { # odd
+                if ( defined $prev_name ) {
+                    if ( $cur_idx - $prev_idx == 1 ) {
+                        print qq{>$prev_name/1};
+                        print qq{$prev_seq};
+                        print qq{>$prev_name/2};
+                        print qq{$cur_seq};
                     }
                     else {
+                        print qq{>$prev_name/1};
+                        print qq{$prev_seq};
+                        print qq{>$prev_name/2};
+                        print qq{N};
+
                         print qq{>$cur_name/1};
                         print qq{N};
                         print qq{>$cur_name/2};
                         print qq{$cur_seq};
                     }
-                }
-                else { # even
-                    if ( defined $prev_name ) {
-                        print qq{>$prev_name/1};
-                        print qq{$prev_seq};
-                        print qq{>$prev_name/2};
-                        print qq{N};
-                    }
 
-                    $prev_name = $cur_name;
-                    $prev_idx = $cur_idx;
-                    $prev_seq = $cur_seq;
+                    undef $prev_name;
+                    undef $prev_idx;
+                    undef $prev_seq;
+                }
+                else {
+                    print qq{>$cur_name/1};
+                    print qq{N};
+                    print qq{>$cur_name/2};
+                    print qq{$cur_seq};
                 }
             }
-        ' \
-        > pe.cor.fa
-fi
+            else { # even
+                if ( defined $prev_name ) {
+                    print qq{>$prev_name/1};
+                    print qq{$prev_seq};
+                    print qq{>$prev_name/2};
+                    print qq{N};
+                }
+
+                $prev_name = $cur_name;
+                $prev_idx = $cur_idx;
+                $prev_seq = $cur_seq;
+            }
+        }
+    ' \
+    > pe.cor.fa
+
+rm pe.cor.sub.fa
 
 #----------------------------#
 # Estimating genome size.
@@ -265,6 +265,12 @@ save SUM_IN
 SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
 save SUM_OUT
 
+mv pe.cor.fa pe.cor.interleave.fa
+shuffle.sh \
+    interleaved \
+    in=pe.cor.interleave.fa \
+    out=pe.cor.fa
+rm pe.cor.interleave.fa
 pigz -p [% opt.parallel %] pe.cor.fa
 
 #----------------------------#
