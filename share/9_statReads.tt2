@@ -101,4 +101,18 @@ parallel --no-run-if-empty -k -j 2 "
     " ::: [% opt.cov3 %] ::: raw trim \
     >> statReads.md
 
+if [ -e 2_illumina/trimming.stats.txt ]; then
+    echo >> statReads.md
+    echo '```text' >> statReads.md
+    echo "#trimmedReads" >> statReads.md
+    cat 2_illumina/trimming.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 1000 and print;
+        ' \
+        >> statReads.md
+    echo '```' >> statReads.md
+fi
+
 cat statReads.md

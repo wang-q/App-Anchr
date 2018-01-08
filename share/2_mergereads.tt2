@@ -85,11 +85,24 @@ for NAME in ihist.merge1.txt ihist.merge.txt; do
             ' \
         >> statMergeReads.md
 done
+
+log_info "stats of trimmed reads"
 echo >> statMergeReads.md
+echo '```text' >> statMergeReads.md
+echo "#trimmedReads" >> statMergeReads.md
+cat trimming.stats.txt \
+	| perl -nla -F"\t" -e '
+        /^#(Matched|Name)/ and print and next;
+        /^#/ and next;
+        $F[1] >= 1000 and print;
+	' \
+	>> statMergeReads.md
+echo '```' >> statMergeReads.md
 
 log_info "stats of filtered reads"
+echo >> statMergeReads.md
 echo '```text' >> statMergeReads.md
-echo "#mergeReads" >> statMergeReads.md
+echo "#filteredReads" >> statMergeReads.md
 cat filtering.stats.txt \
 	| perl -nla -F"\t" -e '
         /^#(Matched|Name)/ and print and next;

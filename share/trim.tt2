@@ -138,7 +138,8 @@ if [ ! -e R1.[% current %].fq.gz ]; then
         ref=[% opt.adapter %] \
         threads=[% opt.parallel %] \
         ktrim=r k=23 mink=11 hdist=1 tbo tpe \
-        ftm=5 ordered overwrite
+        ftm=5 ordered overwrite \
+        stats=trimming.stats.txt
 fi
 [% prev = 'bbduk' -%]
 [% END -%]
