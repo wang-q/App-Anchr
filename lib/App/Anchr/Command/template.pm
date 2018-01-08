@@ -494,14 +494,15 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
 
     anchr quorum \
-        R1.sickle.fq.gz [% IF not opt.se %]R2.sickle.fq.gz[% END %] \
+        R1.sickle.fq.gz \
+[% IF not opt.se -%]
+        R2.sickle.fq.gz \
         \$(
-            if [[ {1} -ge '30' ]]; then
-                if [ -e Rs.sickle.fq.gz ]; then
-                    echo Rs.sickle.fq.gz;
-                fi
+            if [ -e Rs.sickle.fq.gz ]; then
+                echo Rs.sickle.fq.gz;
             fi
         ) \
+[% END -%]
         -p [% opt.parallel %] \
         -o quorum.sh
     bash quorum.sh
@@ -551,14 +552,15 @@ if [ -e pe.cor.fa.gz ]; then
 fi
 
 anchr quorum \
-    R1.sickle.fq.gz [% IF not opt.se %]R2.sickle.fq.gz[% END %] \
+    R1.sickle.fq.gz \
+[% IF not opt.se -%]
+    R2.sickle.fq.gz \
     \$(
-        if [[ [% qual %] -ge '30' ]]; then
-            if [ -e Rs.sickle.fq.gz ]; then
-                echo Rs.sickle.fq.gz;
-            fi
+        if [ -e Rs.sickle.fq.gz ]; then
+            echo Rs.sickle.fq.gz;
         fi
     ) \
+[% END -%]
     -p [% opt.parallel %] \
     -o quorum.sh
 bash quorum.sh
