@@ -866,6 +866,12 @@ fastqc -t 16 \
     merged.fq.gz unmerged.fq.gz \
     -o .
 
+mkdir kmergenie
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    cd kmergenie
+    kmergenie -l 21 -k 121 -s 10 -t 8 --one-pass ../{}.fq.gz -o {}
+    " ::: merged unmerged
+
 spades.py \
     -s merged.fq.gz --12 unmerged.fq.gz \
     --only-assembler \
@@ -880,8 +886,8 @@ anchr contained \
 
 megahit \
     -r merged.fq.gz --12 unmerged.fq.gz \
-    --k-min 45 --k-max 225 \
-    --k-step 26 --min-count 2 \
+    --k-min 45 --k-max 225 --k-step 26 \
+    --min-count 2 \
     -o megahit_out
 
 anchr contained \
