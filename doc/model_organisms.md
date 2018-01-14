@@ -248,6 +248,7 @@ anchr template \
     --qual3 "raw trim" \
     --mergereads \
     --tile \
+    --ecphase "1,2,3" \
     --parallel 16
 
 ```
@@ -777,7 +778,7 @@ bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
-# spades and platanus
+# spades, megahit, and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
 
