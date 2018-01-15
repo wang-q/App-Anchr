@@ -326,36 +326,36 @@ bash 2_mergereads.sh
 
 | Name           | N50 |    Sum |        # |
 |:---------------|----:|-------:|---------:|
-| clumped        | 151 |  1.72G | 11411654 |
-| filteredbytile | 151 |  1.66G | 11024018 |
-| trimmed        | 149 |  1.42G | 10344602 |
-| filtered       | 149 |  1.42G | 10344094 |
-| ecco           | 149 |  1.42G | 10344094 |
-| eccc           | 149 |  1.42G | 10344094 |
-| ecct           | 149 |  1.42G | 10289556 |
-| extended       | 189 |  1.82G | 10289556 |
-| merged         | 339 |  1.71G |  5075796 |
-| unmerged.raw   | 174 | 20.08M |   137964 |
-| unmerged       | 164 | 14.44M |   101870 |
+| clumped        | 151 |  1.73G | 11439000 |
+| filteredbytile | 151 |  1.67G | 11064416 |
+| trimmed        | 149 |  1.43G | 10382752 |
+| filtered       | 149 |  1.43G | 10382242 |
+| ecco           | 149 |  1.43G | 10382242 |
+| eccc           | 149 |  1.43G | 10382242 |
+| ecct           | 149 |  1.42G | 10327794 |
+| extended       | 189 |  1.83G | 10327794 |
+| merged         | 339 |  1.72G |  5094753 |
+| unmerged.raw   | 174 | 20.13M |   138288 |
+| unmerged       | 164 | 14.47M |   102062 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
-| ihist.merge1.txt | 271.6 |    277 |  23.8 |         10.87% |
+| ihist.merge1.txt | 271.6 |    277 |  23.9 |         10.85% |
 | ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.66% |
 
 ```text
 #trimmedReads
-#Matched	18712	0.16974%
+#Matched	18800	0.16991%
 #Name	Reads	ReadsPct
-pcr_dimer	8380	0.07602%
-PCR_Primers	1504	0.01364%
+pcr_dimer	8411	0.07602%
+PCR_Primers	1502	0.01358%
 ```
 
 ```text
 #filteredReads
-#Matched	508	0.00491%
+#Matched	510	0.00491%
 #Name	Reads	ReadsPct
-gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	506	0.00489%
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	508	0.00489%
 ```
 
 * quorum

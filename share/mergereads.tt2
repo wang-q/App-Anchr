@@ -18,7 +18,7 @@ clumpify.sh \
 [% END -%]
     out=clumped.fq.gz \
     threads=[% opt.parallel %] \
-    dedupe \
+    dedupe dupesubs=0 \
     overwrite
 rm temp.fq.gz; ln -s clumped.fq.gz temp.fq.gz
 
