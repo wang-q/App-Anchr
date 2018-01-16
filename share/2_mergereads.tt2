@@ -111,3 +111,7 @@ cat filtering.stats.txt \
 	' \
 	>> statMergeReads.md
 echo '```' >> statMergeReads.md
+
+cat statMergeReads.md
+
+mv statMergeReads.md ../../
