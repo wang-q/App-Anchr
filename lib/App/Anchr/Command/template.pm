@@ -515,7 +515,7 @@ done
 find . -type f -name "*.sam.gz" -or -name "*.sort.bam" \
     | parallel --no-run-if-empty -j 1 rm
 
-cat
+cat statInsertSize.md
 
 mv statInsertSize.md ../../
 
