@@ -23,7 +23,6 @@ sub opt_spec {
         [ "cov2=s",   "down sampling coverage of Illumina reads",  { default => "40 80" }, ],
         [ "qual2=s",  "quality threshold",                         { default => "25 30" }, ],
         [ "len2=s",   "filter reads less or equal to this length", { default => "60" }, ],
-        [ "reads=i",  "how many reads to estimate insert size",    { default => 2000000 }, ],
         [ "filter=s", "adapter, phix, artifact",                   { default => "adapter" }, ],
         [ 'tadpole',  'also use tadpole to create k-unitigs', ],
         [ 'megahit',  'also use megahit to create k-unitigs', ],
@@ -36,6 +35,9 @@ sub opt_spec {
         [ "tile",        "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
+        [],
+        [ 'insertsize', 'calc the insert sizes', ],
+        [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
         { show_defaults => 1, }
     );
 }
@@ -86,6 +88,9 @@ sub execute {
     # kmergenie
     $self->gen_kmergenie( $opt, $args );
 
+    # insertSize
+    $self->gen_insertSize( $opt, $args );
+
     # kmergenie
     $self->gen_mergereads( $opt, $args );
 
@@ -97,9 +102,6 @@ sub execute {
 
     # statReads
     $self->gen_statReads( $opt, $args );
-
-    # insertSize
-    $self->gen_insertSize( $opt, $args );
 
     # quorum
     $self->gen_quorum( $opt, $args );
@@ -370,6 +372,7 @@ sub gen_insertSize {
     my $sh_name;
 
     return if $opt->{se};
+    return unless $opt->{insertsize};
 
     $sh_name = "2_insertSize.sh";
     print "Create $sh_name\n";
@@ -379,81 +382,142 @@ log_warn 2_insertSize.sh
 
 cd [% args.0 %]
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Qual-Len: Q{1}L{2} <=='
+mkdir -p 2_illumina/insertSize
+cd 2_illumina/insertSize
 
-    if [ ! -e R1.sickle.fq.gz ]; then
-        echo >&2 '    R1.sickle.fq.gz not exists'
-        exit;
-    fi
+if [ -e ihist.tadpole.txt ]; then
+    exit;
+fi
 
-    if [ -e ihist.txt ]; then
-        echo >&2 '    ihist.txt presents'
-        exit;
-    fi
+if [ -e ihist.genome.txt ]; then
+    exit;
+fi
 
-    tadpole.sh \
-        in=R1.sickle.fq.gz \
-        in2=R2.sickle.fq.gz \
-        out=tadpole.contig.fasta \
-        threads=[% opt.parallel %] \
-        overwrite
+tadpole.sh \
+    in=../R1.fq.gz \
+    in2=../R2.fq.gz \
+    out=tadpole.contig.fasta \
+    threads=[% opt.parallel %] \
+    overwrite
 
+bbmap.sh \
+    in=../R1.fq.gz \
+    in2=../R2.fq.gz \
+    out=tadpole.sam.gz \
+    ref=tadpole.contig.fasta \
+    threads=[% opt.parallel %] \
+    maxindel=0 strictmaxindel \
+    reads=[% opt.reads %] \
+    nodisk overwrite
+
+reformat.sh \
+    in=tadpole.sam.gz \
+    ihist=ihist.tadpole.txt \
+    overwrite
+
+picard SortSam \
+    I=tadpole.sam.gz \
+    O=tadpole.sort.bam \
+    SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=LENIENT
+
+picard CollectInsertSizeMetrics \
+    I=tadpole.sort.bam \
+    O=insert_size.tadpole.txt \
+    HISTOGRAM_FILE=insert_size.tadpole.pdf
+
+if [ -e ../../1_genome/genome.fa ]; then
     bbmap.sh \
-        in=R1.sickle.fq.gz \
-        in2=R2.sickle.fq.gz \
-        out=pe.sam.gz \
-        ref=tadpole.contig.fasta \
+        in=../R1.fq.gz \
+        in2=../R2.fq.gz \
+        out=genome.sam.gz \
+        ref=../../1_genome/genome.fa \
         threads=[% opt.parallel %] \
-        maxindel=0 strictmaxindel perfectmode \
+        maxindel=0 strictmaxindel \
         reads=[% opt.reads %] \
         nodisk overwrite
-
+        
     reformat.sh \
-        in=pe.sam.gz \
-        ihist=ihist.txt \
+        in=genome.sam.gz \
+        ihist=ihist.genome.txt \
         overwrite
+    
+    picard SortSam \
+        I=genome.sam.gz \
+        O=genome.sort.bam \
+        SORT_ORDER=coordinate \
+        VALIDATION_STRINGENCY=LENIENT
+    
+    picard CollectInsertSizeMetrics \
+        I=genome.sort.bam \
+        O=insert_size.genome.txt \
+        HISTOGRAM_FILE=insert_size.genome.pdf
 
-    find . -type f -name "pe.sam.gz" | parallel --no-run-if-empty -j 1 rm
+fi
 
-    echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+printf "| %s | %s | %s | %s | %s |\n" \
+    "Group" "Mean" "Median" "STDev" "PercentOfPairs/PairOrientation" \
+    > statInsertSize.md
+printf "|:--|--:|--:|--:|--:|\n" >> statInsertSize.md
 
-    printf "| %s | %s | %s | %s | %s |\n" \
-        "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
-        > statInsertSize.md
-    printf "|:--|--:|--:|--:|--:|\n" >> statInsertSize.md
-
+# bbtools reformat.sh
 #Mean	339.868
 #Median	312
 #Mode	251
 #STDev	134.676
 #PercentOfPairs	36.247
+for G in genome tadpole; do
+    if [ ! -e ihist.${G}.txt ]; then
+        continue;
+    fi
 
-for Q in [% opt.qual2 %]; do
-    for L in [% opt.len2 %]; do
-        printf "| %s " "Q${Q}L${L}" >> statInsertSize.md
-        cat 2_illumina/Q${Q}L${L}/ihist.txt \
-            | perl -nla -e '
-                BEGIN { our $stat = { }; };
+    printf "| %s " "${G}.bbtools" >> statInsertSize.md
+    cat ihist.${G}.txt \
+        | perl -nla -e '
+            BEGIN { our $stat = { }; };
 
-                m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
-                $stat->{$1} = $F[1];
+            m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
+            $stat->{$1} = $F[1];
 
-                END {
-                    printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
-                        $stat->{Mean},
-                        $stat->{Median},
-                        $stat->{STDev},
-                        $stat->{PercentOfPairs};
-                }
-                ' \
-            >> statInsertSize.md
-    done
+            END {
+                printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
+                    $stat->{Mean},
+                    $stat->{Median},
+                    $stat->{STDev},
+                    $stat->{PercentOfPairs};
+            }
+            ' \
+        >> statInsertSize.md
 done
 
-cat statInsertSize.md
+# picard CollectInsertSizeMetrics
+#MEDIAN_INSERT_SIZE	MODE_INSERT_SIZE	MEDIAN_ABSOLUTE_DEVIATION	MIN_INSERT_SIZE	MAX_INSERT_SIZE	MEAN_INSERT_SIZE	STANDARD_DEVIATION	READ_PAIRS	PAIR_ORIENTATION	WIDTH_OF_10_PERCENT	WIDTH_OF_20_PERCENT	WIDTH_OF_30_PERCENT	WIDTH_OF_40_PERCENT	WIDTH_OF_50_PERCENT	WIDTH_OF_60_PERCENT	WIDTH_OF_70_PERCENT	WIDTH_OF_80_PERCENT	WIDTH_OF_90_PERCENT	WIDTH_OF_95_PERCENT	WIDTH_OF_99_PERCENT	SAMPLE	LIBRARY	READ_GROUP
+#296	287	14	92	501	294.892521	21.587526	1611331	FR	7	11	17	23	29	35	41	49	63	81	145
+for G in genome tadpole; do
+    if [ ! -e insert_size.${G}.txt ]; then
+        continue;
+    fi
+
+    printf "| %s " "${G}.picard" >> statInsertSize.md
+    cat insert_size.${G}.txt \
+        | perl -nla -F"\t" -e '
+            next if @F < 9;
+            next unless /^\d/;
+            printf qq{| %.1f | %s | %.1f | %s |\n},
+                $F[5],
+                $F[0],
+                $F[6],
+                $F[8];
+            ' \
+        >> statInsertSize.md
+done
+
+find . -type f -name "*.sam.gz" -or -name "*.sort.bam" \
+    | parallel --no-run-if-empty -j 1 rm
+
+cat
+
+mv statInsertSize.md ../../
 
 EOF
     $tt->process(
