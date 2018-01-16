@@ -406,7 +406,7 @@ bbmap.sh \
     out=tadpole.sam.gz \
     ref=tadpole.contig.fasta \
     threads=[% opt.parallel %] \
-    maxindel=0 strictmaxindel \
+    pairedonly \
     reads=[% opt.reads %] \
     nodisk overwrite
 

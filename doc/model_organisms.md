@@ -267,6 +267,8 @@ cd ${WORKING_DIR}/${BASE_NAME}
 # Illumina QC
 bash 2_fastqc.sh
 bash 2_kmergenie.sh
+
+# insert sizes
 bash 2_insertSize.sh
 
 # preprocess Illumina reads
@@ -327,16 +329,16 @@ bash 2_mergereads.sh
 | Name           | N50 |    Sum |        # |
 |:---------------|----:|-------:|---------:|
 | clumped        | 151 |  1.73G | 11439000 |
-| filteredbytile | 151 |  1.67G | 11064416 |
-| trimmed        | 149 |  1.43G | 10382752 |
-| filtered       | 149 |  1.43G | 10382242 |
-| ecco           | 149 |  1.43G | 10382242 |
-| eccc           | 149 |  1.43G | 10382242 |
-| ecct           | 149 |  1.42G | 10327794 |
-| extended       | 189 |  1.83G | 10327794 |
-| merged         | 339 |  1.72G |  5094753 |
-| unmerged.raw   | 174 | 20.13M |   138288 |
-| unmerged       | 164 | 14.47M |   102062 |
+| filteredbytile | 151 |  1.67G | 11057040 |
+| trimmed        | 149 |  1.43G | 10376538 |
+| filtered       | 149 |  1.43G | 10376028 |
+| ecco           | 149 |  1.43G | 10376028 |
+| eccc           | 149 |  1.43G | 10376028 |
+| ecct           | 149 |  1.42G | 10321932 |
+| extended       | 189 |  1.83G | 10321932 |
+| merged         | 339 |  1.72G |  5091886 |
+| unmerged.raw   | 174 | 20.11M |   138160 |
+| unmerged       | 164 | 14.46M |   101970 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
@@ -345,9 +347,9 @@ bash 2_mergereads.sh
 
 ```text
 #trimmedReads
-#Matched	18800	0.16991%
+#Matched	18802	0.17005%
 #Name	Reads	ReadsPct
-pcr_dimer	8411	0.07602%
+pcr_dimer	8410	0.07606%
 PCR_Primers	1502	0.01358%
 ```
 
@@ -355,7 +357,7 @@ PCR_Primers	1502	0.01358%
 #filteredReads
 #Matched	510	0.00491%
 #Name	Reads	ReadsPct
-gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	508	0.00489%
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	508	0.00490%
 ```
 
 * quorum
@@ -750,6 +752,7 @@ anchr template \
     --qual3 "trim" \
     --mergereads \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -760,6 +763,9 @@ anchr template \
 # Illumina QC
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+
+# insert size
+bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # preprocess Illumina reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
@@ -773,10 +779,6 @@ bsub -w "ended(${BASE_NAME}-2_trim) && ended(${BASE_NAME}-3_trimlong)" \
 
 # merge reads
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
-
-# insert size
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
 
 # spades, megahit, and platanus
 bsub -w "done(${BASE_NAME}-2_trim)" \
@@ -952,6 +954,13 @@ quast --no-check --threads 16 \
 
 ```
 
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 356.5 |    320 | 484.3 |                         45.78% |
+| tadpole.bbtools | 338.9 |    309 | 143.3 |                         43.29% |
+| genome.picard   | 352.1 |    322 | 142.5 |                             FR |
+| tadpole.picard  | 342.9 |    313 | 141.4 |                             FR |
+
 | Name      |    N50 |      Sum |        # |
 |:----------|-------:|---------:|---------:|
 | Genome    | 924431 | 12157105 |       17 |
@@ -975,11 +984,6 @@ PhiX_read2_adapter	2061	0.01120%
 I7_Primer_Nextera_XT_and_Nextera_Enrichment_N712	1470	0.00799%
 Reverse_adapter	1096	0.00596%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 312.6 |    292 | 146.1 |         42.06% |
-| Q30L60 | 311.9 |    292 | 144.8 |         42.97% |
 
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
@@ -1261,6 +1265,7 @@ anchr template \
     --qual3 "trim" \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -1270,6 +1275,13 @@ anchr template \
 Same as [s288c: run](#s288c-run)
 
 The `meryl` step of `canu` failed in hpcc, run it locally.
+
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 587.2 |    244 | 3424.7 |                         43.08% |
+| tadpole.bbtools | 257.0 |    234 |  108.0 |                         34.81% |
+| genome.picard   | 265.6 |    244 |  109.9 |                             FR |
+| tadpole.picard  | 257.1 |    235 |  107.5 |                             FR |
 
 | Name      |      N50 |       Sum |         # |
 |:----------|---------:|----------:|----------:|
@@ -1312,12 +1324,6 @@ RNA_PCR_Primer_(RP1)_part_#_15013198	1488	0.00085%
 I7_Nextera_Transposase_1	1458	0.00084%
 I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1366	0.00078%
 ```
-
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 248.6 |    228 | 101.1 |         32.02% |
-| Q30L60 | 247.6 |    228 | 100.0 |         33.02% |
 
 | Name         | N50 |     Sum |         # |
 |:-------------|----:|--------:|----------:|
@@ -1566,6 +1572,7 @@ anchr template \
     --qual3 "trim" \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -1573,6 +1580,13 @@ anchr template \
 ## n2: run
 
 Same as [s288c: run](#s288c-run)
+
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 253.4 |    207 | 1037.1 |                         41.49% |
+| tadpole.bbtools | 210.3 |    202 |   71.2 |                         40.98% |
+| genome.picard   | 214.1 |    207 |   68.3 |                             FR |
+| tadpole.picard  | 211.2 |    203 |   68.7 |                             FR |
 
 | Name      |      N50 |       Sum |         # |
 |:----------|---------:|----------:|----------:|
@@ -1608,11 +1622,6 @@ Nextera_LMP_Read1_External_Adapter	1625	0.00143%
 I7_Nextera_Transposase_2	1405	0.00123%
 Bisulfite_R1	1363	0.00120%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 206.1 |    199 |  71.0 |         21.49% |
-| Q30L60 | 205.8 |    199 |  70.9 |         32.65% |
 
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
@@ -1948,6 +1957,7 @@ anchr template \
     --qual3 "trim" \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -1955,6 +1965,15 @@ anchr template \
 ## col_0: run
 
 Same as [s288c: run](#s288c-run)
+
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 419.7 |    340 | 1245.4 |                         48.78% |
+| tadpole.bbtools | 340.6 |    324 |  115.1 |                         39.56% |
+| genome.picard   | 396.4 |    377 |  110.0 |                             FR |
+| genome.picard   | 255.3 |    268 |   52.6 |                             RF |
+| tadpole.picard  | 378.7 |    363 |  109.1 |                             FR |
+| tadpole.picard  | 245.0 |    255 |   51.5 |                             RF |
 
 | Name      |      N50 |       Sum |        # |
 |:----------|---------:|----------:|---------:|
@@ -1994,11 +2013,6 @@ I5_Primer_Nextera_XT_Index_Kit_v2_S511	1387	0.00258%
 I5_Primer_Nextera_XT_and_Nextera_Enrichment_[N/S/E]502	1332	0.00248%
 RNA_Adapter_(RA5)_part_#_15013205	1324	0.00246%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 334.1 |    322 | 105.1 |         17.30% |
-| Q30L60 | 345.3 |    333 | 106.4 |         25.66% |
 
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
@@ -2201,6 +2215,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 ```
@@ -2208,6 +2223,13 @@ anchr template \
 ## col_0H: run
 
 Same as [s288c: run](#s288c-run)
+
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 643.4 |    472 | 2200.4 |                         38.56% |
+| tadpole.bbtools | 451.6 |    470 |   89.3 |                         26.89% |
+| genome.picard   | 467.2 |    472 |   37.0 |                             FR |
+| tadpole.picard  | 452.2 |    470 |   78.7 |                             FR |
 
 | Name     |      N50 |       Sum |         # |
 |:---------|---------:|----------:|----------:|
@@ -2242,11 +2264,6 @@ Bisulfite_R2	1127	0.00078%
 Bisulfite_R1	1098	0.00076%
 I7_Primer_Nextera_XT_and_Nextera_Enrichment_N701	1034	0.00071%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 461.7 |    463 |  27.3 |         22.10% |
-| Q30L60 | 461.7 |    463 |  39.9 |         23.17% |
 
 | Name         | N50 |     Sum |         # |
 |:-------------|----:|--------:|----------:|
