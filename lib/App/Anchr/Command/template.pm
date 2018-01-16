@@ -498,12 +498,12 @@ for G in genome tadpole; do
         continue;
     fi
 
-    printf "| %s " "${G}.picard" >> statInsertSize.md
     cat insert_size.${G}.txt \
-        | perl -nla -F"\t" -e '
+        | G=${G} perl -nla -F"\t" -e '
             next if @F < 9;
             next unless /^\d/;
-            printf qq{| %.1f | %s | %.1f | %s |\n},
+            printf qq{| %s | %.1f | %s | %.1f | %s |\n},
+                qq{$ENV{G}.picard},
                 $F[5],
                 $F[0],
                 $F[6],
