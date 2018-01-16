@@ -249,6 +249,7 @@ anchr template \
     --mergereads \
     --tile \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 16
 
 ```
@@ -266,6 +267,7 @@ cd ${WORKING_DIR}/${BASE_NAME}
 # Illumina QC
 bash 2_fastqc.sh
 bash 2_kmergenie.sh
+bash 2_insertSize.sh
 
 # preprocess Illumina reads
 bash 2_trim.sh
@@ -276,10 +278,14 @@ bash 3_trimlong.sh
 # reads stats
 bash 9_statReads.sh
 
-# insertSize
-bash 2_insertSize.sh
-
 ```
+
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 321.9 |    298 | 968.5 |                         47.99% |
+| tadpole.bbtools | 295.7 |    296 |  22.3 |                         40.20% |
+| genome.picard   | 298.2 |    298 |  18.0 |                             FR |
+| tadpole.picard  | 294.9 |    296 |  21.6 |                             FR |
 
 | Name      |     N50 |     Sum |        # |
 |:----------|--------:|--------:|---------:|
@@ -308,12 +314,6 @@ bash 2_insertSize.sh
 pcr_dimer       6920    0.07504%
 PCR_Primers     1266    0.01373%
 ```
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 297.6 |    298 |  19.7 |         35.07% |
-| Q25L60 | 297.7 |    298 |  19.4 |         43.03% |
-| Q30L60 | 297.8 |    298 |  45.2 |         45.61% |
 
 * mergereads
 
