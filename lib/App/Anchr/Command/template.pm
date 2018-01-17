@@ -455,7 +455,7 @@ if [ -e ../../1_genome/genome.fa ]; then
 
 fi
 
-echo -e "Table: insertSize\n" > statInsertSize.md
+echo -e "Table: statInsertSize\n" > statInsertSize.md
 printf "| %s | %s | %s | %s | %s |\n" \
     "Group" "Mean" "Median" "STDev" "PercentOfPairs/PairOrientation" \
     >> statInsertSize.md
@@ -1478,16 +1478,16 @@ find . -type f -name "output.*" | parallel --no-run-if-empty -j 1 rm
 find . -type f -name "core.*"   | parallel --no-run-if-empty -j 1 rm
 
 # cat all .md
-if [ -e statReads.md ]; then
-    cat statReads.md;
-    echo;
-fi
 if [ -e statInsertSize.md ]; then
     cat statInsertSize.md;
     echo;
 fi
-if [ -e 2_illumina/mergereads/statMergeReads.md ]; then
-    cat 2_illumina/mergereads/statMergeReads.md;
+if [ -e statReads.md ]; then
+    cat statReads.md;
+    echo;
+fi
+if [ -e statMergeReads.md ]; then
+    cat statMergeReads.md;
     echo;
 fi
 if [ -e statQuorum.md ]; then

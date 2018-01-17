@@ -9,13 +9,14 @@ USAGE="Usage: $0 [DIR_PREFIX] [FILENAME_MD]"
 DIR_PREFIX=${1:-"4_kunitigs"}
 FILENAME_MD=${2:-"statAnchors.md"}
 
+echo -e "Table: ${FILENAME_MD}\n" > ${FILENAME_MD}
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     "Name" "CovCor" "Mapped%" \
     "N50Anchor" "Sum" "#" \
     "N50Others" "Sum" "#" \
     "median" "MAD" "lower" "upper" \
     "Kmer" "RunTimeKU" "RunTimeAN" \
-    > ${FILENAME_MD}
+    >> ${FILENAME_MD}
 printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> ${FILENAME_MD}
 

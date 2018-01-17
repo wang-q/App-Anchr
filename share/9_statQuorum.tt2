@@ -1,13 +1,14 @@
 [% INCLUDE header.tt2 %]
 log_warn 9_statQuorum.sh
 
+echo -e "Table: statQuorum\n" > statQuorum.md
 printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
     "Name" \
     "CovIn" "CovOut" "Discard%" \
     "AvgRead" "Kmer" \
     "RealG" "EstG" "Est/Real" \
     "RunTime" \
-    > statQuorum.md
+    >> statQuorum.md
 printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> statQuorum.md
 

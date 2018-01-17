@@ -1,9 +1,10 @@
 [% INCLUDE header.tt2 %]
 log_warn 9_statFinal.sh
 
+echo -e "Table: statFinal\n" > statFinal.md
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-    > statFinal.md
+    >> statFinal.md
 printf "|:--|--:|--:|--:|\n" >> statFinal.md
 
 # genome

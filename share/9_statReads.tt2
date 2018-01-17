@@ -6,9 +6,10 @@ if [ -e statReads.md ]; then
     exit;
 fi
 
+echo -e "Table: statReads\n" > statReads.md
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-    > statReads.md
+    >> statReads.md
 printf "|:--|--:|--:|--:|\n" >> statReads.md
 
 if [ -e 1_genome/genome.fa ]; then

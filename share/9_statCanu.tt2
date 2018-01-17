@@ -1,9 +1,10 @@
 [% INCLUDE header.tt2 %]
 log_warn 9_statCanu.sh
 
+echo -e "Table: statCanu\n" > statCanu.md
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-    > statCanu.md
+    >> statCanu.md
 printf "|:--|--:|--:|--:|\n" >> statCanu.md
 
 if [ -e 1_genome/genome.fa ]; then

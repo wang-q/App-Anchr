@@ -32,9 +32,10 @@ anchr mergereads \
 bash mergereads.sh
 
 log_info "stats of all .fq.gz files"
+echo -e "Table: statMergeReads\n" > statMergeReads.md
 printf "| %s | %s | %s | %s |\n" \
     "Name" "N50" "Sum" "#" \
-    > statMergeReads.md
+    >> statMergeReads.md
 printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
 for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged; do
