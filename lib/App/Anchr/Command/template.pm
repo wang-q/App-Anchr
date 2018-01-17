@@ -1579,11 +1579,10 @@ rm -fr 5_canu*
 rm -fr 6_merge*
 rm -fr 6_anchor*
 
-# spades
+# spades, platanus, and megahit
 rm -fr 8_spades*
-
-# platanus
 rm -fr 8_platanus*
+rm -fr 8_megahit*
 
 # quast
 rm -fr 9_quast*
