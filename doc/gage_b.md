@@ -143,6 +143,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -174,6 +175,13 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 578.4 |    578 | 708.2 |                         49.48% |
+| tadpole.bbtools | 557.2 |    571 | 165.2 |                         44.69% |
+| genome.picard   | 582.1 |    585 | 146.5 |                             FR |
+| tadpole.picard  | 573.7 |    577 | 147.3 |                             FR |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 5224283 | 5432652 |       2 |
@@ -186,11 +194,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q25L60   |     250 | 380.22M | 1713406 |
 | Q30L60   |     250 | 370.48M | 1750227 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 549.5 |    561 | 153.2 |         32.81% |
-| Q25L60 | 554.7 |    565 | 152.8 |         37.60% |
-| Q30L60 | 552.2 |    563 | 150.8 |         41.35% |
 
 | Name         | N50 |     Sum |       # |
 |:-------------|----:|--------:|--------:|
@@ -384,6 +387,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -415,6 +419,13 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|------:|-------------------------------:|
+| genome.bbtools  | 440.0 |    422 | 958.8 |                         15.58% |
+| tadpole.bbtools | 407.5 |    420 |  84.2 |                         32.42% |
+| genome.picard   | 412.9 |    422 |  39.3 |                             FR |
+| tadpole.picard  | 408.5 |    421 |  46.7 |                             FR |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 3188524 | 4602977 |       7 |
@@ -426,12 +437,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q20L60   |     144 | 173.66M | 1285528 |
 | Q25L60   |     133 |  144.6M | 1153408 |
 | Q30L60   |     116 | 125.79M | 1150580 |
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 388.0 |    419 | 102.4 |         37.65% |
-| Q25L60 | 389.1 |    419 |  94.0 |         42.11% |
-| Q30L60 | 387.5 |    419 |  91.5 |         41.15% |
 
 
 | Name         | N50 |     Sum |       # |
@@ -608,6 +613,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -639,6 +645,15 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 458.7 |    277 | 2524.0 |                          7.42% |
+| tadpole.bbtools | 266.8 |    266 |   49.3 |                         35.20% |
+| genome.picard   | 295.7 |    279 |   47.4 |                             FR |
+| genome.picard   | 287.1 |    271 |   33.8 |                             RF |
+| tadpole.picard  | 267.9 |    267 |   49.1 |                             FR |
+| tadpole.picard  | 251.5 |    255 |   48.0 |                             RF |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 5067172 | 5090491 |       2 |
@@ -651,11 +666,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q25L60   |     173 | 250.53M | 1570422 |
 | Q30L60   |     163 | 220.91M | 1503261 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 189.4 |    185 |  47.7 |         38.97% |
-| Q25L60 | 191.6 |    187 |  57.3 |         44.03% |
-| Q30L60 | 191.9 |    187 |  62.2 |         46.71% |
 
 | Name         | N50 |     Sum |       # |
 |:-------------|----:|--------:|--------:|
@@ -834,6 +844,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -865,6 +876,15 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 391.1 |    274 | 1890.4 |                          8.53% |
+| tadpole.bbtools | 270.8 |    267 |   53.0 |                         41.32% |
+| genome.picard   | 294.0 |    277 |   48.0 |                             FR |
+| genome.picard   | 280.2 |    268 |   29.0 |                             RF |
+| tadpole.picard  | 271.9 |    268 |   48.0 |                             FR |
+| tadpole.picard  | 260.5 |    262 |   44.9 |                             RF |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 2961149 | 4033464 |       2 |
@@ -877,11 +897,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q25L60   |     187 | 252.78M | 1417550 |
 | Q30L60   |     180 |  229.6M | 1354637 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 196.6 |    190 |  51.0 |         38.48% |
-| Q25L60 | 198.6 |    192 |  53.1 |         42.47% |
-| Q30L60 | 198.9 |    192 |  52.8 |         45.71% |
 
 | Name         | N50 |     Sum |       # |
 |:-------------|----:|--------:|--------:|
@@ -1058,6 +1073,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -1089,6 +1105,13 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 246.4 |    193 | 1280.3 |                         46.93% |
+| tadpole.bbtools | 196.5 |    189 |   53.4 |                         39.73% |
+| genome.picard   | 199.2 |    193 |   47.4 |                             FR |
+| tadpole.picard  | 193.5 |    188 |   44.6 |                             FR |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 2961149 | 4033464 |       2 |
@@ -1101,9 +1124,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q25L60   |     100 | 362.46M | 3625404 |
 | Q30L60   |     100 | 362.46M | 3625404 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q25L60 | 197.0 |    190 |  49.9 |         16.08% |
 
 | Name         | N50 |     Sum |       # |
 |:-------------|----:|--------:|--------:|
@@ -1250,6 +1270,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -1281,6 +1302,13 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 461.0 |    422 | 1286.1 |                         17.09% |
+| tadpole.bbtools | 406.2 |    420 |   63.6 |                         32.72% |
+| genome.picard   | 413.0 |    422 |   39.3 |                             FR |
+| tadpole.picard  | 407.6 |    421 |   47.5 |                             FR |
+
 | Name     |     N50 |     Sum |        # |
 |:---------|--------:|--------:|---------:|
 | Genome   | 3188524 | 4602977 |        7 |
@@ -1292,12 +1320,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q20L60   |     144 |   1.63G | 12042806 |
 | Q25L60   |     133 |   1.35G | 10804424 |
 | Q30L60   |     116 |   1.18G | 10785603 |
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 387.4 |    419 |  96.6 |         36.84% |
-| Q25L60 | 389.9 |    419 | 104.0 |         42.99% |
-| Q30L60 | 389.5 |    419 |  97.2 |         44.53% |
 
 | Name         | N50 |     Sum |        # |
 |:-------------|----:|--------:|---------:|
@@ -1498,6 +1520,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -1529,6 +1552,15 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 443.2 |    277 | 2401.1 |                          7.34% |
+| tadpole.bbtools | 263.4 |    264 |   49.5 |                         33.66% |
+| genome.picard   | 295.6 |    279 |   47.2 |                             FR |
+| genome.picard   | 287.3 |    271 |   33.9 |                             RF |
+| tadpole.picard  | 263.8 |    264 |   49.2 |                             FR |
+| tadpole.picard  | 243.7 |    249 |   47.4 |                             RF |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 5067172 | 5090491 |       2 |
@@ -1540,12 +1572,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q20L60   |     178 |   1.24G | 7514512 |
 | Q25L60   |     173 |   1.07G | 6707252 |
 | Q30L60   |     163 | 940.59M | 6410845 |
-
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 189.7 |    185 |  48.7 |         39.17% |
-| Q25L60 | 191.8 |    187 |  51.4 |         44.00% |
-| Q30L60 | 191.9 |    187 |  56.7 |         45.98% |
 
 
 | Name         | N50 |     Sum |       # |
@@ -1736,6 +1762,7 @@ anchr template \
     --tadpole \
     --mergereads \
     --ecphase "1,3" \
+    --insertsize \
     --parallel 24
 
 # run
@@ -1767,6 +1794,15 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 
 ```
 
+| Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
+|:----------------|------:|-------:|-------:|-------------------------------:|
+| genome.bbtools  | 406.3 |    274 | 2047.1 |                          8.47% |
+| tadpole.bbtools | 275.3 |    269 |   92.1 |                         42.92% |
+| genome.picard   | 293.8 |    277 |   47.8 |                             FR |
+| genome.picard   | 280.5 |    268 |   29.3 |                             RF |
+| tadpole.picard  | 275.2 |    270 |   46.1 |                             FR |
+| tadpole.picard  | 268.0 |    267 |   42.2 |                             RF |
+
 | Name     |     N50 |     Sum |       # |
 |:---------|--------:|--------:|--------:|
 | Genome   | 2961149 | 4033464 |       2 |
@@ -1779,11 +1815,6 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 | Q25L60   |     188 |    1.1G | 6145100 |
 | Q30L60   |     181 |  997.2M | 5862451 |
 
-| Group  |  Mean | Median | STDev | PercentOfPairs |
-|:-------|------:|-------:|------:|---------------:|
-| Q20L60 | 188.9 |    184 |  42.6 |         62.87% |
-| Q25L60 | 190.6 |    186 |  44.9 |         67.45% |
-| Q30L60 | 191.6 |    186 |  47.2 |         69.89% |
 
 | Name         | N50 |     Sum |       # |
 |:-------------|----:|--------:|--------:|
