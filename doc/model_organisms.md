@@ -39,17 +39,20 @@
 ```bash
 brew install aria2 curl                     # downloading tools
 
-brew install homebrew/science/sratoolkit    # NCBI SRAToolkit
+brew tap brewsci/bio
+brew tap brewsci/science
+
+brew install sratoolkit    # NCBI SRAToolkit
 
 brew reinstall --build-from-source --without-webp gd # broken, can't find libwebp.so.6
 brew reinstall --build-from-source lua@5.1
 brew reinstall --build-from-source gnuplot@4
-brew install homebrew/science/mummer        # mummer need gnuplot4
+brew install mummer        # mummer need gnuplot4
 
 brew install openblas                       # numpy
 
 brew install python
-brew install homebrew/science/quast         # assembly quality assessment
+brew install quast         # assembly quality assessment
 quast --test                                # may recompile the bundled nucmer
 
 # canu requires gnuplot 5 while mummer requires gnuplot 4
@@ -64,13 +67,16 @@ brew link gnuplot@4 --force
 brew install r
 brew install kmergenie --with-maxkmer=200
 
-brew install homebrew/science/kmc --HEAD
+brew install kmc --HEAD
+
+brew install picard-tools
 ```
 
-## Two of the leading assemblers
+## Other leading assemblers
 
 ```bash
-brew install homebrew/science/spades
+brew install spades
+brew install megahit
 brew install wang-q/tap/platanus
 
 ```
