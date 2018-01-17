@@ -436,18 +436,18 @@ if [ -e ../../1_genome/genome.fa ]; then
         maxindel=0 strictmaxindel \
         reads=[% opt.reads %] \
         nodisk overwrite
-        
+
     reformat.sh \
         in=genome.sam.gz \
         ihist=ihist.genome.txt \
         overwrite
-    
+
     picard SortSam \
         I=genome.sam.gz \
         O=genome.sort.bam \
         SORT_ORDER=coordinate \
         VALIDATION_STRINGENCY=LENIENT
-    
+
     picard CollectInsertSizeMetrics \
         I=genome.sort.bam \
         O=insert_size.genome.txt \
@@ -455,9 +455,10 @@ if [ -e ../../1_genome/genome.fa ]; then
 
 fi
 
+echo -e "Table: insertSize\n" > statInsertSize.md
 printf "| %s | %s | %s | %s | %s |\n" \
     "Group" "Mean" "Median" "STDev" "PercentOfPairs/PairOrientation" \
-    > statInsertSize.md
+    >> statInsertSize.md
 printf "|:--|--:|--:|--:|--:|\n" >> statInsertSize.md
 
 # bbtools reformat.sh
@@ -527,7 +528,6 @@ EOF
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
-
 }
 
 sub gen_quorum {
