@@ -1479,38 +1479,47 @@ find . -type f -name "core.*"   | parallel --no-run-if-empty -j 1 rm
 
 # cat all .md
 if [ -e statInsertSize.md ]; then
+    echo;
     cat statInsertSize.md;
     echo;
 fi
 if [ -e statReads.md ]; then
+    echo;
     cat statReads.md;
     echo;
 fi
 if [ -e statMergeReads.md ]; then
+    echo;
     cat statMergeReads.md;
     echo;
 fi
 if [ -e statQuorum.md ]; then
+    echo;
     cat statQuorum.md;
     echo;
 fi
 if [ -e statAnchors.md ]; then
+    echo;
     cat statAnchors.md;
     echo;
 fi
 if [ -e statKunitigsAnchors.md ]; then
+    echo;
     cat statKunitigsAnchors.md;
     echo;
 fi
 if [ -e statTadpoleAnchors.md ]; then
+    echo;
     cat statTadpoleAnchors.md;
     echo;
 fi
 if [ -e statCanu.md ]; then
+    echo;
     cat statCanu.md;
     echo;
 fi
 if [ -e statFinal.md ]; then
+    echo;
     cat statFinal.md;
     echo;
 fi
