@@ -46,10 +46,9 @@ for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merg
     printf "| %s | %s | %s | %s |\n" \
         $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
 done
-echo >> statMergeReads.md
-
 printf "| %s | %s | %s | %s |\n" \
     $(echo pe.cor; stat_format pe.cor.fa.gz;) >> statMergeReads.md
+echo >> statMergeReads.md
 
 log_info "clear unneeded .fq.gz files"
 for NAME in temp clumped filteredbytile trimmed filtered ecco eccc ecct extended unmerged.raw unmerged.trim; do

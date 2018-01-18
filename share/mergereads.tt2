@@ -4,8 +4,19 @@
 # Run
 #----------------------------#
 
+START_TIME=$(date +%s)
+save START_TIME
+
+NUM_THREADS=[% opt.parallel %]
+save NUM_THREADS
+
 BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 rm temp.fq.gz;
+
+#----------------------------#
+# Pipeline
+#----------------------------#
+# from bbmap/bbmap/pipelines/assemblyPipeline.sh
 
 # Reorder reads for speed of subsequent phases
 # As we're going to precess reads from different sources, don't dedupe here.
@@ -164,5 +175,22 @@ shuffle.sh \
     out=pe.cor.fa
 rm pe.interleave.fa
 pigz -p [% opt.parallel %] pe.cor.fa
+
+log_debug "Reads stats with faops"
+SUM_IN=$( faops n50 -H -N 0 -S [% args.0 %] [% IF args.1 %][% args.1 %][% END %])
+save SUM_IN
+SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa.gz )
+save SUM_OUT
+
+#----------------------------#
+# Done.
+#----------------------------#
+END_TIME=$(date +%s)
+save END_TIME
+
+RUNTIME=$((END_TIME-START_TIME))
+save RUNTIME
+
+log_info Done.
 
 exit 0
