@@ -124,12 +124,20 @@ bbmerge-auto.sh \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
 [% END -%]
-    strict k=81 extend2=80 rem ordered prefilter=2 overwrite
+    strict k=81 extend2=80 rem overwrite
 
-# Quality-trim the unmerged reads.
+# Quality-trim the unmerged reads
 bbduk.sh \
-    in=unmerged.raw.fq.gz out=unmerged.fq.gz \
+    in=unmerged.raw.fq.gz out=unmerged.trim.fq.gz \
     threads=[% opt.parallel %] \
-    qtrim=r trimq=[% opt.trimk %] minlen=[% opt.len %] ordered overwrite
+    qtrim=r trimq=[% opt.trimk %] minlen=[% opt.len %] overwrite
+
+# Separates paired reads
+repair.sh \
+    in=unmerged.trim.fq.gz \
+    out=unmerged.fq.gz \
+    outs=single.fq.gz \
+    threads=[% opt.parallel %] \
+    repair overwrite
 
 exit 0
