@@ -135,9 +135,34 @@ bbduk.sh \
 # Separates paired reads
 repair.sh \
     in=unmerged.trim.fq.gz \
-    out=unmerged.fq.gz \
-    outs=single.fq.gz \
+    out=U1.fq.gz \
+    out2=U2.fq.gz \
+    outs=Us.fq.gz \
     threads=[% opt.parallel %] \
     repair overwrite
+
+# Create pe.cor.fa.gz
+faops interleave \
+    -p unmerged \
+    U1.fq.gz \
+    U2.fq.gz \
+    > pe.interleave.fa
+
+faops interleave \
+    -p single \
+    Us.fq.gz \
+    >> pe.interleave.fa
+
+faops interleave \
+    -p merged \
+    merged.fq.gz \
+    >> pe.interleave.fa
+
+shuffle.sh \
+    interleaved \
+    in=pe.interleave.fa \
+    out=pe.cor.fa
+rm pe.interleave.fa
+pigz -p [% opt.parallel %] pe.cor.fa
 
 exit 0

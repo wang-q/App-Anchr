@@ -38,7 +38,7 @@ printf "| %s | %s | %s | %s |\n" \
     >> statMergeReads.md
 printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
-for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged.trim unmerged single; do
+for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged.trim U1 U2 Us; do
     if [ ! -e ${NAME}.fq.gz ]; then
         continue;
     fi
@@ -47,6 +47,9 @@ for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merg
         $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
 done
 echo >> statMergeReads.md
+
+printf "| %s | %s | %s | %s |\n" \
+    $(echo pe.cor; stat_format pe.cor.fa.gz;) >> statMergeReads.md
 
 log_info "clear unneeded .fq.gz files"
 for NAME in temp clumped filteredbytile trimmed filtered ecco eccc ecct extended unmerged.raw unmerged.trim; do
