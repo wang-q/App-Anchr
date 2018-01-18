@@ -1710,6 +1710,14 @@ find . -type f -path "*4_tadpole_*" -name "k_unitigs_K*.fasta"   | parallel --no
 find . -type f -path "*4_tadpole_*/anchor*" -name "basecov.txt"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_tadpole_*/anchor*" -name "*.sam"        | parallel --no-run-if-empty -j 1 rm
 
+rm -fr 6_MR*
+find . -type f -path "*6_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*6_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*6_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*6_tadpole_*" -name "k_unitigs_K*.fasta"   | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*6_tadpole_*/anchor*" -name "basecov.txt"  | parallel --no-run-if-empty -j 1 rm
+find . -type f -path "*6_tadpole_*/anchor*" -name "*.sam"        | parallel --no-run-if-empty -j 1 rm
+
 # tempdir
 find . -type d -name "\?" | xargs rm -fr
 
@@ -1771,6 +1779,16 @@ fi
 if [ -e statTadpoleAnchors.md ]; then
     echo;
     cat statTadpoleAnchors.md;
+    echo;
+fi
+if [ -e statMRKunitigsAnchors.md ]; then
+    echo;
+    cat statMRKunitigsAnchors.md;
+    echo;
+fi
+if [ -e statMRTadpoleAnchors.md ]; then
+    echo;
+    cat statMRTadpoleAnchors.md;
     echo;
 fi
 if [ -e statCanu.md ]; then

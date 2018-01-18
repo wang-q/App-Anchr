@@ -341,16 +341,20 @@ Table: statMergeReads
 | Name           | N50 |    Sum |        # |
 |:---------------|----:|-------:|---------:|
 | clumped        | 151 |  1.73G | 11439000 |
-| filteredbytile | 151 |  1.67G | 11072140 |
-| trimmed        | 149 |  1.43G | 10389462 |
-| filtered       | 149 |  1.43G | 10388954 |
-| ecco           | 149 |  1.43G | 10388954 |
-| eccc           | 149 |  1.43G | 10388954 |
-| ecct           | 149 |  1.42G | 10334246 |
-| extended       | 189 |  1.83G | 10334246 |
-| merged         | 339 |  1.72G |  5098024 |
-| unmerged.raw   | 174 | 20.11M |   138198 |
-| unmerged       | 164 | 14.45M |   101916 |
+| filteredbytile | 151 |  1.67G | 11064206 |
+| trimmed        | 149 |  1.43G | 10382730 |
+| filtered       | 149 |  1.43G | 10382222 |
+| ecco           | 149 |  1.43G | 10382222 |
+| eccc           | 149 |  1.43G | 10382222 |
+| ecct           | 149 |  1.42G | 10328076 |
+| extended       | 189 |  1.83G | 10328076 |
+| merged         | 339 |  1.72G |  5094828 |
+| unmerged.raw   | 174 | 20.15M |   138420 |
+| unmerged.trim  | 164 | 14.48M |   102134 |
+| U1             | 178 |  7.59M |    51067 |
+| U2             | 151 |  6.89M |    51067 |
+| Us             |   0 |      0 |        0 |
+| pe.cor         | 338 |  1.74G | 10291790 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
@@ -910,7 +914,7 @@ bsub -w "done(${BASE_NAME}-6_anchors)" \
 
 bsub -w "done(${BASE_NAME}-6_downSampling)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpole" "bash 6_tadpole.sh"
-bsub -w "done(${BASE_NAME}-6_kunitigs)" \
+bsub -w "done(${BASE_NAME}-6_tadpole)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
 bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_tadpole" "bash 9_statAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
