@@ -1,0 +1,45 @@
+[% INCLUDE header.tt2 %]
+log_warn 6_downSampling.sh
+
+if [ -e 2_illumina/mergereads/pe.cor.fa.gz ]; then
+    echo 2>&1 "2_illumina/mergereads/pe.cor.fa.gz not presents"
+    exit;
+fi
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    echo '==> MRX{}'
+
+    rm -fr 6_MRX{}
+    
+    # shortcut if cov2 == all
+    if [[ {3} == "all" ]]; then
+        mkdir -p 6_MRXallP000
+        cd 6_MRXallP000
+        gzip -d -c ../2_illumina/mergereads/pe.cor.fa.gz > pe.cor.fa
+        cp ../2_illumina/mergereads/environment.json .
+        exit;
+    fi
+
+    # actual sampling
+    faops split-about -l 0 -e \
+        2_illumina/mergereads/pe.cor.fa.gz \
+        \$(( [% opt.genome %] * {} )) \
+        6_MRX{}
+                
+    MAX_SERIAL=\$(
+        cat 2_illumina/mergereads/environment.json \
+            | jq '.SUM_OUT | tonumber | . / [% opt.genome %] / {} | floor | . - 1'
+    )
+    
+    for i in \$( seq 0 1 \${MAX_SERIAL} ); do
+        P=\$( printf '%03d' \${i})
+        printf \"  * Part: %s\n\" \${P}
+        
+        mkdir -p \"6_MRX{}P\${P}\"
+        
+        mv  \"6_MRX{}/\${P}.fa\" \
+            \"6_MRX{}P\${P}/pe.cor.fa\"
+        cp 2_illumina/mergereads/environment.json \"6_MRX{}P\${P}\"
+    done
+
+    " [% opt.cov2 %]

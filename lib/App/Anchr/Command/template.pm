@@ -91,7 +91,7 @@ sub execute {
     # insertSize
     $self->gen_insertSize( $opt, $args );
 
-    # kmergenie
+    # mergereads
     $self->gen_mergereads( $opt, $args );
 
     # trim2
@@ -123,6 +123,9 @@ sub execute {
 
     # mergeAnchors
     $self->gen_mergeAnchors( $opt, $args );
+
+    # 6_downSampling
+    $self->gen_6_downSampling( $opt, $args );
 
     # canu
     $self->gen_canu( $opt, $args );
@@ -680,6 +683,29 @@ sub gen_downSampling {
 
     $tt->process(
         '4_downSampling.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_6_downSampling {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "6_downSampling.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '6_downSampling.tt2',
         {   args => $args,
             opt  => $opt,
         },
