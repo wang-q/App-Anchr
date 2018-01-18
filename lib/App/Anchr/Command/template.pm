@@ -725,7 +725,7 @@ sub gen_kunitigs {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_kunitigs.sh
+log_warn [% sh %]
 
 cd [% args.0 %]
 
@@ -759,6 +759,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -768,7 +769,7 @@ EOF
         print "Create $sh_name\n";
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_tadpole.sh
+log_warn [% sh %]
 
 cd [% args.0 %]
 
@@ -803,6 +804,7 @@ EOF
             \$template,
             {   args => $args,
                 opt  => $opt,
+                sh   => $sh_name,
             },
             Path::Tiny::path( $args->[0], $sh_name )->stringify
         ) or die Template->error;
@@ -813,7 +815,7 @@ EOF
         print "Create $sh_name\n";
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_megahit.sh
+log_warn [% sh %]
 
 cd [% args.0 %]
 
@@ -868,6 +870,7 @@ EOF
             \$template,
             {   args => $args,
                 opt  => $opt,
+                sh   => $sh_name,
             },
             Path::Tiny::path( $args->[0], $sh_name )->stringify
         ) or die Template->error;
@@ -878,7 +881,7 @@ EOF
         print "Create $sh_name\n";
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_spades.sh
+log_warn [% sh %]
 
 cd [% args.0 %]
 
@@ -935,6 +938,7 @@ EOF
             \$template,
             {   args => $args,
                 opt  => $opt,
+                sh   => $sh_name,
             },
             Path::Tiny::path( $args->[0], $sh_name )->stringify
         ) or die Template->error;
