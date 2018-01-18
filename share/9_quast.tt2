@@ -28,6 +28,16 @@ if [ -e 7_mergeSpadesAnchors/anchor.merge.fasta ]; then
     QUAST_LABEL+="mergeSpades,"
 fi
 
+if [ -e 7_mergeMRKunitigsAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeMRKunitigsAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="mergeMRKunitigs,"
+fi
+
+if [ -e 7_mergeMRTadpoleAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeMRTadpoleAnchors/anchor.merge.fasta "
+    QUAST_LABEL+="mergeMRTadpole,"
+fi
+
 if [ -e 7_mergeAnchors/anchor.merge.fasta ]; then
     QUAST_TARGET+=" 7_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeAnchors,"
