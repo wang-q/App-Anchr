@@ -130,6 +130,9 @@ sub execute {
     # 6_kunitigs
     $self->gen_6_kunitigs( $opt, $args );
 
+    # 6_anchors
+    $self->gen_6_anchors( $opt, $args );
+
     # canu
     $self->gen_canu( $opt, $args );
 
@@ -1230,6 +1233,106 @@ EOF
             \$template,
             {   args => $args,
                 opt  => $opt,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+}
+
+sub gen_6_anchors {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "6_anchors.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_kunitigs_MRX{1}P{2}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 6_kunitigs_MRX{1}P{2}/anchor
+    mkdir -p 6_kunitigs_MRX{1}P{2}/anchor
+    cd 6_kunitigs_MRX{1}P{2}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+    if ( $opt->{tadpole} ) {
+        $sh_name = "6_tadpoleAnchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_tadpole_MRX{1}P{2}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 6_tadpole_MRX{1}P{2}/anchor
+    mkdir -p 6_tadpole_MRX{1}P{2}/anchor
+    cd 6_tadpole_MRX{1}P{2}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
             },
             Path::Tiny::path( $args->[0], $sh_name )->stringify
         ) or die Template->error;
