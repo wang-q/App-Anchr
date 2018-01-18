@@ -13,6 +13,10 @@ cd 2_illumina/mergereads
 
 log_info "mergereads.sh"
 
+# save genome size
+ESTIMATED_GENOME_SIZE=[% opt.genome %]
+save ESTIMATED_GENOME_SIZE
+
 anchr mergereads \
     ../R1.fq.gz ../R2.fq.gz \
 [% IF opt.tile -%]
