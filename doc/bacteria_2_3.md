@@ -336,12 +336,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 3288558 | 5165770 |    2 |
 | Paralogs                       |    3333 |  155714 |   62 |
-| 6_mergeKunitigsAnchors.anchors |  179401 | 5048362 |   73 |
-| 6_mergeKunitigsAnchors.others  |    1026 |   19526 |   19 |
-| 6_mergeTadpoleAnchors.anchors  |  179401 | 5071318 |   74 |
-| 6_mergeTadpoleAnchors.others   |    1026 |   52540 |   44 |
-| 6_mergeAnchors.anchors         |  179401 | 5071506 |   74 |
-| 6_mergeAnchors.others          |    1026 |   52540 |   44 |
+| 7_mergeKunitigsAnchors.anchors |  179401 | 5048362 |   73 |
+| 7_mergeKunitigsAnchors.others  |    1026 |   19526 |   19 |
+| 7_mergeTadpoleAnchors.anchors  |  179401 | 5071318 |   74 |
+| 7_mergeTadpoleAnchors.others   |    1026 |   52540 |   44 |
+| 7_mergeAnchors.anchors         |  179401 | 5071506 |   74 |
+| 7_mergeAnchors.others          |    1026 |   52540 |   44 |
 | anchorLong                     |  208156 | 5069045 |   63 |
 | anchorFill                     |  561544 | 5117884 |   15 |
 | canu_X80-trim                  | 3316838 | 5204553 |    2 |
@@ -642,12 +642,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 3397754 | 3397754 |   1 |
 | Paralogs                       |    2793 |  100722 |  43 |
-| 6_mergeKunitigsAnchors.anchors |  248548 | 3355322 |  36 |
-| 6_mergeKunitigsAnchors.others  |    2901 |  101579 |  47 |
-| 6_mergeTadpoleAnchors.anchors  |  248548 | 3356138 |  36 |
-| 6_mergeTadpoleAnchors.others   |    1856 |  127488 |  70 |
-| 6_mergeAnchors.anchors         |  248548 | 3356138 |  36 |
-| 6_mergeAnchors.others          |    1856 |  127488 |  70 |
+| 7_mergeKunitigsAnchors.anchors |  248548 | 3355322 |  36 |
+| 7_mergeKunitigsAnchors.others  |    2901 |  101579 |  47 |
+| 7_mergeTadpoleAnchors.anchors  |  248548 | 3356138 |  36 |
+| 7_mergeTadpoleAnchors.others   |    1856 |  127488 |  70 |
+| 7_mergeAnchors.anchors         |  248548 | 3356138 |  36 |
+| 7_mergeAnchors.others          |    1856 |  127488 |  70 |
 | anchorLong                     |  261825 | 3355296 |  32 |
 | anchorFill                     | 1750022 | 3379331 |   6 |
 | canu_X80-trim                  | 3403179 | 3403179 |   1 |
@@ -942,12 +942,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 2153922 | 2153922 |   1 |
 | Paralogs                       |    4318 |  142093 |  53 |
-| 6_mergeKunitigsAnchors.anchors |   22842 | 1981872 | 144 |
-| 6_mergeKunitigsAnchors.others  |    1434 |  312662 | 220 |
-| 6_mergeTadpoleAnchors.anchors  |   24281 | 2015557 | 137 |
-| 6_mergeTadpoleAnchors.others   |    1365 |  444634 | 317 |
-| 6_mergeAnchors.anchors         |   24281 | 2015557 | 137 |
-| 6_mergeAnchors.others          |    1365 |  444634 | 317 |
+| 7_mergeKunitigsAnchors.anchors |   22842 | 1981872 | 144 |
+| 7_mergeKunitigsAnchors.others  |    1434 |  312662 | 220 |
+| 7_mergeTadpoleAnchors.anchors  |   24281 | 2015557 | 137 |
+| 7_mergeTadpoleAnchors.others   |    1365 |  444634 | 317 |
+| 7_mergeAnchors.anchors         |   24281 | 2015557 | 137 |
+| 7_mergeAnchors.others          |    1365 |  444634 | 317 |
 | anchorLong                     |   27506 | 1375927 |  92 |
 | anchorFill                     |   47734 | 1459828 |  64 |
 | canu_X80-trim                  | 2205541 | 2205541 |   1 |
@@ -1243,12 +1243,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 2272360 | 2272360 |    1 |
 | Paralogs                       |       0 |       0 |    0 |
-| 6_mergeKunitigsAnchors.anchors |    9988 | 2028270 |  282 |
-| 6_mergeKunitigsAnchors.others  |    1710 |  427182 |  271 |
-| 6_mergeTadpoleAnchors.anchors  |    9988 | 2035373 |  283 |
-| 6_mergeTadpoleAnchors.others   |    1595 |  562180 |  365 |
-| 6_mergeAnchors.anchors         |   10000 | 2034055 |  282 |
-| 6_mergeAnchors.others          |    1595 |  562180 |  365 |
+| 7_mergeKunitigsAnchors.anchors |    9988 | 2028270 |  282 |
+| 7_mergeKunitigsAnchors.others  |    1710 |  427182 |  271 |
+| 7_mergeTadpoleAnchors.anchors  |    9988 | 2035373 |  283 |
+| 7_mergeTadpoleAnchors.others   |    1595 |  562180 |  365 |
+| 7_mergeAnchors.anchors         |   10000 | 2034055 |  282 |
+| 7_mergeAnchors.others          |    1595 |  562180 |  365 |
 | anchorLong                     |    6970 |  634918 |  145 |
 | anchorFill                     |    6970 |  643399 |  144 |
 | canu_X80-trim                  | 2196486 | 2196486 |    1 |
@@ -1677,12 +1677,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 4086189 | 4086189 |    1 |
 | Paralogs                       |    1033 |  322667 |  278 |
-| 6_mergeKunitigsAnchors.anchors |    3951 | 3090266 | 1002 |
-| 6_mergeKunitigsAnchors.others  |    1466 | 2794181 | 2016 |
-| 6_mergeTadpoleAnchors.anchors  |    4140 | 3084002 |  958 |
-| 6_mergeTadpoleAnchors.others   |    1439 | 3195405 | 2337 |
-| 6_mergeAnchors.anchors         |    4140 | 3084002 |  958 |
-| 6_mergeAnchors.others          |    1439 | 3195405 | 2337 |
+| 7_mergeKunitigsAnchors.anchors |    3951 | 3090266 | 1002 |
+| 7_mergeKunitigsAnchors.others  |    1466 | 2794181 | 2016 |
+| 7_mergeTadpoleAnchors.anchors  |    4140 | 3084002 |  958 |
+| 7_mergeTadpoleAnchors.others   |    1439 | 3195405 | 2337 |
+| 7_mergeAnchors.anchors         |    4140 | 3084002 |  958 |
+| 7_mergeAnchors.others          |    1439 | 3195405 | 2337 |
 | spades.contig                  |    3382 | 5503940 | 4947 |
 | spades.scaffold                |    3388 | 5509714 | 4546 |
 | spades.non-contained           |    6098 | 3838791 |  983 |
@@ -2010,12 +2010,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 1892775 | 1892775 |   1 |
 | Paralogs                       |   33912 |   93531 |  10 |
-| 6_mergeKunitigsAnchors.anchors |   35248 | 1801042 |  72 |
-| 6_mergeKunitigsAnchors.others  |   27554 |   54112 |  22 |
-| 6_mergeTadpoleAnchors.anchors  |   35248 | 1816760 |  72 |
-| 6_mergeTadpoleAnchors.others   |    1051 |   83652 |  51 |
-| 6_mergeAnchors.anchors         |   35248 | 1801042 |  72 |
-| 6_mergeAnchors.others          |   27554 |   54112 |  22 |
+| 7_mergeKunitigsAnchors.anchors |   35248 | 1801042 |  72 |
+| 7_mergeKunitigsAnchors.others  |   27554 |   54112 |  22 |
+| 7_mergeTadpoleAnchors.anchors  |   35248 | 1816760 |  72 |
+| 7_mergeTadpoleAnchors.others   |    1051 |   83652 |  51 |
+| 7_mergeAnchors.anchors         |   35248 | 1801042 |  72 |
+| 7_mergeAnchors.others          |   27554 |   54112 |  22 |
 | anchorLong                     |   35248 | 1793972 |  70 |
 | anchorFill                     | 1427076 | 1849806 |   5 |
 | canu_X80-trim                  | 1884029 | 1884029 |   1 |
@@ -2297,12 +2297,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 4607202 | 4828820 |    2 |
 | Paralogs                       |    1377 |  543111 |  334 |
-| 6_mergeKunitigsAnchors.anchors |   29020 | 4095467 |  284 |
-| 6_mergeKunitigsAnchors.others  |    1741 |   83190 |   46 |
-| 6_mergeTadpoleAnchors.anchors  |   29020 | 4097267 |  279 |
-| 6_mergeTadpoleAnchors.others   |    1741 |   86439 |   47 |
-| 6_mergeAnchors.anchors         |   29020 | 4095467 |  284 |
-| 6_mergeAnchors.others          |    1741 |   83190 |   46 |
+| 7_mergeKunitigsAnchors.anchors |   29020 | 4095467 |  284 |
+| 7_mergeKunitigsAnchors.others  |    1741 |   83190 |   46 |
+| 7_mergeTadpoleAnchors.anchors  |   29020 | 4097267 |  279 |
+| 7_mergeTadpoleAnchors.others   |    1741 |   86439 |   47 |
+| 7_mergeAnchors.anchors         |   29020 | 4095467 |  284 |
+| 7_mergeAnchors.others          |    1741 |   83190 |   46 |
 | anchorLong                     |   29141 | 4079903 |  266 |
 | anchorFill                     |  398656 | 4357089 |   29 |
 | canu_Xall-trim                 |  461950 | 4542043 |   22 |
@@ -2589,12 +2589,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 1830138 | 1830138 |   1 |
 | Paralogs                       |    5432 |   95358 |  29 |
-| 6_mergeKunitigsAnchors.anchors |   68737 | 1777760 |  51 |
-| 6_mergeKunitigsAnchors.others  |    1052 |   24097 |  16 |
-| 6_mergeTadpoleAnchors.anchors  |   68737 | 1777932 |  51 |
-| 6_mergeTadpoleAnchors.others   |    1052 |   38937 |  26 |
-| 6_mergeAnchors.anchors         |   68737 | 1777932 |  51 |
-| 6_mergeAnchors.others          |    1052 |   38937 |  26 |
+| 7_mergeKunitigsAnchors.anchors |   68737 | 1777760 |  51 |
+| 7_mergeKunitigsAnchors.others  |    1052 |   24097 |  16 |
+| 7_mergeTadpoleAnchors.anchors  |   68737 | 1777932 |  51 |
+| 7_mergeTadpoleAnchors.others   |    1052 |   38937 |  26 |
+| 7_mergeAnchors.anchors         |   68737 | 1777932 |  51 |
+| 7_mergeAnchors.others          |    1052 |   38937 |  26 |
 | anchorLong                     |   79186 | 1770807 |  40 |
 | anchorFill                     |  398530 | 1790284 |   8 |
 | canu_X80-trim                  | 1838071 | 1851226 |   2 |
@@ -2841,12 +2841,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|------:|
 | Genome                         | 2944528 | 2944528 |     1 |
 | Paralogs                       |    5116 |   68585 |    22 |
-| 6_mergeKunitigsAnchors.anchors |  369532 | 2967265 |    33 |
-| 6_mergeKunitigsAnchors.others  |    1235 |  461106 |   349 |
-| 6_mergeTadpoleAnchors.anchors  |  369533 | 3043142 |    52 |
-| 6_mergeTadpoleAnchors.others   |   24524 | 2771813 |   609 |
-| 6_mergeAnchors.anchors         |  369533 | 3051693 |    51 |
-| 6_mergeAnchors.others          |   24524 | 2771813 |   609 |
+| 7_mergeKunitigsAnchors.anchors |  369532 | 2967265 |    33 |
+| 7_mergeKunitigsAnchors.others  |    1235 |  461106 |   349 |
+| 7_mergeTadpoleAnchors.anchors  |  369533 | 3043142 |    52 |
+| 7_mergeTadpoleAnchors.others   |   24524 | 2771813 |   609 |
+| 7_mergeAnchors.anchors         |  369533 | 3051693 |    51 |
+| 7_mergeAnchors.others          |   24524 | 2771813 |   609 |
 | spades.contig                  |   11130 | 9565817 | 10002 |
 | spades.scaffold                |   11238 | 9566027 |  9990 |
 | spades.non-contained           |   84925 | 5935750 |   624 |
@@ -3086,12 +3086,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 4290252 | 4298133 |   2 |
 | Paralogs                       |    3242 |  328828 | 121 |
-| 6_mergeKunitigsAnchors.anchors |  108227 | 4145092 |  91 |
-| 6_mergeKunitigsAnchors.others  |    7951 |   99171 |  39 |
-| 6_mergeTadpoleAnchors.anchors  |  108267 | 4168327 |  92 |
-| 6_mergeTadpoleAnchors.others   |    7942 |  806968 | 158 |
-| 6_mergeAnchors.anchors         |  108267 | 4168327 |  92 |
-| 6_mergeAnchors.others          |    7942 |  806968 | 158 |
+| 7_mergeKunitigsAnchors.anchors |  108227 | 4145092 |  91 |
+| 7_mergeKunitigsAnchors.others  |    7951 |   99171 |  39 |
+| 7_mergeTadpoleAnchors.anchors  |  108267 | 4168327 |  92 |
+| 7_mergeTadpoleAnchors.others   |    7942 |  806968 | 158 |
+| 7_mergeAnchors.anchors         |  108267 | 4168327 |  92 |
+| 7_mergeAnchors.others          |    7942 |  806968 | 158 |
 | spades.contig                  |  225813 | 4245706 | 263 |
 | spades.scaffold                |  227405 | 4245746 | 259 |
 | spades.non-contained           |  225813 | 4201222 |  51 |
@@ -3333,12 +3333,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 1641481 | 1641481 |   1 |
 | Paralogs                       |    6093 |   33281 |  13 |
-| 6_mergeKunitigsAnchors.anchors |  102868 | 1603604 |  29 |
-| 6_mergeKunitigsAnchors.others  |    3121 |   18051 |   9 |
-| 6_mergeTadpoleAnchors.anchors  |  112526 | 1604405 |  27 |
-| 6_mergeTadpoleAnchors.others   |    1075 |   27326 |  18 |
-| 6_mergeAnchors.anchors         |  112526 | 1604405 |  27 |
-| 6_mergeAnchors.others          |    1075 |   27326 |  18 |
+| 7_mergeKunitigsAnchors.anchors |  102868 | 1603604 |  29 |
+| 7_mergeKunitigsAnchors.others  |    3121 |   18051 |   9 |
+| 7_mergeTadpoleAnchors.anchors  |  112526 | 1604405 |  27 |
+| 7_mergeTadpoleAnchors.others   |    1075 |   27326 |  18 |
+| 7_mergeAnchors.anchors         |  112526 | 1604405 |  27 |
+| 7_mergeAnchors.others          |    1075 |   27326 |  18 |
 | spades.contig                  |  153957 | 1629499 |  38 |
 | spades.scaffold                |  189386 | 1629519 |  36 |
 | spades.non-contained           |  153957 | 1622182 |  18 |
@@ -3603,12 +3603,12 @@ Table: statFinal
 |:-------------------------------|------:|------:|--:|
 | Genome                         | 48502 | 48502 | 1 |
 | Paralogs                       |     0 |     0 | 0 |
-| 6_mergeKunitigsAnchors.anchors | 48122 | 48122 | 1 |
-| 6_mergeKunitigsAnchors.others  |  2710 |  2710 | 1 |
-| 6_mergeTadpoleAnchors.anchors  | 48122 | 48122 | 1 |
-| 6_mergeTadpoleAnchors.others   |  2710 |  2710 | 1 |
-| 6_mergeAnchors.anchors         | 48122 | 48122 | 1 |
-| 6_mergeAnchors.others          |  2710 |  2710 | 1 |
+| 7_mergeKunitigsAnchors.anchors | 48122 | 48122 | 1 |
+| 7_mergeKunitigsAnchors.others  |  2710 |  2710 | 1 |
+| 7_mergeTadpoleAnchors.anchors  | 48122 | 48122 | 1 |
+| 7_mergeTadpoleAnchors.others   |  2710 |  2710 | 1 |
+| 7_mergeAnchors.anchors         | 48122 | 48122 | 1 |
+| 7_mergeAnchors.others          |  2710 |  2710 | 1 |
 | anchorLong                     | 48122 | 48122 | 1 |
 | anchorFill                     | 48122 | 48122 | 1 |
 | canu_X80-trim                  | 48489 | 48489 | 1 |

@@ -1130,11 +1130,11 @@ sub gen_mergeAnchors {
     my $template;
     my $sh_name;
 
-    $sh_name = "6_mergeAnchors.sh";
+    $sh_name = "7_mergeAnchors.sh";
     print "Create $sh_name\n";
 
     $tt->process(
-        '6_mergeAnchors.tt2',
+        '7_mergeAnchors.tt2',
         {   args => $args,
             opt  => $opt,
         },
@@ -1276,11 +1276,11 @@ sub gen_anchorLong {
 
     return unless $opt->{cov3};
 
-    $sh_name = "6_anchorLong.sh";
+    $sh_name = "7_anchorLong.sh";
     print "Create $sh_name\n";
 
     $tt->process(
-        '6_anchorLong.tt2',
+        '7_anchorLong.tt2',
         {   args => $args,
             opt  => $opt,
         },
@@ -1297,11 +1297,11 @@ sub gen_anchorFill {
 
     return unless $opt->{cov3};
 
-    $sh_name = "6_anchorFill.sh";
+    $sh_name = "7_anchorFill.sh";
     print "Create $sh_name\n";
 
     $tt->process(
-        '6_anchorFill.tt2',
+        '7_anchorFill.tt2',
         {   args => $args,
             opt  => $opt,
         },
@@ -1459,9 +1459,9 @@ find . -type d -name "trimming"   -path "*5_canu_*" | parallel --no-run-if-empty
 find . -type d -name "unitigging" -path "*5_canu_*" | parallel --no-run-if-empty -j 1 rm -fr
 
 # anchorLong and anchorFill
-find . -type d -name "group"         -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm -fr
-find . -type f -name "long.fasta"    -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm
-find . -type f -name ".anchorLong.*" -path "*6_anchor*" | parallel --no-run-if-empty -j 1 rm
+find . -type d -name "group"         -path "*7_anchor*" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type f -name "long.fasta"    -path "*7_anchor*" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name ".anchorLong.*" -path "*7_anchor*" | parallel --no-run-if-empty -j 1 rm
 
 # spades
 find . -type d -path "*8_spades/*" -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
@@ -1576,8 +1576,8 @@ rm -fr 4_tadpole*
 rm -fr 5_canu*
 
 # mergeAnchors, anchorLong and anchorFill
-rm -fr 6_merge*
-rm -fr 6_anchor*
+rm -fr 7_merge*
+rm -fr 7_anchor*
 
 # spades, platanus, and megahit
 rm -fr 8_spades*

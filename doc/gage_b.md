@@ -166,8 +166,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -260,12 +260,12 @@ contam_250	311	0.01659%
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 5224283 | 5432652 |   2 |
 | Paralogs                       |    2295 |  223889 | 103 |
-| 6_mergeKunitigsAnchors.anchors |   46576 | 5312541 | 209 |
-| 6_mergeKunitigsAnchors.others  |    1093 |   36933 |  32 |
-| 6_mergeTadpoleAnchors.anchors  |   46669 | 5315022 | 205 |
-| 6_mergeTadpoleAnchors.others   |    1110 |   48557 |  42 |
-| 6_mergeAnchors.anchors         |   46669 | 5315022 | 205 |
-| 6_mergeAnchors.others          |    1110 |   48557 |  42 |
+| 7_mergeKunitigsAnchors.anchors |   46576 | 5312541 | 209 |
+| 7_mergeKunitigsAnchors.others  |    1093 |   36933 |  32 |
+| 7_mergeTadpoleAnchors.anchors  |   46669 | 5315022 | 205 |
+| 7_mergeTadpoleAnchors.others   |    1110 |   48557 |  42 |
+| 7_mergeAnchors.anchors         |   46669 | 5315022 | 205 |
+| 7_mergeAnchors.others          |    1110 |   48557 |  42 |
 | tadpole.Q20L60                 |   11462 | 5322724 | 949 |
 | tadpole.Q25L60                 |   16956 | 5318749 | 755 |
 | tadpole.Q30L60                 |   18156 | 5318705 | 727 |
@@ -410,8 +410,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -488,12 +488,12 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 3188524 | 4602977 |    7 |
 | Paralogs                       |    2337 |  147155 |   66 |
-| 6_mergeKunitigsAnchors.anchors |   30353 | 4088766 |  265 |
-| 6_mergeKunitigsAnchors.others  |   12265 |  943298 |  211 |
-| 6_mergeTadpoleAnchors.anchors  |   30353 | 4089181 |  263 |
-| 6_mergeTadpoleAnchors.others   |   10910 |  988860 |  259 |
-| 6_mergeAnchors.anchors         |   30353 | 4089181 |  263 |
-| 6_mergeAnchors.others          |   10910 |  988860 |  259 |
+| 7_mergeKunitigsAnchors.anchors |   30353 | 4088766 |  265 |
+| 7_mergeKunitigsAnchors.others  |   12265 |  943298 |  211 |
+| 7_mergeTadpoleAnchors.anchors  |   30353 | 4089181 |  263 |
+| 7_mergeTadpoleAnchors.others   |   10910 |  988860 |  259 |
+| 7_mergeAnchors.anchors         |   30353 | 4089181 |  263 |
+| 7_mergeAnchors.others          |   10910 |  988860 |  259 |
 | tadpole.Q20L60                 |    9813 | 4520272 | 1076 |
 | tadpole.Q25L60                 |    7912 | 4515562 | 1304 |
 | tadpole.Q30L60                 |    3644 | 4500715 | 2517 |
@@ -636,8 +636,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -719,12 +719,12 @@ gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	4867	0.26995%
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 5067172 | 5090491 |    2 |
 | Paralogs                       |    1580 |   83364 |   53 |
-| 6_mergeKunitigsAnchors.anchors |   16283 | 5032484 |  577 |
-| 6_mergeKunitigsAnchors.others  |    1220 |  513486 |  437 |
-| 6_mergeTadpoleAnchors.anchors  |   30965 | 5097276 |  316 |
-| 6_mergeTadpoleAnchors.others   |    1405 |  957692 |  728 |
-| 6_mergeAnchors.anchors         |   30965 | 5097276 |  316 |
-| 6_mergeAnchors.others          |    1405 |  957692 |  728 |
+| 7_mergeKunitigsAnchors.anchors |   16283 | 5032484 |  577 |
+| 7_mergeKunitigsAnchors.others  |    1220 |  513486 |  437 |
+| 7_mergeTadpoleAnchors.anchors  |   30965 | 5097276 |  316 |
+| 7_mergeTadpoleAnchors.others   |    1405 |  957692 |  728 |
+| 7_mergeAnchors.anchors         |   30965 | 5097276 |  316 |
+| 7_mergeAnchors.others          |    1405 |  957692 |  728 |
 | tadpole.Q20L60                 |    5378 | 5238729 | 2113 |
 | tadpole.Q25L60                 |    6795 | 5223678 | 1789 |
 | tadpole.Q30L60                 |    8474 | 5201308 | 1454 |
@@ -867,8 +867,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -957,12 +957,12 @@ gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	8205	0.54615%
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 2961149 | 4033464 |    2 |
 | Paralogs                       |    3483 |  114707 |   48 |
-| 6_mergeKunitigsAnchors.anchors |   34831 | 3824443 |  229 |
-| 6_mergeKunitigsAnchors.others  |    1390 |  245308 |  182 |
-| 6_mergeTadpoleAnchors.anchors  |   68220 | 3852346 |  148 |
-| 6_mergeTadpoleAnchors.others   |    3646 |  566298 |  275 |
-| 6_mergeAnchors.anchors         |   68220 | 3852347 |  148 |
-| 6_mergeAnchors.others          |    3646 |  566298 |  275 |
+| 7_mergeKunitigsAnchors.anchors |   34831 | 3824443 |  229 |
+| 7_mergeKunitigsAnchors.others  |    1390 |  245308 |  182 |
+| 7_mergeTadpoleAnchors.anchors  |   68220 | 3852346 |  148 |
+| 7_mergeTadpoleAnchors.others   |    3646 |  566298 |  275 |
+| 7_mergeAnchors.anchors         |   68220 | 3852347 |  148 |
+| 7_mergeAnchors.others          |    3646 |  566298 |  275 |
 | tadpole.Q20L60                 |    6611 | 3942532 | 1232 |
 | tadpole.Q25L60                 |    7680 | 3937250 | 1096 |
 | tadpole.Q30L60                 |    9965 | 3926036 |  893 |
@@ -1096,8 +1096,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -1172,12 +1172,12 @@ gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	148	0.00521%
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 2961149 | 4033464 |    2 |
 | Paralogs                       |    3483 |  114707 |   48 |
-| 6_mergeKunitigsAnchors.anchors |    2500 | 3339437 | 1490 |
-| 6_mergeKunitigsAnchors.others  |    1074 |  457162 |  397 |
-| 6_mergeTadpoleAnchors.anchors  |    3712 | 3762024 | 1296 |
-| 6_mergeTadpoleAnchors.others   |    1077 |  658948 |  565 |
-| 6_mergeAnchors.anchors         |    3712 | 3762024 | 1296 |
-| 6_mergeAnchors.others          |    1077 |  658948 |  565 |
+| 7_mergeKunitigsAnchors.anchors |    2500 | 3339437 | 1490 |
+| 7_mergeKunitigsAnchors.others  |    1074 |  457162 |  397 |
+| 7_mergeTadpoleAnchors.anchors  |    3712 | 3762024 | 1296 |
+| 7_mergeTadpoleAnchors.others   |    1077 |  658948 |  565 |
+| 7_mergeAnchors.anchors         |    3712 | 3762024 | 1296 |
+| 7_mergeAnchors.others          |    1077 |  658948 |  565 |
 | tadpole.Q25L60                 |    1097 | 4002159 | 5371 |
 | spades.contig                  |  198954 | 3957851 |  185 |
 | spades.scaffold                |  246583 | 3958051 |  183 |
@@ -1293,8 +1293,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -1419,12 +1419,12 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 3188524 | 4602977 |    7 |
 | Paralogs                       |    2337 |  147155 |   66 |
-| 6_mergeKunitigsAnchors.anchors |   55617 | 4238323 |  250 |
-| 6_mergeKunitigsAnchors.others  |    1942 | 3294180 | 1844 |
-| 6_mergeTadpoleAnchors.anchors  |   52328 | 4282818 |  249 |
-| 6_mergeTadpoleAnchors.others   |    2057 | 3812397 | 2012 |
-| 6_mergeAnchors.anchors         |   52328 | 4282818 |  249 |
-| 6_mergeAnchors.others          |    2057 | 3813456 | 2013 |
+| 7_mergeKunitigsAnchors.anchors |   55617 | 4238323 |  250 |
+| 7_mergeKunitigsAnchors.others  |    1942 | 3294180 | 1844 |
+| 7_mergeTadpoleAnchors.anchors  |   52328 | 4282818 |  249 |
+| 7_mergeTadpoleAnchors.others   |    2057 | 3812397 | 2012 |
+| 7_mergeAnchors.anchors         |   52328 | 4282818 |  249 |
+| 7_mergeAnchors.others          |    2057 | 3813456 | 2013 |
 | tadpole.Q20L60                 |    7739 | 4536125 | 1274 |
 | tadpole.Q25L60                 |   13537 | 4524004 |  827 |
 | tadpole.Q30L60                 |   11850 | 4523672 |  926 |
@@ -1543,8 +1543,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -1652,12 +1652,12 @@ gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	21770	0.26871%
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 5067172 | 5090491 |    2 |
 | Paralogs                       |    1580 |   83364 |   53 |
-| 6_mergeKunitigsAnchors.anchors |   68014 | 5162923 |  153 |
-| 6_mergeKunitigsAnchors.others  |    1219 | 3740446 | 3085 |
-| 6_mergeTadpoleAnchors.anchors  |  131245 | 5122968 |   84 |
-| 6_mergeTadpoleAnchors.others   |    1343 | 5150661 | 3905 |
-| 6_mergeAnchors.anchors         |  131245 | 5122968 |   84 |
-| 6_mergeAnchors.others          |    1343 | 5150661 | 3905 |
+| 7_mergeKunitigsAnchors.anchors |   68014 | 5162923 |  153 |
+| 7_mergeKunitigsAnchors.others  |    1219 | 3740446 | 3085 |
+| 7_mergeTadpoleAnchors.anchors  |  131245 | 5122968 |   84 |
+| 7_mergeTadpoleAnchors.others   |    1343 | 5150661 | 3905 |
+| 7_mergeAnchors.anchors         |  131245 | 5122968 |   84 |
+| 7_mergeAnchors.others          |    1343 | 5150661 | 3905 |
 | tadpole.Q20L60                 |    5744 | 5487000 | 3197 |
 | tadpole.Q25L60                 |    7433 | 5457978 | 2834 |
 | tadpole.Q30L60                 |    5651 | 5410001 | 2875 |
@@ -1785,8 +1785,8 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
         8_competitor/soap_ctg.fasta \
         8_competitor/spades_ctg.fasta \
         8_competitor/velvet_ctg.fasta \
-        6_mergeAnchors/anchor.merge.fasta \
-        6_mergeAnchors/others.non-contained.fasta \
+        7_mergeAnchors/anchor.merge.fasta \
+        7_mergeAnchors/others.non-contained.fasta \
         1_genome/paralogs.fas \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
@@ -1906,12 +1906,12 @@ Reverse_adapter	178	0.00282%
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 2961149 | 4033464 |    2 |
 | Paralogs                       |    3483 |  114707 |   48 |
-| 6_mergeKunitigsAnchors.anchors |   65194 | 3899368 |  185 |
-| 6_mergeKunitigsAnchors.others  |    1230 | 2223542 | 1740 |
-| 6_mergeTadpoleAnchors.anchors  |  105317 | 3877896 |   97 |
-| 6_mergeTadpoleAnchors.others   |    1364 | 2652558 | 1891 |
-| 6_mergeAnchors.anchors         |  105317 | 3877896 |   97 |
-| 6_mergeAnchors.others          |    1364 | 2652558 | 1891 |
+| 7_mergeKunitigsAnchors.anchors |   65194 | 3899368 |  185 |
+| 7_mergeKunitigsAnchors.others  |    1230 | 2223542 | 1740 |
+| 7_mergeTadpoleAnchors.anchors  |  105317 | 3877896 |   97 |
+| 7_mergeTadpoleAnchors.others   |    1364 | 2652558 | 1891 |
+| 7_mergeAnchors.anchors         |  105317 | 3877896 |   97 |
+| 7_mergeAnchors.others          |    1364 | 2652558 | 1891 |
 | tadpole.Q20L60                 |   11044 | 4227237 | 2318 |
 | tadpole.Q25L60                 |   15337 | 4186972 | 2005 |
 | tadpole.Q30L60                 |   15397 | 4083922 | 1531 |

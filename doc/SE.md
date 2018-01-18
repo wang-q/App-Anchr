@@ -253,12 +253,12 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 4641652 | 4641652 |   1 |
 | Paralogs                       |    1934 |  195673 | 106 |
-| 6_mergeKunitigsAnchors.anchors |   63138 | 4528751 | 125 |
-| 6_mergeKunitigsAnchors.others  |    1345 |   40248 |  33 |
-| 6_mergeTadpoleAnchors.anchors  |   63594 | 4529697 | 123 |
-| 6_mergeTadpoleAnchors.others   |    1550 |   70762 |  47 |
-| 6_mergeAnchors.anchors         |   63594 | 4529697 | 123 |
-| 6_mergeAnchors.others          |    1550 |   70762 |  47 |
+| 7_mergeKunitigsAnchors.anchors |   63138 | 4528751 | 125 |
+| 7_mergeKunitigsAnchors.others  |    1345 |   40248 |  33 |
+| 7_mergeTadpoleAnchors.anchors  |   63594 | 4529697 | 123 |
+| 7_mergeTadpoleAnchors.others   |    1550 |   70762 |  47 |
+| 7_mergeAnchors.anchors         |   63594 | 4529697 | 123 |
+| 7_mergeAnchors.others          |    1550 |   70762 |  47 |
 | spades.contig                  |   97656 | 4644120 | 260 |
 | spades.scaffold                |  112078 | 4644620 | 255 |
 | spades.non-contained           |  106190 | 4581541 | 107 |
@@ -275,12 +275,12 @@ bsub -w "ended(${BASE_NAME}-0_master)" \
 |:-------------------------------|--------:|--------:|----:|
 | Genome                         | 4641652 | 4641652 |   1 |
 | Paralogs                       |    1934 |  195673 | 106 |
-| 6_mergeKunitigsAnchors.anchors |   63410 | 4527839 | 128 |
-| 6_mergeKunitigsAnchors.others  |    1349 |   55257 |  44 |
-| 6_mergeTadpoleAnchors.anchors  |   63518 | 4528369 | 127 |
-| 6_mergeTadpoleAnchors.others   |    1472 |   95920 |  68 |
-| 6_mergeAnchors.anchors         |   63518 | 4528369 | 127 |
-| 6_mergeAnchors.others          |    1472 |   95920 |  68 |
+| 7_mergeKunitigsAnchors.anchors |   63410 | 4527839 | 128 |
+| 7_mergeKunitigsAnchors.others  |    1349 |   55257 |  44 |
+| 7_mergeTadpoleAnchors.anchors  |   63518 | 4528369 | 127 |
+| 7_mergeTadpoleAnchors.others   |    1472 |   95920 |  68 |
+| 7_mergeAnchors.anchors         |   63518 | 4528369 | 127 |
+| 7_mergeAnchors.others          |    1472 |   95920 |  68 |
 | spades.contig                  |   97659 | 4656299 | 272 |
 | spades.scaffold                |  106190 | 4656699 | 268 |
 | spades.non-contained           |  106190 | 4587374 | 110 |

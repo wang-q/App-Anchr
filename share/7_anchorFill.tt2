@@ -1,8 +1,8 @@
 [% INCLUDE header.tt2 %]
-log_warn 6_anchorFill.sh
+log_warn 7_anchorFill.sh
 
-if [ -e 6_anchorFill/contig.fasta ]; then
-    echo >&2 "6_anchorFill/contig.fasta presents"
+if [ -e 7_anchorFill/contig.fasta ]; then
+    echo >&2 "7_anchorFill/contig.fasta presents"
     exit;
 fi
 
@@ -23,7 +23,7 @@ GAP_COV=${3:-1}
 #----------------------------#
 # merge anchors
 #----------------------------#
-mkdir -p 6_anchorFill
+mkdir -p 7_anchorFill
 
 log_info "overlap: between anchor-long"
 
@@ -31,10 +31,10 @@ anchr overlap2 \
     --parallel [% opt.parallel %] \
     ${FILE_ANCHOR} \
     ${FILE_LONG} \
-    -d 6_anchorFill \
+    -d 7_anchorFill \
     -b 50 --len 1000 --idt 0.995 --all
 
-cd 6_anchorFill
+cd 7_anchorFill
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C anchor.fasta)
 log_debug "contigs: ${CONTIG_COUNT}"

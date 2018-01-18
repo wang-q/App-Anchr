@@ -8,37 +8,37 @@ if [ -e 1_genome/genome.fa ]; then
     QUAST_TARGET+=" -R 1_genome/genome.fa "
 fi
 
-if [ -e 6_mergeKunitigsAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeKunitigsAnchors/anchor.merge.fasta "
+if [ -e 7_mergeKunitigsAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeKunitigsAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeKunitigs,"
 fi
 
-if [ -e 6_mergeTadpoleAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeTadpoleAnchors/anchor.merge.fasta "
+if [ -e 7_mergeTadpoleAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeTadpoleAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeTadpole,"
 fi
 
-if [ -e 6_mergeMegahitAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeMegahitAnchors/anchor.merge.fasta "
+if [ -e 7_mergeMegahitAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeMegahitAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeMegahit,"
 fi
 
-if [ -e 6_mergeSpadesAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeSpadesAnchors/anchor.merge.fasta "
+if [ -e 7_mergeSpadesAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeSpadesAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeSpades,"
 fi
 
-if [ -e 6_mergeAnchors/anchor.merge.fasta ]; then
-    QUAST_TARGET+=" 6_mergeAnchors/anchor.merge.fasta "
+if [ -e 7_mergeAnchors/anchor.merge.fasta ]; then
+    QUAST_TARGET+=" 7_mergeAnchors/anchor.merge.fasta "
     QUAST_LABEL+="mergeAnchors,"
 fi
 
-if [ -e 6_anchorLong/contig.fasta ]; then
-    QUAST_TARGET+=" 6_anchorLong/contig.fasta "
+if [ -e 7_anchorLong/contig.fasta ]; then
+    QUAST_TARGET+=" 7_anchorLong/contig.fasta "
     QUAST_LABEL+="anchorLong,"
 fi
-if [ -e 6_anchorFill/contig.fasta ]; then
-    QUAST_TARGET+=" 6_anchorFill/contig.fasta "
+if [ -e 7_anchorFill/contig.fasta ]; then
+    QUAST_TARGET+=" 7_anchorFill/contig.fasta "
     QUAST_LABEL+="anchorFill,"
 fi
 

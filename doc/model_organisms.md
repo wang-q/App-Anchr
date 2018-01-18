@@ -4,7 +4,7 @@
 - [Assemble genomes of model organisms by ANCHR](#assemble-genomes-of-model-organisms-by-anchr)
 - [More tools on downloading and preprocessing data](#more-tools-on-downloading-and-preprocessing-data)
     - [Extra external executables](#extra-external-executables)
-    - [Two of the leading assemblers](#two-of-the-leading-assemblers)
+    - [Other leading assemblers](#other-leading-assemblers)
     - [PacBio specific tools](#pacbio-specific-tools)
 - [*Escherichia coli* str. K-12 substr. MG1655](#escherichia-coli-str-k-12-substr-mg1655)
     - [e_coli: download](#e-coli-download)
@@ -462,14 +462,14 @@ Table: statTadpoleAnchors.md
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors
+bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors
 
-bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors
+bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors
 
-bash 6_mergeAnchors.sh 6_merge 6_mergeAnchors
+bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors
 
 # anchor sort on ref
-for D in 6_mergeAnchors 6_mergeKunitigsAnchors 6_mergeTadpoleAnchors; do
+for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors; do
     if [ ! -d ${D} ]; then
         continue;
     fi
@@ -541,14 +541,14 @@ Table: statCanu
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz
+bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz
 
 # false strand
-cat 6_anchorLong/group/*.ovlp.tsv \
+cat 7_anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta
+bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta
 
 ```
 
@@ -581,12 +581,12 @@ Table: statFinal
 |:-------------------------------|--------:|--------:|-----:|
 | Genome                         | 4641652 | 4641652 |    1 |
 | Paralogs                       |    1934 |  195673 |  106 |
-| 6_mergeKunitigsAnchors.anchors |   63594 | 4530920 |  122 |
-| 6_mergeKunitigsAnchors.others  |    1061 |  322687 |  282 |
-| 6_mergeTadpoleAnchors.anchors  |   67348 | 4531664 |  119 |
-| 6_mergeTadpoleAnchors.others   |    1086 |  389480 |  320 |
-| 6_mergeAnchors.anchors         |   67348 | 4531664 |  119 |
-| 6_mergeAnchors.others          |    1086 |  389480 |  320 |
+| 7_mergeKunitigsAnchors.anchors |   63594 | 4530920 |  122 |
+| 7_mergeKunitigsAnchors.others  |    1061 |  322687 |  282 |
+| 7_mergeTadpoleAnchors.anchors  |   67348 | 4531664 |  119 |
+| 7_mergeTadpoleAnchors.others   |    1086 |  389480 |  320 |
+| 7_mergeAnchors.anchors         |   67348 | 4531664 |  119 |
+| 7_mergeAnchors.others          |    1086 |  389480 |  320 |
 | anchorLong                     |   80372 | 4324205 |  107 |
 | anchorFill                     |  691935 | 4397879 |    9 |
 | canu_X40-raw                   | 4674150 | 4674150 |    1 |
@@ -838,13 +838,13 @@ bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
 
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_kunitigs" "bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
 
 bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors_4_tadpole" "bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors"
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
 
-bsub -w "done(${BASE_NAME}-6_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-6_mergeAnchors_4_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_mergeAnchors" "bash 6_mergeAnchors.sh 6_mergeAnchors"
+bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_mergeAnchors"
 
 # canu
 bsub -w "done(${BASE_NAME}-3_trimlong)" \
@@ -853,13 +853,13 @@ bsub -w "done(${BASE_NAME}-5_canu)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
 
 # expand anchors
-bsub -w "done(${BASE_NAME}-6_mergeAnchors) && done(${BASE_NAME}-5_canu)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorLong" \
-    "bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
+bsub -w "done(${BASE_NAME}-7_mergeAnchors) && done(${BASE_NAME}-5_canu)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_anchorLong" \
+    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
 
-bsub -w "done(${BASE_NAME}-6_anchorLong)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchorFill" \
-    "bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
+bsub -w "done(${BASE_NAME}-7_anchorLong)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_anchorFill" \
+    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
 
 ```
 
@@ -870,7 +870,7 @@ bash 9_statFinal.sh
 bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_quast" "bash 9_quast.sh"
 
 # false strands of anchorLong
-cat 6_anchorLong/group/*.ovlp.tsv \
+cat 7_anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
@@ -1121,12 +1121,12 @@ Table: statFinal
 |:-------------------------------|-------:|---------:|-----:|
 | Genome                         | 924431 | 12157105 |   17 |
 | Paralogs                       |   3851 |  1059148 |  366 |
-| 6_mergeKunitigsAnchors.anchors |  32933 | 11356239 |  640 |
-| 6_mergeKunitigsAnchors.others  |   1375 |  3787992 | 2993 |
-| 6_mergeTadpoleAnchors.anchors  |  29743 | 11246792 |  691 |
-| 6_mergeTadpoleAnchors.others   |   1310 |  3176593 | 2583 |
-| 6_mergeAnchors.anchors         |  32933 | 11356239 |  640 |
-| 6_mergeAnchors.others          |   1375 |  3787992 | 2993 |
+| 7_mergeKunitigsAnchors.anchors |  32933 | 11356239 |  640 |
+| 7_mergeKunitigsAnchors.others  |   1375 |  3787992 | 2993 |
+| 7_mergeTadpoleAnchors.anchors  |  29743 | 11246792 |  691 |
+| 7_mergeTadpoleAnchors.others   |   1310 |  3176593 | 2583 |
+| 7_mergeAnchors.anchors         |  32933 | 11356239 |  640 |
+| 7_mergeAnchors.others          |   1375 |  3787992 | 2993 |
 | anchorLong                     |  37703 | 11286751 |  534 |
 | anchorFill                     | 253144 | 11283555 |   77 |
 | canu_Xall-trim                 | 813374 | 12360766 |   26 |
@@ -1459,12 +1459,12 @@ gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome	57365	0.04381%
 |:-------------------------------|---------:|----------:|-------:|
 | Genome                         | 25286936 | 137567477 |      8 |
 | Paralogs                       |     4031 |  13665900 |   4492 |
-| 6_mergeKunitigsAnchors.anchors |    30271 | 116586070 |   9044 |
-| 6_mergeKunitigsAnchors.others  |     1113 |   8739127 |   6698 |
-| 6_mergeTadpoleAnchors.anchors  |    27248 | 116101033 |   9682 |
-| 6_mergeTadpoleAnchors.others   |     1132 |   5764066 |   4165 |
-| 6_mergeAnchors.anchors         |    30271 | 116598902 |   9045 |
-| 6_mergeAnchors.others          |     1113 |   8739127 |   6698 |
+| 7_mergeKunitigsAnchors.anchors |    30271 | 116586070 |   9044 |
+| 7_mergeKunitigsAnchors.others  |     1113 |   8739127 |   6698 |
+| 7_mergeTadpoleAnchors.anchors  |    27248 | 116101033 |   9682 |
+| 7_mergeTadpoleAnchors.others   |     1132 |   5764066 |   4165 |
+| 7_mergeAnchors.anchors         |    30271 | 116598902 |   9045 |
+| 7_mergeAnchors.others          |     1113 |   8739127 |   6698 |
 | anchorLong                     |    33528 | 113050865 |   7860 |
 | anchorFill                     |   258828 | 114990399 |   1813 |
 | canu_Xall-trim                 | 18542648 | 151436172 |    598 |
@@ -1750,12 +1750,12 @@ contam_43	103	0.00017%
 |:-------------------------------|---------:|----------:|-------:|
 | Genome                         | 17493829 | 100286401 |      7 |
 | Paralogs                       |     2013 |   5313653 |   2637 |
-| 6_mergeKunitigsAnchors.anchors |    15054 |  88875682 |  12131 |
-| 6_mergeKunitigsAnchors.others  |     1676 |  15368215 |   8379 |
-| 6_mergeTadpoleAnchors.anchors  |    14496 |  88532967 |  12846 |
-| 6_mergeTadpoleAnchors.others   |     1733 |  11210853 |   5841 |
-| 6_mergeAnchors.anchors         |    15965 |  89499082 |  11834 |
-| 6_mergeAnchors.others          |     1674 |  15381901 |   8394 |
+| 7_mergeKunitigsAnchors.anchors |    15054 |  88875682 |  12131 |
+| 7_mergeKunitigsAnchors.others  |     1676 |  15368215 |   8379 |
+| 7_mergeTadpoleAnchors.anchors  |    14496 |  88532967 |  12846 |
+| 7_mergeTadpoleAnchors.others   |     1733 |  11210853 |   5841 |
+| 7_mergeAnchors.anchors         |    15965 |  89499082 |  11834 |
+| 7_mergeAnchors.others          |     1674 |  15381901 |   8394 |
 | anchorLong                     |    19121 |  88485194 |   9739 |
 | anchorFill                     |   291112 |  94506949 |    706 |
 | canu_Xall-trim                 |  2859614 | 107313895 |    109 |
@@ -2144,12 +2144,12 @@ RNA_Adapter_(RA5)_part_#_15013205	1324	0.00246%
 |:-------------------------------|---------:|----------:|-------:|
 | Genome                         | 23459830 | 119667750 |      7 |
 | Paralogs                       |     2007 |  16447809 |   8055 |
-| 6_mergeKunitigsAnchors.anchors |    28512 | 107742213 |   8449 |
-| 6_mergeKunitigsAnchors.others  |     1182 |   5434964 |   4319 |
-| 6_mergeTadpoleAnchors.anchors  |    26909 | 107388764 |   8737 |
-| 6_mergeTadpoleAnchors.others   |     1196 |   3848342 |   3001 |
-| 6_mergeAnchors.anchors         |    28512 | 107726209 |   8449 |
-| 6_mergeAnchors.others          |     1182 |   5442970 |   4326 |
+| 7_mergeKunitigsAnchors.anchors |    28512 | 107742213 |   8449 |
+| 7_mergeKunitigsAnchors.others  |     1182 |   5434964 |   4319 |
+| 7_mergeTadpoleAnchors.anchors  |    26909 | 107388764 |   8737 |
+| 7_mergeTadpoleAnchors.others   |     1196 |   3848342 |   3001 |
+| 7_mergeAnchors.anchors         |    28512 | 107726209 |   8449 |
+| 7_mergeAnchors.others          |     1182 |   5442970 |   4326 |
 | anchorLong                     |    29561 | 107449744 |   8164 |
 | anchorFill                     |  1160299 | 109462778 |    555 |
 | canu_Xall-trim                 |  5997654 | 121555181 |    265 |
@@ -2383,12 +2383,12 @@ I5_Adapter_Nextera	1144	0.00099%
 |:-------------------------------|---------:|----------:|-------:|
 | Genome                         | 23459830 | 119667750 |      7 |
 | Paralogs                       |     2007 |  16447809 |   8055 |
-| 6_mergeKunitigsAnchors.anchors |    12016 | 135707549 |  28582 |
-| 6_mergeKunitigsAnchors.others  |     1345 |  39389985 |  27651 |
-| 6_mergeTadpoleAnchors.anchors  |    14370 | 107496214 |  14253 |
-| 6_mergeTadpoleAnchors.others   |     1312 |  19106502 |  13671 |
-| 6_mergeAnchors.anchors         |    12016 | 135716086 |  28590 |
-| 6_mergeAnchors.others          |     1345 |  39391084 |  27652 |
+| 7_mergeKunitigsAnchors.anchors |    12016 | 135707549 |  28582 |
+| 7_mergeKunitigsAnchors.others  |     1345 |  39389985 |  27651 |
+| 7_mergeTadpoleAnchors.anchors  |    14370 | 107496214 |  14253 |
+| 7_mergeTadpoleAnchors.others   |     1312 |  19106502 |  13671 |
+| 7_mergeAnchors.anchors         |    12016 | 135716086 |  28590 |
+| 7_mergeAnchors.others          |     1345 |  39391084 |  27652 |
 | tadpole.Q25L60                 |      494 | 229351949 | 620298 |
 | tadpole.Q30L60                 |      621 | 197869414 | 519364 |
 | spades.contig                  |     3091 | 373674609 | 472715 |

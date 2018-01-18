@@ -1,8 +1,8 @@
 [% INCLUDE header.tt2 %]
-log_warn 6_anchorLong.sh
+log_warn 7_anchorLong.sh
 
-if [ -e 6_anchorLong/contig.fasta ]; then
-    echo >&2 "6_anchorLong/contig.fasta presents"
+if [ -e 7_anchorLong/contig.fasta ]; then
+    echo >&2 "7_anchorLong/contig.fasta presents"
     exit;
 fi
 
@@ -23,7 +23,7 @@ GAP_COV=${3:-2}
 #----------------------------#
 # merge anchors
 #----------------------------#
-mkdir -p 6_anchorLong
+mkdir -p 7_anchorLong
 
 log_info "overlap: between anchor-long"
 
@@ -31,10 +31,10 @@ anchr overlap2 \
     --parallel [% opt.parallel %] \
     ${FILE_ANCHOR} \
     ${FILE_LONG} \
-    -d 6_anchorLong \
+    -d 7_anchorLong \
     -b 50 --len 1000 --idt 0.98 --all
 
-cd 6_anchorLong
+cd 7_anchorLong
 
 log_info "cover: trusted regions of anchors"
 anchr cover \

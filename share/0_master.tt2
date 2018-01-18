@@ -78,22 +78,22 @@ fi
 # merge anchors
 #----------------------------#
 [% IF opt.tadpole -%]
-if [ -e 6_mergeAnchors.sh ]; then
-    bash 6_mergeAnchors.sh 4_kunitigs 6_mergeKunitigsAnchors;
+if [ -e 7_mergeAnchors.sh ]; then
+    bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors;
 
-    bash 6_mergeAnchors.sh 4_tadpole 6_mergeTadpoleAnchors;
+    bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors;
 
-    bash 6_mergeAnchors.sh 6_merge 6_mergeAnchors;
+    bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors;
 fi
 [% ELSE -%]
-if [ -e 6_mergeAnchors.sh ]; then
-    bash 6_mergeAnchors.sh 4_kunitigs_Q;
+if [ -e 7_mergeAnchors.sh ]; then
+    bash 7_mergeAnchors.sh 4_kunitigs_Q;
 fi
 [% END -%]
 
 # anchor sort on ref
 if [ -e 1_genome/genome.fa ]; then
-    for D in 6_mergeAnchors 6_mergeKunitigsAnchors 6_mergeTadpoleAnchors; do
+    for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors; do
         if [ ! -d ${D} ]; then
             continue;
         fi
@@ -128,11 +128,11 @@ fi
 #----------------------------#
 # expand anchors
 #----------------------------#
-if [ -e 6_anchorLong.sh ]; then
-    bash 6_anchorLong.sh 6_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
+if [ -e 7_anchorLong.sh ]; then
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
 fi
-if [ -e 6_anchorFill.sh ]; then
-    bash 6_anchorFill.sh 6_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta
+if [ -e 7_anchorFill.sh ]; then
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta
 fi
 
 #----------------------------#
