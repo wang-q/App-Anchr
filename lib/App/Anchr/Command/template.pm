@@ -127,6 +127,9 @@ sub execute {
     # 6_downSampling
     $self->gen_6_downSampling( $opt, $args );
 
+    # 6_kunitigs
+    $self->gen_6_kunitigs( $opt, $args );
+
     # canu
     $self->gen_canu( $opt, $args );
 
@@ -932,6 +935,107 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
 
     echo >&2
     " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+}
+
+sub gen_6_kunitigs {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "6_kunitigs.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_kunitigs_MRX{1}P{2}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 6_kunitigs_MRX{1}P{2}
+    cd 6_kunitigs_MRX{1}P{2}
+
+    anchr kunitigs \
+        ../6_MRX{1}P{2}/pe.cor.fa \
+        ../6_MRX{1}P{2}/environment.json \
+        -p [% opt.parallel %] \
+        --kmer 31,41,51,61,71,81 \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+    if ( $opt->{tadpole} ) {
+        $sh_name = "6_tadpole.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_tadpole_MRX{1}P{2}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 6_tadpole_MRX{1}P{2}
+    cd 6_tadpole_MRX{1}P{2}
+
+    anchr kunitigs \
+        ../6_MRX{1}P{2}/pe.cor.fa \
+        ../6_MRX{1}P{2}/environment.json \
+        -p [% opt.parallel %] \
+        --kmer 31,41,51,61,71,81 \
+        --tadpole \
+        -o kunitigs.sh
+    bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
         $tt->process(
