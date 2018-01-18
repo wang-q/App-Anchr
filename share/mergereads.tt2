@@ -191,6 +191,9 @@ save END_TIME
 RUNTIME=$((END_TIME-START_TIME))
 save RUNTIME
 
+ESTIMATED_GENOME_SIZE=[% opt.genome %]
+save ESTIMATED_GENOME_SIZE
+
 log_info Done.
 
 exit 0

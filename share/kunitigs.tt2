@@ -27,14 +27,6 @@ KMER=[% opt.kmer.join(',') %]
 save KMER
 log_debug "You set kmer size of $KMER for the graph"
 
-[% IF opt.jf == 'auto' -%]
-JF_SIZE=$( cat environment.json | jq '.JF_SIZE | tonumber' )
-[% ELSE -%]
-JF_SIZE=[% opt.jf %]
-save JF_SIZE
-[% END -%]
-log_debug "JF_SIZE: $JF_SIZE"
-
 [% IF opt.estsize == 'auto' -%]
 ESTIMATED_GENOME_SIZE=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
 [% ELSE -%]
