@@ -897,15 +897,36 @@ bsub -w "done(${BASE_NAME}-4_tadpole)" \
 bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
 
+# down sampling mergereads
+bsub -w "done(${BASE_NAME}-2_mergereads)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_downSampling" "bash 6_downSampling.sh"
+
+bsub -w "done(${BASE_NAME}-6_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_kunitigs" "bash 6_kunitigs.sh"
+bsub -w "done(${BASE_NAME}-6_kunitigs)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchors" "bash 6_anchors.sh"
+bsub -w "done(${BASE_NAME}-6_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_kunitigs" "bash 9_statAnchors.sh 6_kunitigs statMRKunitigsAnchors.md"
+
+bsub -w "done(${BASE_NAME}-6_downSampling)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpole" "bash 6_tadpole.sh"
+bsub -w "done(${BASE_NAME}-6_kunitigs)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
+bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_tadpole" "bash 9_statAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
+
 # merge anchors
 bsub -w "done(${BASE_NAME}-4_anchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
-
 bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
     -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
+bsub -w "done(${BASE_NAME}-6_anchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_kunitigs" "bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors"
+bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
 
-bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_mergeAnchors"
+bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole) && done(${BASE_NAME}-7_mergeAnchors_6_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_6_tadpole)" \
+    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
 
 # canu
 bsub -w "done(${BASE_NAME}-3_trimlong)" \
