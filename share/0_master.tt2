@@ -75,25 +75,62 @@ fi
 [% END -%]
 
 #----------------------------#
+# down sampling mergereads
+#----------------------------#
+if [ -e 6_downSampling.sh ]; then
+    bash 6_downSampling.sh
+fi
+
+if [ -e 6_kunitigs.sh ]; then
+    bash 6_kunitigs.sh;
+fi
+if [ -e 6_anchors.sh ]; then
+    bash 6_anchors.sh;
+fi
+[% IF opt.tadpole -%]
+if [ -e 9_statMRAnchors.sh ]; then
+    bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md
+fi
+
+if [ -e 6_tadpole.sh ]; then
+    bash 6_tadpole.sh
+fi
+if [ -e 6_tadpoleAnchors.sh ]; then
+    bash 6_tadpoleAnchors.sh
+fi
+if [ -e 9_statMRAnchors.sh ]; then
+    bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md
+fi
+[% ELSE -%]
+if [ -e 9_statMRAnchors.sh ]; then
+    bash 9_statMRAnchors.sh;
+fi
+[% END -%]
+
+#----------------------------#
 # merge anchors
 #----------------------------#
 [% IF opt.tadpole -%]
 if [ -e 7_mergeAnchors.sh ]; then
     bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors;
-
     bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors;
+
+[% IF opt.mergereads -%]
+    bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors
+    bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors
+[% END -%]
 
     bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors;
 fi
 [% ELSE -%]
 if [ -e 7_mergeAnchors.sh ]; then
-    bash 7_mergeAnchors.sh 4_kunitigs_Q;
+    bash 7_mergeAnchors.sh 4_kunitigs;
 fi
 [% END -%]
 
 # anchor sort on ref
 if [ -e 1_genome/genome.fa ]; then
-    for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors; do
+    for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
         if [ ! -d ${D} ]; then
             continue;
         fi
