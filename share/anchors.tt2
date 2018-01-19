@@ -18,8 +18,8 @@ faops size SR.fasta > sr.chr.sizes
 log_info "Mapping reads"
 
 log_debug "bbmap"
-rm *.sam || true
-rm basecov.txt || true
+rm -f *.sam
+rm -f basecov.txt
 bbwrap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
@@ -211,7 +211,7 @@ cat contig.covered.csv \
     > fill_all.txt
 
 jrunlist some contig.covered.yml fill_all.txt -o contig.fill_all.yml
-rm contig.fill_all.temp.yml || true; ln -s contig.fill_all.yml contig.fill_all.temp.yml
+rm -f contig.fill_all.temp.yml; ln -s contig.fill_all.yml contig.fill_all.temp.yml
 
 if [ -s fill_all.txt ]; then
     jrunlist span contig.fill_all.temp.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
@@ -228,7 +228,7 @@ cat sr.chr.sizes \
     > fill_hole.txt
 
 jrunlist some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
-rm contig.fill_hole.temp.yml || true; ln -s contig.fill_hole.yml contig.fill_hole.temp.yml
+rm -f contig.fill_hole.temp.yml; ln -s contig.fill_hole.yml contig.fill_hole.temp.yml
 
 if [ -s fill_hole.txt ]; then
     jrunlist span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
