@@ -169,10 +169,20 @@ faops interleave \
     merged.fq.gz \
     >> pe.interleave.fa
 
-shuffle.sh \
-    interleaved \
-    in=pe.interleave.fa \
-    out=pe.cor.fa
+#----------------------------#
+# Shuffle interleaved reads.
+#----------------------------#
+log_info Shuffle interleaved reads.
+cat pe.interleave.fa \
+    | awk '{
+        OFS="\t"; \
+        getline seq; \
+        getline name2; \
+        getline seq2; \
+        print $0,seq,name2,seq2}' \
+    | shuf \
+    | awk '{OFS="\n"; print $1,$2,$3,$4}' \
+    > pe.cor.fa
 rm pe.interleave.fa
 pigz -p [% opt.parallel %] pe.cor.fa
 
