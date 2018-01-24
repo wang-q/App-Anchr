@@ -25,8 +25,6 @@ sub opt_spec {
         [ "len2=s",   "filter reads less or equal to this length", { default => "60" }, ],
         [ "filter=s", "adapter, phix, artifact",                   { default => "adapter" }, ],
         [ 'tadpole',  'use tadpole to create k-unitigs', ],
-        [ 'megahit',  'feed megahit with sampled mergereads', ],
-        [ 'spades',   'feed spades with sampled mergereads', ],
         [],
         [ "cov3=s", "down sampling coverage of PacBio reads", ],
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
@@ -35,6 +33,8 @@ sub opt_spec {
         [ "tile",        "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
+        [ 'megahit',  'feed megahit with sampled mergereads', ],
+        [ 'spades',   'feed spades with sampled mergereads', ],
         [],
         [ 'insertsize', 'calc the insert sizes', ],
         [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
@@ -819,140 +819,6 @@ EOF
         ) or die Template->error;
     }
 
-    if ( $opt->{megahit} ) {
-        $sh_name = "4_megahit.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn [% sh %]
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_megahit_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p 4_megahit_Q{1}L{2}X{3}P{4}
-    cd 4_megahit_Q{1}L{2}X{3}P{4}
-
-    ln -s ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa pe.cor.fa
-    cp ../4_Q{1}L{2}X{3}P{4}/environment.json environment.json
-
-    START_TIME=\$(date +%s)
-
-    megahit \
-        -t [% opt.parallel %] \
-        --k-list 31,41,51,61,71,81 \
-        --12 pe.cor.fa \
-        --min-count 3 \
-        -o megahit_out
-
-    anchr contained \
-        megahit_out/final.contigs.fa \
-        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-        -o stdout \
-        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
-
-    END_TIME=\$(date +%s)
-    RUNTIME=\$((END_TIME-START_TIME))
-
-    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
-    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
-
-    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
-
-    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
-    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
-
-    echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
-
-EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-                sh   => $sh_name,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-
-    if ( $opt->{spades} ) {
-        $sh_name = "4_spades.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn [% sh %]
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_spades_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
-        echo >&2 '    k_unitigs.fasta already presents'
-        exit;
-    fi
-
-    mkdir -p 4_spades_Q{1}L{2}X{3}P{4}
-    cd 4_spades_Q{1}L{2}X{3}P{4}
-
-    ln -s ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa pe.cor.fa
-    cp ../4_Q{1}L{2}X{3}P{4}/environment.json environment.json
-
-    START_TIME=\$(date +%s)
-
-    spades.py \
-        -t [% opt.parallel %] \
-        --only-assembler \
-        -k 31,41,51,61,71,81 \
-        --12 pe.cor.fa \
-        -o .
-
-    anchr contained \
-        contigs.fasta \
-        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-        -o stdout \
-        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
-
-    find . -type d -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
-
-    END_TIME=\$(date +%s)
-    RUNTIME=\$((END_TIME-START_TIME))
-
-    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
-    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
-
-    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
-
-    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
-    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
-
-    echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
-
-EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-                sh   => $sh_name,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-
 }
 
 sub gen_6_kunitigs {
@@ -1039,6 +905,154 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         --tadpole \
         -o kunitigs.sh
     bash kunitigs.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{megahit} ) {
+        $sh_name = "6_megahit.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_megahit_MRX{1}P{2}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 6_megahit_MRX{1}P{2}
+    cd 6_megahit_MRX{1}P{2}
+
+    ln -s ../6_MRX{1}P{2}/pe.cor.fa pe.cor.fa
+    cp ../6_MRX{1}P{2}/environment.json environment.json
+
+    START_TIME=\$(date +%s)
+
+    megahit \
+        -t [% opt.parallel %] \
+        --k-list 31,41,51,61,71,81 \
+        --12 pe.cor.fa \
+        --min-count 3 \
+        -o megahit_out
+
+    anchr contained \
+        megahit_out/final.contigs.fa \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
+
+    END_TIME=\$(date +%s)
+    RUNTIME=\$((END_TIME-START_TIME))
+
+    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
+
+    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{spades} ) {
+        $sh_name = "6_spades.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_spades_MRX{1}P{2}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta already presents'
+        exit;
+    fi
+
+    mkdir -p 6_spades_MRX{1}P{2}
+    cd 6_spades_MRX{1}P{2}
+
+    ln -s ../6_MRX{1}P{2}/pe.cor.fa pe.cor.fa
+    cp ../6_MRX{1}P{2}/environment.json environment.json
+
+    START_TIME=\$(date +%s)
+
+    # Separates paired reads
+    mkdir -p re-pair
+    faops filter -l 0 -a 60 pe.cor.fa stdout \
+        | repair.sh \
+            in=stdin.fa \
+            out=re-pair/R1.fa \
+            out2=re-pair/R2.fa \
+            outs=re-pair/Rs.fa \
+            threads=[% opt.parallel %] \
+            repair overwrite
+
+    # spades seems ignore non-properly paired reads
+    spades.py \
+        -t [% opt.parallel %] \
+        --only-assembler \
+        -k 31,41,51,61,71,81 \
+        -1 re-pair/R1.fa \
+        -2 re-pair/R2.fa \
+        -s re-pair/Rs.fa \
+        -o .
+
+    anchr contained \
+        contigs.fasta \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin k_unitigs.fasta
+
+    find . -type d -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
+
+    END_TIME=\$(date +%s)
+    RUNTIME=\$((END_TIME-START_TIME))
+
+    TJQ=\$(jq \".RUNTIME = \"\${RUNTIME}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
+
+    SUM_COR=\$( faops n50 -H -N 0 -S pe.cor.fa )
+
+    TJQ=\$(jq \".SUM_COR = \"\${SUM_COR}\"\" < environment.json)
+    [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
 
     echo >&2
     " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
@@ -1149,98 +1163,6 @@ EOF
         ) or die Template->error;
     }
 
-    if ( $opt->{megahit} ) {
-        $sh_name = "4_megahitAnchors.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 4_megahitAnchors.sh
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_megahit_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
-        echo >&2 '    anchor.fasta already presents'
-        exit;
-    fi
-
-    rm -fr 4_megahit_Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p 4_megahit_Q{1}L{2}X{3}P{4}/anchor
-    cd 4_megahit_Q{1}L{2}X{3}P{4}/anchor
-
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        --ratio 0.99 \
-        --fill 3 \
-        -p [% opt.parallel2 %] \
-        -o anchors.sh
-    bash anchors.sh
-
-    echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
-
-EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-
-    if ( $opt->{spades} ) {
-        $sh_name = "4_spadesAnchors.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 4_spadesAnchors.sh
-
-cd [% args.0 %]
-
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
-        exit;
-    fi
-
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_spades_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
-        echo >&2 '    anchor.fasta already presents'
-        exit;
-    fi
-
-    rm -fr 4_spades_Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p 4_spades_Q{1}L{2}X{3}P{4}/anchor
-    cd 4_spades_Q{1}L{2}X{3}P{4}/anchor
-
-    anchr anchors \
-        ../k_unitigs.fasta \
-        ../pe.cor.fa \
-        --ratio 0.99 \
-        --fill 3 \
-        -p [% opt.parallel2 %] \
-        -o anchors.sh
-    bash anchors.sh
-
-    echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
-
-EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-
 }
 
 sub gen_6_anchors {
@@ -1323,6 +1245,100 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     anchr anchors \
         ../k_unitigs.fasta \
         ../pe.cor.fa \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{megahit} ) {
+        $sh_name = "6_megahitAnchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_megahit_MRX{1}P{2}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 6_megahit_MRX{1}P{2}/anchor
+    mkdir -p 6_megahit_MRX{1}P{2}/anchor
+    cd 6_megahit_MRX{1}P{2}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        --ratio 0.99 \
+        --fill 3 \
+        -p [% opt.parallel2 %] \
+        -o anchors.sh
+    bash anchors.sh
+
+    echo >&2
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+
+EOF
+        $tt->process(
+            \$template,
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
+    if ( $opt->{spades} ) {
+        $sh_name = "6_spadesAnchors.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+cd [% args.0 %]
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+        exit;
+    fi
+
+    echo >&2 '==> Group MRX{1}P{2}'
+    if [ -e 6_megahit_MRX{1}P{2}/anchor/anchor.fasta ]; then
+        echo >&2 '    anchor.fasta already presents'
+        exit;
+    fi
+
+    rm -fr 6_spades_MRX{1}P{2}/anchor
+    mkdir -p 6_spades_MRX{1}P{2}/anchor
+    cd 6_spades_MRX{1}P{2}/anchor
+
+    anchr anchors \
+        ../k_unitigs.fasta \
+        ../pe.cor.fa \
+        --ratio 0.99 \
+        --fill 3 \
         -p [% opt.parallel2 %] \
         -o anchors.sh
     bash anchors.sh
