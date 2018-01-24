@@ -265,12 +265,22 @@ save SUM_IN
 SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa )
 save SUM_OUT
 
-mv pe.cor.fa pe.cor.interleave.fa
-shuffle.sh \
-    interleaved \
-    in=pe.cor.interleave.fa \
-    out=pe.cor.fa
-rm pe.cor.interleave.fa
+#----------------------------#
+# Shuffle interleaved reads.
+#----------------------------#
+log_info Shuffle interleaved reads.
+mv pe.cor.fa pe.interleave.fa
+cat pe.interleave.fa \
+    | awk '{
+        OFS="\t"; \
+        getline seq; \
+        getline name2; \
+        getline seq2; \
+        print $0,seq,name2,seq2}' \
+    | shuf \
+    | awk '{OFS="\n"; print $1,$2,$3,$4}' \
+    > pe.cor.fa
+rm pe.interleave.fa
 pigz -p [% opt.parallel %] pe.cor.fa
 
 #----------------------------#
