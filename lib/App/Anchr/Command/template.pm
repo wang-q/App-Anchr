@@ -1325,7 +1325,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     fi
 
     echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_megahit_MRX{1}P{2}/anchor/anchor.fasta ]; then
+    if [ -e 6_spades_MRX{1}P{2}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
