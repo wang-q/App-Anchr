@@ -20,6 +20,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    7227   --name 7227=iso_1    \
     --id    6239   --name 6239=n2       \
     --id    3702   --name 3702=col_0    \
+    --id    39947  --name 39947=nip     \
     \
     --id    222523 --name 222523=Bcer   \
     --id    272943 --name 272943=Rsph   \
@@ -48,7 +49,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli s288c iso_1 n2 col_0; do
+for strain in e_coli s288c iso_1 n2 col_0 nip; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -82,6 +83,7 @@ perl ~/Scripts/egaz/self_batch.pl \
     -q iso_1 \
     -q n2 \
     -q col_0 \
+    -q nip \
     --parallel 16
 
 bash model/1_real_chr.sh
