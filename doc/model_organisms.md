@@ -2581,3 +2581,78 @@ I5_Adapter_Nextera	1144	0.00099%
 | platanus.non-contained         |    72444 | 116299742 |   4486 |
 | platanus.anchor                |    71109 | 111877064 |   5138 |
 
+
+# *Oryza sativa* Japonica Group Nipponbare
+
+* Genome: [Ensembl Genomes](http://plants.ensembl.org/Oryza_sativa/Info/Index)
+* Proportion of paralogs (> 1000 bp): 0.16
+
+## nip: download
+
+* Reference genome
+
+```bash
+mkdir -p ~/data/anchr/nip/1_genome
+cd ~/data/anchr/nip/1_genome
+
+aria2c -x 9 -s 3 -c ftp://ftp.ensemblgenomes.org/pub/release-29/plants/fasta/oryza_sativa/dna/Oryza_sativa.IRGSP-1.0.29.dna_sm.toplevel.fa.gz
+faops order Oryza_sativa.IRGSP-1.0.29.dna_sm.toplevel.fa.gz \
+    <(for chr in $(seq 1 1 12); do echo $chr; done) \
+    genome.fa
+
+cp ~/data/anchr/paralogs/model/Results/nip/nip.multi.fas paralogs.fas
+
+```
+
+* Illumina HiSeq 180 bp
+
+    [SRX734432](https://www.ncbi.nlm.nih.gov/sra/SRX2527206[accn]) SRR1614244
+
+```bash
+cd ${HOME}/data/anchr/nip
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR161/004/SRR1614244/SRR1614244_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR161/004/SRR1614244/SRR1614244_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+8ca85062cf7ef7fb21af1c22d16a5309 SRR1614244_1.fastq.gz
+931f7c2d1e4d6518a19a9da71c57d966 SRR1614244_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR1614244_1.fastq.gz R1.fq.gz
+ln -s SRR1614244_2.fastq.gz R2.fq.gz
+
+```
+
+* PacBio
+
+    [SRX1897300](https://www.ncbi.nlm.nih.gov/sra/SRX1897300) SRR3743363
+
+```bash
+mkdir -p ~/data/anchr/nip/3_pacbio
+cd ~/data/anchr/nip/3_pacbio
+
+cat <<EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR374/003/SRR3743363/SRR3743363_subreads.fastq.gz
+EOF
+
+aria2c -x 6 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+a77a415cc45f4077d88f81976a59e078 SRR3743363_subreads.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+faops filter -l 0 SRR3743363_subreads.fastq.gz pacbio.fasta
+
+```
