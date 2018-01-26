@@ -8,7 +8,6 @@
     - [QLX: run](#qlx-run)
     - [QLX: merge anchors with Qxx, Lxx and QxxLxx](#qlx-merge-anchors-with-qxx-lxx-and-qxxlxx)
     - [QLX: merge anchors with QxxXxx](#qlx-merge-anchors-with-qxxxxx)
-    - [QLX: clear intermediate files](#qlx-clear-intermediate-files)
 - [Other stuffs](#other-stuffs)
     - [miniasm](#miniasm)
     - [Local corrections](#local-corrections)
@@ -724,42 +723,33 @@ cat <<EOF > list.tmp
 
 EOF
 
-kmc -k51 -n100 -ci3 @list.tmp raw . 
+kmc -k17 -n100 -ci3 @list.tmp raw . 
 kmc_tools transform raw histogram hist.raw.txt
-
-# uniq
-cat <<EOF > list.tmp
-../R1.uniq.fq.gz
-../R2.uniq.fq.gz
-
-EOF
-
-kmc -k51 -n100 -ci3 @list.tmp uniq . 
-kmc_tools transform uniq histogram hist.uniq.txt
 
 # Q25L60
 cat <<EOF > list.tmp
-../Q25L60/R1.fq.gz
-../Q25L60/R2.fq.gz
+../Q25L60/R1.sickle.fq.gz
+../Q25L60/R2.sickle.fq.gz
+../Q25L60/Rs.sickle.fq.gz
 
 EOF
 
-kmc -k51 -n100 -ci1 @list.tmp Q25L60 . 
+kmc -k17 -n100 -ci3 @list.tmp Q25L60 . 
 kmc_tools transform Q25L60 histogram hist.Q25L60.txt
 
 #kmc_tools transform Q25L60 dump dump.Q25L60.txt
 
-kmc_tools filter Q25L60 @list.tmp -ci3 filtered.fa -fa
+#kmc_tools filter Q25L60 @list.tmp -ci3 filtered.fa -fa
 
-faops n50 -H -S -C \
-    ../Q25L60/R1.fq.gz \
-    ../Q25L60/R2.fq.gz;
-    
-faops n50 -H -S -C \
-    ../Q25L60/pe.cor.fa;
-
-faops n50 -H -S -C \
-    filtered.fa;
+#faops n50 -H -S -C \
+#    ../Q25L60/R1.fq.gz \
+#    ../Q25L60/R2.fq.gz;
+#    
+#faops n50 -H -S -C \
+#    ../Q25L60/pe.cor.fa;
+#
+#faops n50 -H -S -C \
+#    filtered.fa;
 
 ```
 
