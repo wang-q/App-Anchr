@@ -686,6 +686,7 @@ bash 9_quast.sh
 
 Table: statFinal
 
+
 | Name                             |     N50 |     Sum |    # |
 |:---------------------------------|--------:|--------:|-----:|
 | Genome                           | 4641652 | 4641652 |    1 |
@@ -698,8 +699,12 @@ Table: statFinal
 | 7_mergeMRKunitigsAnchors.others  |    1096 |   36919 |   35 |
 | 7_mergeMRTadpoleAnchors.anchors  |   82718 | 4519277 |  105 |
 | 7_mergeMRTadpoleAnchors.others   |    1188 |   29721 |   27 |
-| 7_mergeAnchors.anchors           |   82795 | 4531183 |  108 |
-| 7_mergeAnchors.others            |    1084 |  396788 |  328 |
+| 7_mergeMRMegahitAnchors.anchors  |   78535 | 4559466 |  110 |
+| 7_mergeMRMegahitAnchors.others   |    1100 |  198231 |  193 |
+| 7_mergeMRSpadesAnchors.anchors   |  105519 | 5126475 |   98 |
+| 7_mergeMRSpadesAnchors.others    |    1136 |  196227 |  185 |
+| 7_mergeAnchors.anchors           |  117610 | 5393064 |  100 |
+| 7_mergeAnchors.others            |    1095 |  639710 |  561 |
 | anchorLong                       |   95462 | 4529892 |  100 |
 | anchorFill                       |  868043 | 4602824 |    9 |
 | canu_X40-raw                     | 4674150 | 4674150 |    1 |
@@ -722,6 +727,7 @@ Table: statFinal
 | platanus.scaffold                |  133012 | 4574920 |  142 |
 | platanus.non-contained           |  133012 | 4556916 |   63 |
 | platanus.anchor                  |  132960 | 4542760 |   67 |
+
 
 # *Saccharomyces cerevisiae* S288c
 
