@@ -255,6 +255,8 @@ anchr template \
     --mergereads \
     --tile \
     --ecphase "1,2,3" \
+    --megahit \
+    --spades \
     --insertsize \
     --parallel 16
 
@@ -477,6 +479,14 @@ bash 6_tadpole.sh
 bash 6_tadpoleAnchors.sh
 bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md
 
+bash 6_megahit.sh
+bash 6_megahitAnchors.sh
+bash 9_statMRAnchors.sh 6_megahit statMRMegahitAnchors.md
+
+bash 6_spades.sh
+bash 6_spadesAnchors.sh
+bash 9_statMRAnchors.sh 6_spades statMRSpadesAnchors.md
+
 ```
 
 Table: statMRKunitigsAnchors.md
@@ -515,23 +525,60 @@ Table: statMRTadpoleAnchors.md
 | MRX80P002 |   80.0 |  97.34% |     59557 | 4.51M | 124 |       103 | 27.73K | 256 |   78.0 | 2.5 |  20.0 | 128.2 | "31,41,51,61,71,81" | 0:00'57'' | 0:00'47'' |
 | MRX80P003 |   80.0 |  97.33% |     60755 | 4.51M | 126 |       102 | 28.54K | 267 |   78.0 | 3.0 |  20.0 | 130.5 | "31,41,51,61,71,81" | 0:00'58'' | 0:00'46'' |
 
+Table: statMRMegahitAnchors.md
+
+| Name      | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |    Sum |   # | median | MAD | lower | upper | Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|------:|----:|----------:|-------:|----:|-------:|----:|------:|------:|-----:|----------:|----------:|
+| MRX40P000 |   40.0 |  98.09% |     30025 | 4.46M | 293 |       736 | 87.95K | 421 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'47'' |
+| MRX40P001 |   40.0 |  97.96% |     29104 | 4.45M | 311 |       586 | 90.48K | 439 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'55'' | 0:00'48'' |
+| MRX40P002 |   40.0 |  98.01% |     31255 | 4.46M | 297 |       612 |  85.1K | 425 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'53'' | 0:00'43'' |
+| MRX40P003 |   40.0 |  98.05% |     26263 | 4.46M | 309 |       562 | 89.44K | 438 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'45'' |
+| MRX40P004 |   40.0 |  97.99% |     30160 | 4.45M | 291 |       664 | 91.34K | 420 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'45'' |
+| MRX40P005 |   40.0 |  97.99% |     29565 | 4.47M | 271 |       485 | 78.24K | 399 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'45'' |
+| MRX40P006 |   40.0 |  98.02% |     30745 | 4.46M | 293 |       543 | 86.97K | 424 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'55'' | 0:00'47'' |
+| MRX40P007 |   40.0 |  98.01% |     26337 | 4.46M | 307 |       596 | 89.71K | 434 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'45'' |
+| MRX40P008 |   40.0 |  98.00% |     30659 | 4.46M | 278 |       439 |  82.7K | 409 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:00'54'' | 0:00'45'' |
+| MRX80P000 |   80.0 |  98.06% |     51524 |  4.5M | 165 |       446 | 47.84K | 287 |   78.0 | 2.0 |  20.0 | 126.0 | null | 0:01'22'' | 0:00'54'' |
+| MRX80P001 |   80.0 |  98.00% |     51518 |  4.5M | 149 |       576 | 43.62K | 273 |   78.5 | 2.5 |  20.0 | 129.0 | null | 0:01'22'' | 0:00'47'' |
+| MRX80P002 |   80.0 |  98.00% |     57107 | 4.49M | 162 |       955 | 50.57K | 287 |   78.0 | 2.0 |  20.0 | 126.0 | null | 0:01'23'' | 0:00'51'' |
+| MRX80P003 |   80.0 |  98.06% |     49645 | 4.49M | 160 |       690 | 52.64K | 285 |   78.0 | 2.0 |  20.0 | 126.0 | null | 0:01'22'' | 0:00'47'' |
+
+Table: statMRSpadesAnchors.md
+
+| Name      | CovCor | Mapped% | N50Anchor |   Sum |   # | N50Others |    Sum |   # | median | MAD | lower | upper | Kmer | RunTimeKU | RunTimeAN |
+|:----------|-------:|--------:|----------:|------:|----:|----------:|-------:|----:|-------:|----:|------:|------:|-----:|----------:|----------:|
+| MRX40P000 |   40.0 |  98.44% |     35107 | 4.47M | 255 |       834 | 80.33K | 353 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:20'49'' | 0:00'50'' |
+| MRX40P001 |   40.0 |  98.35% |     34513 | 4.47M | 286 |       800 | 89.33K | 387 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:21'14'' | 0:00'50'' |
+| MRX40P002 |   40.0 |  98.34% |     35486 | 4.47M | 265 |       681 | 79.66K | 361 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:21'47'' | 0:00'48'' |
+| MRX40P003 |   40.0 |  98.36% |     29325 | 4.47M | 278 |       543 |  79.2K | 372 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:21'55'' | 0:00'48'' |
+| MRX40P004 |   40.0 |  98.36% |     32183 | 4.47M | 273 |       746 | 87.72K | 375 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:22'33'' | 0:00'52'' |
+| MRX40P005 |   40.0 |  98.39% |     35606 | 4.48M | 246 |       707 | 73.85K | 346 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:22'48'' | 0:00'52'' |
+| MRX40P006 |   40.0 |  98.36% |     35532 | 4.47M | 261 |       705 | 78.15K | 356 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:23'27'' | 0:00'48'' |
+| MRX40P007 |   40.0 |  98.38% |     31336 | 4.47M | 280 |       581 | 81.47K | 377 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:23'37'' | 0:00'50'' |
+| MRX40P008 |   40.0 |  98.39% |     36984 | 4.48M | 252 |       510 | 75.94K | 347 |   39.0 | 1.0 |  12.0 |  63.0 | null | 0:23'51'' | 0:00'48'' |
+| MRX80P000 |   80.0 |  98.37% |     59910 | 4.52M | 137 |       424 |  39.1K | 232 |   79.0 | 2.0 |  20.0 | 127.5 | null | 0:23'00'' | 0:00'57'' |
+| MRX80P001 |   80.0 |  98.39% |     59649 | 4.51M | 142 |       674 | 42.58K | 235 |   79.0 | 2.0 |  20.0 | 127.5 | null | 0:18'45'' | 0:00'51'' |
+| MRX80P002 |   80.0 |  98.54% |     59589 | 4.52M | 134 |       962 | 42.45K | 232 |   79.0 | 2.0 |  20.0 | 127.5 | null | 0:22'15'' | 0:00'56'' |
+| MRX80P003 |   80.0 |  98.38% |     59566 | 4.51M | 134 |       690 | 46.24K | 227 |   78.0 | 2.0 |  20.0 | 126.0 | null | 0:24'50'' | 0:00'50'' |
+
 * merge anchors
 
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
 bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors
-
 bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors
 
 bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors
-
 bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors
+
+bash 7_mergeAnchors.sh 6_megahit 7_mergeMRMegahitAnchors
+bash 7_mergeAnchors.sh 6_spades 7_mergeMRSpadesAnchors
 
 bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors
 
 # anchor sort on ref
-for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
+for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors 7_mergeMRMegahitAnchors 7_mergeMRSpadesAnchors; do
     if [ ! -d ${D} ]; then
         continue;
     fi
