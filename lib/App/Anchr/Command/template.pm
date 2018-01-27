@@ -30,7 +30,6 @@ sub opt_spec {
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
         [],
         [ 'mergereads',  'also run the mergereads approach', ],
-        [ "tile",        "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
         [ 'megahit',   'feed megahit with sampled mergereads', ],
@@ -439,6 +438,9 @@ tadpole.sh \
     in=../R1.fq.gz \
     in2=../R2.fq.gz \
     out=tadpole.contig.fasta \
+[% IF opt.prefilter -%]
+    prefilter=[% opt.prefilter %] \
+[% END -%]
     threads=[% opt.parallel %] \
     overwrite
 
