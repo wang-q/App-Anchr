@@ -4,198 +4,151 @@
 # Run
 #----------------------------#
 
-[% IF opt.uniq -%]
-[% current = 'uniq' -%]
-#----------------------------#
-# [% current %]
-#----------------------------#
-log_info "[% current %]"
-if [ ! -e R1.[% current %].fq.gz ]; then
-[% IF args.1 -%]
-    tally \
-        --pair-by-offset --with-quality --nozip --unsorted \
-        -i [% args.0 %] \
-        -j [% args.1 %] \
-        -o R1.[% current %].fq \
-        -p R2.[% current %].fq
+START_TIME=$(date +%s)
+save START_TIME
 
-    parallel --no-run-if-empty -j 1 "
-        pigz -p [% opt.parallel %] {}.[% current %].fq
-        " ::: R1 R2
-[% ELSE -%]
-    tally \
-        --with-quality --nozip --unsorted \
-        -i [% args.0 %] \
-        -o R1.[% current %].fq
+NUM_THREADS=[% opt.parallel %]
+save NUM_THREADS
 
-    pigz -p [% opt.parallel %] R1.[% current %].fq
-[% END -%]
-fi
-[% prev = 'uniq' -%]
-[% END -%]
+BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
+rm -f temp.fq.gz;
 
-[% IF opt.shuffle -%]
-[% current = 'shuffle' -%]
 #----------------------------#
-# [% current %]
+# Pipeline
 #----------------------------#
-log_info "[% current %]"
-if [ ! -e R1.[% current %].fq.gz ]; then
-[% IF args.1 -%]
-    shuffle.sh \
-[% IF prev -%]
-        in=R1.[% prev %].fq.gz \
-        in2=R2.[% prev %].fq.gz \
-[% ELSE -%]
+# from bbmap/bbmap/pipelines/assemblyPipeline.sh
+
+# Reorder reads for speed of subsequent phases
+# As we're going to precess reads from different sources, don't dedupe here.
+# 1. dedupe, Remove duplicate reads.
+# 2. optical, mark or remove optical duplicates only. Normal Illumina names needed.
+log_info "clumpify"
+if [ ! -e clumped.fq.gz ]; then
+    clumpify.sh \
         in=[% args.0 %] \
+[% IF args.1 -%]
         in2=[% args.1 %] \
 [% END -%]
-        out=R1.[% current %].fq \
-        out2=R2.[% current %].fq
-
-    parallel --no-run-if-empty -j 1 "
-        pigz -p [% opt.parallel %] {}.[% current %].fq
-        " ::: R1 R2
-[% ELSE -%]
-    shuffle.sh \
-[% IF prev -%]
-        in=R1.[% prev %].fq.gz \
-[% ELSE -%]
-        in=[% args.0 %] \
+        out=clumpify.fq.gz \
+[% IF opt.dedupe -%]
+        dedupe dupesubs=0 \
 [% END -%]
-        out=R1.[% current %].fq
-
-    pigz -p [% opt.parallel %] R1.[% current %].fq
-[% END -%]
+        threads=[% opt.parallel %]
 fi
-[% prev = 'shuffle' -%]
+rm temp.fq.gz; ln -s clumpify.fq.gz temp.fq.gz
+
+[% IF opt.tile -%]
+# Remove low-quality reads by positions in flowcell
+log_info "filteredbytile"
+if [ ! -e filteredbytile.fq.gz ]; then
+    filterbytile.sh \
+        in=temp.fq.gz \
+        out=filteredbytile.fq.gz \
+        threads=[% opt.parallel %]
+fi
+rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
 [% IF opt.sample -%]
-[% current = 'sample' -%]
-#----------------------------#
-# [% current %]
-#----------------------------#
-log_info "[% current %]"
-if [ ! -e R1.[% current %].fq.gz ]; then
-[% IF args.1 -%]
+# Down sampling reads. 300x is fine
+log_info "sample with reformat.sh"
+if [ ! -e sample.fq.gz ]; then
     reformat.sh \
-        sampleseed=[% opt.sample %] \
+        in=temp.fq.gz \
+        out=sample.fq.gz \
         samplebasestarget=[% opt.sample %] \
-[% IF prev -%]
-        in=R1.[% prev %].fq.gz \
-        in2=R2.[% prev %].fq.gz \
-[% ELSE -%]
-        in=[% args.0 %] \
-        in2=[% args.1 %] \
-[% END -%]
-        out=R1.[% current %].fq \
-        out2=R2.[% current %].fq
-
-    parallel --no-run-if-empty -j 1 "
-        pigz -p [% opt.parallel %] {}.[% current %].fq
-        " ::: R1 R2
-[% ELSE -%]
-    reformat.sh \
-        sampleseed=[% opt.sample %] \
-        samplebasestarget=[% opt.sample %] \
-[% IF prev -%]
-        in=R1.[% prev %].fq.gz \
-[% ELSE -%]
-        in=[% args.0 %] \
-[% END -%]
-        out=R1.[% current %].fq
-
-    pigz -p [% opt.parallel %] R1.[% current %].fq
-[% END -%]
+        threads=[% opt.parallel %]
 fi
-[% prev = 'sample' -%]
+rm temp.fq.gz; ln -s sample.fq.gz temp.fq.gz
 [% END -%]
 
-[% IF opt.bbduk -%]
-[% current = 'bbduk' -%]
-#----------------------------#
-# [% current %]
-#----------------------------#
-log_info "[% current %]"
-if [ ! -e R1.[% current %].fq.gz ]; then
+# Trim 5' adapters and discard reads with Ns
+# Use bbduk.sh to quality and length trim the Illumina reads and remove adapter sequences
+# 1. ftm = 5, right trim read length to a multiple of 5
+# 2. k = 23, Kmer length used for finding contaminants
+# 3. ktrim=r, Trim reads to remove bases matching reference kmers to the right
+# 4. mink=7, look for shorter kmers at read tips down to 7 bps
+# 5. hdist=1, hamming distance for query kmers
+# 6. tbo, trim adapters based on where paired reads overlap
+# 7. tpe, when kmer right-trimming, trim both reads to the minimum length of either
+# 8. qtrim=r, trim read right ends to remove bases with low quality
+# 9. trimq=15, regions with average quality below 15 will be trimmed.
+# 10. minlen=60, reads shorter than 60 bps after trimming will be discarded.
+log_info "trim with bbduk.sh"
+if [ ! -e trim.fq.gz ]; then
     bbduk.sh \
-[% IF prev -%]
-        in=R1.[% prev %].fq.gz \
-[% IF args.1 -%]
-        in2=R2.[% prev %].fq.gz \
-[% END -%]
-[% ELSE -%]
-        in=[% args.0 %] \
-[% IF args.1 -%]
-        in2=[% args.1 %] \
-[% END -%]
-[% END -%]
-        out=R1.[% current %].fq.gz \
-[% IF args.1 -%]
-        out2=R2.[% current %].fq.gz \
-[% END -%]
+        in=temp.fq.gz \
+        out=trim.fq.gz \
         ref=[% opt.adapter %] \
-        threads=[% opt.parallel %] \
-        ktrim=r k=23 mink=11 hdist=1 tbo tpe \
-        ftm=5 ordered overwrite \
-        stats=trimming.stats.txt
+        maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
+        minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
+        stats=trim.stats.txt \
+        threads=[% opt.parallel %]
 fi
-[% prev = 'bbduk' -%]
-[% END -%]
+rm temp.fq.gz; ln -s trim.fq.gz temp.fq.gz
 
-[% IF not opt.nosickle -%]
-[% current = 'sickle' -%]
-#----------------------------#
-# [% current %]
-#----------------------------#
-log_info "[% current %]"
-if [ ! -e R1.[% current %].fq.gz ]; then
+# Remove synthetic artifacts, spike-ins and 3' adapters by kmer-matching.
+log_info "filter with bbduk.sh"
+if [ ! -e filter.fq.gz ]; then
+    bbduk.sh \
+        in=temp.fq.gz \
+        out=filter.fq.gz \
+        ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifact' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
+        k=[% opt.matchk %] hdist=1 ordered cardinality \
+        stats=filter.stats.txt \
+        threads=[% opt.parallel %]
+fi
+rm temp.fq.gz; ln -s filter.fq.gz temp.fq.gz
+
+# Revert to normal pair-end fastq files
+log_info "re-pair with repair.sh"
+if [ ! -e R1.trim.fq.gz ]; then
+[% IF args.1 -%]
+    repair.sh \
+        in=temp.fq.gz \
+        out=R1.trim.fq.gz \
+        out2=R2.trim.fq.gz \
+        outs=Rs.trim.fq.gz \
+        repair \
+        threads=[% opt.parallel %]
+[% ELSE -%]
+    cp -L temp.fq.gz R1.trim.fq.gz
+[% END -%]
+fi
+
+# sickle
+log_info "sickle ::: Qual [% opt.qual %] ::: Len [% opt.len %]"
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    mkdir -p Q{1}L{2}
+    cd Q{1}L{2}
+
+    printf '==> Qual-Len: %s\n'  Q{1}L{2}
+    if [ -e R1.sickle.fq.gz ]; then
+        echo '    R1.sickle.fq.gz already presents'
+        exit;
+    fi
+
 [% IF args.1 -%]
     sickle pe \
         -t sanger \
-        -l [% opt.len %] \
-        -q [% opt.qual %] \
-[% IF prev -%]
-        -f R1.[% prev %].fq.gz \
-        -r R2.[% prev %].fq.gz \
-[% ELSE -%]
-        -f [% args.0 %] \
-        -r [% args.1 %] \
-[% END -%]
-        -o R1.[% current %].fq \
-        -p R2.[% current %].fq \
-        -s Rs.[% current %].fq
-
-    parallel --no-run-if-empty -j 1 "
-        pigz -p [% opt.parallel %] {}.[% current %].fq
-        " ::: R1 R2 Rs
+        -q {1} \
+        -l {2} \
+        -f ../R1.trim.fq.gz \
+        -r ../R2.trim.fq.gz \
+        -o R1.sickle.fq \
+        -p R2.sickle.fq \
+        -s Rs.sickle.fq
+    gzip -d -c ../Rs.trim.fq.gz >> Rs.sickle.fq
 [% ELSE -%]
     sickle se \
         -t sanger \
-        -l [% opt.len %] \
-        -q [% opt.qual %] \
-[% IF prev -%]
-        -f R1.[% prev %].fq.gz \
-[% ELSE -%]
-        -f [% args.0 %] \
-[% END -%]
+        -q {1} \
+        -l {2} \
+        -f ../R1.trim.fq.gz \
         -o R1.sickle.fq
-
-    pigz -p [% opt.parallel %] R1.[% current %].fq
-[% END -%]
-fi
-[% prev = 'sickle' -%]
-
-#----------------------------#
-# outputs
-#----------------------------#
-mv R1.sickle.fq.gz [% opt.basename %]1.sickle.fq.gz
-[% IF args.1 -%]
-mv R2.sickle.fq.gz [% opt.basename %]2.sickle.fq.gz
-mv Rs.sickle.fq.gz [% opt.basename %]s.sickle.fq.gz
 [% END -%]
 
-[% END -%]
+    pigz *.sickle.fq
+    " ::: [% opt.qual %] ::: [% opt.len %]
 
 exit 0

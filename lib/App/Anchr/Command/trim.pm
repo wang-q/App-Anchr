@@ -10,19 +10,20 @@ use constant abstract => "trim PE/SE Illumina fastq files";
 
 sub opt_spec {
     return (
-        [ "outfile|o=s",  "output filename, [stdout] for screen",      { default => "trim.sh" }, ],
-        [ "basename|b=s", "prefix of fastq filenames",                 { default => "R" }, ],
-        [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
-        [ "qual|q=i",     "quality threshold",                         { default => 25 }, ],
+        [ "outfile|o=s", "output filename, [stdout] for screen",      { default => "trim.sh" }, ],
+        [ "len|l=s",     "filter reads less or equal to this length", { default => "60" }, ],
+        [ "qual|q=s",    "quality threshold",                         { default => "25" }, ],
+        [ "filter=s",    "adapter, phix, artifact",                   { default => "adapter" }, ],
+        [ "trimq=i",     "quality score for 3' end",                  { default => 15 }, ],
+        [ "trimk=i",     "kmer for 5' adapter trimming",              { default => 23 }, ],
+        [ "matchk=i",    "kmer for decontamination",                  { default => 27 }, ],
         [   "adapter|a=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
-        [ "uniq",     "the uniq step", ],
-        [ "shuffle",  "the shuffle step", ],
+        [ "dedupe",   "the uniq step", ],
+        [ "tile",     "with normal Illumina names, do tile based filtering", ],
         [ "sample=i", "the sample step", ],
-        [ "bbduk",    "the bbduk step", ],
-        [ "nosickle", "skip the sickle step", ],
-        [ "parallel|p=i", "number of threads", { default => 8 }, ],
+        [ "parallel|p=i", "number of threads", { default => 16 }, ],
         { show_defaults => 1, }
     );
 }
