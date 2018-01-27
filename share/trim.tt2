@@ -116,7 +116,9 @@ if [ ! -e R1.trim.fq.gz ]; then
 [% END -%]
 fi
 
-# sickle
+#----------------------------#
+# Sickle
+#----------------------------#
 log_info "sickle ::: Qual [% opt.qual %] ::: Len [% opt.len %]"
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     mkdir -p Q{1}L{2}

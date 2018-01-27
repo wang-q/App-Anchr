@@ -24,31 +24,33 @@ like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout)] );
 ok( scalar( grep {/\S/} split( /\n/, $result->stdout ) ) > 40, 'line count' );
-like( $result->stdout, qr{sickle.+outputs}s, 'bash contents' );
-
-$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -b fancy/NAMES -o stdout)] );
-like( $result->stdout, qr{fancy\/NAMES}s, 'fancy names' );
+like( $result->stdout, qr{Pipeline.+Sickle}s, 'bash contents' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz -o stdout )] );
 like( $result->stdout, qr{\sse\s}s, 'se mode' );
 unlike( $result->stdout, qr{\spe\s}s, 'se mode without pe' );
 
 {    # real run
+    my $t_path = Path::Tiny::path("t/")->absolute->stringify;
+    my $cwd    = Path::Tiny->cwd;
+
     my $tempdir = Path::Tiny->tempdir;
+    chdir $tempdir;
+
     $result = test_app(
         'App::Anchr' => [
-            qw(trim t/R1.fq.gz t/R2.fq.gz), "-b",
-            $tempdir->stringify . "/R",     "-o",
-            $tempdir->child("trim.sh")->stringify,
+            "trim",             "$t_path/R1.fq.gz",
+            "$t_path/R2.fq.gz", qw(-q 25 -l 60),
+            "-o",               $tempdir->child("trim.sh")->stringify,
         ]
     );
 
     ok( $tempdir->child("trim.sh")->is_file, 'bash file exists' );
     system( sprintf "bash %s", $tempdir->child("trim.sh")->stringify );
-    ok( $tempdir->child("R1.sickle.fq.gz")->is_file, 'output files exist' );
-    ok( $tempdir->child("Rs.sickle.fq.gz")->is_file, 'output files exist' );
+    ok( $tempdir->child("Q25L60/R1.sickle.fq.gz")->is_file, 'output files exist' );
+    ok( $tempdir->child("Q25L60/Rs.sickle.fq.gz")->is_file, 'output files exist' );
 
-    #        chdir $tempdir;    # keep tempdir
+    chdir $cwd;    # Won't keep tempdir
 }
 
 done_testing();
