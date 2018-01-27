@@ -33,8 +33,8 @@ sub opt_spec {
         [ "tile",        "with normal Illumina names, do tile based filtering", ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
-        [ 'megahit',  'feed megahit with sampled mergereads', ],
-        [ 'spades',   'feed spades with sampled mergereads', ],
+        [ 'megahit',   'feed megahit with sampled mergereads', ],
+        [ 'spades',    'feed spades with sampled mergereads', ],
         [],
         [ 'insertsize', 'calc the insert sizes', ],
         [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
@@ -280,10 +280,40 @@ sub gen_trim {
     $sh_name = "2_trim.sh";
     print "Create $sh_name\n";
 
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn 2_trim.sh
+
+cd 2_illumina
+
+anchr trim \
+    [% opt.trim2 %] \
+    --qual "[% opt.qual2 %]" \
+    --len "[% opt.len2 %]" \
+[% IF opt.filter -%]
+    --filter [% opt.filter %] \
+[% END -%]
+[% IF opt.sample2 -%]
+[% IF opt.genome -%]
+    --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
+[% END -%]
+[% END -%]
+    $(
+        if [ -e illumina_adapters.fa ]; then
+            echo "-a illumina_adapters.fa";
+        fi
+    ) \
+    --parallel [% opt.parallel %] \
+    R1.fq.gz [% IF not opt.se %]R2.fq.gz[% END %] \
+    -o trim.sh
+bash trim.sh
+
+EOF
     $tt->process(
-        '2_trim.tt2',
+        \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
