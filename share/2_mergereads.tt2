@@ -18,15 +18,9 @@ ESTIMATED_GENOME_SIZE=[% opt.genome %]
 save ESTIMATED_GENOME_SIZE
 
 anchr mergereads \
-    ../R1.fq.gz ../R2.fq.gz \
-[% IF opt.tile -%]
-    --tile \
-[% END -%]
+    ../R1.trim.fq.gz ../R2.trim.fq.gz \
 [% IF opt.prefilter -%]
     --prefilter [% opt.prefilter %] \
-[% END -%]
-[% IF opt.filter -%]
-    --filter [% opt.filter %] \
 [% END -%]
 [% IF opt.ecphase -%]
     --ecphase [% opt.ecphase %] \
@@ -42,7 +36,7 @@ printf "| %s | %s | %s | %s |\n" \
     >> statMergeReads.md
 printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
-for NAME in clumped filteredbytile trimmed filtered ecco eccc ecct extended merged unmerged.raw unmerged.trim U1 U2 Us; do
+for NAME in clumped ecco eccc ecct extended merged unmerged.raw unmerged.trim U1 U2 Us; do
     if [ ! -e ${NAME}.fq.gz ]; then
         continue;
     fi
@@ -55,7 +49,7 @@ printf "| %s | %s | %s | %s |\n" \
 echo >> statMergeReads.md
 
 log_info "clear unneeded .fq.gz files"
-for NAME in temp clumped filteredbytile trimmed filtered ecco eccc ecct extended unmerged.raw unmerged.trim; do
+for NAME in temp clumped ecco eccc ecct extended unmerged.raw unmerged.trim; do
     if [ -e ${NAME}.fq.gz ]; then
         rm ${NAME}.fq.gz
     fi
@@ -92,32 +86,6 @@ for NAME in ihist.merge1.txt ihist.merge.txt; do
             ' \
         >> statMergeReads.md
 done
-
-log_info "stats of trimmed reads"
-echo >> statMergeReads.md
-echo '```text' >> statMergeReads.md
-echo "#trimmedReads" >> statMergeReads.md
-cat trimming.stats.txt \
-	| perl -nla -F"\t" -e '
-        /^#(Matched|Name)/ and print and next;
-        /^#/ and next;
-        $F[1] >= 1000 and print;
-	' \
-	>> statMergeReads.md
-echo '```' >> statMergeReads.md
-
-log_info "stats of filtered reads"
-echo >> statMergeReads.md
-echo '```text' >> statMergeReads.md
-echo "#filteredReads" >> statMergeReads.md
-cat filtering.stats.txt \
-	| perl -nla -F"\t" -e '
-        /^#(Matched|Name)/ and print and next;
-        /^#/ and next;
-        $F[1] >= 100 and print;
-	' \
-	>> statMergeReads.md
-echo '```' >> statMergeReads.md
 
 cat statMergeReads.md
 
