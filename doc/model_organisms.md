@@ -243,7 +243,7 @@ anchr template \
     . \
     --basename ${BASE_NAME} \
     --genome 4641652 \
-    --trim2 "--uniq --shuffle --bbduk" \
+    --trim2 "--dedupe --tile" \
     --sample2 300 \
     --cov2 "40 80" \
     --qual2 "20 25 30" \
@@ -253,7 +253,6 @@ anchr template \
     --cov3 "40 80 all" \
     --qual3 "raw trim" \
     --mergereads \
-    --tile \
     --ecphase "1,2,3" \
     --megahit \
     --spades \
@@ -301,32 +300,41 @@ Table: statInsertSize
 
 Table: statReads
 
-| Name      |     N50 |     Sum |        # |
-|:----------|--------:|--------:|---------:|
-| Genome    | 4641652 | 4641652 |        1 |
-| Paralogs  |    1934 |  195673 |      106 |
-| Illumina  |     151 |   1.73G | 11458940 |
-| uniq      |     151 |   1.73G | 11439000 |
-| shuffle   |     151 |   1.73G | 11439000 |
-| sample    |     151 |   1.39G |  9221824 |
-| bbduk     |     150 |   1.38G |  9221642 |
-| Q20L60    |     150 |   1.22G |  8835415 |
-| Q25L60    |     150 |   1.11G |  8522766 |
-| Q30L60    |     127 | 926.56M |  7887527 |
-| PacBio    |   13982 | 748.51M |    87225 |
-| X40.raw   |   14030 | 185.68M |    22336 |
-| X40.trim  |   13702 | 169.38M |    19468 |
-| X80.raw   |   13990 | 371.34M |    44005 |
-| X80.trim  |   13632 | 339.51M |    38725 |
-| Xall.raw  |   13982 | 748.51M |    87225 |
-| Xall.trim |   13646 | 689.43M |    77693 |
+| Name           |     N50 |     Sum |        # |
+|:---------------|--------:|--------:|---------:|
+| Genome         | 4641652 | 4641652 |        1 |
+| Paralogs       |    1934 |  195673 |      106 |
+| Illumina       |     151 |   1.73G | 11458940 |
+| clumpify       |     151 |   1.73G | 11439000 |
+| filteredbytile |     151 |   1.67G | 11057522 |
+| sample         |     151 |   1.39G |  9221826 |
+| trim           |     149 |   1.19G |  8654072 |
+| filter         |     149 |   1.19G |  8653636 |
+| trimmed        |     149 |   1.19G |  8653636 |
+| Q20L60         |     149 |   1.17G |  8534030 |
+| Q25L60         |     148 |    1.1G |  8293111 |
+| Q30L60         |     128 | 922.36M |  7768475 |
+| PacBio         |   13982 | 748.51M |    87225 |
+| X40.raw        |   14030 | 185.68M |    22336 |
+| X40.trim       |   13702 | 169.38M |    19468 |
+| X80.raw        |   13990 | 371.34M |    44005 |
+| X80.trim       |   13632 | 339.51M |    38725 |
+| Xall.raw       |   13982 | 748.51M |    87225 |
+| Xall.trim      |   13646 | 689.43M |    77693 |
 
 ```text
-#trimmedReads
-#Matched        15594   0.16910%
+#trim
+#Matched        15581   0.16896%
 #Name   Reads   ReadsPct
-pcr_dimer       6920    0.07504%
-PCR_Primers     1266    0.01373%
+pcr_dimer       7017    0.07609%
+PCR_Primers     1238    0.01342%
+```
+
+```text
+#filter
+#Matched        436     0.00504%
+#Name   Reads   ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome  434     0.00501%
 ```
 
 * mergereads
@@ -340,43 +348,26 @@ bash 2_mergereads.sh
 
 Table: statMergeReads
 
-| Name           | N50 |    Sum |        # |
-|:---------------|----:|-------:|---------:|
-| clumped        | 151 |  1.73G | 11439000 |
-| filteredbytile | 151 |  1.67G | 11064206 |
-| trimmed        | 149 |  1.43G | 10382730 |
-| filtered       | 149 |  1.43G | 10382222 |
-| ecco           | 149 |  1.43G | 10382222 |
-| eccc           | 149 |  1.43G | 10382222 |
-| ecct           | 149 |  1.42G | 10328076 |
-| extended       | 189 |  1.83G | 10328076 |
-| merged         | 339 |  1.72G |  5094828 |
-| unmerged.raw   | 174 | 20.15M |   138420 |
-| unmerged.trim  | 164 | 14.48M |   102134 |
-| U1             | 178 |  7.59M |    51067 |
-| U2             | 151 |  6.89M |    51067 |
-| Us             |   0 |      0 |        0 |
-| pe.cor         | 338 |  1.74G | 10291790 |
+| Name          | N50 |    Sum |       # |
+|:--------------|----:|-------:|--------:|
+| clumped       | 149 |  1.19G | 8652794 |
+| ecco          | 149 |  1.19G | 8652794 |
+| eccc          | 149 |  1.19G | 8652794 |
+| ecct          | 149 |  1.18G | 8606874 |
+| extended      | 189 |  1.53G | 8606874 |
+| merged        | 339 |  1.43G | 4246486 |
+| unmerged.raw  | 174 |  16.6M |  113902 |
+| unmerged.trim | 174 | 16.59M |  113840 |
+| U1            | 181 |  8.73M |   56920 |
+| U2            | 168 |  7.86M |   56920 |
+| Us            |   0 |      0 |       0 |
+| pe.cor        | 338 |  1.45G | 8606812 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
-| ihist.merge1.txt | 271.6 |    277 |  23.9 |         10.84% |
-| ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.66% |
+| ihist.merge1.txt | 271.6 |    277 |  23.9 |         10.85% |
+| ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.68% |
 
-```text
-#trimmedReads
-#Matched        18810   0.16989%
-#Name   Reads   ReadsPct
-pcr_dimer       8414    0.07599%
-PCR_Primers     1501    0.01356%
-```
-
-```text
-#filteredReads
-#Matched        508     0.00489%
-#Name   Reads   ReadsPct
-gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome  506     0.00487%
-```
 
 * quorum
 
@@ -392,9 +383,9 @@ Table: statQuorum
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 | 262.6 |  232.0 |   11.63% |     139 | "93" | 4.64M | 4.67M |     1.01 | 0:03'02'' |
-| Q25L60 | 239.9 |  228.2 |    4.88% |     133 | "83" | 4.64M | 4.57M |     0.99 | 0:02'46'' |
-| Q30L60 | 199.8 |  195.4 |    2.16% |     120 | "71" | 4.64M | 4.56M |     0.98 | 0:02'25'' |
+| Q20L60 | 252.8 |  236.5 |    6.44% |     138 | "95" | 4.64M | 4.61M |     0.99 | 0:02'45'' |
+| Q25L60 | 237.0 |  227.7 |    3.91% |     134 | "87" | 4.64M | 4.57M |     0.98 | 0:02'36'' |
+| Q30L60 | 198.8 |  194.7 |    2.08% |     122 | "71" | 4.64M | 4.56M |     0.98 | 0:02'21'' |
 
 * down sampling, k-unitigs and anchors
 
