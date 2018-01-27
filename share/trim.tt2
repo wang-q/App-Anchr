@@ -23,7 +23,7 @@ rm -f temp.fq.gz;
 # 1. dedupe, Remove duplicate reads.
 # 2. optical, mark or remove optical duplicates only. Normal Illumina names needed.
 log_info "clumpify"
-if [ ! -e clumped.fq.gz ]; then
+if [ ! -e clumpify.fq.gz ]; then
     clumpify.sh \
         in=[% args.0 %] \
 [% IF args.1 -%]
@@ -35,7 +35,7 @@ if [ ! -e clumped.fq.gz ]; then
 [% END -%]
         threads=[% opt.parallel %]
 fi
-rm temp.fq.gz; ln -s clumpify.fq.gz temp.fq.gz
+rm -f temp.fq.gz; ln -s clumpify.fq.gz temp.fq.gz
 
 [% IF opt.tile -%]
 # Remove low-quality reads by positions in flowcell
