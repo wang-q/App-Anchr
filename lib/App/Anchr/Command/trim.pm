@@ -54,6 +54,10 @@ sub validate_args {
         }
     }
 
+    if ( $opt->{filter} ) {
+        $opt->{filter} = [ grep {defined} split ",", $opt->{filter} ];
+    }
+
     if ( $opt->{adapter} ) {
         if ( !Path::Tiny::path( $opt->{adapter} )->is_file ) {
             $self->usage_error("The adapter file [$opt->{adapter}] doesn't exist.");

@@ -82,7 +82,7 @@ if [ ! -e trim.fq.gz ]; then
         ref=[% opt.adapter %] \
         maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
         minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
-        stats=trim.stats.txt \
+        stats=trim.stats.txt overwrite \
         threads=[% opt.parallel %]
 fi
 rm temp.fq.gz; ln -s trim.fq.gz temp.fq.gz
@@ -95,7 +95,7 @@ if [ ! -e filter.fq.gz ]; then
         out=filter.fq.gz \
         ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifact' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
         k=[% opt.matchk %] hdist=1 ordered cardinality \
-        stats=filter.stats.txt \
+        stats=filter.stats.txt overwrite \
         threads=[% opt.parallel %]
 fi
 rm temp.fq.gz; ln -s filter.fq.gz temp.fq.gz
@@ -109,7 +109,7 @@ if [ ! -e R1.trim.fq.gz ]; then
         out=R1.trim.fq.gz \
         out2=R2.trim.fq.gz \
         outs=Rs.trim.fq.gz \
-        repair \
+        fint \
         threads=[% opt.parallel %]
 [% ELSE -%]
     cp -L temp.fq.gz R1.trim.fq.gz

@@ -1732,11 +1732,11 @@ rm -fr 3_pacbio/untar/*
 
 # illumina
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
-        rm 2_illumina/{1}.{2}.fq.gz;
-        touch 2_illumina/{1}.{2}.fq.gz;
+    if [ -e 2_illumina/{}.fq.gz ]; then
+        rm 2_illumina/{}.fq.gz;
+        touch 2_illumina/{}.fq.gz;
     fi
-    " ::: R1 R2  ::: uniq shuffle sample bbduk
+    " ::: clumpify filteredbytile sample trim filter
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm

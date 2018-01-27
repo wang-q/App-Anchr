@@ -25,21 +25,29 @@ if [ -e 2_illumina/R1.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "Illumina"; stat_format 2_illumina/R1.fq.gz [% IF not opt.se %]2_illumina/R2.fq.gz[% END %];) >> statReads.md
 fi
-if [ -e 2_illumina/R1.uniq.fq.gz ]; then
+if [ -e 2_illumina/clumpify.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "uniq";    stat_format 2_illumina/R1.uniq.fq.gz [% IF not opt.se %]2_illumina/R2.uniq.fq.gz[% END %];) >> statReads.md
+        $(echo "clumpify";    stat_format 2_illumina/clumpify.fq.gz;) >> statReads.md
 fi
-if [ -e 2_illumina/R1.shuffle.fq.gz ]; then
+if [ -e 2_illumina/filteredbytile.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "shuffle"; stat_format 2_illumina/R1.shuffle.fq.gz [% IF not opt.se %]2_illumina/R2.shuffle.fq.gz[% END %];) >> statReads.md
+        $(echo "filteredbytile";    stat_format 2_illumina/filteredbytile.fq.gz;) >> statReads.md
 fi
-if [ -e 2_illumina/R1.sample.fq.gz ]; then
+if [ -e 2_illumina/sample.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "sample";  stat_format 2_illumina/R1.sample.fq.gz [% IF not opt.se %]2_illumina/R2.sample.fq.gz[% END %];) >> statReads.md
+        $(echo "sample";    stat_format 2_illumina/sample.fq.gz;) >> statReads.md
 fi
-if [ -e 2_illumina/R1.bbduk.fq.gz ]; then
+if [ -e 2_illumina/trim.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "bbduk";  stat_format 2_illumina/R1.bbduk.fq.gz [% IF not opt.se %]2_illumina/R2.bbduk.fq.gz[% END %];) >> statReads.md
+        $(echo "trim";    stat_format 2_illumina/trim.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/filter.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "filter";    stat_format 2_illumina/filter.fq.gz;) >> statReads.md
+fi
+if [ -e 2_illumina/R1.trim.fq.gz ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "trimmed"; stat_format 2_illumina/R1.trim.fq.gz [% IF not opt.se %]2_illumina/R2.trim.fq.gz 2_illumina/Rs.trim.fq.gz[% END %];) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "
@@ -96,15 +104,29 @@ parallel --no-run-if-empty -k -j 2 "
     " ::: [% opt.cov3 %] ::: raw trim \
     >> statReads.md
 
-if [ -e 2_illumina/trimming.stats.txt ]; then
+if [ -e 2_illumina/trim.stats.txt ]; then
     echo >> statReads.md
     echo '```text' >> statReads.md
-    echo "#trimmedReads" >> statReads.md
-    cat 2_illumina/trimming.stats.txt \
+    echo "#trim" >> statReads.md
+    cat 2_illumina/trim.stats.txt \
         | perl -nla -F"\t" -e '
             /^#(Matched|Name)/ and print and next;
             /^#/ and next;
             $F[1] >= 1000 and print;
+        ' \
+        >> statReads.md
+    echo '```' >> statReads.md
+fi
+
+if [ -e 2_illumina/filter.stats.txt ]; then
+    echo >> statReads.md
+    echo '```text' >> statReads.md
+    echo "#filter" >> statReads.md
+    cat 2_illumina/filter.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 100 and print;
         ' \
         >> statReads.md
     echo '```' >> statReads.md
