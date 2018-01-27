@@ -1898,6 +1898,10 @@ rm -fr 4_Q*
 rm -fr 4_kunitigs*
 rm -fr 4_tadpole*
 
+rm -fr 6_MR*
+rm -fr 6_kunitigs*
+rm -fr 6_tadpole*
+
 # canu
 rm -fr 5_canu*
 
