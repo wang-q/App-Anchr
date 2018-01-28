@@ -495,8 +495,6 @@ sub gen_insertSize {
 [% INCLUDE header.tt2 %]
 log_warn 2_insertSize.sh
 
-cd [% args.0 %]
-
 mkdir -p 2_illumina/insertSize
 cd 2_illumina/insertSize
 
@@ -1740,7 +1738,7 @@ sub gen_cleanup {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 0_cleanup.sh
+log_warn [% sh %]
 
 # bax2bam
 rm -fr 3_pacbio/bam/*
@@ -1754,6 +1752,9 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         touch 2_illumina/{}.fq.gz;
     fi
     " ::: clumpify filteredbytile sample trim filter
+
+# insertSize
+rm 2_illumina/insertSize/tadpole.contig.fasta
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
@@ -1875,6 +1876,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
