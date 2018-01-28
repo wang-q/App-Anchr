@@ -29,6 +29,7 @@ sub description {
     $desc .= ucfirst(abstract) . ".\n";
     $desc .= "\tFastq files can be gzipped\n";
     $desc .= "\tFile1 and file2 are paired; or file1 is interleaved\n";
+    $desc .= "\tFile3 is single\n";
     return $desc;
 }
 

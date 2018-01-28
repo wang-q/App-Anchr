@@ -1882,13 +1882,16 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
         rm 2_illumina/{1}.{2}.fq.gz;
     fi
-    " ::: R1 R2  ::: uniq shuffle sample bbduk
+    " ::: R1 R2 Rs ::: uniq shuffle sample bbduk clean
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ -e 2_illumina/{}.fq.gz ]; then
         rm 2_illumina/{}.fq.gz;
     fi
-    " ::: clumpify filteredbytile sample trim filter temp
+    " ::: clumpify filteredbytile sample trim filter temp clean
+
+rm -fr 2_illumina/*.stats.txt
+rm -fr 2_illumina/*.json
 
 rm -fr 2_illumina/mergereads/
 rm -fr 2_illumina/insertSize/

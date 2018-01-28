@@ -45,9 +45,9 @@ if [ -e 2_illumina/filter.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "filter";    stat_format 2_illumina/filter.fq.gz;) >> statReads.md
 fi
-if [ -e 2_illumina/R1.trim.fq.gz ]; then
+if [ -e 2_illumina/R1.clean.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "trimmed"; stat_format 2_illumina/R1.trim.fq.gz [% IF not opt.se %]2_illumina/R2.trim.fq.gz 2_illumina/Rs.trim.fq.gz[% END %];) >> statReads.md
+        $(echo "clean"; stat_format 2_illumina/R1.clean.fq.gz [% IF not opt.se %]2_illumina/R2.clean.fq.gz 2_illumina/Rs.clean.fq.gz[% END %];) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "
