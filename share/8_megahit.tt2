@@ -6,7 +6,7 @@ log_warn 8_megahit.sh
 #----------------------------#
 USAGE="Usage: $0 DIR_PREFIX"
 
-DIR_PREFIX=${1:-"2_illumina/Q25L60"}
+DIR_PREFIX=${1:-"2_illumina/trim"}
 
 DIR_PREFIX="$(cd "$(dirname "$DIR_PREFIX")"; pwd)/$(basename "$DIR_PREFIX")"
 
@@ -27,11 +27,11 @@ else
         -t [% opt.parallel %] \
         --k-list 31,41,51,61,71,81 \
 [% IF not opt.se -%]
-        -1 ${DIR_PREFIX}/R1.sickle.fq.gz \
-        -2 ${DIR_PREFIX}/R2.sickle.fq.gz \
-        -r ${DIR_PREFIX}/Rs.sickle.fq.gz \
+        -1 ${DIR_PREFIX}/R1.fq.gz \
+        -2 ${DIR_PREFIX}/R2.fq.gz \
+        -r ${DIR_PREFIX}/Rs.fq.gz \
 [% ELSE -%]
-        -r ${DIR_PREFIX}/R1.sickle.fq.gz \
+        -r ${DIR_PREFIX}/R1.fq.gz \
 [% END -%]
         --min-count 3 \
         -o 8_megahit
@@ -55,11 +55,11 @@ cd 8_megahit/anchor
 anchr anchors \
     ../megahit.non-contained.fasta \
 [% IF not opt.se -%]
-    ${DIR_PREFIX}/R1.sickle.fq.gz \
-    ${DIR_PREFIX}/R2.sickle.fq.gz \
-    ${DIR_PREFIX}/Rs.sickle.fq.gz \
+    ${DIR_PREFIX}/R1.fq.gz \
+    ${DIR_PREFIX}/R2.fq.gz \
+    ${DIR_PREFIX}/Rs.fq.gz \
 [% ELSE -%]
-    ${DIR_PREFIX}/R1.sickle.fq.gz \
+    ${DIR_PREFIX}/R1.fq.gz \
 [% END -%]
     -p [% opt.parallel %] \
     --ratio 0.98 \

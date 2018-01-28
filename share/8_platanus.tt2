@@ -30,13 +30,13 @@ else
     if [ ! -e pe.fa ]; then
         faops interleave \
             -p pe \
-            ${DIR_PREFIX}/R1.sickle.fq.gz \
-            ${DIR_PREFIX}/R2.sickle.fq.gz \
+            ${DIR_PREFIX}/R1.fq.gz \
+            ${DIR_PREFIX}/R2.fq.gz \
             > pe.fa
 
         faops interleave \
             -p se \
-            ${DIR_PREFIX}/Rs.sickle.fq.gz \
+            ${DIR_PREFIX}/Rs.fq.gz \
             > se.fa
     fi
 
@@ -68,7 +68,7 @@ else
     if [ ! -e se.fa ]; then
         faops interleave \
             -p se \
-            ${DIR_PREFIX}/R1.sickle.fq.gz \
+            ${DIR_PREFIX}/R1.fq.gz \
             > se.fa
     fi
 
@@ -98,11 +98,11 @@ cd anchor
 anchr anchors \
     ../platanus.non-contained.fasta \
 [% IF not opt.se -%]
-    ${DIR_PREFIX}/R1.sickle.fq.gz \
-    ${DIR_PREFIX}/R2.sickle.fq.gz \
-    ${DIR_PREFIX}/Rs.sickle.fq.gz \
+    ${DIR_PREFIX}/R1.fq.gz \
+    ${DIR_PREFIX}/R2.fq.gz \
+    ${DIR_PREFIX}/Rs.fq.gz \
 [% ELSE -%]
-    ${DIR_PREFIX}/R1.sickle.fq.gz \
+    ${DIR_PREFIX}/R1.fq.gz \
 [% END -%]
     -p [% opt.parallel %] \
     --ratio 0.98 \
