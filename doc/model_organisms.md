@@ -14,6 +14,10 @@
     - [s288c: download](#s288c-download)
     - [s288c: template](#s288c-template)
     - [s288c: run](#s288c-run)
+- [s288cH](#s288ch)
+    - [s288cH: download](#s288ch-download)
+    - [s288cH: template](#s288ch-template)
+    - [s288cH: run](#s288ch-run)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
     - [iso_1: template](#iso-1-template)
@@ -30,6 +34,10 @@
     - [col_0H: download](#col-0h-download)
     - [col_0H: template](#col-0h-template)
     - [col_0H: run](#col-0h-run)
+- [*Oryza sativa* Japonica Group Nipponbare](#oryza-sativa-japonica-group-nipponbare)
+    - [nip: download](#nip-download)
+    - [nip: template](#nip-template)
+    - [nip: run](#nip-run)
 
 
 # More tools on downloading and preprocessing data
