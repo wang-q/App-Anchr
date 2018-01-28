@@ -316,6 +316,58 @@ anchr trim \
     -o trim.sh
 bash trim.sh
 
+log_info "stats of all .fq.gz files"
+echo -e "Table: statTrimReads\n" > statTrimReads.md
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    >> statTrimReads.md
+printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
+
+for NAME in clumpify filteredbytile sample trim filter R1.clean R2.clean Rs.clean; do
+    if [ ! -e ${NAME}.fq.gz ]; then
+        continue;
+    fi
+
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
+done
+echo >> statTrimReads.md
+
+log_info "clear unneeded .fq.gz files"
+for NAME in temp clumpify filteredbytile sample trim; do
+    if [ -e ${NAME}.fq.gz ]; then
+        rm ${NAME}.fq.gz
+    fi
+done
+
+if [ -e trim.stats.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#trim" >> statTrimReads.md
+    cat trim.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 1000 and print;
+        ' \
+        >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e filter.stats.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#filter" >> statTrimReads.md
+    cat filter.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 100 and print;
+        ' \
+        >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
 popd > /dev/null
 
 cd 2_illumina
