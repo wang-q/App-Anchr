@@ -281,9 +281,18 @@ sub gen_trim {
 
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 2_trim.sh
+log_warn [% sh %]
 
-cd 2_illumina
+if [ -e 2_illumina/trim/R1.clean.fq.gz ]; then
+    log_debug "2_illumina/trim/R1.clean.fq.gz presents"
+    exit;
+fi
+
+#----------------------------#
+# run
+#----------------------------#
+mkdir -p 2_illumina/trim
+pushd 2_illumina/trim > /dev/null
 
 anchr trim \
     [% opt.trim2 %] \
@@ -303,9 +312,17 @@ anchr trim \
         fi
     ) \
     --parallel [% opt.parallel %] \
-    R1.fq.gz [% IF not opt.se %]R2.fq.gz[% END %] \
+    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
     -o trim.sh
 bash trim.sh
+
+popd > /dev/null
+
+cd 2_illumina
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    ln -s ./trim/Q{1}L{2}/ ./Q{1}L{2}
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
 
 EOF
     $tt->process(
@@ -1884,15 +1901,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
     " ::: R1 R2 Rs ::: uniq shuffle sample bbduk clean
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ -e 2_illumina/{}.fq.gz ]; then
-        rm 2_illumina/{}.fq.gz;
-    fi
-    " ::: clumpify filteredbytile sample trim filter temp clean
-
-rm -fr 2_illumina/*.stats.txt
-rm -fr 2_illumina/*.json
-
+rm -fr 2_illumina/trim/
 rm -fr 2_illumina/mergereads/
 rm -fr 2_illumina/insertSize/
 
