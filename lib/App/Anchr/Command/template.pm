@@ -654,10 +654,9 @@ sub gen_quorum {
     my $template;
     my $sh_name;
 
-    if ( !$opt->{separate} ) {
-        $sh_name = "2_quorum.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
+    $sh_name = "2_quorum.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 2_quorum.sh
 
@@ -667,8 +666,8 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Qual-Len: Q{1}L{2} <=='
 
-    if [ ! -e R1.sickle.fq.gz ]; then
-        echo >&2 '    R1.sickle.fq.gz not exists'
+    if [ ! -e R1.fq.gz ]; then
+        echo >&2 '    R1.fq.gz not exists'
         exit;
     fi
 
@@ -678,12 +677,12 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
 
     anchr quorum \
-        R1.sickle.fq.gz \
+        R1.fq.gz \
 [% IF not opt.se -%]
-        R2.sickle.fq.gz \
+        R2.fq.gz \
         \$(
-            if [ -e Rs.sickle.fq.gz ]; then
-                echo Rs.sickle.fq.gz;
+            if [ -e Rs.fq.gz ]; then
+                echo Rs.fq.gz;
             fi
         ) \
 [% END -%]
@@ -703,65 +702,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
 
 EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-    else {
-        for my $qual ( grep {defined} split /\s+/, $opt->{qual2} ) {
-            for my $len ( grep {defined} split /\s+/, $opt->{len2} ) {
-                $sh_name = "2_quorum_Q${qual}L${len}.sh";
-                print "Create $sh_name\n";
-                $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 2_quorum.sh
-
-cd [% args.0 %]
-
-cd 2_illumina/Q[% qual %]L[% len %]
-echo >&2 '==> Qual-Len: Q[% qual %]L[% len %] <=='
-
-if [ ! -e R1.sickle.fq.gz ]; then
-    echo >&2 '    R1.sickle.fq.gz not exists'
-    exit;
-fi
-
-if [ -e pe.cor.fa.gz ]; then
-    echo >&2 '    pe.cor.fa.gz exists'
-    exit;
-fi
-
-anchr quorum \
-    R1.sickle.fq.gz \
-[% IF not opt.se -%]
-    R2.sickle.fq.gz \
-    \$(
-        if [ -e Rs.sickle.fq.gz ]; then
-            echo Rs.sickle.fq.gz;
-        fi
-    ) \
-[% END -%]
-    -p [% opt.parallel %] \
-    -o quorum.sh
-bash quorum.sh
-
-EOF
-                $tt->process(
-                    \$template,
-                    {   args => $args,
-                        opt  => $opt,
-                        qual => $qual,
-                        len  => $len,
-                    },
-                    Path::Tiny::path( $args->[0], $sh_name )->stringify
-                ) or die Template->error;
-            }
-        }
-    }
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 
 }
 
