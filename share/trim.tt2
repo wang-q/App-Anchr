@@ -81,7 +81,7 @@ if [ ! -e trim.fq.gz ]; then
         out=trim.fq.gz \
         ref=[% opt.adapter %] \
         maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
-        minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
+        minlen=[% opt.len.split('\s+').0 %] ftm=5 ordered \
         stats=trim.stats.txt overwrite \
         threads=[% opt.parallel %]
 fi
@@ -106,13 +106,13 @@ if [ ! -e R1.trim.fq.gz ]; then
 [% IF args.1 -%]
     repair.sh \
         in=temp.fq.gz \
-        out=R1.trim.fq.gz \
-        out2=R2.trim.fq.gz \
-        outs=Rs.trim.fq.gz \
-        fint \
+        out=R1.clean.fq.gz \
+        out2=R2.clean.fq.gz \
+        outs=Rs.clean.fq.gz \
+        repair \
         threads=[% opt.parallel %]
 [% ELSE -%]
-    cp -L temp.fq.gz R1.trim.fq.gz
+    cp -L temp.fq.gz R1.clean.fq.gz
 [% END -%]
 fi
 
@@ -135,18 +135,25 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         -t sanger \
         -q {1} \
         -l {2} \
-        -f ../R1.trim.fq.gz \
-        -r ../R2.trim.fq.gz \
+        -f ../R1.clean.fq.gz \
+        -r ../R2.clean.fq.gz \
         -o R1.sickle.fq \
         -p R2.sickle.fq \
         -s Rs.sickle.fq
-    gzip -d -c ../Rs.trim.fq.gz >> Rs.sickle.fq
+    sickle se \
+        -t sanger \
+        -q {1} \
+        -l {2} \
+        -f ../Rs.clean.fq.gz \
+        -o Rs.temp.fq
+    cat Rs.temp.fq >> Rs.sickle.fq
+    rm Rs.temp.fq
 [% ELSE -%]
     sickle se \
         -t sanger \
         -q {1} \
         -l {2} \
-        -f ../R1.trim.fq.gz \
+        -f ../R1.clean.fq.gz \
         -o R1.sickle.fq
 [% END -%]
 

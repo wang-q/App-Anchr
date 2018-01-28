@@ -14,7 +14,6 @@ sub opt_spec {
         [ "len|l=s",     "filter reads less or equal to this length", { default => "60" }, ],
         [ "qual|q=s",    "quality threshold",                         { default => "25" }, ],
         [ "filter=s",    "adapter, phix, artifact",                   { default => "adapter" }, ],
-        [ "trimq=i",     "quality score for 3' end",                  { default => 15 }, ],
         [ "trimk=i",     "kmer for 5' adapter trimming",              { default => 23 }, ],
         [ "matchk=i",    "kmer for decontamination",                  { default => 27 }, ],
         [   "adapter|a=s", "adapter file",
