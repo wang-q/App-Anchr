@@ -18,7 +18,7 @@ ESTIMATED_GENOME_SIZE=[% opt.genome %]
 save ESTIMATED_GENOME_SIZE
 
 anchr mergereads \
-    ../R1.clean.fq.gz ../R2.clean.fq.gz ../Rs.clean.fq.gz \
+    ../filter.fq.gz \
 [% IF opt.prefilter -%]
     --prefilter [% opt.prefilter %] \
 [% END -%]
