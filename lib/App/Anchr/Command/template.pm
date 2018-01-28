@@ -1884,7 +1884,14 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     fi
     " ::: R1 R2  ::: uniq shuffle sample bbduk
 
+parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ -e 2_illumina/{}.fq.gz ]; then
+        rm 2_illumina/{}.fq.gz;
+    fi
+    " ::: clumpify filteredbytile sample trim filter temp
+
 rm -fr 2_illumina/mergereads/
+rm -fr 2_illumina/insertSize/
 
 # pacbio
 rm -fr 3_pacbio/bam
