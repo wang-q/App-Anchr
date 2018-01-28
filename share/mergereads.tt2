@@ -21,7 +21,7 @@ rm -f temp.fq.gz;
 # Reorder reads for speed of subsequent phases
 log_info "clumpify"
 clumpify.sh \
-    in=[% args.0 %][% IF args.2 %],[% args.2 %][% END %] \
+    in=[% args.0 %] \
 [% IF args.1 -%]
     in2=[% args.1 %] \
 [% END -%]
@@ -94,6 +94,14 @@ bbmerge-auto.sh \
     prefilter=[% opt.prefilter %]  \
 [% END -%]
     strict k=81 extend2=80 rem overwrite
+
+[% IF args.2 -%]
+log_info "Combine unmerged.raw with [% args.2 %]"
+pigz -d -c unmerged.raw.fq.gz [% args.2 %] \
+    > unmerged.raw.fq
+rm unmerged.raw.fq.gz
+pigz unmerged.raw.fq
+[% END -%]
 
 log_info "Quality-trim the unmerged reads"
 bbduk.sh \
