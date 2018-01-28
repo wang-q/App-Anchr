@@ -725,12 +725,14 @@ faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/${BASE_NAME}/${BASE_NAME}.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fas
 ```
 
-* Illumina
+* Illumina MiSeq
 
-    PRJNA340312, SRX2058864
+    [ERX1999216](https://www.ncbi.nlm.nih.gov/sra/ERX1999216) ERR1938683
+
+    PRJEB19900
 
 ```bash
 cd ${HOME}/data/anchr/s288c
@@ -739,21 +741,21 @@ mkdir -p 2_illumina
 cd 2_illumina
 
 cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_1.fastq.gz
-ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR193/003/ERR1938683/ERR1938683_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR193/003/ERR1938683/ERR1938683_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-7ba93499d73cdaeaf50dd506e2c8572d SRR4074255_1.fastq.gz
-aee9ec3f855796b6d30a3d191fc22345 SRR4074255_2.fastq.gz
+9a635e035371a81c8538698a54a24bfc ERR1938683_1.fastq.gz
+48f362c1d7a95b996bc7931669b1d74b ERR1938683_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
-ln -s SRR4074255_1.fastq.gz R1.fq.gz
-ln -s SRR4074255_2.fastq.gz R2.fq.gz
+ln -s ERR1938683_1.fastq.gz R1.fq.gz
+ln -s ERR1938683_2.fastq.gz R2.fq.gz
 ```
 
 * PacBio
@@ -858,7 +860,7 @@ anchr template \
     --genome 12157105 \
     --is_euk \
     --trim2 "--dedupe" \
-    --cov2 "40 80 120 all" \
+    --cov2 "40 80 all" \
     --qual2 "20 25 30" \
     --len2 "60" \
     --filter "adapter,phix,artifact" \
@@ -1308,6 +1310,98 @@ Table: statFinal
 | platanus.non-contained           |  71428 | 11408032 |  322 |
 | platanus.anchor                  |   8215 | 10688304 | 1892 |
 
+
+# s288cH
+
+## s288cH: download
+
+* Reference genome
+
+```bash
+mkdir -p ${HOME}/data/anchr/s288cH
+cd ${HOME}/data/anchr/s288cH
+
+mkdir -p 1_genome
+cd 1_genome
+
+cp ~/data/anchr/s288c/1_genome/genome.fa .
+cp ~/data/anchr/s288c/1_genome/paralogs.fas .
+
+```
+
+* Illumina HiSeq 2500 (pe150, nextera)
+
+    [SRX2058864](https://www.ncbi.nlm.nih.gov/sra/SRX2058864) SRR4074255
+
+    PRJNA340312
+
+```bash
+cd ${HOME}/data/anchr/s288cH
+
+mkdir -p 2_illumina
+cd 2_illumina
+
+cat << EOF > sra_ftp.txt
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR407/005/SRR4074255/SRR4074255_2.fastq.gz
+EOF
+
+aria2c -x 9 -s 3 -c -i sra_ftp.txt
+
+cat << EOF > sra_md5.txt
+7ba93499d73cdaeaf50dd506e2c8572d SRR4074255_1.fastq.gz
+aee9ec3f855796b6d30a3d191fc22345 SRR4074255_2.fastq.gz
+EOF
+
+md5sum --check sra_md5.txt
+
+ln -s SRR4074255_1.fastq.gz R1.fq.gz
+ln -s SRR4074255_2.fastq.gz R2.fq.gz
+```
+
+## s288cH: template
+
+* Rsync to hpcc
+
+```bash
+rsync -avP \
+    ~/data/anchr/s288cH/ \
+    wangq@202.119.37.251:data/anchr/s288cH
+
+#rsync -avP wangq@202.119.37.251:data/anchr/s288cH/ ~/data/anchr/s288cH
+
+```
+
+* template
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=s288cH
+QUEUE_NAME=mpi
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --genome 12157105 \
+    --is_euk \
+    --trim2 "--dedupe" \
+    --cov2 "40 80 120 all" \
+    --qual2 "20 25 30" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --tadpole \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --insertsize \
+    --parallel 24
+
+```
+
+## s288cH: run
+
+Same as [s288c: run](#s288c-run)
 
 # *Drosophila melanogaster* iso-1
 
@@ -2352,9 +2446,9 @@ cp ~/data/anchr/col_0/1_genome/paralogs.fas .
 
 ```
 
-* Illumina HiSeq (100 bp)
+* Illumina HiSeq (pe100)
 
-    [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246[accn])
+    [SRX202246](https://www.ncbi.nlm.nih.gov/sra/SRX202246)
 
 ```bash
 cd ${HOME}/data/anchr/col_0H
