@@ -368,6 +368,10 @@ if [ -e filter.stats.txt ]; then
     echo '```' >> statTrimReads.md
 fi
 
+cat statTrimReads.md
+
+mv statMergeReads.md ../../
+
 popd > /dev/null
 
 cd 2_illumina
@@ -1871,6 +1875,11 @@ fi
 if [ -e statReads.md ]; then
     echo;
     cat statReads.md;
+    echo;
+fi
+if [ -e statTrimReads.md ]; then
+    echo;
+    cat statTrimReads.md;
     echo;
 fi
 if [ -e statMergeReads.md ]; then
