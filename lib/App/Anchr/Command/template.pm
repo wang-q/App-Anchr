@@ -299,7 +299,7 @@ anchr trim \
 [% END -%]
     $(
         if [ -e illumina_adapters.fa ]; then
-            echo "-a illumina_adapters.fa";
+            echo "--adapter illumina_adapters.fa";
         fi
     ) \
     --parallel [% opt.parallel %] \

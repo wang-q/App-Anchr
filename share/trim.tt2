@@ -10,7 +10,6 @@ save START_TIME
 NUM_THREADS=[% opt.parallel %]
 save NUM_THREADS
 
-BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 rm -f temp.fq.gz;
 
 #----------------------------#
@@ -93,7 +92,7 @@ if [ ! -e filter.fq.gz ]; then
     bbduk.sh \
         in=temp.fq.gz \
         out=filter.fq.gz \
-        ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %]${BBTOOLS_RESOURCES}/adapters.fa,[% END %][% IF filter == 'phix' %]${BBTOOLS_RESOURCES}/phix174_ill.ref.fa.gz,[% END %][% IF filter == 'artifact' %]${BBTOOLS_RESOURCES}/sequencing_artifacts.fa.gz,[% END %][% END %] \
+        ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %][% opt.adapter %],[% END %][% IF filter == 'phix' %][% opt.phix %],[% END %][% IF filter == 'artifact' %][% opt.artifact %],[% END %][% END %] \
         k=[% opt.matchk %] hdist=1 ordered cardinality \
         stats=filter.stats.txt overwrite \
         threads=[% opt.parallel %]

@@ -10,7 +10,6 @@ save START_TIME
 NUM_THREADS=[% opt.parallel %]
 save NUM_THREADS
 
-BBTOOLS_RESOURCES=$(brew --prefix)/Cellar/$(brew list --versions bbtools | sed 's/ /\//')/resources
 rm -f temp.fq.gz;
 
 #----------------------------#
