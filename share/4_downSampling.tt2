@@ -2,12 +2,10 @@
 log_warn 4_downSampling.sh
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    echo '==> Q{1}L{2}X{3}'
-
     if [ ! -e 2_illumina/Q{1}L{2}/pe.cor.fa.gz ]; then
-        echo '2_illumina/Q{1}L{2}/pe.cor.fa.gz not exists'
         exit;
     fi
+    echo '==> Q{1}L{2}X{3}'
 
     rm -fr 4_Q{1}L{2}X{3}   
     
