@@ -21,7 +21,7 @@ rm -f temp.fq.gz;
 # Reorder reads for speed of subsequent phases
 log_info "clumpify"
 clumpify.sh \
-    in=[% args.0 %] \
+    in=[% args.0 %][% IF args.2 %],[% args.2 %][% END %] \
 [% IF args.1 -%]
     in2=[% args.1 %] \
 [% END -%]

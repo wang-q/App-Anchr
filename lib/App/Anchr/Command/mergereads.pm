@@ -21,7 +21,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr mergereads [options] <file1> [file2]";
+    return "anchr mergereads [options] <file1> [file2] [file3]";
 }
 
 sub description {
@@ -35,8 +35,8 @@ sub description {
 sub validate_args {
     my ( $self, $opt, $args ) = @_;
 
-    if ( !( @{$args} == 1 or @{$args} == 2 ) ) {
-        my $message = "This command need one or two input files.\n\tIt found";
+    if ( !( @{$args} == 1 or @{$args} == 2 or @{$args} == 3 ) ) {
+        my $message = "This command need one, two or three input files.\n\tIt found";
         $message .= sprintf " [%s]", $_ for @{$args};
         $message .= ".\n";
         $self->usage_error($message);
