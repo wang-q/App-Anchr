@@ -20,8 +20,8 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | 
 printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> ${FILENAME_MD}
 
-for Q in [% opt.qual2 %]; do
-    for L in [% opt.len2 %]; do
+for Q in 0 [% opt.qual2 %]; do
+    for L in 0 [% opt.len2 %]; do
 	    for X in [% opt.cov2 %]; do
 		    for P in $(printf "%03d " {0..50}); do
 		        if [ ! -e ${DIR_PREFIX}_Q${Q}L${L}X${X}P${P}/anchor/pe.anchor.fa ]; then

@@ -791,8 +791,6 @@ sub gen_kunitigs {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
@@ -816,7 +814,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
     $tt->process(
@@ -834,8 +832,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
@@ -861,7 +857,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
         $tt->process(
@@ -1138,8 +1134,6 @@ sub gen_anchors {
 [% INCLUDE header.tt2 %]
 log_warn 4_anchors.sh
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
@@ -1163,7 +1157,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
     $tt->process(
@@ -1206,7 +1200,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
 
 EOF
         $tt->process(

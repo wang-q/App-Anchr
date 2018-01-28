@@ -43,4 +43,4 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         cp 2_illumina/Q{1}L{2}/environment.json \"4_Q{1}L{2}X{3}P\${P}\"
     done
 
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %] ::: [% opt.cov2 %]
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %]

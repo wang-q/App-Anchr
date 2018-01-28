@@ -12,8 +12,12 @@ printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
 printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> statQuorum.md
 
-for Q in [% opt.qual2 %]; do
-    for L in [% opt.len2 %]; do
+for Q in 0 [% opt.qual2 %]; do
+    for L in 0 [% opt.len2 %]; do
+        if [ ! -d 2_illumina/Q${Q}L${L} ]; then
+            continue;
+        fi
+
         pushd 2_illumina/Q${Q}L${L} > /dev/null
 
         SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
