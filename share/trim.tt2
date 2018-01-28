@@ -4,12 +4,6 @@
 # Run
 #----------------------------#
 
-START_TIME=$(date +%s)
-save START_TIME
-
-NUM_THREADS=[% opt.parallel %]
-save NUM_THREADS
-
 rm -f temp.fq.gz;
 
 #----------------------------#

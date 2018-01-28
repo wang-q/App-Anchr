@@ -27,7 +27,7 @@ if [ -e 2_illumina/R1.fq.gz ]; then
 fi
 if [ -e 2_illumina/trim/R1.fq.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "clean"; stat_format 2_illumina/trim/R1.fq.gz [% IF not opt.se %]2_illumina/trim/R2.fq.gz 2_illumina/trim/Rs.fq.gz[% END %];) >> statReads.md
+        $(echo "trim"; stat_format 2_illumina/trim/R1.fq.gz [% IF not opt.se %]2_illumina/trim/R2.fq.gz 2_illumina/trim/Rs.fq.gz[% END %];) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "

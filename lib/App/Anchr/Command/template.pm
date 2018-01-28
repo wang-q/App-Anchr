@@ -283,8 +283,8 @@ sub gen_trim {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-if [ -e 2_illumina/trim/R1.clean.fq.gz ]; then
-    log_debug "2_illumina/trim/R1.clean.fq.gz presents"
+if [ -e 2_illumina/trim/R1.fq.gz ]; then
+    log_debug "2_illumina/trim/R1.fq.gz presents"
     exit;
 fi
 
@@ -323,7 +323,7 @@ printf "| %s | %s | %s | %s |\n" \
     >> statTrimReads.md
 printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
 
-for NAME in clumpify filteredbytile sample trim filter R1.clean R2.clean Rs.clean; do
+for NAME in clumpify filteredbytile sample trim filter R1 R2 Rs; do
     if [ ! -e ${NAME}.fq.gz ]; then
         continue;
     fi
@@ -370,7 +370,7 @@ fi
 
 cat statTrimReads.md
 
-mv statMergeReads.md ../../
+mv statTrimReads.md ../../
 
 popd > /dev/null
 
@@ -379,6 +379,7 @@ cd 2_illumina
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     ln -s ./trim/Q{1}L{2}/ ./Q{1}L{2}
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+ln -s ./trim ./Q0L0
 
 EOF
     $tt->process(
@@ -660,9 +661,11 @@ sub gen_quorum {
 [% INCLUDE header.tt2 %]
 log_warn 2_quorum.sh
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 1 "
+    if [ ! -d 2_illumina/Q{1}L{2} ]; then
+        exit;
+    fi
+
     cd 2_illumina/Q{1}L{2}
     echo >&2 '==> Qual-Len: Q{1}L{2} <=='
 
@@ -699,7 +702,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     find . -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
 
     echo >&2
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %]
 
 EOF
     $tt->process(
@@ -1901,7 +1904,7 @@ log_warn 0_realClean.sh
 cd [% args.0 %]
 
 # illumina
-rm -fr 2_illumina/Q*/
+rm -f 2_illumina/Q*
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ -e 2_illumina/{1}.{2}.fq.gz ]; then
