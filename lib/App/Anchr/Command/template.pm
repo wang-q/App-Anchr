@@ -1742,8 +1742,6 @@ sub gen_cleanup {
 [% INCLUDE header.tt2 %]
 log_warn 0_cleanup.sh
 
-cd [% args.0 %]
-
 # bax2bam
 rm -fr 3_pacbio/bam/*
 rm -fr 3_pacbio/fasta/*
@@ -1767,7 +1765,7 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j
 find 2_illumina -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
 
 # down sampling
-rm -fr 4_Q{15,20,25,30,35}*
+rm -fr 4_Q{0,15,20,25,30,35}*
 find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
