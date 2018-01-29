@@ -184,9 +184,7 @@ sub gen_fastqc {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 2_fastqc.sh
-
-cd [% args.0 %]
+log_warn [% sh %]
 
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
@@ -204,6 +202,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -220,9 +219,7 @@ sub gen_kmergenie {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 2_kmergenie.sh
-
-cd [% args.0 %]
+log_warn [% sh %]
 
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
@@ -240,6 +237,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -406,9 +404,7 @@ sub gen_trimlong {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 3_trimlong.sh
-
-cd [% args.0 %]
+log_warn [% sh %]
 
 for X in [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
@@ -454,6 +450,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -493,7 +490,7 @@ sub gen_insertSize {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 2_insertSize.sh
+log_warn [% sh %]
 
 mkdir -p 2_illumina/insertSize
 cd 2_illumina/insertSize
@@ -641,6 +638,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -657,7 +655,7 @@ sub gen_quorum {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 2_quorum.sh
+log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -d 2_illumina/Q{1}L{2} ]; then
@@ -707,6 +705,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -727,6 +726,7 @@ sub gen_statQuorum {
         '9_statQuorum.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -886,8 +886,6 @@ sub gen_6_kunitigs {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
         exit;
@@ -929,8 +927,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -975,8 +971,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -1041,8 +1035,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -1173,8 +1165,6 @@ EOF
 [% INCLUDE header.tt2 %]
 log_warn 4_tadpoleAnchors.sh
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
@@ -1228,8 +1218,6 @@ sub gen_6_anchors {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
         exit;
@@ -1271,8 +1259,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -1316,8 +1302,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -1363,8 +1347,6 @@ EOF
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
-
-cd [% args.0 %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
@@ -1482,8 +1464,6 @@ sub gen_canu {
 [% INCLUDE header.tt2 %]
 log_warn 5_canu.sh
 
-cd [% args.0 %]
-
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     echo >&2 '==> Group X{1}-{2}'
 
@@ -1526,8 +1506,6 @@ EOF
                 $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 5_canu.sh
-
-cd [% args.0 %]
 
 echo >&2 '==> Group X[% cov %]-[% qual %]'
 
@@ -1754,7 +1732,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     " ::: clumpify filteredbytile sample trim filter
 
 # insertSize
-rm 2_illumina/insertSize/tadpole.contig.fasta
+rm -f 2_illumina/insertSize/tadpole.contig.fasta
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
@@ -1894,8 +1872,6 @@ sub gen_realClean {
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 0_realClean.sh
-
-cd [% args.0 %]
 
 # illumina
 rm -f 2_illumina/Q*
