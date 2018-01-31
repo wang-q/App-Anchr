@@ -20,7 +20,7 @@ bsub -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_trim" "ba
 bsub -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-3_trimlong" "bash 3_trimlong.sh"
 [% END -%]
 
-bsub -w "ended([% opt.basename %]-2_trim) [% IF opt.cov3 %]&& ended([% opt.basename %]-3_trimlong)[% END %]" \
+bsub -w "ended([% opt.basename %]-2_trim)[% IF opt.cov3 %] && ended([% opt.basename %]-3_trimlong)[% END %]" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statReads" "bash 9_statReads.sh"
 
 [% IF opt.mergereads -%]
@@ -117,6 +117,34 @@ bsub -w "done([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors" "bash 7_mergeAnchors.sh 4_kunitigs"
 [% END -%]
 
+# anchor sort on ref
+bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-sort_on_ref" \
+    '
+    if [ -e 1_genome/genome.fa ]; then
+        for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
+            if [ ! -d ${D} ]; then
+                continue;
+            fi
+    
+            bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
+                ${D}/anchor.merge.fasta 1_genome/genome.fa ${D}/anchor.sort
+            nucmer -l 200 1_genome/genome.fa ${D}/anchor.sort.fa
+            mummerplot --postscript out.delta -p anchor.sort --small
+    
+            # mummerplot files
+            rm *.[fr]plot
+            rm out.delta
+            rm *.gp
+            mv anchor.sort.ps ${D}/
+    
+            # minidot
+            minimap ${D}/anchor.sort.fa 1_genome/genome.fa \
+                | minidot - > ${D}/anchor.minidot.eps
+        done
+    fi
+    '
+    
 [% IF opt.cov3 -%]
 #----------------------------#
 # canu
