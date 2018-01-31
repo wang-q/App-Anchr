@@ -2,7 +2,7 @@
 log_warn 0_master.sh
 
 #----------------------------#
-# preprocessing
+# Illumina QC
 #----------------------------#
 if [ -e 2_fastqc.sh ]; then
     bash 2_fastqc.sh;
@@ -10,18 +10,24 @@ fi
 if [ -e 2_kmergenie.sh ]; then
     bash 2_kmergenie.sh;
 fi
-if [ -e 2_trim.sh ]; then
-    bash 2_trim.sh;
-fi
-if [ -e 3_trimlong.sh ]; then
-    bash 3_trimlong.sh;
-fi
-if [ -e 9_statReads.sh ]; then
-    bash 9_statReads.sh;
-fi
 
 if [ -e 2_insertSize.sh ]; then
     bash 2_insertSize.sh;
+fi
+
+#----------------------------#
+# preprocessing
+#----------------------------#
+if [ -e 2_trim.sh ]; then
+    bash 2_trim.sh;
+fi
+
+if [ -e 3_trimlong.sh ]; then
+    bash 3_trimlong.sh;
+fi
+
+if [ -e 9_statReads.sh ]; then
+    bash 9_statReads.sh;
 fi
 
 #----------------------------#

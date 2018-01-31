@@ -11,9 +11,10 @@ use constant abstract => "create executing bash files";
 sub opt_spec {
     return (
         [ "basename=s", "the basename of this genome, default is the working directory", ],
-        [ "genome=i",   "your best guess of the haploid genome size", ],
-        [ "is_euk",     "eukaryotes or not", ],
-        [ "tmp=s",      "user defined tempdir", ],
+        [ "queue=s",      "QUEUE_NAME",        { default => "mpi" }, ],
+        [ "genome=i",     "your best guess of the haploid genome size", ],
+        [ "is_euk",       "eukaryotes or not", ],
+        [ "tmp=s",        "user defined tempdir", ],
         [ "parallel|p=i", "number of threads", { default => 16 }, ],
         [ "se",           "single end mode for Illumina", ],
         [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
@@ -170,6 +171,9 @@ sub execute {
 
     # master
     $self->gen_master( $opt, $args );
+
+    # bsub
+    $self->gen_bsub( $opt, $args );
 
 }
 
@@ -1871,7 +1875,7 @@ sub gen_realClean {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 0_realClean.sh
+log_warn [% sh %]
 
 # illumina
 rm -f 2_illumina/Q*
@@ -1935,6 +1939,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -1954,6 +1959,27 @@ sub gen_master {
         '0_master.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_bsub {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "0_bsub.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '0_bsub.tt2',
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
