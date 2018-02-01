@@ -38,6 +38,9 @@ sub opt_spec {
         [],
         [ 'insertsize', 'calc the insert sizes', ],
         [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
+        [],
+        [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
+        [ "fillmax=i", "max length of gaps", { default => 2000 }, ],
         { show_defaults => 1, }
     );
 }
@@ -159,6 +162,9 @@ sub execute {
 
     # quast
     $self->gen_quast( $opt, $args );
+
+    # fillAnchor
+    $self->gen_fillAnchor( $opt, $args );
 
     # statFinal
     $self->gen_statFinal( $opt, $args );
@@ -1666,6 +1672,26 @@ sub gen_platanus {
         '8_platanus.tt2',
         {   args => $args,
             opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_fillAnchor {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "7_fillAnchor.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '7_fillAnchor.tt2',
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;

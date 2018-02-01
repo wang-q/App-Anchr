@@ -1,8 +1,8 @@
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-if [ -e 7_anchorFill/contig.fasta ]; then
-    echo >&2 "7_anchorFill/contig.fasta presents"
+if [ -e 7_fillAnchor/contig.fasta ]; then
+    echo >&2 "7_fillAnchor/contig.fasta presents"
     exit;
 fi
 
@@ -23,7 +23,7 @@ GAP_COV=${3:-1}
 #----------------------------#
 # merge anchors
 #----------------------------#
-mkdir -p 7_anchorFill
+mkdir -p 7_fillAnchor
 
 log_info "overlap: between anchor-long"
 
@@ -31,10 +31,10 @@ anchr overlap2 \
     --parallel [% opt.parallel %] \
     ${FILE_ANCHOR} \
     ${FILE_LONG} \
-    -d 7_anchorFill \
+    -d 7_fillAnchor \
     -b 50 --len 1000 --idt 0.995 --all
 
-cd 7_anchorFill
+cd 7_fillAnchor
 
 CONTIG_COUNT=$(faops n50 -H -N 0 -C anchor.fasta)
 log_debug "contigs: ${CONTIG_COUNT}"
@@ -46,7 +46,7 @@ anchr group \
     anchorLong.ovlp.tsv \
     --parallel [% opt.parallel %] \
     --keep \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max 5000 -c ${GAP_COV}
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max [% opt.fillmax %] -c ${GAP_COV}
 
 log_info "Processing each groups"
 cat group/groups.txt \
@@ -72,7 +72,7 @@ cat group/groups.txt \
             group/{}.strand.fasta \
             -o group/{}.contig.fasta
     '
-   
+
 log_info "Build contigs"
 cat \
    group/non_grouped.fasta \
