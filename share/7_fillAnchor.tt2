@@ -67,9 +67,9 @@ cat group/groups.txt \
                 -o group/{}.ovlp.tsv;
 
         anchr layout \
+            group/{}.strand.fasta \
             group/{}.ovlp.tsv \
             group/{}.relation.tsv \
-            group/{}.strand.fasta \
             -o group/{}.contig.fasta
     '
 

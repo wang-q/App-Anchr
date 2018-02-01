@@ -120,9 +120,9 @@ cat group/groups.txt \
             > group/{}.anchor.ovlp.tsv
             
         anchr layout \
+            group/{}.strand.fasta \
             group/{}.ovlp.tsv \
             group/{}.relation.tsv \
-            group/{}.strand.fasta \
             --oa group/{}.anchor.ovlp.tsv \
             -o group/{}.contig.fasta
     '
