@@ -1,5 +1,5 @@
 [% INCLUDE header.tt2 %]
-log_warn 7_anchorLong.sh
+log_warn [% sh %]
 
 if [ -e 7_anchorLong/contig.fasta ]; then
     echo >&2 "7_anchorLong/contig.fasta presents"

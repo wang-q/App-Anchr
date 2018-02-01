@@ -1592,6 +1592,7 @@ sub gen_anchorLong {
         '7_anchorLong.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -1613,6 +1614,7 @@ sub gen_anchorFill {
         '7_anchorFill.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
