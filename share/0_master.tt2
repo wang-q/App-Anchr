@@ -169,16 +169,6 @@ if [ -e 9_statCanu.sh ]; then
 fi
 
 #----------------------------#
-# expand anchors
-#----------------------------#
-if [ -e 7_anchorLong.sh ]; then
-    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
-fi
-if [ -e 7_anchorFill.sh ]; then
-    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta
-fi
-
-#----------------------------#
 # spades, megahit and platanus
 #----------------------------#
 if [ -e 8_spades.sh ]; then
@@ -190,6 +180,32 @@ fi
 if [ -e 8_platanus.sh ]; then
     bash 8_platanus.sh;
 fi
+
+#----------------------------#
+# expand anchors
+#----------------------------#
+[% IF opt.fillanchor -%]
+rm -fr 7_fillAnchor
+mkdir -p 7_fillAnchor
+cat \
+    8_spades/spades.non-contained.fasta \
+    8_megahit/megahit.non-contained.fasta \
+    8_platanus/platanus.non-contained.fasta \
+    | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
+if [ -e 7_anchorLong.sh ]; then
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta;
+fi
+if [ -e 7_anchorFill.sh ]; then
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta;
+fi
+[% ELSE -%]
+if [ -e 7_anchorLong.sh ]; then
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
+fi
+if [ -e 7_anchorFill.sh ]; then
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta;
+fi
+[% END -%]
 
 #----------------------------#
 # final stats

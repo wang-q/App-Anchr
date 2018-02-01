@@ -36,6 +36,7 @@ anchr overlap2 \
 
 cd 7_anchorLong
 
+[% IF not opt.fillanchor -%]
 log_info "cover: trusted regions of anchors"
 anchr cover \
     --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
@@ -43,11 +44,12 @@ anchr cover \
     anchorLong.ovlp.tsv \
     -o anchorLong.cover.json
 cat anchorLong.cover.json | jq "." > environment.json
+[% END -%]
 
 log_info "overlap: within anhcors"
 anchr overlap \
     anchor.fasta \
-    --serial --len 30 --idt 0.9999 \
+    --serial --len [% opt.mergemax %] --idt 0.9999 \
     -o stdout \
     | perl -nla -e '
         BEGIN {
@@ -77,7 +79,6 @@ anchr overlap \
     | sort -k 1n,1n -k 2n,2n \
     > anchor.ovlp.tsv
 
-
 log_info "group: anchor-long"
 rm -fr group
 anchr group \
@@ -85,8 +86,12 @@ anchr group \
     anchorLong.ovlp.tsv \
     --oa anchor.ovlp.tsv \
     --parallel [% opt.parallel %] \
+[% IF opt.fillanchor -%]
+    --range "1-$(faops n50 -H -N 0 -C anchor.fasta)" \
+[% ELSE -%]
     --range $(cat environment.json | jq -r '.TRUSTED') \
-    --len 1000 --idt 0.98 --max "-30" -c ${GAP_COV}
+[% END -%]
+    --len 1000 --idt 0.98 --max "-[% opt.mergemax %]" -c ${GAP_COV}
 
 log_info "Processing each groups"
 cat group/groups.txt \
@@ -106,7 +111,7 @@ cat group/groups.txt \
                 stdin group/{}.restrict.tsv \
                 -o group/{}.ovlp.tsv;
 
-        anchr overlap --len 30 --idt 0.9999 \
+        anchr overlap --len [% opt.mergemax %] --idt 0.9999 \
             group/{}.strand.fasta \
             -o stdout \
             | perl -nla -e '\''

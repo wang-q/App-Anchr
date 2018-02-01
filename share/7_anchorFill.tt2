@@ -46,7 +46,7 @@ anchr group \
     anchorLong.ovlp.tsv \
     --parallel [% opt.parallel %] \
     --keep \
-    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max 5000 -c ${GAP_COV}
+    --range "1-${CONTIG_COUNT}" --len 1000 --idt 0.995 --max [% opt.fillmax %] -c ${GAP_COV}
 
 log_info "Processing each groups"
 cat group/groups.txt \
