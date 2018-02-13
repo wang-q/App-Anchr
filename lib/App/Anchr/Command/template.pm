@@ -37,6 +37,7 @@ sub opt_spec {
         [ 'spades',    'feed spades with sampled mergereads', ],
         [],
         [ 'insertsize', 'calc the insert sizes', ],
+        [ 'sgapreqc',   'run sga preqc and stats', ],
         [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
         [],
         [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
@@ -94,6 +95,9 @@ sub execute {
 
     # insertSize
     $self->gen_insertSize( $opt, $args );
+
+    # sgaPreQC
+    $self->gen_sgaPreQC( $opt, $args );
 
     # mergereads
     $self->gen_mergereads( $opt, $args );
@@ -640,6 +644,90 @@ find . -type f -name "*.sam.gz" -or -name "*.sort.bam" \
 cat statInsertSize.md
 
 mv statInsertSize.md ../../
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_sgaPreQC {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{sgapreqc};
+
+    $sh_name = "2_sgaPreQC.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+mkdir -p 2_illumina/sgaPreQC
+cd 2_illumina/sgaPreQC
+
+if [ -e preqc_report.pdf ]; then
+    exit;
+fi
+
+sga preprocess \
+[% IF opt.se -%]
+    ../R1.fq.gz \
+[% ELSE -%]
+    ../R1.fq.gz ../R1.fq.gz \
+    --pe-mode 1 \
+[% END -%]
+    -o reads.pp.fq
+
+sga index -a ropebwt -t [% opt.parallel %] reads.pp.fq
+
+sga stats -t [% opt.parallel %] -n [% opt.reads %] reads.pp.fq > stats.txt
+
+sga preqc -t [% opt.parallel %] reads.pp.fq > preqc_output
+
+sga-preqc-report.py preqc_output
+
+echo -e "Table: statSgaPreQC\n" > statSgaPreQC.md
+printf "| %s | %s |\n" \
+    "Item" "Value" \
+    >> statSgaPreQC.md
+printf "|:--|--:|\n" >> statSgaPreQC.md
+
+# sga stats
+#*** Stats:
+#380308 out of 149120670 bases are potentially incorrect (0.002550)
+#797208 reads out of 1000000 are perfect (0.797208)
+#Mean overlap depth: 356.41
+cat stats.txt |
+    perl -nl -e '
+        BEGIN { our $stat = { }; };
+
+        m{potentially incorrect \(([\d\.]+)\)} and $stat->{incorrectBases} = $1;
+        m{perfect \(([\d\.]+)\)} and $stat->{perfectReads} = $1;
+        m{overlap depth: ([\d\.]+)} and $stat->{overlapDepth} = $1;
+
+        END {
+            for my $key ( qw{incorrectBases perfectReads overlapDepth} ) {
+                printf qq{| %s | %s |\n}, $key, $stat->{$key};
+            }
+        }
+        ' \
+    >> statSgaPreQC.md
+
+find . -type f -name "reads.pp.*" |
+    parallel --no-run-if-empty -j 1 rm
+
+cat statSgaPreQC.md
+
+mv statSgaPreQC.md ../../
 
 EOF
     $tt->process(
@@ -1801,6 +1889,11 @@ find . -type f -name "core.*"   | parallel --no-run-if-empty -j 1 rm
 if [ -e statInsertSize.md ]; then
     echo;
     cat statInsertSize.md;
+    echo;
+fi
+if [ -e statSgaPreQC.md ]; then
+    echo;
+    cat statSgaPreQC.md;
     echo;
 fi
 if [ -e statReads.md ]; then

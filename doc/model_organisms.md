@@ -265,6 +265,7 @@ anchr template \
     --megahit \
     --spades \
     --insertsize \
+    --sgapreqc \
     --parallel 16
 
 ```
@@ -283,8 +284,8 @@ cd ${WORKING_DIR}/${BASE_NAME}
 bash 2_fastqc.sh
 bash 2_kmergenie.sh
 
-# insert sizes
 bash 2_insertSize.sh
+bash 2_sgaPreQC.sh
 
 # preprocess Illumina reads
 bash 2_trim.sh
@@ -305,6 +306,14 @@ Table: statInsertSize
 | tadpole.bbtools | 295.6 |    296 |  21.1 |                         40.57% |
 | genome.picard   | 298.2 |    298 |  18.0 |                             FR |
 | tadpole.picard  | 294.9 |    296 |  21.7 |                             FR |
+
+Table: statSgaPreQC
+
+| Item           |    Value |
+|:---------------|---------:|
+| incorrectBases | 0.002550 |
+| perfectReads   | 0.797208 |
+| overlapDepth   |   356.41 |
 
 Table: statReads
 

@@ -15,6 +15,10 @@ if [ -e 2_insertSize.sh ]; then
     bash 2_insertSize.sh;
 fi
 
+if [ -e 2_sgaPreQC.sh ]; then
+    bash 2_sgaPreQC.sh;
+fi
+
 #----------------------------#
 # preprocessing
 #----------------------------#

@@ -11,6 +11,10 @@ bsub -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_kmergenie
 bsub -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_insertSize" "bash 2_insertSize.sh"
 [% END -%]
 
+[% IF opt.sgapreqc -%]
+bsub -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_sgaPreQC" "bash 2_sgaPreQC.sh"
+[% END -%]
+
 #----------------------------#
 # preprocessing
 #----------------------------#
