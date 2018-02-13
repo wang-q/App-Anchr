@@ -309,11 +309,11 @@ Table: statInsertSize
 
 Table: statSgaPreQC
 
-| Item           |    Value |
-|:---------------|---------:|
-| incorrectBases | 0.002550 |
-| perfectReads   | 0.797208 |
-| overlapDepth   |   356.41 |
+| Item           |  Value |
+|:---------------|-------:|
+| incorrectBases |  0.26% |
+| perfectReads   | 79.72% |
+| overlapDepth   | 356.41 |
 
 Table: statReads
 

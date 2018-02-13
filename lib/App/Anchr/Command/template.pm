@@ -715,7 +715,10 @@ cat stats.txt |
         m{overlap depth: ([\d\.]+)} and $stat->{overlapDepth} = $1;
 
         END {
-            for my $key ( qw{incorrectBases perfectReads overlapDepth} ) {
+            for my $key ( qw{incorrectBases perfectReads} ) {
+                printf qq{| %s | %.2f%% |\n}, $key, $stat->{$key} * 100;
+            }
+            for my $key ( qw{overlapDepth} ) {
                 printf qq{| %s | %s |\n}, $key, $stat->{$key};
             }
         }
