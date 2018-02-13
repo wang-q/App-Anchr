@@ -296,6 +296,13 @@ bash 3_trimlong.sh
 # reads stats
 bash 9_statReads.sh
 
+# mergereads
+bash 2_mergereads.sh
+
+# quorum
+bash 2_quorum.sh
+bash 9_statQuorum.sh
+
 ```
 
 Table: statInsertSize
@@ -307,6 +314,7 @@ Table: statInsertSize
 | genome.picard   | 298.2 |    298 |  18.0 |                             FR |
 | tadpole.picard  | 294.9 |    296 |  21.7 |                             FR |
 
+
 Table: statSgaPreQC
 
 | Item           |  Value |
@@ -314,6 +322,7 @@ Table: statSgaPreQC
 | incorrectBases |  0.26% |
 | perfectReads   | 79.72% |
 | overlapDepth   | 356.41 |
+
 
 Table: statReads
 
@@ -354,55 +363,69 @@ PCR_Primers     1238    0.01342%
 gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome  434     0.00501%
 ```
 
-* mergereads
 
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
+Table: statTrimReads
 
-bash 2_mergereads.sh
+| Name           | N50 |     Sum |        # |
+|:---------------|----:|--------:|---------:|
+| clumpify       | 151 |   1.73G | 11439000 |
+| filteredbytile | 151 |   1.67G | 11062784 |
+| sample         | 151 |   1.39G |  9221824 |
+| trim           | 149 |   1.19G |  8654404 |
+| filter         | 149 |   1.19G |  8653996 |
+| R1             | 150 | 614.35M |  4326998 |
+| R2             | 144 | 576.27M |  4326998 |
+| Rs             |   0 |       0 |        0 |
 
+
+```text
+#trim
+#Matched        15655   0.16976%
+#Name   Reads   ReadsPct
+pcr_dimer       7016    0.07608%
+PCR_Primers     1227    0.01331%
 ```
+
+```text
+#filter
+#Matched        408     0.00471%
+#Name   Reads   ReadsPct
+gi|9626372|ref|NC_001422.1| Coliphage phiX174, complete genome  406     0.00469%
+```
+
 
 Table: statMergeReads
 
 | Name          | N50 |    Sum |       # |
 |:--------------|----:|-------:|--------:|
-| clumped       | 149 |  1.19G | 8652794 |
-| ecco          | 149 |  1.19G | 8652794 |
-| eccc          | 149 |  1.19G | 8652794 |
-| ecct          | 149 |  1.18G | 8606874 |
-| extended      | 189 |  1.53G | 8606874 |
-| merged        | 339 |  1.43G | 4246486 |
-| unmerged.raw  | 174 |  16.6M |  113902 |
-| unmerged.trim | 174 | 16.59M |  113840 |
-| U1            | 181 |  8.73M |   56920 |
-| U2            | 168 |  7.86M |   56920 |
+| clumped       | 149 |  1.19G | 8653168 |
+| ecco          | 149 |  1.19G | 8653168 |
+| eccc          | 149 |  1.19G | 8653168 |
+| ecct          | 149 |  1.18G | 8607506 |
+| extended      | 189 |  1.53G | 8607506 |
+| merged        | 339 |  1.43G | 4246260 |
+| unmerged.raw  | 174 | 16.73M |  114986 |
+| unmerged.trim | 174 | 16.72M |  114920 |
+| U1            | 181 |   8.8M |   57460 |
+| U2            | 167 |  7.92M |   57460 |
 | Us            |   0 |      0 |       0 |
-| pe.cor        | 338 |  1.45G | 8606812 |
+| pe.cor        | 338 |  1.45G | 8607440 |
 
 | Group            |  Mean | Median | STDev | PercentOfPairs |
 |:-----------------|------:|-------:|------:|---------------:|
 | ihist.merge1.txt | 271.6 |    277 |  23.9 |         10.85% |
-| ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.68% |
+| ihist.merge.txt  | 337.7 |    338 |  19.3 |         98.66% |
 
-
-* quorum
-
-```bash
-cd ${WORKING_DIR}/${BASE_NAME}
-
-bash 2_quorum.sh
-bash 9_statQuorum.sh
-
-```
 
 Table: statQuorum
 
 | Name   | CovIn | CovOut | Discard% | AvgRead | Kmer | RealG |  EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|-----:|------:|------:|---------:|----------:|
-| Q20L60 | 252.8 |  236.5 |    6.44% |     138 | "95" | 4.64M | 4.61M |     0.99 | 0:02'45'' |
-| Q25L60 | 237.0 |  227.7 |    3.91% |     134 | "87" | 4.64M | 4.57M |     0.98 | 0:02'36'' |
-| Q30L60 | 198.8 |  194.7 |    2.08% |     122 | "71" | 4.64M | 4.56M |     0.98 | 0:02'21'' |
+| Q0L0   | 256.5 |  238.1 |    7.17% |     138 | "93" | 4.64M | 4.63M |     1.00 | 0:03'03'' |
+| Q20L60 | 252.8 |  236.5 |    6.44% |     138 | "67" | 4.64M | 4.61M |     0.99 | 0:02'59'' |
+| Q25L60 | 237.0 |  227.7 |    3.91% |     135 | "87" | 4.64M | 4.57M |     0.98 | 0:02'49'' |
+| Q30L60 | 198.8 |  194.7 |    2.07% |     123 | "73" | 4.64M | 4.56M |     0.98 | 0:02'31'' |
+
 
 * down sampling, k-unitigs and anchors
 
