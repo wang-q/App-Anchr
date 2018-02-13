@@ -15,6 +15,7 @@
     - [CalcUniqueness](#calcuniqueness)
     - [tadpole](#tadpole)
     - [callInsertions](#callinsertions)
+    - [sga preqc](#sga-preqc)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -923,8 +924,10 @@ bbmap.sh \
     ref=../1_genome/genome.fa \
     nodisk slow bs=bs.sh overwrite
 
-# Variant-calling; ploidy may need adjustment.  For a large dataset "prefilter" may be needed.
-# To call only insertions, "calldel=f callsub=f" can be added.  Not calling substitutions saves memory.
+# Variant-calling; ploidy may need adjustment.
+# For a large dataset "prefilter" may be needed.
+# To call only insertions, "calldel=f callsub=f" can be added. 
+# Not calling substitutions saves memory.
 callvariants.sh \
     in=merged.sam.gz out=vars.txt \
     vcf=vars.vcf.gz ref=../1_genome/genome.fa \
@@ -950,3 +953,28 @@ sh bs.sh
 | extended     |     186 |   1.84G | 10400878 |
 | merged       |     339 |   1.74G |  5144147 |
 | unmerged     |     170 |  16.98M |   112584 |
+
+
+## sga preqc
+
+
+```bash
+cd ${HOME}/data/anchr/QLX
+
+mkdir -p 2_illumina/preqc
+cd 2_illumina/preqc
+
+sga preprocess \
+    ../R1.fq.gz ../R1.fq.gz \
+    --pe-mode 1 -o reads.pp.fastq
+
+sga index -a ropebwt -t 16 reads.pp.fastq
+
+sga stats -t 16 -n 2000000 reads.pp.fastq > stats.txt
+
+sga preqc -t 16 reads.pp.fastq > reads.preqc
+
+sga-preqc-report.py reads.preqc
+
+```
+
