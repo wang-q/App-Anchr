@@ -71,6 +71,8 @@ cat reads.coverage.tsv |
             our %cov_of = ();
         }
 
+        next if $F[1] < [% opt.mincov %];
+
         $cov_of{ $F[0] } = $F[1];
         $stat->add_data( $F[1] );
 
