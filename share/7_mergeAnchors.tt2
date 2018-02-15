@@ -1,5 +1,5 @@
 [% INCLUDE header.tt2 %]
-log_warn 7_mergeAnchors.sh
+log_warn [% sh %]
 
 #----------------------------#
 # set parameters
