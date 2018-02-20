@@ -17,7 +17,7 @@ do
     check_install ${package}
 done
 
-for package in bbtools fastqc minimap miniasm poa samtools seqtk sickle;
+for package in bbtools fastqc minimap miniasm poa samtools seqtk sickle sga;
 do
     check_install brewsci/science/${package};
 done
