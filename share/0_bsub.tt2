@@ -175,7 +175,7 @@ bsub -w "done([% opt.basename %]-2_trim)" \
 # expand anchors
 #----------------------------#
 [% IF opt.fillanchor -%]
-bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit && ended([% opt.basename %]-8_platanus)" \
+bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit) && ended([% opt.basename %]-8_platanus)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-contigs_2GS" \
     '
     rm -fr 7_fillAnchor
@@ -192,7 +192,7 @@ bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-cont
     "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta"
 
 bsub -w "done([% opt.basename %]-7_anchorLong)" \
-    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
     "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta"
 
 [% ELSIF opt.cov3 -%]
