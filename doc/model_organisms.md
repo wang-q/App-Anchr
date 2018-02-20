@@ -924,6 +924,7 @@ anchr template \
     --mergereads \
     --ecphase "1,2,3" \
     --insertsize \
+    --sgapreqc \
     --parallel 24
 
 ```
@@ -931,124 +932,15 @@ anchr template \
 ## s288c: run
 
 ```bash
-# Illumina QC
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_fastqc" "bash 2_fastqc.sh"
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_kmergenie" "bash 2_kmergenie.sh"
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=s288c
 
-# insert size
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_insertSize" "bash 2_insertSize.sh"
+cd ${WORKING_DIR}/${BASE_NAME}
 
-# preprocess Illumina reads
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_trim" "bash 2_trim.sh"
+bash 0_bsub.sh
+#bash 0_master.sh
 
-# preprocess PacBio reads
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-3_trimlong" "bash 3_trimlong.sh"
-
-# reads stats
-bsub -w "ended(${BASE_NAME}-2_trim) && ended(${BASE_NAME}-3_trimlong)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statReads" "bash 9_statReads.sh"
-
-# merge reads
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_mergereads" "bash 2_mergereads.sh"
-
-# spades, megahit, and platanus
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_spades" "bash 8_spades.sh"
-
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_megahit" "bash 8_megahit.sh"
-
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-8_platanus" "bash 8_platanus.sh"
-
-# quorum
-bsub -w "done(${BASE_NAME}-2_trim)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-2_quorum" "bash 2_quorum.sh"
-bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statQuorum" "bash 9_statQuorum.sh"
-
-# down sampling, k-unitigs and anchors
-bsub -w "done(${BASE_NAME}-2_quorum)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_downSampling" "bash 4_downSampling.sh"
-
-bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_kunitigs" "bash 4_kunitigs.sh"
-bsub -w "done(${BASE_NAME}-4_kunitigs)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_anchors" "bash 4_anchors.sh"
-bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
-
-bsub -w "done(${BASE_NAME}-4_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpole" "bash 4_tadpole.sh"
-bsub -w "done(${BASE_NAME}-4_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
-bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
-
-# down sampling mergereads
-bsub -w "done(${BASE_NAME}-2_mergereads)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_downSampling" "bash 6_downSampling.sh"
-
-bsub -w "done(${BASE_NAME}-6_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_kunitigs" "bash 6_kunitigs.sh"
-bsub -w "done(${BASE_NAME}-6_kunitigs)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_anchors" "bash 6_anchors.sh"
-bsub -w "done(${BASE_NAME}-6_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_kunitigs" "bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md"
-
-bsub -w "done(${BASE_NAME}-6_downSampling)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpole" "bash 6_tadpole.sh"
-bsub -w "done(${BASE_NAME}-6_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
-bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statAnchors_6_tadpole" "bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
-
-```
-
-```bash
-# merge anchors
-bsub -w "done(${BASE_NAME}-4_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
-bsub -w "done(${BASE_NAME}-4_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
-bsub -w "done(${BASE_NAME}-6_anchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_kunitigs" "bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors"
-bsub -w "done(${BASE_NAME}-6_tadpoleAnchors)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
-
-bsub -w "done(${BASE_NAME}-7_mergeAnchors_4_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_4_tadpole) && done(${BASE_NAME}-7_mergeAnchors_6_kunitigs) && done(${BASE_NAME}-7_mergeAnchors_6_tadpole)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
-
-# canu
-bsub -w "done(${BASE_NAME}-3_trimlong)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-5_canu" "bash 5_canu.sh"
-bsub -w "done(${BASE_NAME}-5_canu)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_statCanu" "bash 9_statCanu.sh"
-
-# expand anchors
-bsub -w "done(${BASE_NAME}-7_mergeAnchors) && done(${BASE_NAME}-5_canu)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_anchorLong" \
-    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz"
-
-bsub -w "done(${BASE_NAME}-7_anchorLong)" \
-    -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-7_anchorFill" \
-    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta"
-
-```
-
-```bash
-# stats
-bash 9_statFinal.sh
-
-bsub -q ${QUEUE_NAME} -n 24 -J "${BASE_NAME}-9_quast" "bash 9_quast.sh"
-
-# false strands of anchorLong
-cat 7_anchorLong/group/*.ovlp.tsv \
-    | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
-    | sort | uniq -c
-
-# bash 0_cleanup.sh
+#bash 0_cleanup.sh
 
 ```
 
@@ -1064,12 +956,6 @@ cd 2_illumina/mergereads
 fastqc -t 16 \
     merged.fq.gz unmerged.fq.gz \
     -o .
-
-mkdir kmergenie
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    cd kmergenie
-    kmergenie -l 21 -k 121 -s 10 -t 8 --one-pass ../{}.fq.gz -o {}
-    " ::: merged unmerged
 
 # spades
 spades.py \
@@ -1155,9 +1041,18 @@ Table: statInsertSize
 | Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
 |:----------------|------:|-------:|------:|-------------------------------:|
 | genome.bbtools  | 407.5 |    367 | 464.6 |                         48.81% |
-| tadpole.bbtools | 394.9 |    361 | 139.2 |                         42.85% |
+| tadpole.bbtools | 394.9 |    360 | 139.2 |                         42.87% |
 | genome.picard   | 402.1 |    367 | 142.1 |                             FR |
 | tadpole.picard  | 394.4 |    360 | 139.4 |                             FR |
+
+
+Table: statSgaPreQC
+
+| Item           |  Value |
+|:---------------|-------:|
+| incorrectBases |  0.08% |
+| perfectReads   | 93.09% |
+| overlapDepth   | 113.65 |
 
 
 Table: statReads
@@ -1212,11 +1107,11 @@ Table: statMergeReads
 | eccc          | 150 | 990.83M | 6614852 |
 | ecct          | 150 |  947.5M | 6321770 |
 | extended      | 190 |    1.2G | 6321770 |
-| merged        | 387 | 902.19M | 2398087 |
-| unmerged.raw  | 190 | 287.32M | 1525596 |
-| unmerged.trim | 190 | 287.32M | 1525592 |
-| U1            | 190 | 144.08M |  762796 |
-| U2            | 190 | 143.24M |  762796 |
+| merged        | 387 | 902.19M | 2398077 |
+| unmerged.raw  | 190 | 287.33M | 1525616 |
+| unmerged.trim | 190 | 287.33M | 1525612 |
+| U1            | 190 | 144.08M |  762806 |
+| U2            | 190 | 143.24M |  762806 |
 | Us            |   0 |       0 |       0 |
 | pe.cor        | 354 |   1.19G | 6321766 |
 
@@ -1230,68 +1125,68 @@ Table: statQuorum
 
 | Name   | CovIn | CovOut | Discard% | AvgRead |  Kmer |  RealG |   EstG | Est/Real |   RunTime |
 |:-------|------:|-------:|---------:|--------:|------:|-------:|-------:|---------:|----------:|
-| Q0L0   |  81.5 |   73.5 |    9.82% |     149 | "105" | 12.16M | 11.92M |     0.98 | 0:01'38'' |
-| Q20L60 |  80.6 |   73.6 |    8.64% |     148 | "105" | 12.16M | 11.86M |     0.98 | 0:01'38'' |
-| Q25L60 |  78.0 |   73.2 |    6.10% |     147 | "105" | 12.16M | 11.66M |     0.96 | 0:01'36'' |
-| Q30L60 |  73.5 |   70.7 |    3.76% |     145 | "105" | 12.16M |  11.6M |     0.95 | 0:01'32'' |
+| Q0L0   |  81.5 |   73.5 |    9.82% |     149 | "105" | 12.16M | 11.92M |     0.98 | 0:01'58'' |
+| Q20L60 |  80.6 |   73.6 |    8.64% |     148 | "105" | 12.16M | 11.86M |     0.98 | 0:01'57'' |
+| Q25L60 |  78.0 |   73.2 |    6.10% |     147 | "105" | 12.16M | 11.66M |     0.96 | 0:01'57'' |
+| Q30L60 |  73.5 |   70.7 |    3.76% |     146 | "105" | 12.16M |  11.6M |     0.95 | 0:01'50'' |
 
 
 Table: statKunitigsAnchors.md
 
 | Name           | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|--------:|----------:|-------:|-----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q0L0X40P000    |   40.0 |  82.90% |     10804 | 10.98M | 1564 |       353 | 347.19K | 3441 |   32.0 | 1.0 |   9.7 |  52.5 | "31,41,51,61,71,81" | 0:02'23'' | 0:01'20'' |
-| Q0L0X60P000    |   60.0 |  82.19% |      8511 | 10.91M | 1893 |        86 | 347.02K | 4052 |   48.0 | 2.0 |  14.0 |  81.0 | "31,41,51,61,71,81" | 0:03'11'' | 0:01'19'' |
-| Q0L0XallP000   |   73.5 |  81.74% |      7664 | 10.85M | 2009 |        82 | 356.94K | 4298 |   59.0 | 3.0 |  16.7 | 102.0 | "31,41,51,61,71,81" | 0:03'42'' | 0:01'22'' |
-| Q20L60X40P000  |   40.0 |  83.02% |     11290 | 11.01M | 1482 |       219 | 310.53K | 3278 |   32.0 | 1.0 |   9.7 |  52.5 | "31,41,51,61,71,81" | 0:02'21'' | 0:01'18'' |
-| Q20L60X60P000  |   60.0 |  82.34% |      8823 | 10.92M | 1805 |        85 | 335.52K | 3878 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:03'07'' | 0:01'20'' |
-| Q20L60XallP000 |   73.6 |  82.05% |      8386 |  10.9M | 1929 |        79 | 326.45K | 4122 |   60.0 | 3.0 |  17.0 | 103.5 | "31,41,51,61,71,81" | 0:03'39'' | 0:01'23'' |
-| Q25L60X40P000  |   40.0 |  84.77% |     18271 | 11.14M | 1012 |      1052 | 240.82K | 2445 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:02'19'' | 0:01'25'' |
-| Q25L60X60P000  |   60.0 |  84.04% |     15331 | 11.11M | 1174 |      1038 |  245.1K | 2656 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:03'06'' | 0:01'22'' |
-| Q25L60XallP000 |   73.2 |  83.85% |     14510 |  11.1M | 1237 |      1014 | 243.88K | 2746 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:03'37'' | 0:01'19'' |
-| Q30L60X40P000  |   40.0 |  86.51% |     21356 | 11.17M |  856 |      1235 | 235.54K | 2257 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:02'21'' | 0:01'28'' |
-| Q30L60X60P000  |   60.0 |  85.71% |     18958 | 11.15M |  978 |      1057 |  225.2K | 2336 |   50.0 | 2.0 |  14.7 |  84.0 | "31,41,51,61,71,81" | 0:03'08'' | 0:01'25'' |
-| Q30L60XallP000 |   70.7 |  85.56% |     18122 | 11.14M | 1025 |      1054 |  229.9K | 2394 |   59.0 | 2.0 |  17.7 |  97.5 | "31,41,51,61,71,81" | 0:03'34'' | 0:01'26'' |
+| Q0L0X40P000    |   40.0 |  83.00% |     11165 |  10.5M | 1270 |      1678 | 882.81K | 3136 |   32.0 | 1.0 |   9.7 |  52.5 | "31,41,51,61,71,81" | 0:02'13'' | 0:01'15'' |
+| Q0L0X60P000    |   60.0 |  82.10% |      8790 | 10.43M | 1563 |      1458 | 854.82K | 3725 |   48.0 | 2.0 |  14.0 |  81.0 | "31,41,51,61,71,81" | 0:02'58'' | 0:01'17'' |
+| Q0L0XallP000   |   73.5 |  81.74% |      8051 | 10.36M | 1663 |      1437 | 878.29K | 3936 |   59.0 | 3.0 |  16.7 | 102.0 | "31,41,51,61,71,81" | 0:03'28'' | 0:01'17'' |
+| Q20L60X40P000  |   40.0 |  83.15% |     11661 | 10.62M | 1249 |      1690 | 749.31K | 3067 |   32.0 | 1.0 |   9.7 |  52.5 | "31,41,51,61,71,81" | 0:02'11'' | 0:01'17'' |
+| Q20L60X60P000  |   60.0 |  82.39% |      9251 | 10.47M | 1504 |      1492 | 824.32K | 3574 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:02'55'' | 0:01'16'' |
+| Q20L60XallP000 |   73.6 |  82.05% |      8588 | 10.49M | 1644 |      1408 | 765.61K | 3817 |   60.0 | 3.0 |  17.0 | 103.5 | "31,41,51,61,71,81" | 0:03'25'' | 0:01'18'' |
+| Q25L60X40P000  |   40.0 |  84.67% |     19095 | 11.02M |  908 |      1491 |  391.4K | 2361 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:02'11'' | 0:01'22'' |
+| Q25L60X60P000  |   60.0 |  84.01% |     16281 | 10.93M | 1045 |      1456 | 435.17K | 2504 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:02'54'' | 0:01'18'' |
+| Q25L60XallP000 |   73.2 |  83.84% |     14710 | 10.93M | 1121 |      1438 | 428.09K | 2620 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:03'23'' | 0:01'20'' |
+| Q30L60X40P000  |   40.0 |  86.45% |     21637 | 11.06M |  773 |      1527 | 370.73K | 2133 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:02'12'' | 0:01'24'' |
+| Q30L60X60P000  |   60.0 |  85.65% |     18956 | 11.04M |  912 |      1445 | 343.41K | 2269 |   50.0 | 2.0 |  14.7 |  84.0 | "31,41,51,61,71,81" | 0:02'55'' | 0:01'23'' |
+| Q30L60XallP000 |   70.7 |  85.55% |     18232 | 11.02M |  945 |      1441 | 356.56K | 2306 |   59.0 | 2.0 |  17.7 |  97.5 | "31,41,51,61,71,81" | 0:03'18'' | 0:01'21'' |
 
 
 Table: statTadpoleAnchors.md
 
 | Name           | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:---------------|-------:|--------:|----------:|-------:|-----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| Q0L0X40P000    |   40.0 |  91.85% |     24640 | 11.17M |  738 |      1234 | 294.19K | 2263 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:01'34'' |
-| Q0L0X60P000    |   60.0 |  91.08% |     19305 | 11.14M |  951 |      1260 | 295.08K | 2283 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'28'' | 0:01'26'' |
-| Q0L0XallP000   |   73.5 |  90.76% |     15371 | 11.11M | 1143 |      1069 | 295.24K | 2549 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:01'34'' | 0:01'20'' |
-| Q20L60X40P000  |   40.0 |  91.97% |     24825 | 11.18M |  739 |      1203 | 265.52K | 2263 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:01'32'' |
-| Q20L60X60P000  |   60.0 |  91.20% |     20487 | 11.15M |  907 |      1260 | 265.91K | 2188 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'26'' | 0:01'23'' |
-| Q20L60XallP000 |   73.6 |  90.85% |     15636 | 11.12M | 1114 |      1110 | 281.64K | 2497 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:01'36'' | 0:01'22'' |
-| Q25L60X40P000  |   40.0 |  92.48% |     31157 | 11.19M |  623 |      1671 | 261.37K | 1993 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'16'' | 0:01'40'' |
-| Q25L60X60P000  |   60.0 |  91.96% |     25699 | 11.18M |  717 |      2403 | 272.44K | 1856 |   50.0 | 2.0 |  14.7 |  84.0 | "31,41,51,61,71,81" | 0:01'26'' | 0:01'26'' |
-| Q25L60XallP000 |   73.2 |  91.61% |     22471 | 11.17M |  828 |      1710 | 246.42K | 1940 |   61.0 | 2.0 |  18.3 | 100.5 | "31,41,51,61,71,81" | 0:01'34'' | 0:01'22'' |
-| Q30L60X40P000  |   40.0 |  92.98% |     30686 | 11.19M |  622 |      1713 | 257.61K | 2163 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'14'' | 0:01'42'' |
-| Q30L60X60P000  |   60.0 |  92.43% |     27431 | 11.19M |  668 |      1683 | 230.64K | 1928 |   50.0 | 2.0 |  14.7 |  84.0 | "31,41,51,61,71,81" | 0:01'25'' | 0:01'34'' |
-| Q30L60XallP000 |   70.7 |  92.22% |     25565 | 11.18M |  709 |      1683 | 231.56K | 1922 |   59.0 | 2.0 |  17.7 |  97.5 | "31,41,51,61,71,81" | 0:01'33'' | 0:01'31'' |
+| Q0L0X40P000    |   40.0 |  91.80% |     23833 | 11.06M |  682 |      1671 | 454.85K | 2162 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'09'' | 0:01'28'' |
+| Q0L0X60P000    |   60.0 |  91.16% |     19359 |    11M |  835 |      1623 | 467.88K | 2145 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'21'' | 0:01'22'' |
+| Q0L0XallP000   |   73.5 |  90.75% |     15740 |  10.9M | 1006 |      1650 | 536.23K | 2393 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:01'27'' | 0:01'21'' |
+| Q20L60X40P000  |   40.0 |  91.86% |     25473 | 11.08M |  664 |      1683 | 401.44K | 2174 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'10'' | 0:01'30'' |
+| Q20L60X60P000  |   60.0 |  91.22% |     19791 | 11.04M |  825 |      1646 | 407.11K | 2101 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'20'' | 0:01'22'' |
+| Q20L60XallP000 |   73.6 |  90.85% |     15909 | 10.94M |  995 |      1621 | 492.67K | 2358 |   60.0 | 2.0 |  18.0 |  99.0 | "31,41,51,61,71,81" | 0:01'28'' | 0:01'19'' |
+| Q25L60X40P000  |   40.0 |  92.43% |     30379 | 11.14M |  594 |      1668 | 349.23K | 1939 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'08'' | 0:01'29'' |
+| Q25L60X60P000  |   60.0 |  91.93% |     25156 |  11.1M |  681 |      1656 | 335.68K | 1829 |   50.0 | 2.0 |  14.7 |  84.0 | "31,41,51,61,71,81" | 0:01'20'' | 0:01'26'' |
+| Q25L60XallP000 |   73.2 |  91.61% |     22842 | 11.08M |  764 |      1615 | 355.05K | 1865 |   61.0 | 2.0 |  18.3 | 100.5 | "31,41,51,61,71,81" | 0:01'27'' | 0:01'22'' |
+| Q30L60X40P000  |   40.0 |  92.86% |     31185 | 11.14M |  556 |      1676 | 350.35K | 2012 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'11'' | 0:01'36'' |
+| Q30L60X60P000  |   60.0 |  92.41% |     27887 | 11.12M |  613 |      1693 | 340.94K | 1823 |   50.0 | 1.0 |  15.7 |  79.5 | "31,41,51,61,71,81" | 0:01'18'' | 0:01'30'' |
+| Q30L60XallP000 |   70.7 |  92.22% |     25656 | 11.13M |  668 |      1598 | 311.25K | 1865 |   59.0 | 2.0 |  17.7 |  97.5 | "31,41,51,61,71,81" | 0:01'26'' | 0:01'26'' |
 
 
 Table: statMRKunitigsAnchors.md
 
 | Name       | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
 |:-----------|-------:|--------:|----------:|-------:|-----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| MRX40P000  |   40.0 |  85.40% |     16932 | 11.07M | 1059 |       160 |  283.6K | 2278 |   32.0 | 2.0 |   8.7 |  57.0 | "31,41,51,61,71,81" | 0:02'50'' | 0:01'18'' |
-| MRX40P001  |   40.0 |  87.51% |     17649 | 11.07M | 1069 |       147 | 280.76K | 2286 |   32.0 | 2.0 |   8.7 |  57.0 | "31,41,51,61,71,81" | 0:02'48'' | 0:01'21'' |
-| MRX60P000  |   60.0 |  84.17% |     13485 | 11.01M | 1310 |       119 | 309.94K | 2761 |   48.0 | 3.0 |  13.0 |  85.5 | "31,41,51,61,71,81" | 0:03'50'' | 0:01'17'' |
-| MRX80P000  |   80.0 |  83.38% |     12144 | 10.93M | 1452 |       115 | 364.69K | 3049 |   64.0 | 3.0 |  18.3 | 109.5 | "31,41,51,61,71,81" | 0:04'49'' | 0:01'20'' |
-| MRXallP000 |   98.0 |  83.05% |     11042 | 10.94M | 1546 |       102 | 336.01K | 3232 |   78.0 | 5.0 |  20.0 | 139.5 | "31,41,51,61,71,81" | 0:05'43'' | 0:01'24'' |
+| MRX40P000  |   40.0 |  86.78% |     16979 | 10.74M |  897 |      1926 | 621.79K | 2119 |   32.0 | 2.0 |   8.7 |  57.0 | "31,41,51,61,71,81" | 0:02'36'' | 0:01'33'' |
+| MRX40P001  |   40.0 |  87.26% |     18079 | 10.73M |  875 |      1921 |  639.4K | 2082 |   32.0 | 2.0 |   8.7 |  57.0 | "31,41,51,61,71,81" | 0:02'37'' | 0:01'34'' |
+| MRX60P000  |   60.0 |  85.88% |     14080 | 10.53M | 1058 |      1953 | 803.69K | 2518 |   48.0 | 3.0 |  13.0 |  85.5 | "31,41,51,61,71,81" | 0:03'34'' | 0:01'37'' |
+| MRX80P000  |   80.0 |  84.58% |     13006 | 10.32M | 1108 |      1958 | 987.83K | 2690 |   64.0 | 4.0 |  17.3 | 114.0 | "31,41,51,61,71,81" | 0:04'30'' | 0:01'36'' |
+| MRXallP000 |   98.0 |  83.05% |     11941 | 10.35M | 1205 |      1799 | 932.07K | 2884 |   78.0 | 5.0 |  20.0 | 139.5 | "31,41,51,61,71,81" | 0:05'23'' | 0:01'36'' |
 
 
 Table: statMRTadpoleAnchors.md
 
-| Name       | CovCor | Mapped% | N50Anchor |    Sum |    # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
-|:-----------|-------:|--------:|----------:|-------:|-----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
-| MRX40P000  |   40.0 |  91.30% |     31992 | 11.15M |  570 |      1148 | 229.83K | 1256 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'23'' | 0:01'20'' |
-| MRX40P001  |   40.0 |  91.34% |     35720 | 11.16M |  544 |      1275 | 226.74K | 1216 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'19'' | 0:01'21'' |
-| MRX60P000  |   60.0 |  91.01% |     25629 | 11.14M |  706 |      1079 | 239.99K | 1501 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'36'' | 0:01'17'' |
-| MRX80P000  |   80.0 |  90.72% |     20906 | 11.12M |  877 |      1039 | 254.67K | 1839 |   66.0 | 3.0 |  19.0 | 112.5 | "31,41,51,61,71,81" | 0:01'48'' | 0:01'21'' |
-| MRXallP000 |   98.0 |  90.44% |     17986 | 11.11M | 1023 |      1039 | 251.23K | 2136 |   80.0 | 3.0 |  20.0 | 133.5 | "31,41,51,61,71,81" | 0:02'00'' | 0:01'23'' |
+| Name       | CovCor | Mapped% | N50Anchor |    Sum |   # | N50Others |     Sum |    # | median | MAD | lower | upper |                Kmer | RunTimeKU | RunTimeAN |
+|:-----------|-------:|--------:|----------:|-------:|----:|----------:|--------:|-----:|-------:|----:|------:|------:|--------------------:|----------:|----------:|
+| MRX40P000  |   40.0 |  91.30% |     34385 | 11.01M | 480 |      2147 |  392.2K | 1154 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:01'18'' |
+| MRX40P001  |   40.0 |  91.34% |     34563 |    11M | 473 |      2146 | 393.86K | 1160 |   33.0 | 1.0 |  10.0 |  54.0 | "31,41,51,61,71,81" | 0:01'17'' | 0:01'16'' |
+| MRX60P000  |   60.0 |  90.98% |     27123 | 10.95M | 608 |      1984 | 442.42K | 1395 |   49.0 | 2.0 |  14.3 |  82.5 | "31,41,51,61,71,81" | 0:01'30'' | 0:01'17'' |
+| MRX80P000  |   80.0 |  90.69% |     20854 | 10.84M | 748 |      1984 | 539.85K | 1719 |   66.0 | 2.0 |  20.0 | 108.0 | "31,41,51,61,71,81" | 0:01'39'' | 0:01'15'' |
+| MRXallP000 |   98.0 |  90.44% |     18183 | 10.88M | 886 |      1785 |    488K | 1997 |   80.0 | 3.0 |  20.0 | 133.5 | "31,41,51,61,71,81" | 0:01'51'' | 0:01'37'' |
 
 
 Table: statCanu
@@ -1310,30 +1205,30 @@ Table: statFinal
 |:---------------------------------|-------:|---------:|-----:|
 | Genome                           | 924431 | 12157105 |   17 |
 | Paralogs                         |   3851 |  1059148 |  366 |
-| 7_mergeKunitigsAnchors.anchors   |  26556 | 11209555 |  697 |
-| 7_mergeKunitigsAnchors.others    |   1423 |   287146 |  185 |
-| 7_mergeTadpoleAnchors.anchors    |  37632 | 11224733 |  503 |
-| 7_mergeTadpoleAnchors.others     |   4770 |   269205 |  110 |
-| 7_mergeMRKunitigsAnchors.anchors |  22756 | 11186266 |  809 |
-| 7_mergeMRKunitigsAnchors.others  |   1707 |   204103 |  121 |
-| 7_mergeMRTadpoleAnchors.anchors  |  45406 | 11208662 |  467 |
-| 7_mergeMRTadpoleAnchors.others   |   4400 |   192281 |   75 |
-| 7_mergeAnchors.anchors           |  46366 | 11241414 |  445 |
-| 7_mergeAnchors.others            |   1986 |   437891 |  240 |
-| anchorLong                       |  47321 | 11218984 |  418 |
-| anchorFill                       | 267740 | 11357318 |   74 |
+| 7_mergeKunitigsAnchors.anchors   |  27200 | 11179163 |  663 |
+| 7_mergeKunitigsAnchors.others    |   2029 |  1488551 |  755 |
+| 7_mergeTadpoleAnchors.anchors    |  39733 | 11196001 |  475 |
+| 7_mergeTadpoleAnchors.others     |   2116 |   703374 |  336 |
+| 7_mergeMRKunitigsAnchors.anchors |  22941 | 11045412 |  724 |
+| 7_mergeMRKunitigsAnchors.others  |   2303 |  1160153 |  552 |
+| 7_mergeMRTadpoleAnchors.anchors  |  46021 | 11118136 |  408 |
+| 7_mergeMRTadpoleAnchors.others   |   2680 |   635506 |  262 |
+| 7_mergeAnchors.anchors           |  47103 | 11202492 |  410 |
+| 7_mergeAnchors.others            |   2355 |  2230367 | 1004 |
+| anchorLong                       |  48715 | 11197015 |  395 |
+| anchorFill                       | 230510 | 11281408 |   89 |
 | canu_Xall-trim                   | 813374 | 12360766 |   26 |
 | spades.contig                    | 122875 | 11742788 | 1257 |
 | spades.scaffold                  | 133886 | 11743508 | 1239 |
 | spades.non-contained             | 125298 | 11531378 |  204 |
-| spades.anchor                    | 122800 | 11305206 |  168 |
-| megahit.contig                   |  49631 | 11651225 |  984 |
-| megahit.non-contained            |  51277 | 11455395 |  455 |
-| megahit.anchor                   |  51979 | 11215635 |  402 |
+| spades.anchor                    | 125227 | 11070647 |  124 |
+| megahit.contig                   |  49631 | 11651321 |  987 |
+| megahit.non-contained            |  51277 | 11457076 |  457 |
+| megahit.anchor                   |  52748 | 10912269 |  302 |
 | platanus.contig                  |  37135 | 12071740 | 3954 |
 | platanus.scaffold                | 160128 | 11921921 | 2948 |
 | platanus.non-contained           | 176536 | 11510261 |  168 |
-| platanus.anchor                  | 150088 | 11352513 |  152 |
+| platanus.anchor                  | 154876 | 11171649 |  108 |
 
 
 # s288cH
