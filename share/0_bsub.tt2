@@ -148,7 +148,7 @@ bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
         done
     fi
     '
-    
+
 [% IF opt.cov3 -%]
 #----------------------------#
 # canu
@@ -157,15 +157,6 @@ bsub -w "done([% opt.basename %]-3_trimlong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-5_canu" "bash 5_canu.sh"
 bsub -w "done([% opt.basename %]-5_canu)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statCanu" "bash 9_statCanu.sh"
-
-# expand anchors
-bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-5_canu)" \
-    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
-    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz"
-
-bsub -w "done([% opt.basename %]-7_anchorLong)" \
-    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
-    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta"
 [% END -%]
 
 #----------------------------#
@@ -181,12 +172,47 @@ bsub -w "done([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_platanus" "bash 8_platanus.sh"
 
 #----------------------------#
+# expand anchors
+#----------------------------#
+[% IF opt.fillanchor -%]
+bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit && ended([% opt.basename %]-8_platanus)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-contigs_2GS" \
+    '
+    rm -fr 7_fillAnchor
+    mkdir -p 7_fillAnchor
+    cat \
+        8_spades/spades.non-contained.fasta \
+        8_megahit/megahit.non-contained.fasta \
+        8_platanus/platanus.non-contained.fasta \
+        | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
+    '
+
+bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-contigs_2GS)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
+    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta"
+
+bsub -w "done([% opt.basename %]-7_anchorLong)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
+    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta"
+
+[% ELSIF opt.cov3 -%]
+bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-5_canu)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
+    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz"
+
+bsub -w "done([% opt.basename %]-7_anchorLong)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
+    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta"
+
+[% END -%]
+
+#----------------------------#
 # final stats
 #----------------------------#
-bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.cov3 %]&& ended([% opt.basename %]-7_anchorFill)[% END %] && ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_platanus)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.fillanchor or opt.cov3 %]&& ended([% opt.basename %]-7_anchorFill)[% END %] && ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_platanus)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statFinal" "bash 9_statFinal.sh"
 
-bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.cov3 %]&& ended([% opt.basename %]-7_anchorFill)[% END %] && ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_platanus)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.fillanchor or opt.cov3 %]&& ended([% opt.basename %]-7_anchorFill)[% END %] && ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_platanus)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_quast" "bash 9_quast.sh"
 
 bsub -w "done([% opt.basename %]-9_quast)" \
