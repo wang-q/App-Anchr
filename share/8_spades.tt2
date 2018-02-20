@@ -8,6 +8,7 @@ USAGE="Usage: $0 DIR_READS"
 
 DIR_READS=${1:-"2_illumina/trim"}
 
+# Convert to abs path
 DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
 
 if [ -e 8_spades/anchor/anchor.fasta ]; then
