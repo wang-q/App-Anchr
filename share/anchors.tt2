@@ -226,7 +226,7 @@ fi
 # fill small holes
 cat sr.chr.sizes |
     cut -f 1 |
-    grep -Fx -f fill_all.txt -v |
+    grep -Fx -f fill_all.txt -v \
     > fill_hole.txt
 
 jrunlist some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
