@@ -738,6 +738,8 @@ Table: statFinal
 | Paralogs               |    1934 |  195673 |  106 |
 | 7_mergeAnchors.anchors |  136677 | 5582950 |   90 |
 | 7_mergeAnchors.others  |    7394 | 1203173 |  520 |
+| anchorLong             |  148364 | 5581111 |   87 |
+| anchorFill             |  340359 | 5316563 |   28 |
 | canu_X40-raw           | 4674150 | 4674150 |    1 |
 | canu_X40-trim          | 4674046 | 4674046 |    1 |
 | canu_X80-raw           | 4658166 | 4658166 |    1 |
