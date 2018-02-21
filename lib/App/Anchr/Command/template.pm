@@ -1548,27 +1548,6 @@ sub gen_mergeAnchors {
 
 }
 
-sub gen_anchorMerged {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "7_anchorMerged.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '7_anchorMerged.tt2',
-        {   args => $args,
-            opt  => $opt,
-            sh   => $sh_name,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
 sub gen_canu {
     my ( $self, $opt, $args ) = @_;
 
