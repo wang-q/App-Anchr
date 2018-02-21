@@ -1969,6 +1969,11 @@ if [ -e statMRTadpoleAnchors.md ]; then
     cat statMRTadpoleAnchors.md;
     echo;
 fi
+if [ -e statMergeAnchors.md ]; then
+    echo;
+    cat statMergeAnchors.md;
+    echo;
+fi
 if [ -e statCanu.md ]; then
     echo;
     cat statCanu.md;
