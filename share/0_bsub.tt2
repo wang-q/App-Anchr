@@ -113,13 +113,16 @@ bsub -w "done([% opt.basename %]-6_tadpoleAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
 [% END -%]
 
-bsub -w "done([% opt.basename %]-7_mergeAnchors_4_kunitigs) [% IF opt.tadpole %]&& done([% opt.basename %]-7_mergeAnchors_4_tadpole)[% END %] [% IF opt.mergereads %]&& done([% opt.basename %]-7_mergeAnchors_6_kunitigs) [% IF opt.tadpole %]&& done([% opt.basename %]-7_mergeAnchors_6_tadpole)[% END %][% END %]" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors_4_kunitigs) [% IF opt.tadpole %]&& ended([% opt.basename %]-7_mergeAnchors_4_tadpole)[% END %] [% IF opt.mergereads %]&& ended([% opt.basename %]-7_mergeAnchors_6_kunitigs) [% IF opt.tadpole %]&& ended([% opt.basename %]-7_mergeAnchors_6_tadpole)[% END %][% END %]" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
 
 [% ELSE -%]
 bsub -w "done([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors" "bash 7_mergeAnchors.sh 4_kunitigs"
 [% END -%]
+
+bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statMergeAnchors" "bash 9_statMergeAnchors.sh"
 
 # anchor sort on ref
 bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
