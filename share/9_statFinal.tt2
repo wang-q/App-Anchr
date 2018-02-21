@@ -18,7 +18,7 @@ if [ -e 1_genome/paralogs.fas ]; then
 fi
 
 # anchors
-for D in 7_mergeAnchors; do
+for D in 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors 7_mergeMRMegahitAnchors 7_mergeMRSpadesAnchors 7_mergeAnchors; do
     if [ -e ${D}/anchor.merge.fasta ]; then
         printf "| %s | %s | %s | %s |\n" \
             $(echo "${D}.anchors";   faops n50 -H -S -C ${D}/anchor.merge.fasta;) >> statFinal.md
