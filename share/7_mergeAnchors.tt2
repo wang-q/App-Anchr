@@ -15,8 +15,10 @@ if [ -e ${DIR_MERGE}/anchor.merge.fasta ]; then
 fi
 
 #----------------------------#
-# merge anchors
+# anchor.non-contained
 #----------------------------#
+log_info "anchor.non-contained"
+
 mkdir -p ${DIR_MERGE}
 
 # reverse sort files, so that Q30L60X80 will be infile_0
@@ -25,27 +27,45 @@ anchr contained \
     --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.non-contained.fasta
-anchr orient \
-    ${DIR_MERGE}/anchor.non-contained.fasta \
-    --len 1000 --idt 0.98 --parallel [% opt.parallel %] \
-    -o ${DIR_MERGE}/anchor.orient.fasta
-anchr merge \
-    ${DIR_MERGE}/anchor.orient.fasta \
-    --len 1000 --idt 0.999 --parallel [% opt.parallel %] \
-    -o ${DIR_MERGE}/anchor.merge0.fasta
-anchr contained \
-    ${DIR_MERGE}/anchor.merge0.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99 --parallel [% opt.parallel %] \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.merge.fasta
 
 #----------------------------#
-# merge others
+# anchors with all reads
 #----------------------------#
+log_info "anchors with all reads"
+
+mkdir -p ${DIR_MERGE}/anchor
+cd ${DIR_MERGE}/anchor
+
+anchr anchors \
+    ../anchor.non-contained.fasta \
+[% IF not opt.se -%]
+    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
+[% ELSE -%]
+    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
+[% END -%]
+    -p [% opt.parallel %] \
+    --ratio 0.98 \
+    -o anchors.sh
+bash anchors.sh
+
+mv anchor.fasta ../anchor.merge.fasta
+
+#----------------------------#
+# others
+#----------------------------#
+log_info "others"
+
+cd ${BASH_DIR}
+
 anchr contained \
     $( find . -path "*${DIR_PREFIX}*" -name "pe.others.fa" -or -path "*${DIR_PREFIX}*" -name "others.non-contained.fasta" | sort -r ) \
+    ${DIR_MERGE}/anchor/pe.others.fa \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.non-contained.fasta
+
+find ${DIR_MERGE}/anchor -name "*.fasta" -or -name "*.fa" | xargs rm
 
 exit;
