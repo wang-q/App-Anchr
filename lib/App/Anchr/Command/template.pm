@@ -144,6 +144,9 @@ sub execute {
     # mergeAnchors
     $self->gen_mergeAnchors( $opt, $args );
 
+    # statMergeAnchors
+    $self->gen_statMergeAnchors( $opt, $args );
+
     # canu
     $self->gen_canu( $opt, $args );
 
@@ -1539,6 +1542,27 @@ sub gen_mergeAnchors {
 
     $tt->process(
         '7_mergeAnchors.tt2',
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_statMergeAnchors {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statMergeAnchors.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statMergeAnchors.tt2',
         {   args => $args,
             opt  => $opt,
             sh   => $sh_name,
