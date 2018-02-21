@@ -138,6 +138,10 @@ if [ -e 7_mergeAnchors.sh ]; then
 fi
 [% END -%]
 
+if [ -e 7_mergeAnchors.sh ]; then
+    bash 9_statMergeAnchors.sh
+fi
+
 # anchor sort on ref
 if [ -e 1_genome/genome.fa ]; then
     for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
