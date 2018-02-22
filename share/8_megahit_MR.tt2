@@ -1,0 +1,62 @@
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0"
+
+if [ -e 8_megahit_MR/anchor/anchor.fasta ]; then
+    log_info "8_megahit_MR/anchor/anchor.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# spades
+#----------------------------#
+if [ -e 8_megahit_MR/megahit.non-contained.fasta ]; then
+    log_info "8_megahit_MR/megahit.non-contained.fasta presents"
+else
+    log_info "Run megahit"
+
+    megahit \
+        -t [% opt.parallel %] \
+        --k-min 45 --k-max 225 --k-step 26 \
+        --min-count 3 \
+        -1 ${BASH_DIR}/2_illumina/mergereads/U1.fq.gz \
+        -2 ${BASH_DIR}/2_illumina/mergereads/U2.fq.gz \
+        -r ${BASH_DIR}/2_illumina/mergereads/Us.fq.gz,${BASH_DIR}/2_illumina/mergereads/merged.fq.gz \
+        -o 8_megahit_MR
+
+    anchr contained \
+        8_megahit_MR/final.contigs.fa \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        -o stdout \
+        | faops filter -a 1000 -l 0 stdin 8_megahit_MR/megahit.non-contained.fasta
+fi
+
+log_info "Clear intermediate files"
+find . -type d -path "*8_megahit_MR/*" -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
+
+#----------------------------#
+# anchor
+#----------------------------#
+log_info "Create anchors"
+
+mkdir -p 8_megahit_MR/anchor
+cd 8_megahit_MR/anchor
+
+anchr anchors \
+    ../megahit.non-contained.fasta \
+    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
+    -p [% opt.parallel %] \
+    --ratio 0.98 \
+    -o anchors.sh
+bash anchors.sh
+
+find . -type f -name "pe.anchor.fa" | xargs rm
+find . -type f -name "anchor.*.fasta" | xargs rm
+
+exit 0;

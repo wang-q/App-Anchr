@@ -945,99 +945,6 @@ bash 0_bsub.sh
 
 ```
 
-```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=s288c
-
-cd ${WORKING_DIR}/${BASE_NAME}
-
-mkdir -p 2_illumina/mergereads
-cd 2_illumina/mergereads
-
-fastqc -t 16 \
-    merged.fq.gz unmerged.fq.gz \
-    -o .
-
-# spades
-spades.py \
-    -s merged.fq.gz --12 unmerged.fq.gz \
-    --only-assembler \
-    -k25,55,95,125 --phred-offset 33 \
-    -o spades_out
-
-anchr contained \
-    spades_out/contigs.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin spades_out/spades.non-contained.fasta
-
-# megahit
-megahit \
-    -r merged.fq.gz --12 unmerged.fq.gz \
-    --k-min 45 --k-max 225 --k-step 26 \
-    --min-count 2 \
-    -o megahit_out
-
-anchr contained \
-    megahit_out/final.contigs.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin megahit_out/megahit.non-contained.fasta
-
-# megahit2
-megahit \
-    -r merged.fq.gz --12 unmerged.fq.gz \
-    --k-min 45 --k-max 225 --k-step 10 \
-    --min-count 2 \
-    -o megahit2_out
-
-anchr contained \
-    megahit2_out/final.contigs.fa \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin megahit2_out/megahit.non-contained.fasta
-
-# tadpole
-for K in 25 55 95 125; do
-    tadpole.sh in=merged.fq.gz,unmerged.fq.gz out=tadpole_out/contigs_K${K}.fa k=${K}
-done
-
-anchr contained \
-    $(
-        find tadpole_out -type f -name "contigs_K*" | sort -r
-    ) \
-    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin tadpole_out/tadpole.non-contained.fasta
-anchr orient \
-    tadpole_out/tadpole.non-contained.fasta \
-    --len 1000 --idt 0.98 --parallel 16 \
-    -o tadpole_out/anchor.orient.fasta
-anchr merge \
-    tadpole_out/anchor.orient.fasta \
-    --len 1000 --idt 0.999 --parallel 16 \
-    -o tadpole_out/anchor.merge0.fasta
-anchr contained \
-    tadpole_out/anchor.merge0.fasta \
-    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 \
-    -o stdout \
-    | faops filter -a 1000 -l 0 stdin tadpole_out/anchor.merge.fasta
-
-rm -fr 9_quast_merge
-quast --no-check --threads 16 \
-    -R ../../1_genome/genome.fa \
-    spades_out/spades.non-contained.fasta \
-    megahit_out/megahit.non-contained.fasta \
-    megahit2_out/megahit.non-contained.fasta \
-    tadpole_out/tadpole.non-contained.fasta \
-    tadpole_out/anchor.merge.fasta \
-    ../../1_genome/paralogs.fas \
-    --label "spades,megahit,megahit2,tadpole,tadpoleMerge,paralogs" \
-    -o 9_quast_merge
-
-```
-
-
 Table: statInsertSize
 
 | Group           |  Mean | Median | STDev | PercentOfPairs/PairOrientation |
@@ -1705,16 +1612,16 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=iso_1
-QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue largemem \
     --genome 137567477 \
     --is_euk \
-    --trim2 "--uniq --bbduk" \
+    --trim2 "--dedupe" \
     --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
@@ -1725,13 +1632,25 @@ anchr template \
     --mergereads \
     --ecphase "1,3" \
     --insertsize \
+    --sgapreqc \
     --parallel 24
 
 ```
 
 ## iso_1: run
 
-Same as [s288c: run](#s288c-run)
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=iso_1
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bash 0_bsub.sh
+#bash 0_master.sh
+
+#bash 0_cleanup.sh
+
+```
 
 The `meryl` step of `canu` failed in hpcc, run it locally.
 
