@@ -13,9 +13,7 @@
     - [Local corrections](#local-corrections)
     - [kmc](#kmc)
     - [CalcUniqueness](#calcuniqueness)
-    - [tadpole](#tadpole)
     - [callInsertions](#callinsertions)
-    - [sga preqc](#sga-preqc)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -855,54 +853,6 @@ bbcountunique.sh \
 
 ```
 
-## tadpole
-
-```bash
-BASE_NAME=QLX
-cd ${HOME}/data/anchr/${BASE_NAME}
-
-tadpole.sh \
-    in=2_illumina/R1.fq.gz \
-    in2=2_illumina/R2.fq.gz \
-    out=2_illumina/contigs.raw.fa \
-    overwrite=true
-
-tadpole.sh \
-    in=2_illumina/Q25L60/R1.fq.gz \
-    in2=2_illumina/Q25L60/R2.fq.gz \
-    out=2_illumina/Q25L60/contigs.sickle.fa \
-    overwrite=true
-
-tadpole.sh \
-    in=2_illumina/Q25L60/R1.fq.gz,2_illumina/Q25L60/Rs.fq.gz \
-    in2=2_illumina/Q25L60/R2.fq.gz \
-    out=2_illumina/Q25L60/contigs.sickle2.fa \
-    overwrite=true
-
-tadpole.sh \
-    in=2_illumina/Q25L60/pe.cor.fa \
-    out=2_illumina/Q25L60/contigs.cor.fa \
-    overwrite=true
-
-faops n50 -S -C 2_illumina/contigs.raw.fa
-faops n50 -S -C 2_illumina/Q25L60/contigs.sickle.fa
-faops n50 -S -C 2_illumina/Q25L60/contigs.sickle2.fa
-faops n50 -S -C 2_illumina/Q25L60/contigs.cor.fa
-
-# quast
-rm -fr 9_quast_tadpole
-quast --no-check --threads 16 \
-    -R 1_genome/genome.fa \
-    2_illumina/contigs.raw.fa \
-    2_illumina/Q25L60/contigs.sickle.fa \
-    2_illumina/Q25L60/contigs.sickle2.fa \
-    2_illumina/Q25L60/contigs.cor.fa \
-    1_genome/paralogs.fas \
-    --label "raw,sickle,sickle2,cor,paralogs" \
-    -o 9_quast_tadpole
-
-```
-
 ## callInsertions
 
 ```bash
@@ -953,28 +903,4 @@ sh bs.sh
 | extended     |     186 |   1.84G | 10400878 |
 | merged       |     339 |   1.74G |  5144147 |
 | unmerged     |     170 |  16.98M |   112584 |
-
-
-## sga preqc
-
-
-```bash
-cd ${HOME}/data/anchr/QLX
-
-mkdir -p 2_illumina/preqc
-cd 2_illumina/preqc
-
-sga preprocess \
-    ../R1.fq.gz ../R1.fq.gz \
-    --pe-mode 1 -o reads.pp.fastq
-
-sga index -a ropebwt -t 16 reads.pp.fastq
-
-sga stats -t 16 -n 2000000 reads.pp.fastq > stats.txt
-
-sga preqc -t 16 reads.pp.fastq > reads.preqc
-
-sga-preqc-report.py reads.preqc
-
-```
 
