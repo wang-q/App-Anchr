@@ -174,11 +174,21 @@ bsub -w "done([% opt.basename %]-2_trim)" \
 bsub -w "done([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_platanus" "bash 8_platanus.sh"
 
+[% IF opt.mergereads and ! opt.se -%]
+bsub -w "done([% opt.basename %]-2_mergereads)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_spades_MR" "bash 8_spades_MR.sh"
+bsub -w "done([% opt.basename %]-2_mergereads)" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_megahit_MR" "bash 8_megahit_MR.sh"
+[% END -%]
+
+bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit) && ended([% opt.basename %]-8_platanus)[% IF opt.mergereads and ! opt.se %] && ended([% opt.basename %]-8_spades_MR)&& ended([% opt.basename %]-8_megahit_MR)[% END %]" \
+    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statOtherAnchors" "bash 9_statOtherAnchors.sh"
+
 #----------------------------#
 # expand anchors
 #----------------------------#
 [% IF opt.fillanchor -%]
-bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit) && ended([% opt.basename %]-8_platanus)" \
+bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahit) && ended([% opt.basename %]-8_platanus)[% IF opt.mergereads and ! opt.se %] && ended([% opt.basename %]-8_spades_MR)&& ended([% opt.basename %]-8_megahit_MR)[% END %]" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-contigs_2GS" \
     '
     rm -fr 7_fillAnchor
@@ -187,6 +197,11 @@ bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahi
         8_spades/spades.non-contained.fasta \
         8_megahit/megahit.non-contained.fasta \
         8_platanus/platanus.non-contained.fasta \
+[% IF opt.mergereads and ! opt.se -%]
+        8_spades_MR/spades.non-contained.fasta \
+        8_megahit_MR/megahit.non-contained.fasta \
+[% END -%]
+        | faops dazz -a -l 0 stdin stdout \
         | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
     '
 
