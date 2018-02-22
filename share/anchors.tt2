@@ -333,9 +333,12 @@ anchr contained \
 #----------------------------#
 # Done.
 #----------------------------#
-rm mapped.sam
-rm unmapped.sam
-rm basecov.txt
+find . -type f -name "mapped.sam"     | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "unmapped.sam"   | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "basecov.txt"    | parallel --no-run-if-empty -j 1 rm
+
+find . -type f -name "pe.anchor.fa"   | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "anchor.*.fasta" | parallel --no-run-if-empty -j 1 rm
 
 touch anchor.success
 log_info "Done."
