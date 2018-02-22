@@ -1,5 +1,5 @@
 [% INCLUDE header.tt2 %]
-log_warn 8_spades.sh
+log_warn [% sh %]
 
 #----------------------------#
 # set parameters
@@ -58,13 +58,18 @@ cd 8_spades/anchor
 anchr anchors \
     ../spades.non-contained.fasta \
 [% IF not opt.se -%]
-    ${DIR_READS}/R1.fq.gz \
-    ${DIR_READS}/R2.fq.gz \
-    ${DIR_READS}/Rs.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
 [% ELSE -%]
-    ${DIR_READS}/R1.fq.gz \
+    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
 [% END -%]
     -p [% opt.parallel %] \
     --ratio 0.98 \
     -o anchors.sh
 bash anchors.sh
+
+find . -type f -name "pe.anchor.fa" | xargs rm
+find . -type f -name "anchor.*.fasta" | xargs rm
+
+exit 0;

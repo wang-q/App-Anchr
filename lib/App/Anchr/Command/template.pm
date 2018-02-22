@@ -1750,9 +1750,25 @@ sub gen_spades {
         '8_spades.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+
+    if ( !$opt->{se} and $opt->{mergereads} ) {
+        $sh_name = "8_spades_MR.sh";
+        print "Create $sh_name\n";
+
+        $tt->process(
+            '8_spades_MR.tt2',
+            {   args => $args,
+                opt  => $opt,
+                sh   => $sh_name,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
 }
 
 sub gen_megahit {
