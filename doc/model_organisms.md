@@ -713,10 +713,22 @@ bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.con
 cd ${WORKING_DIR}/${BASE_NAME}
 
 bash 8_spades.sh
+bash 8_spades_MR.sh
 bash 8_megahit.sh
+bash 8_megahit_MR.sh
 bash 8_platanus.sh
 
 ```
+
+Table: statOtherAnchors.md
+
+| Name         | Mapped% | N50Anchor |   Sum |   # | N50Others |    Sum |   # | median | MAD | lower | upper | RunTimeAN |
+|:-------------|--------:|----------:|------:|----:|----------:|-------:|----:|-------:|----:|------:|------:|----------:|
+| 8_spades     |  92.52% |    117596 | 4.54M |  72 |      1275 | 40.68K | 164 |  124.5 | 4.5 |  20.0 | 207.0 | 0:01'49'' |
+| 8_spades_MR  |  92.71% |    175990 | 4.55M |  63 |      1283 | 17.33K | 132 |  125.0 | 5.0 |  20.0 | 210.0 | 0:01'39'' |
+| 8_megahit    |  92.17% |     67334 | 4.52M | 110 |      1141 |  25.4K | 231 |  124.0 | 4.0 |  20.0 | 204.0 | 0:01'37'' |
+| 8_megahit_MR |  92.62% |    110523 | 4.56M |  83 |      1198 | 21.67K | 167 |  126.0 | 4.0 |  20.0 | 207.0 | 0:01'21'' |
+| 8_platanus   |  94.23% |    132960 | 4.54M |  67 |      1145 | 14.16K | 130 |  114.0 | 3.0 |  20.0 | 184.5 | 0:02'26'' |
 
 * final stats
 
@@ -732,31 +744,33 @@ bash 9_quast.sh
 
 Table: statFinal
 
-| Name                   |     N50 |     Sum |    # |
-|:-----------------------|--------:|--------:|-----:|
-| Genome                 | 4641652 | 4641652 |    1 |
-| Paralogs               |    1934 |  195673 |  106 |
-| 7_mergeAnchors.anchors |  136677 | 5582950 |   90 |
-| 7_mergeAnchors.others  |    7394 | 1203173 |  520 |
-| anchorLong             |  148364 | 5581111 |   87 |
-| anchorFill             |  340359 | 5316563 |   28 |
-| canu_X40-raw           | 4674150 | 4674150 |    1 |
-| canu_X40-trim          | 4674046 | 4674046 |    1 |
-| canu_X80-raw           | 4658166 | 4658166 |    1 |
-| canu_X80-trim          | 4657933 | 4657933 |    1 |
-| canu_Xall-raw          | 4670118 | 4670118 |    1 |
-| canu_Xall-trim         | 4670240 | 4670240 |    1 |
-| spades.contig          |  117644 | 4665739 |  311 |
-| spades.scaffold        |  132608 | 4665779 |  307 |
-| spades.non-contained   |  125617 | 4585700 |   91 |
-| spades.anchor          |  125552 | 4539555 |   69 |
-| megahit.contig         |   67382 | 4579520 |  205 |
-| megahit.non-contained  |   67382 | 4553887 |  124 |
-| megahit.anchor         |   67325 | 4525248 |  114 |
-| platanus.contig        |   16464 | 4674383 | 1017 |
-| platanus.scaffold      |  133012 | 4574920 |  142 |
-| platanus.non-contained |  133012 | 4556916 |   63 |
-| platanus.anchor        |  132960 | 4542760 |   67 |
+| Name                     |     N50 |     Sum |    # |
+|:-------------------------|--------:|--------:|-----:|
+| Genome                   | 4641652 | 4641652 |    1 |
+| Paralogs                 |    1934 |  195673 |  106 |
+| 7_mergeAnchors.anchors   |  136677 | 5582950 |   90 |
+| 7_mergeAnchors.others    |    7394 | 1203173 |  520 |
+| anchorLong               |  148364 | 5581111 |   87 |
+| anchorFill               |  340359 | 5316563 |   28 |
+| canu_X40-raw             | 4674150 | 4674150 |    1 |
+| canu_X40-trim            | 4674046 | 4674046 |    1 |
+| canu_X80-raw             | 4658166 | 4658166 |    1 |
+| canu_X80-trim            | 4657933 | 4657933 |    1 |
+| canu_Xall-raw            | 4670118 | 4670118 |    1 |
+| canu_Xall-trim           | 4670240 | 4670240 |    1 |
+| spades.contig            |  117644 | 4648957 |  290 |
+| spades.scaffold          |  125619 | 4649007 |  285 |
+| spades.non-contained     |  117644 | 4578356 |   93 |
+| spades_MR.contig         |  148609 | 4581434 |   97 |
+| spades_MR.scaffold       |  148609 | 4581534 |   96 |
+| spades_MR.non-contained  |  176015 | 4570016 |   69 |
+| megahit.contig           |   67382 | 4572920 |  199 |
+| megahit.non-contained    |   67382 | 4548380 |  121 |
+| megahit_MR.contig        |  110552 | 4628012 |  219 |
+| megahit_MR.non-contained |  110552 | 4577308 |   85 |
+| platanus.contig          |   16464 | 4674383 | 1017 |
+| platanus.scaffold        |  133012 | 4574920 |  142 |
+| platanus.non-contained   |  133012 | 4556916 |   63 |
 
 
 # *Saccharomyces cerevisiae* S288c
@@ -1109,6 +1123,17 @@ Table: statMergeAnchors.md
 | 7_mergeTadpoleAnchors    |  77.83% |     39651 | 11.16M | 497 |      3690 | 277.28K | 123 |   31.0 | 1.0 |   9.3 |  51.0 | 0:02'09'' |
 
 
+Table: statOtherAnchors.md
+
+| Name         | Mapped% | N50Anchor |    Sum |   # | N50Others |     Sum |   # | median | MAD | lower | upper | RunTimeAN |
+|:-------------|--------:|----------:|-------:|----:|----------:|--------:|----:|-------:|----:|------:|------:|----------:|
+| 8_spades     |  85.15% |    122800 | 11.31M | 168 |      5538 | 226.17K | 372 |   32.0 | 1.0 |   9.7 |  52.5 | 0:01'20'' |
+| 8_spades_MR  |  87.12% |    146529 | 11.38M | 161 |      5585 | 227.75K | 341 |   32.0 | 1.0 |   9.7 |  52.5 | 0:01'23'' |
+| 8_megahit    |  84.95% |     51979 | 11.22M | 404 |      3451 | 239.87K | 861 |   32.0 | 1.0 |   9.7 |  52.5 | 0:02'40'' |
+| 8_megahit_MR |  86.41% |     87208 | 11.41M | 270 |      3465 | 230.46K | 577 |   32.0 | 1.0 |   9.7 |  52.5 | 0:01'21'' |
+| 8_platanus   |  80.84% |    150088 | 11.35M | 152 |      3670 | 157.75K | 320 |   31.0 | 1.0 |   9.3 |  51.0 | 0:01'20'' |
+
+
 Table: statCanu
 
 | Name                |    N50 |      Sum |     # |
@@ -1121,26 +1146,28 @@ Table: statCanu
 
 Table: statFinal
 
-| Name                   |    N50 |      Sum |    # |
-|:-----------------------|-------:|---------:|-----:|
-| Genome                 | 924431 | 12157105 |   17 |
-| Paralogs               |   3851 |  1059148 |  366 |
-| 7_mergeAnchors.anchors |  47132 | 11133456 |  428 |
-| 7_mergeAnchors.others  |   1570 |   482204 |  285 |
-| anchorLong             |  47132 | 11127662 |  426 |
-| anchorFill             | 230292 | 11261345 |   94 |
-| canu_Xall-trim         | 813374 | 12360766 |   26 |
-| spades.contig          | 122875 | 11742788 | 1257 |
-| spades.scaffold        | 133886 | 11743508 | 1239 |
-| spades.non-contained   | 125298 | 11531378 |  204 |
-| spades.anchor          | 122800 | 11305206 |  168 |
-| megahit.contig         |  49631 | 11651321 |  987 |
-| megahit.non-contained  |  51277 | 11457076 |  457 |
-| megahit.anchor         |  51979 | 11217177 |  404 |
-| platanus.contig        |  37135 | 12071740 | 3954 |
-| platanus.scaffold      | 160128 | 11921921 | 2948 |
-| platanus.non-contained | 176536 | 11510261 |  168 |
-| platanus.anchor        | 150088 | 11352513 |  152 |
+| Name                     |    N50 |      Sum |    # |
+|:-------------------------|-------:|---------:|-----:|
+| Genome                   | 924431 | 12157105 |   17 |
+| Paralogs                 |   3851 |  1059148 |  366 |
+| 7_mergeAnchors.anchors   |  47132 | 11133456 |  428 |
+| 7_mergeAnchors.others    |   1570 |   482204 |  285 |
+| anchorLong               |  47132 | 11127662 |  426 |
+| anchorFill               | 230292 | 11261345 |   94 |
+| canu_Xall-trim           | 813374 | 12360766 |   26 |
+| spades.contig            | 122875 | 11742788 | 1257 |
+| spades.scaffold          | 133886 | 11743508 | 1239 |
+| spades.non-contained     | 125298 | 11531378 |  204 |
+| spades_MR.contig         | 161566 | 11729267 |  627 |
+| spades_MR.scaffold       | 176936 | 11729863 |  619 |
+| spades_MR.non-contained  | 176847 | 11604378 |  180 |
+| megahit.contig           |  49631 | 11651194 |  984 |
+| megahit.non-contained    |  51277 | 11457600 |  457 |
+| megahit_MR.contig        |  84456 | 12009082 | 1263 |
+| megahit_MR.non-contained |  86307 | 11642769 |  311 |
+| platanus.contig          |  37135 | 12071740 | 3954 |
+| platanus.scaffold        | 160128 | 11921921 | 2948 |
+| platanus.non-contained   | 176536 | 11510261 |  168 |
 
 
 # s288cH

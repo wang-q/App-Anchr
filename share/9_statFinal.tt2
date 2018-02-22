@@ -62,9 +62,19 @@ if [ -e 8_spades/spades.non-contained.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "spades.non-contained"; faops n50 -H -S -C 8_spades/spades.non-contained.fasta;) >> statFinal.md
 fi
-if [ -e 8_spades/anchor/anchor.fasta ]; then
+
+# spades_MR
+if [ -e 8_spades_MR/contigs.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "spades.anchor"; faops n50 -H -S -C 8_spades/anchor/anchor.fasta;) >> statFinal.md
+        $(echo "spades_MR.contig"; faops n50 -H -S -C 8_spades_MR/contigs.fasta;) >> statFinal.md
+fi
+if [ -e 8_spades_MR/scaffolds.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades_MR.scaffold"; faops n50 -H -S -C 8_spades_MR/scaffolds.fasta;) >> statFinal.md
+fi
+if [ -e 8_spades_MR/spades.non-contained.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "spades_MR.non-contained"; faops n50 -H -S -C 8_spades_MR/spades.non-contained.fasta;) >> statFinal.md
 fi
 
 # megahit
@@ -76,9 +86,15 @@ if [ -e 8_megahit/megahit.non-contained.fasta ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "megahit.non-contained"; faops n50 -H -S -C 8_megahit/megahit.non-contained.fasta;) >> statFinal.md
 fi
-if [ -e 8_megahit/anchor/anchor.fasta ]; then
+
+# megahit_MR
+if [ -e 8_megahit_MR/final.contigs.fa ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "megahit.anchor"; faops n50 -H -S -C 8_megahit/anchor/anchor.fasta;) >> statFinal.md
+        $(echo "megahit_MR.contig"; faops n50 -H -S -C 8_megahit_MR/final.contigs.fa;) >> statFinal.md
+fi
+if [ -e 8_megahit_MR/megahit.non-contained.fasta ]; then
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo "megahit_MR.non-contained"; faops n50 -H -S -C 8_megahit_MR/megahit.non-contained.fasta;) >> statFinal.md
 fi
 
 # platanus
@@ -93,10 +109,6 @@ fi
 if [ -e 8_platanus/platanus.non-contained.fasta ]; then
 	printf "| %s | %s | %s | %s |\n" \
 	    $(echo "platanus.non-contained"; faops n50 -H -S -C 8_platanus/platanus.non-contained.fasta;) >> statFinal.md
-fi
-if [ -e 8_platanus/anchor/anchor.fasta ]; then
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo "platanus.anchor"; faops n50 -H -S -C 8_platanus/anchor/anchor.fasta;) >> statFinal.md
 fi
 
 cat statFinal.md

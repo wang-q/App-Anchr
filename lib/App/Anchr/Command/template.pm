@@ -2030,6 +2030,11 @@ if [ -e statMergeAnchors.md ]; then
     cat statMergeAnchors.md;
     echo;
 fi
+if [ -e statOtherAnchors.md ]; then
+    echo;
+    cat statOtherAnchors.md;
+    echo;
+fi
 if [ -e statCanu.md ]; then
     echo;
     cat statCanu.md;
