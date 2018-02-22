@@ -65,27 +65,23 @@ if [ -e 8_spades/spades.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_spades/spades.non-contained.fasta "
     QUAST_LABEL+="spades,"
 fi
-if [ -e 8_spades/anchor/anchor.fasta ]; then
-    QUAST_TARGET+=" 8_spades/anchor/anchor.fasta "
-    QUAST_LABEL+="spades.anchor,"
+if [ -e 8_spades_MR/spades.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_spades_MR/spades.non-contained.fasta "
+    QUAST_LABEL+="spades_MR,"
 fi
 
 if [ -e 8_megahit/megahit.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_megahit/megahit.non-contained.fasta "
     QUAST_LABEL+="megahit,"
 fi
-if [ -e 8_megahit/anchor/anchor.fasta ]; then
-    QUAST_TARGET+=" 8_megahit/anchor/anchor.fasta "
-    QUAST_LABEL+="megahit.anchor,"
+if [ -e 8_megahit_MR/megahit.non-contained.fasta ]; then
+    QUAST_TARGET+=" 8_megahit_MR/megahit.non-contained.fasta "
+    QUAST_LABEL+="megahit_MR,"
 fi
 
 if [ -e 8_platanus/platanus.non-contained.fasta ]; then
     QUAST_TARGET+=" 8_platanus/platanus.non-contained.fasta "
     QUAST_LABEL+="platanus,"
-fi
-if [ -e 8_platanus/anchor/anchor.fasta ]; then
-    QUAST_TARGET+=" 8_platanus/anchor/anchor.fasta "
-    QUAST_LABEL+="platanus.anchor,"
 fi
 
 if [ -e 1_genome/paralogs.fas ]; then
