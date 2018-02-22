@@ -57,7 +57,11 @@ for D in Lmon Cdif Cjej; do
         wangq@202.119.37.251:data/anchr/${D}
 done
 
-# rsync -avP wangq@202.119.37.251:data/anchr/ ~/data/anchr
+for D in Vpar Lpne Ngon Nmen Bper Cdip Ftul Sfle Hinf Lmon Cdif Cjej; do
+    rsync -avP \
+        wangq@202.119.37.251:data/anchr/${D}/ \
+        ~/data/anchr/${D}
+done
 
 ```
 
