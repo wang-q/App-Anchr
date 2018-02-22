@@ -168,6 +168,9 @@ sub execute {
     # platanus
     $self->gen_platanus( $opt, $args );
 
+    # statOtherAnchors
+    $self->gen_statOtherAnchors( $opt, $args );
+
     # quast
     $self->gen_quast( $opt, $args );
 
@@ -1823,6 +1826,27 @@ sub gen_platanus {
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+}
+
+sub gen_statOtherAnchors {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statOtherAnchors.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statOtherAnchors.tt2',
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
 }
 
 sub gen_quast {
