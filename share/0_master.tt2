@@ -209,7 +209,13 @@ cat \
     8_spades/spades.non-contained.fasta \
     8_megahit/megahit.non-contained.fasta \
     8_platanus/platanus.non-contained.fasta \
+[% IF opt.mergereads and ! opt.se -%]
+    8_spades_MR/spades.non-contained.fasta \
+    8_megahit_MR/megahit.non-contained.fasta \
+[% END -%]
+    | faops dazz -a -l 0 stdin stdout \
     | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
+
 if [ -e 7_anchorLong.sh ]; then
     bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta;
 fi
