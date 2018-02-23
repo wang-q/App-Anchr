@@ -37,7 +37,8 @@ sub opt_spec {
         [ 'spades',    'feed spades with sampled mergereads', ],
         [],
         [ 'insertsize', 'calc the insert sizes', ],
-        [ 'sgapreqc',   'run sga preqc and stats', ],
+        [ 'sgapreqc',   'run sga preqc', ],
+        [ 'sgastats',   'run sga stats', ],
         [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
         [],
         [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
@@ -695,17 +696,18 @@ sga preprocess \
 
 sga index -a ropebwt -t [% opt.parallel %] reads.pp.fq
 
-sga stats -t [% opt.parallel %] -n [% opt.reads %] reads.pp.fq > stats.txt
-
 sga preqc -t [% opt.parallel %] reads.pp.fq > preqc_output
 
 sga-preqc-report.py preqc_output
 
-echo -e "Table: statSgaPreQC\n" > statSgaPreQC.md
+[% IF opt.sgastats -%]
+sga stats -t [% opt.parallel %] -n [% opt.reads %] reads.pp.fq > stats.txt
+
+echo -e "Table: statSgaStats\n" > statSgaStats.md
 printf "| %s | %s |\n" \
     "Item" "Value" \
     >> statSgaPreQC.md
-printf "|:--|--:|\n" >> statSgaPreQC.md
+printf "|:--|--:|\n" >> statSgaStats.md
 
 # sga stats
 #*** Stats:
@@ -729,7 +731,8 @@ cat stats.txt |
             }
         }
         ' \
-    >> statSgaPreQC.md
+    >> statSgaStats.md
+[% END -%]
 
 find . -type f -name "reads.pp.*" |
     parallel --no-run-if-empty -j 1 rm
@@ -1975,9 +1978,9 @@ if [ -e statInsertSize.md ]; then
     cat statInsertSize.md;
     echo;
 fi
-if [ -e statSgaPreQC.md ]; then
+if [ -e statSgaStats.md ]; then
     echo;
-    cat statSgaPreQC.md;
+    cat statSgaStats.md;
     echo;
 fi
 if [ -e statReads.md ]; then
