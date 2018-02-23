@@ -706,7 +706,7 @@ sga stats -t [% opt.parallel %] -n [% opt.reads %] reads.pp.fq > stats.txt
 echo -e "Table: statSgaStats\n" > statSgaStats.md
 printf "| %s | %s |\n" \
     "Item" "Value" \
-    >> statSgaPreQC.md
+    >> statSgaStats.md
 printf "|:--|--:|\n" >> statSgaStats.md
 
 # sga stats
