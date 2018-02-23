@@ -14,6 +14,7 @@
     - [kmc](#kmc)
     - [CalcUniqueness](#calcuniqueness)
     - [callInsertions](#callinsertions)
+    - [abyss-pe](#abyss-pe)
 
 
 # *Escherichia coli* str. K-12 substr. MG1655
@@ -903,4 +904,61 @@ sh bs.sh
 | extended     |     186 |   1.84G | 10400878 |
 | merged       |     339 |   1.74G |  5144147 |
 | unmerged     |     170 |  16.98M |   112584 |
+
+## abyss-pe
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=QLX
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+mkdir -p abyss
+cd abyss
+
+for K in 31 41 51 61 71 81; do
+    mkdir K${K}
+    abyss-pe \
+        -C K${K} \
+        k=${K} l=1 n=20 j=16 name=asm \
+        lib='pe1' \
+        pe1="${WORKING_DIR}/${BASE_NAME}/2_illumina/trim/R1.fq.gz ${WORKING_DIR}/${BASE_NAME}/2_illumina/trim/R2.fq.gz" \
+        se="${WORKING_DIR}/${BASE_NAME}/2_illumina/trim/Rs.fq.gz" \
+        aligner=bwa 
+done
+
+abyss-fac K*/asm-contigs.fa
+
+anchr contained \
+    $( find . -path "*/K*/*" -name "asm-contigs.fa" ) \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin abyss.non-contained.fasta
+
+anchr orient \
+    abyss.non-contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o abyss.orient.fasta
+anchr merge \
+    abyss.orient.fasta --len 1000 --idt 0.999 --parallel 16 \
+    -o abyss.merge0.fasta
+anchr contained \
+    abyss.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 \
+    -o abyss.fasta
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+rm -fr 9_qa_abyss
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    $( parallel -k 'printf "abyss/K{1}/asm-{2}.fa "' ::: 31 41 51 61 71 81 ::: unitigs contigs scaffolds ) \
+    abyss/abyss.non-contained.fasta \
+    abyss/abyss.fasta \
+    7_mergeKunitigsQ0/anchor.merge.fasta \
+    1_genome/paralogs.fas \
+    --label "$( parallel -k 'printf "K{1}-{2},"' ::: 31 41 51 61 71 81 ::: unitigs contigs scaffolds )abyss.non-contained,abyss,Kunitigs,paralogs" \
+    -o 9_qa_abyss
+
+```
 
