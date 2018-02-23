@@ -157,6 +157,7 @@ anchr template \
     --ecphase "1,2,3" \
     --insertsize \
     --sgapreqc \
+    --sgastats \
     --fillanchor \
     --parallel 24
 
@@ -839,6 +840,7 @@ anchr template \
     --mergereads \
     --ecphase "1,2,3" \
     --insertsize \
+    --sgapreqc \
     --fillanchor \
     --parallel 24
 
