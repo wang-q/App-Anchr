@@ -737,9 +737,9 @@ cat stats.txt |
 find . -type f -name "reads.pp.*" |
     parallel --no-run-if-empty -j 1 rm
 
-cat statSgaPreQC.md
+cat statSgaStats.md
 
-mv statSgaPreQC.md ../../
+mv statSgaStats.md ../../
 
 EOF
     $tt->process(
