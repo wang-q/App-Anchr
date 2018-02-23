@@ -905,6 +905,173 @@ sh bs.sh
 | merged       |     339 |   1.74G |  5144147 |
 | unmerged     |     170 |  16.98M |   112584 |
 
+## sga preqc
+
+
+```bash
+cd ${HOME}/data/anchr/QLX
+
+mkdir -p 2_illumina/preqc
+cd 2_illumina/preqc
+
+sga preprocess \
+    ../R1.fq.gz ../R1.fq.gz \
+    --pe-mode 1 -o reads.pp.fastq
+
+sga index -a ropebwt -t 16 reads.pp.fastq
+
+command time -v sga stats -t 16 --sample-rate 128 --num-reads 1000000 reads.pp.fastq > stats.txt
+command time -v sga stats -t 16 --sample-rate 32  --num-reads 1000000 reads.pp.fastq > stats.txt
+command time -v sga stats -t 16 --sample-rate 4   --num-reads 1000000 reads.pp.fastq > stats.txt
+
+command time -v sga stats -t 16 --sample-rate 128 --num-reads 100000  reads.pp.fastq > stats.txt
+
+command time -v sga stats -t 16 --sample-rate 128 --num-reads 1000000 --branch-cutoff 50 reads.pp.fastq > stats.txt
+
+sga preqc -t 16 reads.pp.fastq > reads.preqc
+
+sga-preqc-report.py reads.preqc
+
+```
+
+```text
+* 128
+
+[timer - sga::stats] wall clock: 540.93s CPU: 7754.06s
+        Command being timed: "sga stats -t 16 --sample-rate 128 --num-reads 1000000 reads.pp.fastq"
+        User time (seconds): 7737.97
+        System time (seconds): 16.09
+        Percent of CPU this job got: 1433%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 9:00.94
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 664860
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 11711572
+        Voluntary context switches: 20144
+        Involuntary context switches: 27078
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 8
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+* 32
+
+[timer - sga::stats] wall clock: 545.66s CPU: 7751.13s
+        Command being timed: "sga stats -t 16 --sample-rate 32 --num-reads 1000000 reads.pp.fastq"
+        User time (seconds): 7704.95
+        System time (seconds): 46.17
+        Percent of CPU this job got: 1420%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 9:05.67
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 1623416
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 43291854
+        Voluntary context switches: 19521
+        Involuntary context switches: 30385
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 8
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+* 4
+
+[timer - sga::stats] wall clock: 589.42s CPU: 7666.94s
+        Command being timed: "sga stats -t 16 --sample-rate 4 --num-reads 1000000 reads.pp.fastq"
+        User time (seconds): 7464.90
+        System time (seconds): 202.05
+        Percent of CPU this job got: 1300%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 9:49.42
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 10551360
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 164698608
+        Voluntary context switches: 26894
+        Involuntary context switches: 38653
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 8
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+* 100000
+
+[timer - sga::stats] wall clock: 56.63s CPU: 779.79s
+        Command being timed: "sga stats -t 16 --sample-rate 128 --num-reads 100000 reads.pp.fastq"
+        User time (seconds): 776.49
+        System time (seconds): 3.29
+        Percent of CPU this job got: 1376%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 0:56.63
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 661932
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 1510531
+        Voluntary context switches: 3497
+        Involuntary context switches: 3184
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 8
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+* 50
+
+[timer - sga::stats] wall clock: 378.65s CPU: 5436.53s
+        Command being timed: "sga stats -t 16 --sample-rate 128 --num-reads 1000000 --branch-cutoff 50 reads.pp.fastq"
+        User time (seconds): 5427.77
+        System time (seconds): 8.76
+        Percent of CPU this job got: 1435%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 6:18.66
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 651168
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 7260730
+        Voluntary context switches: 16141
+        Involuntary context switches: 19560
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 8
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+```
+
 ## abyss-pe
 
 ```bash
