@@ -22,7 +22,7 @@ printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
 
 for X in [% opt.cov2 %]; do
 	for P in $(printf "%03d " {0..50}); do
-		if [ ! -e ${DIR_PREFIX}_MRX${X}P${P}/anchor/pe.anchor.fa ]; then
+		if [ ! -e ${DIR_PREFIX}_MRX${X}P${P}/anchor/anchor.fasta ]; then
 			continue;
 		fi
 
