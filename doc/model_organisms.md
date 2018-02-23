@@ -267,6 +267,7 @@ anchr template \
     --spades \
     --insertsize \
     --sgapreqc \
+    --sgastats \
     --parallel 16
 
 ```
@@ -316,7 +317,7 @@ Table: statInsertSize
 | tadpole.picard  | 294.9 |    296 |  21.7 |                             FR |
 
 
-Table: statSgaPreQC
+Table: statStats
 
 | Item           |  Value |
 |:---------------|-------:|
@@ -2723,13 +2724,13 @@ rsync -avP \
 ```bash
 WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=col_0H
-QUEUE_NAME=largemem
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
 anchr template \
     . \
     --basename ${BASE_NAME} \
+    --queue largemem \
     --genome 119667750 \
     --is_euk \
     --trim2 "--dedupe" \
@@ -2741,13 +2742,25 @@ anchr template \
     --mergereads \
     --ecphase "1,3" \
     --insertsize \
+    --sgapreqc \
     --parallel 24
 
 ```
 
 ## col_0H: run
 
-Same as [s288c: run](#s288c-run)
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=col_0H
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+bash 0_bsub.sh
+#bash 0_master.sh
+
+#bash 0_cleanup.sh
+
+```
 
 | Group           |  Mean | Median |  STDev | PercentOfPairs/PairOrientation |
 |:----------------|------:|-------:|-------:|-------------------------------:|
