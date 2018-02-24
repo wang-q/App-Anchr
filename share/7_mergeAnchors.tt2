@@ -64,8 +64,26 @@ anchr contained \
     ${DIR_MERGE}/anchor/pe.others.fa \
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
-    | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.non-contained.fasta
+    | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.intermediate_0.fasta
+
+anchr contained \
+    ${DIR_MERGE}/anchor.merge.fasta \
+    ${DIR_MERGE}/others.intermediate_0.fasta \
+    --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
+    -o stdout \
+    | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.intermediate_1.fasta
+
+cat ${DIR_MERGE}/others.intermediate_1.fasta |
+    grep '>infile_1/' |
+    sed 's/>//' \
+    > ${DIR_MERGE}/others.txt
+
+faops some -l 0 \
+    ${DIR_MERGE}/others.intermediate_1.fasta \
+    ${DIR_MERGE}/others.txt \
+    ${DIR_MERGE}/others.non-contained.fasta
 
 find ${DIR_MERGE}/anchor -name "*.fasta" -or -name "*.fa" | xargs rm
+find ${DIR_MERGE} -name "others.intermediate*" | xargs rm
 
 exit;
