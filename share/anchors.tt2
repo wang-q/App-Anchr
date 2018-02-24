@@ -17,9 +17,10 @@ faops size SR.fasta > sr.chr.sizes
 #----------------------------#
 log_info "Mapping reads"
 
-log_debug "bbmap"
+log_debug "bbmap via bbwrap"
 rm -f *.sam
 rm -f basecov.txt
+rm -f basecov.hist.tsv
 bbwrap.sh \
     maxindel=0 strictmaxindel perfectmode \
     threads=[% opt.parallel %] \
@@ -36,8 +37,12 @@ bbwrap.sh \
 log_info "basecov"
 cat basecov.txt |
     grep -v '^#' |
-    perl -nla -MApp::Fasops::Common -e '
-        BEGIN { our $name; our @list; }
+    perl -nla -MApp::Fasops::Common -MPath::Tiny -e '
+        BEGIN {
+            our $name;
+            our @list;
+            our %hist_of;
+        }
 
         if ( !defined $name ) {
             $name = $F[0];
@@ -54,9 +59,18 @@ cat basecov.txt |
             @list = ( $F[2] );
         }
 
+        $hist_of{$F[2]}++;
+
         END {
             my $mean_cov = App::Fasops::Common::mean(@list);
             printf qq{%s\t%d\n}, $name, int $mean_cov;
+
+            my $content;
+            for my $key ( sort {$a <=> $b} keys %hist_of ) {
+                $content .= sprintf qq{%s\t%d\n}, $key, $hist_of{$key};
+            }
+            Path::Tiny::path(q{basecov.hist.tsv})->spew( $content );
+
         }
     ' \
     > reads.coverage.tsv
