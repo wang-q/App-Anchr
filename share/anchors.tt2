@@ -117,14 +117,11 @@ cat reads.coverage.tsv |
     ' |
     jq "." > environment.json
 
-MAPPED_RATIO=$( 
-    perl -e '
-        my $mapped = -s q{mapped.sam};
-        my $unmapped = -s q{unmapped.sam};
-        print $mapped / ($mapped + $unmapped);
-    '
+COUNT_MAPPED=$(samtools view -c mapped.sam)
+COUNT_UNMAPPED=$(samtools view -c unmapped.sam)
+MAPPED_RATIO=$(
+    echo "print ${COUNT_MAPPED}/(${COUNT_MAPPED} + ${COUNT_UNMAPPED})" | perl
 )
-save MAPPED_RATIO
 
 #----------------------------#
 # Properly covered regions by reads
