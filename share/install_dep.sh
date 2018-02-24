@@ -17,7 +17,7 @@ do
     check_install ${package}
 done
 
-for package in abyss fastqcsamtools seqtk;
+for package in abyss fastqc samtools seqtk;
 do
     check_install ${package}
 done
