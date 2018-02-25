@@ -85,7 +85,6 @@ cat basecov.txt |
             my $q75 = App::Anchr::Common::histogram_percentile(\%hist_of, 0.75);
             my $IQR = $q75 - $q25;
 
-            my $json = {};
             $json->{median} = $median;
             $json->{IQR} = $IQR;
             Path::Tiny::path(q{environment.json})->spew( JSON->new->encode($json) );
