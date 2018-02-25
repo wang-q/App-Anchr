@@ -14,6 +14,7 @@
     - [kmc](#kmc)
     - [CalcUniqueness](#calcuniqueness)
     - [callInsertions](#callinsertions)
+    - [sga preqc](#sga-preqc)
     - [abyss-pe](#abyss-pe)
 
 
