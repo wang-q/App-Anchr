@@ -23,7 +23,7 @@ printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
 for Q in 0 [% opt.qual2 %]; do
     for L in 0 [% opt.len2 %]; do
 	    for X in [% opt.cov2 %]; do
-		    for P in $(printf "%03d " {0..50}); do
+		    for P in $(printf "%03d " {0..[% opt.statp %]}); do
 		        if [ ! -e ${DIR_PREFIX}_Q${Q}L${L}X${X}P${P}/anchor/anchor.fasta ]; then
 			        continue;
 			    fi

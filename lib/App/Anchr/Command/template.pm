@@ -38,6 +38,7 @@ sub opt_spec {
         [ 'tadpole', 'use tadpole to create k-unitigs', ],
         [ 'megahit', 'feed megahit with sampled mergereads', ],
         [ 'spades',  'feed spades with sampled mergereads', ],
+        [ "statp=i", "parts to stats",                           { default => 50 }, ],
         [],
         [ "cov3=s", "down sampling coverage of PacBio reads", ],
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
