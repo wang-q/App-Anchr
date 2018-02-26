@@ -40,6 +40,7 @@
 
 ```bash
 for D in Bcer Rsph Mabs Vcho VchoH RsphF MabsF VchoF; do
+#for D in Bcer; do
     rsync -avP \
         --exclude="*_hdf5.tgz" \
         ~/data/anchr/${D}/ \
@@ -147,17 +148,18 @@ anchr template \
     --basename ${BASE_NAME} \
     --queue mpi \
     --genome 5432652 \
-    --trim2 "--dedupe --tile" \
-    --cov2 "40 50 60 all" \
-    --qual2 "20 25 30" \
-    --len2 "60" \
-    --filter "adapter,phix,artifact" \
-    --tadpole \
-    --mergereads \
-    --ecphase "1,2,3" \
     --insertsize \
     --sgapreqc \
     --sgastats \
+    --trim2 "--dedupe --tile" \
+    --qual2 "20 25 30" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 50 60 all" \
+    --tadpole \
+    --redoanchors \
     --fillanchor \
     --parallel 24
 
@@ -210,7 +212,7 @@ Table: statInsertSize
 | tadpole.picard  | 573.7 |    577 | 147.3 |                             FR |
 
 
-Table: statSgaPreQC
+Table: statSgaStats
 
 | Item           |  Value |
 |:---------------|-------:|
@@ -361,11 +363,11 @@ Table: statMergeAnchors.md
 
 | Name                     | Mapped% | N50Anchor |   Sum |   # | N50Others |    Sum |  # | median | MAD | lower | upper | RunTimeAN |
 |:-------------------------|--------:|----------:|------:|----:|----------:|-------:|---:|-------:|----:|------:|------:|----------:|
-| 7_mergeAnchors           |  85.76% |     54782 | 5.33M | 196 |      1071 | 70.74K | 57 |   35.0 | 4.0 |   7.7 |  70.0 | 0:01'00'' |
-| 7_mergeKunitigsAnchors   |  86.82% |     44266 | 5.28M | 240 |      1134 | 38.68K | 33 |   34.0 | 4.0 |   7.3 |  68.0 | 0:01'05'' |
-| 7_mergeMRKunitigsAnchors |  86.25% |     44167 | 5.28M | 239 |      1138 | 31.15K | 27 |   34.0 | 4.0 |   7.3 |  68.0 | 0:01'00'' |
-| 7_mergeMRTadpoleAnchors  |  86.20% |     46060 | 5.29M | 226 |      1152 | 42.52K | 34 |   33.0 | 5.0 |   6.0 |  66.0 | 0:01'00'' |
-| 7_mergeTadpoleAnchors    |  86.89% |     41602 |  5.3M | 247 |      1071 | 42.67K | 39 |   34.0 | 4.0 |   7.3 |  68.0 | 0:01'06'' |
+| 7_mergeAnchors           |  85.51% |     56319 | 5.31M | 193 |      1135 | 48.05K | 39 |   35.0 | 4.0 |   7.7 |  70.0 | 0:01'02'' |
+| 7_mergeKunitigsAnchors   |  88.69% |     42768 | 5.29M | 229 |      1093 | 30.64K | 25 |   35.0 | 4.0 |   7.7 |  70.0 | 0:01'10'' |
+| 7_mergeMRKunitigsAnchors |  86.98% |     44167 | 5.28M | 235 |      1060 | 28.65K | 27 |   35.0 | 4.0 |   7.7 |  70.0 | 0:01'03'' |
+| 7_mergeMRTadpoleAnchors  |  86.66% |     46507 |  5.3M | 217 |      1137 | 32.84K | 29 |   35.0 | 4.5 |   7.2 |  70.0 | 0:01'03'' |
+| 7_mergeTadpoleAnchors    |  88.88% |     41602 | 5.31M | 242 |      1071 | 32.28K | 29 |   35.0 | 4.0 |   7.7 |  70.0 | 0:01'10'' |
 
 
 Table: statOtherAnchors.md
@@ -385,10 +387,10 @@ Table: statFinal
 |:-------------------------|--------:|--------:|----:|
 | Genome                   | 5224283 | 5432652 |   2 |
 | Paralogs                 |    2295 |  223889 | 103 |
-| 7_mergeAnchors.anchors   |   54782 | 5331374 | 196 |
-| 7_mergeAnchors.others    |    1071 |   70741 |  57 |
-| anchorLong               |   54782 | 5330884 | 195 |
-| anchorFill               |  136629 | 5612053 |  73 |
+| 7_mergeAnchors.anchors   |   56319 | 5311805 | 193 |
+| 7_mergeAnchors.others    |    1135 |   48052 |  39 |
+| anchorLong               |   56319 | 5310726 | 191 |
+| anchorFill               |  137792 | 5590721 |  68 |
 | spades.contig            |  207660 | 5371823 | 190 |
 | spades.scaffold          |  362667 | 5372267 | 174 |
 | spades.non-contained     |  207660 | 5348387 |  60 |
