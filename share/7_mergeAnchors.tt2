@@ -77,7 +77,9 @@ cd ${BASH_DIR}
 
 anchr contained \
     $( find . -path "*${DIR_PREFIX}*" -name "pe.others.fa" -or -path "*${DIR_PREFIX}*" -name "others.non-contained.fasta" | sort -r ) \
+[% IF opt.redoanchors -%]
     ${DIR_MERGE}/anchor/pe.others.fa \
+[% END -%]
     --len 500 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
     -o stdout \
     | faops filter -a 500 -l 0 stdin ${DIR_MERGE}/others.intermediate_0.fasta
@@ -99,8 +101,10 @@ faops some -l 0 \
     ${DIR_MERGE}/others.txt \
     ${DIR_MERGE}/others.non-contained.fasta
 
-find ${DIR_MERGE}/anchor -name "*.fasta" -or -name "*.fa" | xargs rm
-find ${DIR_MERGE} -name "anchor.intermediate*" | xargs rm
-find ${DIR_MERGE} -name "others.intermediate*" | xargs rm
+[% IF opt.redoanchors -%]
+find ${DIR_MERGE}/anchor -name "*.fasta" -or -name "*.fa" | parallel --no-run-if-empty -j 1 rm
+[% END -%]
+find ${DIR_MERGE} -name "anchor.intermediate*" | parallel --no-run-if-empty -j 1 rm
+find ${DIR_MERGE} -name "others.intermediate*" | parallel --no-run-if-empty -j 1 rm
 
 exit;
