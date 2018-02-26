@@ -21,7 +21,7 @@ printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
     >> ${FILENAME_MD}
 
 for X in [% opt.cov2 %]; do
-	for P in $(printf "%03d " {0..50}); do
+	for P in $(printf "%03d " {0..[% opt.statp %]}); do
 		if [ ! -e ${DIR_PREFIX}_MRX${X}P${P}/anchor/anchor.fasta ]; then
 			continue;
 		fi

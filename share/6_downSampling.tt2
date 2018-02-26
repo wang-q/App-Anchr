@@ -30,7 +30,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         cat 2_illumina/mergereads/environment.json \
             | jq '.SUM_OUT | tonumber | . / [% opt.genome %] / {} | floor | . - 1'
     )
-    MAX_SERIAL=\$(( \${MAX_SERIAL} < 50 ? \${MAX_SERIAL} : 50 ))
+    MAX_SERIAL=\$(( \${MAX_SERIAL} < [% opt.splitp %] ? \${MAX_SERIAL} : [% opt.splitp %] ))
 
     for i in \$( seq 0 1 \${MAX_SERIAL} ); do
         P=\$( printf '%03d' \${i})

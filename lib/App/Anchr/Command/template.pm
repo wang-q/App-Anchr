@@ -34,11 +34,12 @@ sub opt_spec {
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
         [],
-        [ "cov2=s",  "down sampling coverage of Illumina reads", { default => "40 80" }, ],
-        [ 'tadpole', 'use tadpole to create k-unitigs', ],
-        [ 'megahit', 'feed megahit with sampled mergereads', ],
-        [ 'spades',  'feed spades with sampled mergereads', ],
-        [ "statp=i", "parts to stats",                           { default => 50 }, ],
+        [ "cov2=s",   "down sampling coverage of Illumina reads", { default => "40 80" }, ],
+        [ 'tadpole',  'use tadpole to create k-unitigs', ],
+        [ 'megahit',  'feed megahit with sampled mergereads', ],
+        [ 'spades',   'feed spades with sampled mergereads', ],
+        [ "splitp=i", "parts of splitting",                       { default => 50 }, ],
+        [ "statp=i",  "parts of stats",                           { default => 50 }, ],
         [],
         [ "cov3=s", "down sampling coverage of PacBio reads", ],
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
@@ -922,7 +923,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
     $tt->process(
@@ -965,7 +966,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1019,7 +1020,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
     $tt->process(
@@ -1062,7 +1063,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     bash kunitigs.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1126,7 +1127,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1206,7 +1207,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     [[ \$? == 0 ]] && echo \"\${TJQ}\" >| environment.json
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1257,7 +1258,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
     $tt->process(
@@ -1298,7 +1299,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %] ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1351,7 +1352,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
     $tt->process(
@@ -1393,7 +1394,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1438,7 +1439,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
@@ -1483,7 +1484,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     bash anchors.sh
 
     echo >&2
-    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..50})
+    " ::: [% opt.cov2 %] ::: $(printf "%03d " {0..[% opt.splitp %]})
 
 EOF
         $tt->process(
