@@ -15,7 +15,7 @@ if [ -e ${DIR_MERGE}/anchor.merge.fasta ]; then
 fi
 
 #----------------------------#
-# anchor.non-contained
+# merge anchors
 #----------------------------#
 log_info "anchor.non-contained"
 
@@ -28,6 +28,21 @@ anchr contained \
     -o stdout \
     | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.non-contained.fasta
 
+[% IF not opt.redoanchors -%]
+anchr orient \
+    ${DIR_MERGE}/anchor.non-contained.fasta \
+    --len 1000 --idt 0.98 --parallel [% opt.parallel %] \
+    -o ${DIR_MERGE}/anchor.intermediate_0.fasta
+anchr merge \
+    ${DIR_MERGE}/anchor.intermediate_0.fasta \
+    --len 1000 --idt 0.999 --parallel [% opt.parallel %] \
+    -o ${DIR_MERGE}/anchor.intermediate_1.fasta
+anchr contained \
+    ${DIR_MERGE}/anchor.intermediate_1.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel [% opt.parallel %] \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin ${DIR_MERGE}/anchor.merge.fasta
+[% ELSE -%]
 #----------------------------#
 # anchors with all reads
 #----------------------------#
@@ -51,6 +66,7 @@ anchr anchors \
 bash anchors.sh
 
 mv anchor.fasta ../anchor.merge.fasta
+[% END -%]
 
 #----------------------------#
 # others
@@ -84,6 +100,7 @@ faops some -l 0 \
     ${DIR_MERGE}/others.non-contained.fasta
 
 find ${DIR_MERGE}/anchor -name "*.fasta" -or -name "*.fa" | xargs rm
+find ${DIR_MERGE} -name "anchor.intermediate*" | xargs rm
 find ${DIR_MERGE} -name "others.intermediate*" | xargs rm
 
 exit;
