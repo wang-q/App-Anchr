@@ -904,22 +904,22 @@ sub gen_kunitigs {
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+    if [ ! -e 4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_kunitigs_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    if [ -e 4_kunitigs/Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 4_kunitigs_Q{1}L{2}X{3}P{4}
-    cd 4_kunitigs_Q{1}L{2}X{3}P{4}
+    mkdir -p 4_kunitigs/Q{1}L{2}X{3}P{4}
+    cd 4_kunitigs/Q{1}L{2}X{3}P{4}
 
     anchr kunitigs \
-        ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../4_Q{1}L{2}X{3}P{4}/environment.json \
+        ../../4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../../4_downSampling/Q{1}L{2}X{3}P{4}/environment.json \
         -p [% opt.parallel %] \
         --kmer 31,41,51,61,71,81 \
         -o kunitigs.sh
@@ -946,22 +946,22 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+    if [ ! -e 4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_tadpole_Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    if [ -e 4_tadpole/Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 4_tadpole_Q{1}L{2}X{3}P{4}
-    cd 4_tadpole_Q{1}L{2}X{3}P{4}
+    mkdir -p 4_tadpole/Q{1}L{2}X{3}P{4}
+    cd 4_tadpole/Q{1}L{2}X{3}P{4}
 
     anchr kunitigs \
-        ../4_Q{1}L{2}X{3}P{4}/pe.cor.fa \
-        ../4_Q{1}L{2}X{3}P{4}/environment.json \
+        ../../4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa \
+        ../../4_downSampling/Q{1}L{2}X{3}P{4}/environment.json \
         -p [% opt.parallel %] \
         --kmer 31,41,51,61,71,81 \
         --tadpole \
@@ -1236,22 +1236,22 @@ sub gen_anchors {
     print "Create $sh_name\n";
     $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_anchors.sh
+log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+    if [ ! -e 4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    if [ -e 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
-    cd 4_kunitigs_Q{1}L{2}X{3}P{4}/anchor
+    rm -fr 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
+    cd 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -1268,6 +1268,7 @@ EOF
         \$template,
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -1277,22 +1278,22 @@ EOF
         print "Create $sh_name\n";
         $template = <<'EOF';
 [% INCLUDE header.tt2 %]
-log_warn 4_tadpoleAnchors.sh
+log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 4_Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
+    if [ ! -e 4_downSampling/Q{1}L{2}X{3}P{4}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group Q{1}L{2}X{3}P{4}'
-    if [ -e 4_tadpole_Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    if [ -e 4_tadpole/Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
-    mkdir -p 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
-    cd 4_tadpole_Q{1}L{2}X{3}P{4}/anchor
+    rm -fr 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
+    mkdir -p 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
+    cd 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -1309,6 +1310,7 @@ EOF
             \$template,
             {   args => $args,
                 opt  => $opt,
+                sh   => $sh_name,
             },
             Path::Tiny::path( $args->[0], $sh_name )->stringify
         ) or die Template->error;
@@ -1935,7 +1937,7 @@ find 2_illumina -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j
 find 2_illumina -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
 
 # down sampling
-rm -fr 4_Q{0,15,20,25,30,35}*
+rm -fr 4_downSampling/
 find . -type f -path "*4_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
@@ -1943,7 +1945,7 @@ find . -type f -path "*4_tadpole_*" -name "k_unitigs_K*.fasta"   | parallel --no
 find . -type f -path "*4_tadpole_*/anchor*" -name "basecov.txt"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*4_tadpole_*/anchor*" -name "*.sam"        | parallel --no-run-if-empty -j 1 rm
 
-rm -fr 6_MR*
+rm -fr 6_downSampling
 find . -type f -path "*6_kunitigs_*" -name "k_unitigs_K*.fasta"  | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*6_kunitigs_*/anchor*" -name "basecov.txt" | parallel --no-run-if-empty -j 1 rm
 find . -type f -path "*6_kunitigs_*/anchor*" -name "*.sam"       | parallel --no-run-if-empty -j 1 rm
@@ -2100,11 +2102,11 @@ rm -fr 3_pacbio/untar
 rm 3_pacbio/pacbio.X*.fasta
 
 # down sampling
-rm -fr 4_Q*
+rm -fr 4_downSampling
 rm -fr 4_kunitigs*
 rm -fr 4_tadpole*
 
-rm -fr 6_MR*
+rm -fr 6_downSampling
 rm -fr 6_kunitigs*
 rm -fr 6_tadpole*
 
