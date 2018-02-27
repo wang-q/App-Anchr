@@ -15,8 +15,8 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     if [[ {} == "all" ]]; then
         mkdir -p 6_downSampling/MRXallP000
         cd 6_downSampling/MRXallP000
-        gzip -d -c ../2_illumina/mergereads/pe.cor.fa.gz > pe.cor.fa
-        cp ../2_illumina/mergereads/environment.json .
+        gzip -d -c ../../2_illumina/mergereads/pe.cor.fa.gz > pe.cor.fa
+        cp ../../2_illumina/mergereads/environment.json .
         exit;
     fi
 
