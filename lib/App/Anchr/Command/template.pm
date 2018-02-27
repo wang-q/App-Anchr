@@ -1001,22 +1001,22 @@ sub gen_6_kunitigs {
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_kunitigs_MRX{1}P{2}/k_unitigs.fasta ]; then
+    echo >&2 '==> 6_kunitigs/MRX{1}P{2}'
+    if [ -e 6_kunitigs/MRX{1}P{2}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 6_kunitigs_MRX{1}P{2}
-    cd 6_kunitigs_MRX{1}P{2}
+    mkdir -p 6_kunitigs/MRX{1}P{2}
+    cd 6_kunitigs/MRX{1}P{2}
 
     anchr kunitigs \
-        ../6_MRX{1}P{2}/pe.cor.fa \
-        ../6_MRX{1}P{2}/environment.json \
+        ../../6_downSampling/MRX{1}P{2}/pe.cor.fa \
+        ../../6_downSampling/MRX{1}P{2}/environment.json \
         -p [% opt.parallel %] \
         --kmer 31,41,51,61,71,81 \
         -o kunitigs.sh
@@ -1043,22 +1043,22 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_tadpole_MRX{1}P{2}/k_unitigs.fasta ]; then
+    echo >&2 '==> 6_tadpole/MRX{1}P{2}'
+    if [ -e 6_tadpole/MRX{1}P{2}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 6_tadpole_MRX{1}P{2}
-    cd 6_tadpole_MRX{1}P{2}
+    mkdir -p 6_tadpole/MRX{1}P{2}
+    cd 6_tadpole/MRX{1}P{2}
 
     anchr kunitigs \
-        ../6_MRX{1}P{2}/pe.cor.fa \
-        ../6_MRX{1}P{2}/environment.json \
+        ../../6_downSampling/MRX{1}P{2}/pe.cor.fa \
+        ../../6_downSampling/MRX{1}P{2}/environment.json \
         -p [% opt.parallel %] \
         --kmer 31,41,51,61,71,81 \
         --tadpole \
@@ -1087,21 +1087,21 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_megahit_MRX{1}P{2}/k_unitigs.fasta ]; then
+    echo >&2 '==> 6_megahit/MRX{1}P{2}'
+    if [ -e 6_megahit/MRX{1}P{2}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 6_megahit_MRX{1}P{2}
-    cd 6_megahit_MRX{1}P{2}
+    mkdir -p 6_megahit/MRX{1}P{2}
+    cd 6_megahit/MRX{1}P{2}
 
-    ln -s ../6_MRX{1}P{2}/pe.cor.fa pe.cor.fa
-    cp ../6_MRX{1}P{2}/environment.json environment.json
+    ln -s ../../6_downSampling/MRX{1}P{2}/pe.cor.fa pe.cor.fa
+    cp ../../6_downSampling/MRX{1}P{2}/environment.json environment.json
 
     START_TIME=\$(date +%s)
 
@@ -1151,21 +1151,21 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_spades_MRX{1}P{2}/k_unitigs.fasta ]; then
+    echo >&2 '==> 6_spades/MRX{1}P{2}'
+    if [ -e 6_spades/MRX{1}P{2}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
     fi
 
-    mkdir -p 6_spades_MRX{1}P{2}
-    cd 6_spades_MRX{1}P{2}
+    mkdir -p 6_spades/MRX{1}P{2}
+    cd 6_spades/MRX{1}P{2}
 
-    ln -s ../6_MRX{1}P{2}/pe.cor.fa pe.cor.fa
-    cp ../6_MRX{1}P{2}/environment.json environment.json
+    ln -s ../../6_downSampling/MRX{1}P{2}/pe.cor.fa pe.cor.fa
+    cp ../../6_downSampling/MRX{1}P{2}/environment.json environment.json
 
     START_TIME=\$(date +%s)
 
@@ -1335,19 +1335,19 @@ sub gen_6_anchors {
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_kunitigs_MRX{1}P{2}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 6_kunitigs/MRX{1}P{2}'
+    if [ -e 6_kunitigs/MRX{1}P{2}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 6_kunitigs_MRX{1}P{2}/anchor
-    mkdir -p 6_kunitigs_MRX{1}P{2}/anchor
-    cd 6_kunitigs_MRX{1}P{2}/anchor
+    rm -fr 6_kunitigs/MRX{1}P{2}/anchor
+    mkdir -p 6_kunitigs/MRX{1}P{2}/anchor
+    cd 6_kunitigs/MRX{1}P{2}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -1377,19 +1377,19 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_tadpole_MRX{1}P{2}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 6_tadpole/MRX{1}P{2}'
+    if [ -e 6_tadpole/MRX{1}P{2}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 6_tadpole_MRX{1}P{2}/anchor
-    mkdir -p 6_tadpole_MRX{1}P{2}/anchor
-    cd 6_tadpole_MRX{1}P{2}/anchor
+    rm -fr 6_tadpole/MRX{1}P{2}/anchor
+    mkdir -p 6_tadpole/MRX{1}P{2}/anchor
+    cd 6_tadpole/MRX{1}P{2}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -1420,19 +1420,19 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_megahit_MRX{1}P{2}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 6_megahit/MRX{1}P{2}'
+    if [ -e 6_megahit/MRX{1}P{2}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 6_megahit_MRX{1}P{2}/anchor
-    mkdir -p 6_megahit_MRX{1}P{2}/anchor
-    cd 6_megahit_MRX{1}P{2}/anchor
+    rm -fr 6_megahit/MRX{1}P{2}/anchor
+    mkdir -p 6_megahit/MRX{1}P{2}/anchor
+    cd 6_megahit/MRX{1}P{2}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \
@@ -1465,19 +1465,19 @@ EOF
 log_warn [% sh %]
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    if [ ! -e 6_MRX{1}P{2}/pe.cor.fa ]; then
+    if [ ! -e 6_downSampling/MRX{1}P{2}/pe.cor.fa ]; then
         exit;
     fi
 
-    echo >&2 '==> Group MRX{1}P{2}'
-    if [ -e 6_spades_MRX{1}P{2}/anchor/anchor.fasta ]; then
+    echo >&2 '==> 6_spades/MRX{1}P{2}'
+    if [ -e 6_spades/MRX{1}P{2}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
     fi
 
-    rm -fr 6_spades_MRX{1}P{2}/anchor
-    mkdir -p 6_spades_MRX{1}P{2}/anchor
-    cd 6_spades_MRX{1}P{2}/anchor
+    rm -fr 6_spades/MRX{1}P{2}/anchor
+    mkdir -p 6_spades/MRX{1}P{2}/anchor
+    cd 6_spades/MRX{1}P{2}/anchor
 
     anchr anchors \
         ../k_unitigs.fasta \

@@ -22,11 +22,11 @@ printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
 
 for X in [% opt.cov2 %]; do
 	for P in $(printf "%03d " {0..[% opt.statp %]}); do
-		if [ ! -e ${DIR_PREFIX}_MRX${X}P${P}/anchor/anchor.fasta ]; then
+		if [ ! -e ${DIR_PREFIX}/MRX${X}P${P}/anchor/anchor.fasta ]; then
 			continue;
 		fi
 
-		pushd ${DIR_PREFIX}_MRX${X}P${P}/ > /dev/null
+		pushd ${DIR_PREFIX}/MRX${X}P${P}/ > /dev/null
 
 		SUM_COR=$( cat environment.json | jq '.SUM_COR | tonumber' )
 		MAPPED_RATIO=$( cat anchor/environment.json | jq '.MAPPED_RATIO | tonumber' )
