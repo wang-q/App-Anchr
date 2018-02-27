@@ -908,7 +908,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         exit;
     fi
 
-    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    echo >&2 '==> 4_kunitigs/Q{1}L{2}X{3}P{4}'
     if [ -e 4_kunitigs/Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
@@ -950,7 +950,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         exit;
     fi
 
-    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    echo >&2 '==> 4_tadpole/Q{1}L{2}X{3}P{4}'
     if [ -e 4_tadpole/Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
         echo >&2 '    k_unitigs.fasta already presents'
         exit;
@@ -1243,7 +1243,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    echo >&2 '==> 4_kunitigs/Q{1}L{2}X{3}P{4}'
     if [ -e 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
@@ -1285,7 +1285,7 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    echo >&2 '==> 4_downSampling/Q{1}L{2}X{3}P{4}'
+    echo >&2 '==> 4_tadpole/Q{1}L{2}X{3}P{4}'
     if [ -e 4_tadpole/Q{1}L{2}X{3}P{4}/anchor/anchor.fasta ]; then
         echo >&2 '    anchor.fasta already presents'
         exit;
