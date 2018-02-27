@@ -859,6 +859,7 @@ sub gen_downSampling {
         '4_downSampling.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
@@ -882,6 +883,7 @@ sub gen_6_downSampling {
         '6_downSampling.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
