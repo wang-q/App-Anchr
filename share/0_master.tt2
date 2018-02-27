@@ -217,17 +217,17 @@ cat \
     | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
 
 if [ -e 7_anchorLong.sh ]; then
-    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta;
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta 3;
 fi
 if [ -e 7_anchorFill.sh ]; then
-    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta;
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta 2;
 fi
 [% ELSE -%]
 if [ -e 7_anchorLong.sh ]; then
-    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz;
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz 2;
 fi
 if [ -e 7_anchorFill.sh ]; then
-    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta;
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta 1;
 fi
 [% END -%]
 

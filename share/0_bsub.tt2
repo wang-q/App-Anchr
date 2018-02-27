@@ -207,20 +207,20 @@ bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahi
 
 bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-contigs_2GS)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
-    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta"
+    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta 3"
 
 bsub -w "done([% opt.basename %]-7_anchorLong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
-    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta"
+    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta 2"
 
 [% ELSIF opt.cov3 -%]
 bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-5_canu)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
-    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz"
+    "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz 2"
 
 bsub -w "done([% opt.basename %]-7_anchorLong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
-    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta"
+    "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta 1"
 
 [% END -%]
 

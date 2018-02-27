@@ -673,14 +673,20 @@ Table: statCanu
 ```bash
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz
+bash 7_anchorLong.sh \
+    7_mergeAnchors/anchor.merge.fasta \
+    5_canu_Xall-trim/${BASE_NAME}.correctedReads.fasta.gz \
+    2
 
 # false strand
 cat 7_anchorLong/group/*.ovlp.tsv \
     | perl -nla -e '/anchor.+long/ or next; print $F[0] if $F[8] == 1;' \
     | sort | uniq -c
 
-bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/${BASE_NAME}.contigs.fasta
+bash 7_anchorFill.sh \
+    7_anchorLong/contig.fasta \
+    5_canu_Xall-trim/${BASE_NAME}.contigs.fasta \
+    1
 
 ```
 
@@ -728,7 +734,7 @@ Table: statFinal
 | 7_mergeAnchors.anchors   |   78538 | 4515962 |  107 |
 | 7_mergeAnchors.others    |    3938 |  277196 |  110 |
 | anchorLong               |   78538 | 4515962 |  107 |
-| anchorFill               |   78538 | 4515962 |  107 |
+| anchorFill               |  651877 | 4575011 |   16 |
 | canu_X40-raw             | 4674150 | 4674150 |    1 |
 | canu_X40-trim            | 4674046 | 4674046 |    1 |
 | canu_X80-raw             | 4658166 | 4658166 |    1 |
