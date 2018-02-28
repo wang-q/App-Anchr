@@ -17,8 +17,6 @@ cd ${HOME}/data/anchr/s288cMito
 mkdir -p 1_genome
 cd 1_genome
 
-cp ~/data/anchr/s288c/1_genome/genome.fa 
-
 faops order ~/data/anchr/s288c/1_genome/genome.fa \
     <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI}; do echo $chr; done) \
     ref.fa
@@ -38,13 +36,19 @@ cd ${HOME}/data/anchr/s288cMito/2_illumina
 ln -sf ${HOME}/data/anchr/s288c/2_illumina/R1.fq.gz R1.fq.gz
 ln -sf ${HOME}/data/anchr/s288c/2_illumina/R2.fq.gz R2.fq.gz
 
-```
-
-## s288cMito: trim
-
-```bash
 mkdir -p ${HOME}/data/anchr/s288cMito/2_illumina/trim
 cd ${HOME}/data/anchr/s288cMito/2_illumina/trim
+
+ln -sf ${HOME}/data/anchr/s288c/2_illumina/trim/R1.fq.gz R1.fq.gz
+ln -sf ${HOME}/data/anchr/s288c/2_illumina/trim/R2.fq.gz R2.fq.gz
+
+```
+
+## s288cMito: ref
+
+```bash
+mkdir -p ${HOME}/data/anchr/s288cMito/2_illumina/ref
+cd ${HOME}/data/anchr/s288cMito/2_illumina/ref
 
 anchr trim \
     --dedupe \
@@ -103,8 +107,8 @@ mkdir -p ${HOME}/data/anchr/s288cMito/2_illumina/filter
 cd ${HOME}/data/anchr/s288cMito/2_illumina/filter
 
 clumpify.sh \
-    in=../R1.fq.gz \
-    in2=../R2.fq.gz \
+    in=../trim/R1.fq.gz \
+    in2=../trim/R2.fq.gz \
     out=reads.fq.gz \
     dedupe dupesubs=0
 
@@ -116,12 +120,12 @@ primary=`grep "haploid_fold_coverage" peaks_raw.txt | sed "s/^.*\t//g"`
 cutoff=$(( $primary * 3 ))
 
 bbnorm.sh in=reads.fq.gz out=highpass.fq.gz pigz passes=1 bits=16 min=$cutoff target=9999999
-reformat.sh in=highpass.fq.gz out=highpass_gc.fq.gz maxgc=0.45
+#reformat.sh in=highpass.fq.gz out=highpass_gc.fq.gz maxgc=0.45
 
-fastqc highpass.fq.gz highpass_gc.fq.gz
+#fastqc highpass.fq.gz highpass_gc.fq.gz
 
 kmercountexact.sh \
-    in=highpass_gc.fq.gz \
+    in=highpass.fq.gz \
     khist=khist_100.txt k=100 \
     peaks=peaks_100.txt \
     smooth ow smoothradius=1 maxradius=1000 progressivemult=1.06 maxpeaks=16 prefilter=2
