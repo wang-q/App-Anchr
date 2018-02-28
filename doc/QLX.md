@@ -840,6 +840,98 @@ kmc_tools transform Q25L60 histogram hist.Q25L60.txt
 
 ```
 
+## K-mer select
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/kmc
+cd 2_illumina/kmc
+
+# K31-150
+cat <<EOF > list.tmp
+../trim/R1.fq.gz
+../trim/R2.fq.gz
+
+EOF
+
+kmc -k31 -n100 -ci150 @list.tmp K31-150 . 
+
+kmc_tools transform K31-150 histogram hist.K31-150.txt
+kmc_tools transform K31-150 dump dump.K31-150.txt
+
+kmc_tools filter K31-150 ../R1.fq.gz -ci2 R1.fq
+kmc_tools filter K31-150 ../R2.fq.gz -ci2 R2.fq
+find . -name "*.fq" | parallel -j 2 pigz -p 8
+
+repair.sh \
+    in=R1.fq.gz \
+    in2=R2.fq.gz \
+    out=Reads.fa \
+    threads=16 \
+    repair overwrite
+
+faops filter -l 0 Reads.fa R12.fa
+
+megahit \
+    -t 16 \
+    --k-list 31,41,51,61,71,81 \
+    --12 R12.fa \
+    --min-count 50 \
+    -o megahit_out
+
+```
+
+## bbnorm
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+mkdir -p 2_illumina/bbnorm
+cd 2_illumina/bbnorm
+
+bbnorm.sh \
+    in=../trim/R1.fq.gz \
+    in2=../trim/R2.fq.gz \
+    out=highpass.fq.gz 
+    passes=1 bits=16 min=340 target=9999999 \
+    hist=hist.txt \
+    peaks=peaks.txt
+
+khist.sh in=reads.fq.gz hist=hist_high.txt peaks=peaks_high.txt
+
+megahit \
+    -t 16 \
+    --k-list 31,41,51,61,71,81 \
+    --12 highpass.fq.gz \
+    --min-count 50 \
+    -o megahit_out
+
+tadwrapper.sh \
+    in=highpass.fq.gz \
+    out=contigs_%.fa \
+    k=25,55,95,125 bisect \
+    outfinal=contigs.fa
+
+```
+
+## norgal
+
+```bash
+BASE_NAME=s288c
+cd ${HOME}/data/anchr/${BASE_NAME}
+
+cd 2_illumina
+
+python ~/share/norgal/norgal.py \
+    -i trim/R1.fq.gz trim/R2.fq.gz \
+    -o norgal_output \
+    -t 16
+
+```
+
 ## MRMegahit and MRSpades
 
 ```bash
