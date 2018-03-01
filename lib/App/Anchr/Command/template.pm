@@ -19,6 +19,8 @@ sub opt_spec {
         [ "se",           "single end mode for Illumina", ],
         [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
         [],
+        [ 'fastqc',     'run FastQC', ],
+        [ 'kmergenie',  'run KmerGenie', ],
         [ 'insertsize', 'calc the insert sizes', ],
         [ 'sgapreqc',   'run sga preqc', ],
         [ 'sgastats',   'run sga stats', ],
@@ -203,6 +205,8 @@ sub gen_fastqc {
     my $template;
     my $sh_name;
 
+    return unless $opt->{fastqc};
+
     $sh_name = "2_fastqc.sh";
     print "Create $sh_name\n";
     $template = <<'EOF';
@@ -237,6 +241,8 @@ sub gen_kmergenie {
     my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
     my $template;
     my $sh_name;
+
+    return unless $opt->{kmergenie};
 
     $sh_name = "2_kmergenie.sh";
     print "Create $sh_name\n";
