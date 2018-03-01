@@ -66,6 +66,7 @@ log_info Creating non-contained k-unitigs
         --len [% opt.min %] --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
         -o k_unitigs.non-contained.fasta
 
+if [ -s k_unitigs.non-contained.fasta ]; then
 [% IF opt.merge -%]
     log_info Merging k-unitigs
     anchr orient k_unitigs.non-contained.fasta \
@@ -77,6 +78,9 @@ log_info Creating non-contained k-unitigs
 [% ELSE -%]
     mv k_unitigs.non-contained.fasta k_unitigs.fasta
 [% END -%]
+else
+    touch k_unitigs.fasta
+fi
 
 fi
 
