@@ -17,6 +17,7 @@ sub opt_spec {
         [ "trimq=i",     "quality score for 3' end",                  { default => 15 }, ],
         [ "trimk=i",     "kmer for 5' adapter trimming",              { default => 23 }, ],
         [ "matchk=i",    "kmer for decontamination",                  { default => 27 }, ],
+        [ "cutk=i",      "kmer for cutoff",                           { default => 51 }, ],
         [   "adapter=s", "adapter file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
@@ -29,6 +30,7 @@ sub opt_spec {
         ],
         [ "dedupe",   "the uniq step", ],
         [ "tile",     "with normal Illumina names, do tile based filtering", ],
+        [ "cutoff=i", "min kmer depth cutoff", ],
         [ "sample=i", "the sample step", ],
         [ "parallel|p=i", "number of threads", { default => 16 }, ],
         { show_defaults => 1, }

@@ -344,7 +344,7 @@ printf "| %s | %s | %s | %s |\n" \
     >> statTrimReads.md
 printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
 
-for NAME in clumpify filteredbytile sample trim filter R1 R2 Rs; do
+for NAME in clumpify filteredbytile highpass sample trim filter R1 R2 Rs; do
     if [ ! -e ${NAME}.fq.gz ]; then
         continue;
     fi
@@ -355,7 +355,7 @@ done
 echo >> statTrimReads.md
 
 log_info "clear unneeded .fq.gz files"
-for NAME in temp clumpify filteredbytile sample trim; do
+for NAME in temp clumpify filteredbytile highpass sample trim; do
     if [ -e ${NAME}.fq.gz ]; then
         rm ${NAME}.fq.gz
     fi
@@ -386,6 +386,22 @@ if [ -e filter.stats.txt ]; then
             $F[1] >= 100 and print;
         ' \
         >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e peaks.raw.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#peaks.raw" >> statTrimReads.md
+    cat peaks.raw.txt >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e peaks.highpass.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#peaks.highpass" >> statTrimReads.md
+    cat peaks.highpass.txt >> statTrimReads.md
     echo '```' >> statTrimReads.md
 fi
 
@@ -2116,6 +2132,7 @@ rm -fr 5_canu*
 # mergeAnchors, anchorLong and anchorFill
 rm -fr 7_merge*
 rm -fr 7_anchor*
+rm -fr 7_fillAnchor
 
 # spades, platanus, and megahit
 rm -fr 8_spades*

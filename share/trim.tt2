@@ -42,6 +42,29 @@ fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
+[% IF opt.cutoff -%]
+# Remove reads without high depth kmer
+log_info "kmer cutoff with bbnorm.sh"
+if [ ! -e highpass.fq.gz ]; then
+    kmercountexact.sh \
+        in=temp.fq.gz \
+        khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
+        threads=[% opt.parallel %]
+
+    bbnorm.sh \
+        in=temp.fq.gz \
+        out=highpass.fq.gz \
+        passes=1 bits=16 min=[% opt.cutoff %] target=9999999 \
+        threads=[% opt.parallel %]
+
+    kmercountexact.sh \
+        in=highpass.fq.gz \
+        khist=khist.highpass.txt peaks=peaks.highpass.txt k=[% opt.cutk %] \
+        threads=[% opt.parallel %]
+fi
+rm temp.fq.gz; ln -s highpass.fq.gz temp.fq.gz
+[% END -%]
+
 [% IF opt.sample -%]
 # Down sampling reads. 300x is fine
 log_info "sample with reformat.sh"
