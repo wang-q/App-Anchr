@@ -1271,6 +1271,11 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
+    if [ ! -s 4_kunitigs/Q{1}L{2}X{3}P{4}/k_unitigs.fasta ]; then
+        echo >&2 '    k_unitigs.fasta does not exist or is empty'
+        exit;
+    fi
+
     rm -fr 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
     mkdir -p 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
     cd 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor

@@ -11,6 +11,7 @@ fi
 
 log_debug "SR sizes"
 faops size SR.fasta > sr.chr.sizes
+jrunlist genome sr.chr.sizes -o sr.chr.yml
 
 #----------------------------#
 # Mapping reads
@@ -220,8 +221,6 @@ save OPT_MIN
 jrunlist cover contig.covered.txt -o contig.covered.yml
 jrunlist stat sr.chr.sizes contig.covered.yml -o contig.covered.csv
 
-# repeats on the edge hurt assembling mostly, so just fill holes
-
 # fill all holes of [% opt.ratio %] covered contigs
 cat contig.covered.csv |
     perl -nla -F"," -e '
@@ -267,6 +266,8 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml1 = YAML::Syck::LoadFile( q{contig.fill_all.temp.yml} );
     my $yml2 = YAML::Syck::LoadFile( q{contig.fill_hole.temp.yml} );
 
+    my $yml_chr = YAML::Syck::LoadFile( q{sr.chr.yml} );
+
     my $yml = {};
 
     for my $key ( sort keys $yml1 ) {
@@ -274,6 +275,34 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
     }
     for my $key ( sort keys $yml2 ) {
         $yml->{$key} = $yml2->{$key};
+    }
+
+    # repeats on the edge hurt assembling, so fill edges near big island by [% opt.fill %]
+    for my $key ( sort keys $yml ) {
+        my $length = AlignDB::IntSpan->new( $yml_chr->{$key} )->max;
+
+        my $set = AlignDB::IntSpan->new( $yml->{$key} );
+        next if $set->is_empty;
+
+        my @sets = $set->sets;
+        my $begin = $set->min;
+        my $end = $set->max;
+
+        if ( $sets[0]->size >= 300 ) {
+            my $new_begin = $begin - [% opt.fill %];
+            $new_begin = 1 if $new_begin < 1;
+
+            $set->add_pair($new_begin, $begin);
+        }
+
+        if ( $sets[-1]->size >= 300 ) {
+            my $new_end = $end + [% opt.fill %];
+            $new_end = $length if $new_end > $length;
+
+            $set->add_pair($end, $new_end);
+        }
+
+        $yml->{$key} = $set->runlist;
     }
 
     YAML::Syck::DumpFile( q{contig.proper.yml}, $yml );
@@ -311,7 +340,6 @@ ln -s contig.proper.yml anchor.yml
 #----------------------------#
 # others
 #----------------------------#
-jrunlist genome sr.chr.sizes -o sr.chr.yml
 jrunlist compare sr.chr.yml anchor.yml --op diff -o others.yml
 
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
@@ -361,6 +389,11 @@ find . -type f -name "basecov.txt"    | parallel --no-run-if-empty -j 1 rm
 
 find . -type f -name "pe.anchor.fa"   | parallel --no-run-if-empty -j 1 rm
 find . -type f -name "anchor.*.fasta" | parallel --no-run-if-empty -j 1 rm
+
+find . -type f -name "contig.fill_hole.*.yml" | parallel --no-run-if-empty -j 1 rm
+find . -type l -name "contig.fill_hole.*.yml" | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "contig.fill_all.*.yml"  | parallel --no-run-if-empty -j 1 rm
+find . -type l -name "contig.fill_all.*.yml"  | parallel --no-run-if-empty -j 1 rm
 
 touch anchor.success
 log_info "Done."
