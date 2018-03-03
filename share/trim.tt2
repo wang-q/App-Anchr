@@ -43,10 +43,12 @@ rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
 log_info "kmer histogram and peaks"
-kmercountexact.sh \
-    in=temp.fq.gz \
-    khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
-    threads=[% opt.parallel %]
+if [ ! -e peaks.raw.txt ]; then
+    kmercountexact.sh \
+        in=temp.fq.gz \
+        khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
+        threads=[% opt.parallel %]
+fi
 
 [% IF opt.cutoff -%]
 # Remove reads without high depth kmer
