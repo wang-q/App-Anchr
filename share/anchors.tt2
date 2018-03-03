@@ -81,6 +81,9 @@ cat basecov.txt |
             }
             Path::Tiny::path(q{basecov.hist.tsv})->spew( $content );
 
+            # Non-covered regions should be ignored
+            delete $hist_of{0};
+
             my $median = App::Anchr::Common::histogram_percentile(\%hist_of, 0.5);
             my $q25 = App::Anchr::Common::histogram_percentile(\%hist_of, 0.25);
             my $q75 = App::Anchr::Common::histogram_percentile(\%hist_of, 0.75);
