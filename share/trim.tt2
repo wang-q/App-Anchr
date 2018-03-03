@@ -42,6 +42,7 @@ fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
+log_info "kmer histogram and peaks"
 kmercountexact.sh \
     in=temp.fq.gz \
     khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
