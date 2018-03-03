@@ -42,15 +42,15 @@ fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
+kmercountexact.sh \
+    in=temp.fq.gz \
+    khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
+    threads=[% opt.parallel %]
+
 [% IF opt.cutoff -%]
 # Remove reads without high depth kmer
 log_info "kmer cutoff with bbnorm.sh"
 if [ ! -e highpass.fq.gz ]; then
-    kmercountexact.sh \
-        in=temp.fq.gz \
-        khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
-        threads=[% opt.parallel %]
-
     bbnorm.sh \
         in=temp.fq.gz \
         out=highpass.fq.gz \
