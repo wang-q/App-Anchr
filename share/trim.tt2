@@ -59,11 +59,6 @@ if [ ! -e highpass.fq.gz ]; then
         out=highpass.fq.gz \
         passes=1 bits=16 min=[% opt.cutoff %] target=9999999 \
         threads=[% opt.parallel %]
-
-    kmercountexact.sh \
-        in=highpass.fq.gz \
-        khist=khist.highpass.txt peaks=peaks.highpass.txt k=[% opt.cutk %] \
-        threads=[% opt.parallel %]
 fi
 rm temp.fq.gz; ln -s highpass.fq.gz temp.fq.gz
 [% END -%]
@@ -118,6 +113,14 @@ if [ ! -e filter.fq.gz ]; then
         threads=[% opt.parallel %]
 fi
 rm temp.fq.gz; ln -s filter.fq.gz temp.fq.gz
+
+log_info "kmer histogram and peaks again"
+if [ ! -e peaks.final.txt ]; then
+    kmercountexact.sh \
+        in=temp.fq.gz \
+        khist=khist.final.txt peaks=peaks.final.txt k=[% opt.cutk %] \
+        threads=[% opt.parallel %]
+fi
 
 # Revert to normal pair-end fastq files
 log_info "re-pair with repair.sh"

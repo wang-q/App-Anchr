@@ -403,11 +403,11 @@ if [ -e peaks.raw.txt ]; then
     echo '```' >> statTrimReads.md
 fi
 
-if [ -e peaks.highpass.txt ]; then
+if [ -e peaks.final.txt ]; then
     echo >> statTrimReads.md
     echo '```text' >> statTrimReads.md
-    echo "#peaks.highpass" >> statTrimReads.md
-    cat peaks.highpass.txt >> statTrimReads.md
+    echo "#peaks.final" >> statTrimReads.md
+    cat peaks.final.txt >> statTrimReads.md
     echo '```' >> statTrimReads.md
 fi
 
