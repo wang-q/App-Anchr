@@ -108,7 +108,7 @@ if [ ! -e filter.fq.gz ]; then
         in=temp.fq.gz \
         out=filter.fq.gz \
         ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %][% opt.adapter %],[% END %][% IF filter == 'phix' %][% opt.phix %],[% END %][% IF filter == 'artifact' %][% opt.artifact %],[% END %][% END %] \
-        k=[% opt.matchk %] ordered cardinality \
+        k=[% opt.matchk %] cardinality \
         stats=filter.stats.txt overwrite \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi

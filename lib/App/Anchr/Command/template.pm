@@ -334,11 +334,6 @@ anchr trim \
     --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
 [% END -%]
 [% END -%]
-    $(
-        if [ -e illumina_adapters.fa ]; then
-            echo "--adapter illumina_adapters.fa";
-        fi
-    ) \
     --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
     ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
     -o trim.sh
