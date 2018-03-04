@@ -33,6 +33,7 @@ sub opt_spec {
         [ "cutoff=i", "min kmer depth cutoff", ],
         [ "sample=i", "the sample step", ],
         [ "parallel|p=i", "number of threads", { default => 16 }, ],
+        [ "xmx=s",        "set Java memory usage", ],
         { show_defaults => 1, }
     );
 }

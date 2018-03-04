@@ -26,7 +26,7 @@ if [ ! -e clumpify.fq.gz ]; then
 [% IF opt.dedupe -%]
         dedupe dupesubs=0 \
 [% END -%]
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm -f temp.fq.gz; ln -s clumpify.fq.gz temp.fq.gz
 
@@ -37,7 +37,7 @@ if [ ! -e filteredbytile.fq.gz ]; then
     filterbytile.sh \
         in=temp.fq.gz \
         out=filteredbytile.fq.gz \
-        threads=[% opt.parallel %]
+    threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
@@ -47,7 +47,7 @@ if [ ! -e peaks.raw.txt ]; then
     kmercountexact.sh \
         in=temp.fq.gz \
         khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 
 [% IF opt.cutoff -%]
@@ -58,7 +58,7 @@ if [ ! -e highpass.fq.gz ]; then
         in=temp.fq.gz \
         out=highpass.fq.gz \
         passes=1 bits=16 min=[% opt.cutoff %] target=9999999 \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s highpass.fq.gz temp.fq.gz
 [% END -%]
@@ -71,7 +71,7 @@ if [ ! -e sample.fq.gz ]; then
         in=temp.fq.gz \
         out=sample.fq.gz \
         samplebasestarget=[% opt.sample %] \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s sample.fq.gz temp.fq.gz
 [% END -%]
@@ -97,7 +97,7 @@ if [ ! -e trim.fq.gz ]; then
         maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
         minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
         stats=trim.stats.txt overwrite \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s trim.fq.gz temp.fq.gz
 
@@ -108,9 +108,9 @@ if [ ! -e filter.fq.gz ]; then
         in=temp.fq.gz \
         out=filter.fq.gz \
         ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %][% opt.adapter %],[% END %][% IF filter == 'phix' %][% opt.phix %],[% END %][% IF filter == 'artifact' %][% opt.artifact %],[% END %][% END %] \
-        k=[% opt.matchk %] hdist=1 ordered cardinality \
+        k=[% opt.matchk %] ordered cardinality \
         stats=filter.stats.txt overwrite \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s filter.fq.gz temp.fq.gz
 
@@ -119,7 +119,7 @@ if [ ! -e peaks.final.txt ]; then
     kmercountexact.sh \
         in=temp.fq.gz \
         khist=khist.final.txt peaks=peaks.final.txt k=[% opt.cutk %] \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 
 # Revert to normal pair-end fastq files
@@ -132,7 +132,7 @@ if [ ! -e R1.trim.fq.gz ]; then
         out2=R2.fq.gz \
         outs=Rs.fq.gz \
         repair \
-        threads=[% opt.parallel %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 [% ELSE -%]
     cp -L temp.fq.gz R1.fq.gz
 [% END -%]

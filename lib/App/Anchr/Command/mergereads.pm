@@ -16,6 +16,7 @@ sub opt_spec {
         [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
         [ 'ecphase=s',    'Error-correct phases',                      { default => "1,2,3", }, ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
+        [ "xmx=s",        "set Java memory usage", ],
         { show_defaults => 1, }
     );
 }

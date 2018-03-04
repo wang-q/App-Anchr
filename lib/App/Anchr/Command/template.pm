@@ -14,10 +14,11 @@ sub opt_spec {
         [ "queue=s",      "QUEUE_NAME",        { default => "mpi" }, ],
         [ "genome=i",     "your best guess of the haploid genome size", ],
         [ "is_euk",       "eukaryotes or not", ],
-        [ "tmp=s",        "user defined tempdir", ],
-        [ "parallel|p=i", "number of threads", { default => 16 }, ],
         [ "se",           "single end mode for Illumina", ],
         [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
+        [ "parallel|p=i", "number of threads", { default => 16 }, ],
+        [ "tmp=s",        "user defined tempdir", ],
+        [ "xmx=s",        "set Java memory usage", ],
         [],
         [ 'fastqc',     'run FastQC', ],
         [ 'kmergenie',  'run KmerGenie', ],
@@ -338,7 +339,7 @@ anchr trim \
             echo "--adapter illumina_adapters.fa";
         fi
     ) \
-    --parallel [% opt.parallel %] \
+    --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
     ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
     -o trim.sh
 bash trim.sh
