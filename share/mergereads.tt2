@@ -86,13 +86,21 @@ rm temp.fq.gz; ln -s extended.fq.gz temp.fq.gz
 
 log_info "Read merging"
 bbmerge-auto.sh \
-    in=temp.fq.gz out=merged.fq.gz outu=unmerged.raw.fq.gz \
+    in=temp.fq.gz out=merged.raw.fq.gz outu=unmerged.raw.fq.gz \
     ihist=ihist.merge.txt \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
 [% END -%]
     strict k=81 extend2=80 rem overwrite
+
+log_info "Dedupe merged reads"
+clumpify.sh \
+    in=merged.raw.fq.gz \
+    out=merged.fq.gz \
+    threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
+    dedupe dupesubs=0 \
+    overwrite
 
 [% IF args.2 -%]
 log_info "Combine unmerged.raw with [% args.2 %]"
