@@ -21,6 +21,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    6239   --name 6239=n2       \
     --id    3702   --name 3702=col_0    \
     --id    39947  --name 39947=nip     \
+    --id    3880   --name 3880=a17      \
     \
     --id    222523 --name 222523=Bcer   \
     --id    272943 --name 272943=Rsph   \
@@ -41,6 +42,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
     --id    71421  --name 71421=Hinf    \
     --file  taxon.csv                   \
     --entrez
+
 ```
 
 ## Prepare genomes
@@ -49,7 +51,7 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli s288c iso_1 n2 col_0 nip; do
+for strain in e_coli s288c iso_1 n2 col_0 nip a17; do
     mkdir -p ~/data/anchr/paralogs/genomes/${strain}
     faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
 done
@@ -78,12 +80,13 @@ perl ~/Scripts/egaz/self_batch.pl \
     --length 1000 \
     --norm \
     --name model \
-    -t e_coli \
     -q s288c \
     -q iso_1 \
     -q n2 \
     -q col_0 \
     -q nip \
+    -q a17 \
+    -t e_coli \
     --parallel 16
 
 bash model/1_real_chr.sh
