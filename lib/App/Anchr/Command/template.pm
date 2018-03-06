@@ -217,13 +217,25 @@ log_warn [% sh %]
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
 
-if [ -e R1_fastqc.html ]; then
-    exit;
+if [ ! -e R1_fastqc.html ]; then
+    fastqc -t [% opt.parallel %] \
+        ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
+        -o .
 fi
 
-fastqc -t [% opt.parallel %] \
-    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
-    -o .
+if [ ! -e S1_fastqc.html ]; then
+    fastqc -t [% opt.parallel %] \
+        ../S1.fq.gz [% IF not opt.se %]../S2.fq.gz[% END %] \
+        -o .
+fi
+
+if [ ! -e T1_fastqc.html ]; then
+    fastqc -t [% opt.parallel %] \
+        ../T1.fq.gz [% IF not opt.se %]../T2.fq.gz[% END %] \
+        -o .
+fi
+
+exit;
 
 EOF
     $tt->process(
@@ -254,13 +266,25 @@ log_warn [% sh %]
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-if [ -e R1.dat.pdf ]; then
-    exit;
+if [ ! -e R1.dat.pdf ]; then
+    parallel --no-run-if-empty --linebuffer -k -j 2 "
+        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
+        " ::: R1 [% IF not opt.se %]R2[% END %]
 fi
 
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
-    " ::: R1  [% IF not opt.se %]R2[% END %]
+if [ ! -e S1.dat.pdf ]; then
+    parallel --no-run-if-empty --linebuffer -k -j 2 "
+        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
+        " ::: S1 [% IF not opt.se %]S2[% END %]
+fi
+
+if [ ! -e T1.dat.pdf ]; then
+    parallel --no-run-if-empty --linebuffer -k -j 2 "
+        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
+        " ::: T1 [% IF not opt.se %]T2[% END %]
+fi
+
+exit;
 
 EOF
     $tt->process(
