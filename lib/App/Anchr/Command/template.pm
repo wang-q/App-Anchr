@@ -298,248 +298,6 @@ EOF
 
 }
 
-sub gen_mergereads {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    return unless $opt->{mergereads};
-    return if $opt->{se};
-
-    $sh_name = "2_mergereads.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '2_mergereads.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
-sub gen_trim {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "2_trim.sh";
-    print "Create $sh_name\n";
-
-    $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn [% sh %]
-
-if [ -e 2_illumina/trim/R1.fq.gz ]; then
-    log_debug "2_illumina/trim/R1.fq.gz presents"
-    exit;
-fi
-
-#----------------------------#
-# run
-#----------------------------#
-mkdir -p 2_illumina/trim
-pushd 2_illumina/trim > /dev/null
-
-anchr trim \
-    [% opt.trim2 %] \
-    --qual "[% opt.qual2 %]" \
-    --len "[% opt.len2 %]" \
-[% IF opt.filter -%]
-    --filter [% opt.filter %] \
-[% END -%]
-[% IF opt.sample2 -%]
-[% IF opt.genome -%]
-    --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
-[% END -%]
-[% END -%]
-    --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
-    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
-    -o trim.sh
-bash trim.sh
-
-log_info "stats of all .fq.gz files"
-echo -e "Table: statTrimReads\n" > statTrimReads.md
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    >> statTrimReads.md
-printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
-
-for NAME in clumpify filteredbytile highpass sample trim filter R1 R2 Rs; do
-    if [ ! -e ${NAME}.fq.gz ]; then
-        continue;
-    fi
-
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
-done
-echo >> statTrimReads.md
-
-log_info "clear unneeded .fq.gz files"
-for NAME in temp clumpify filteredbytile highpass sample trim; do
-    if [ -e ${NAME}.fq.gz ]; then
-        rm ${NAME}.fq.gz
-    fi
-done
-
-if [ -e trim.stats.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#trim" >> statTrimReads.md
-    cat trim.stats.txt \
-        | perl -nla -F"\t" -e '
-            /^#(Matched|Name)/ and print and next;
-            /^#/ and next;
-            $F[1] >= 1000 and print;
-        ' \
-        >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-if [ -e filter.stats.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#filter" >> statTrimReads.md
-    cat filter.stats.txt \
-        | perl -nla -F"\t" -e '
-            /^#(Matched|Name)/ and print and next;
-            /^#/ and next;
-            $F[1] >= 100 and print;
-        ' \
-        >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-if [ -e peaks.raw.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#peaks.raw" >> statTrimReads.md
-    cat peaks.raw.txt >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-if [ -e peaks.final.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#peaks.final" >> statTrimReads.md
-    cat peaks.final.txt >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-cat statTrimReads.md
-
-mv statTrimReads.md ../../
-
-popd > /dev/null
-
-cd 2_illumina
-
-parallel --no-run-if-empty --linebuffer -k -j 2 "
-    ln -s ./trim/Q{1}L{2}/ ./Q{1}L{2}
-    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
-ln -s ./trim ./Q0L0
-
-EOF
-    $tt->process(
-        \$template,
-        {   args => $args,
-            opt  => $opt,
-            sh   => $sh_name,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
-sub gen_trimlong {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    return unless $opt->{cov3};
-
-    $sh_name = "3_trimlong.sh";
-    print "Create $sh_name\n";
-    $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn [% sh %]
-
-for X in [% opt.cov3 %]; do
-    printf "==> Coverage: %s\n" ${X}
-
-    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
-        echo "  pacbio.X${X}.raw.fasta presents";
-        continue;
-    fi
-
-    # shortcut if cov3 == all
-    if [[ ${X} == "all" ]]; then
-        pushd 3_pacbio > /dev/null
-
-        ln -s pacbio.fasta pacbio.X${X}.raw.fasta
-
-        popd > /dev/null
-        continue;
-    fi
-
-    faops split-about -m 1 -l 0 \
-        3_pacbio/pacbio.fasta \
-        $(( [% opt.genome %] * ${X} )) \
-        3_pacbio
-
-    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
-done
-
-for X in  [% opt.cov3 %]; do
-    printf "==> Coverage: %s\n" ${X}
-
-    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
-        echo "  pacbio.X${X}.trim.fasta presents";
-        continue;
-    fi
-
-    anchr trimlong --parallel [% opt.parallel2 %] -v \
-        "3_pacbio/pacbio.X${X}.raw.fasta" \
-        -o "3_pacbio/pacbio.X${X}.trim.fasta"
-done
-
-EOF
-    $tt->process(
-        \$template,
-        {   args => $args,
-            opt  => $opt,
-            sh   => $sh_name,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
-sub gen_statReads {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "9_statReads.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '9_statReads.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-}
 
 sub gen_insertSize {
     my ( $self, $opt, $args ) = @_;
@@ -793,6 +551,249 @@ EOF
         {   args => $args,
             opt  => $opt,
             sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+}
+
+sub gen_mergereads {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "2_mergereads.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '2_mergereads.tt2',
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_trim {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "2_trim.sh";
+    print "Create $sh_name\n";
+
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+if [ -e 2_illumina/trim/R1.fq.gz ]; then
+    log_debug "2_illumina/trim/R1.fq.gz presents"
+    exit;
+fi
+
+#----------------------------#
+# run
+#----------------------------#
+mkdir -p 2_illumina/trim
+pushd 2_illumina/trim > /dev/null
+
+anchr trim \
+    [% opt.trim2 %] \
+    --qual "[% opt.qual2 %]" \
+    --len "[% opt.len2 %]" \
+[% IF opt.filter -%]
+    --filter [% opt.filter %] \
+[% END -%]
+[% IF opt.sample2 -%]
+[% IF opt.genome -%]
+    --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
+[% END -%]
+[% END -%]
+    --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
+    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
+    -o trim.sh
+bash trim.sh
+
+log_info "stats of all .fq.gz files"
+echo -e "Table: statTrimReads\n" > statTrimReads.md
+printf "| %s | %s | %s | %s |\n" \
+    "Name" "N50" "Sum" "#" \
+    >> statTrimReads.md
+printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
+
+for NAME in clumpify filteredbytile highpass sample trim filter R1 R2 Rs; do
+    if [ ! -e ${NAME}.fq.gz ]; then
+        continue;
+    fi
+
+    printf "| %s | %s | %s | %s |\n" \
+        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
+done
+echo >> statTrimReads.md
+
+log_info "clear unneeded .fq.gz files"
+for NAME in temp clumpify filteredbytile highpass sample trim; do
+    if [ -e ${NAME}.fq.gz ]; then
+        rm ${NAME}.fq.gz
+    fi
+done
+
+if [ -e trim.stats.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#trim" >> statTrimReads.md
+    cat trim.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 1000 and print;
+        ' \
+        >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e filter.stats.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#filter" >> statTrimReads.md
+    cat filter.stats.txt \
+        | perl -nla -F"\t" -e '
+            /^#(Matched|Name)/ and print and next;
+            /^#/ and next;
+            $F[1] >= 100 and print;
+        ' \
+        >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e peaks.raw.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#peaks.raw" >> statTrimReads.md
+    cat peaks.raw.txt >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+if [ -e peaks.final.txt ]; then
+    echo >> statTrimReads.md
+    echo '```text' >> statTrimReads.md
+    echo "#peaks.final" >> statTrimReads.md
+    cat peaks.final.txt >> statTrimReads.md
+    echo '```' >> statTrimReads.md
+fi
+
+cat statTrimReads.md
+
+mv statTrimReads.md ../../
+
+popd > /dev/null
+
+cd 2_illumina
+
+parallel --no-run-if-empty --linebuffer -k -j 2 "
+    ln -s ./trim/Q{1}L{2}/ ./Q{1}L{2}
+    " ::: [% opt.qual2 %] ::: [% opt.len2 %]
+ln -s ./trim ./Q0L0
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_trimlong {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{cov3};
+
+    $sh_name = "3_trimlong.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+for X in [% opt.cov3 %]; do
+    printf "==> Coverage: %s\n" ${X}
+
+    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
+        echo "  pacbio.X${X}.raw.fasta presents";
+        continue;
+    fi
+
+    # shortcut if cov3 == all
+    if [[ ${X} == "all" ]]; then
+        pushd 3_pacbio > /dev/null
+
+        ln -s pacbio.fasta pacbio.X${X}.raw.fasta
+
+        popd > /dev/null
+        continue;
+    fi
+
+    faops split-about -m 1 -l 0 \
+        3_pacbio/pacbio.fasta \
+        $(( [% opt.genome %] * ${X} )) \
+        3_pacbio
+
+    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
+done
+
+for X in  [% opt.cov3 %]; do
+    printf "==> Coverage: %s\n" ${X}
+
+    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
+        echo "  pacbio.X${X}.trim.fasta presents";
+        continue;
+    fi
+
+    anchr trimlong --parallel [% opt.parallel2 %] -v \
+        "3_pacbio/pacbio.X${X}.raw.fasta" \
+        -o "3_pacbio/pacbio.X${X}.trim.fasta"
+done
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_statReads {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    $sh_name = "9_statReads.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '9_statReads.tt2',
+        {   args => $args,
+            opt  => $opt,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
