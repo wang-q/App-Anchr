@@ -219,7 +219,7 @@ cd 2_illumina/fastqc
 
 for PREFIX in R S T; do
     if [ ! -e ../${PREFIX}1.fq.gz ]; then
-        next;
+        continue;
     fi
 
     if [ ! -e ${PREFIX}1_fastqc.html ]; then
@@ -262,7 +262,7 @@ cd 2_illumina/kmergenie
 
 for PREFIX in R S T; do
     if [ ! -e ../${PREFIX}1.fq.gz ]; then
-        next;
+        continue;
     fi
 
     if [ ! -e ${PREFIX}1.dat.pdf ]; then
@@ -308,11 +308,11 @@ cd 2_illumina/insertSize
 
 for PREFIX in R S T; do
     if [ ! -e ../${PREFIX}1.fq.gz ]; then
-        next;
+        continue;
     fi
 
     if [ -e ${PREFIX}.ihist.tadpole.txt ]; then
-        next;
+        continue;
     fi
 
     tadpole.sh \
