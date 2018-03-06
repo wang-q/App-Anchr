@@ -1,10 +1,5 @@
 [% INCLUDE header.tt2 %]
-log_warn 2_mergereads.sh
-
-if [ -e 2_illumina/mergereads/merged.fq.gz ]; then
-    log_debug "2_illumina/mergereads/merged.fq.gz presents"
-    exit;
-fi
+log_warn [% sh %]
 
 #----------------------------#
 # run
@@ -12,7 +7,6 @@ fi
 mkdir -p 2_illumina/mergereads
 cd 2_illumina/mergereads
 
-log_info "mergereads.sh"
 START_TIME=$(date +%s)
 save START_TIME
 
@@ -23,31 +17,34 @@ save NUM_THREADS
 ESTIMATED_GENOME_SIZE=[% opt.genome %]
 save ESTIMATED_GENOME_SIZE
 
-anchr mergereads \
-    ../trim/filter.fq.gz \
+for PREFIX in R S T; do
+    if [ ! -e ../trim/${PREFIX}1.fq.gz ]; then
+        continue;
+    fi
+
     # rotate ascii characters https://en.wikipedia.org/wiki/ROT13
     PREFIXM=$(echo ${PREFIX} | tr 'A-Z' 'V-ZA-U')   # M N O
     PREFIXU=$(echo ${PREFIX} | tr 'A-Z' 'D-ZA-C')   # U V W
+
+    if [ -e ${PREFIX}1.fq.gz ]; then
+        log_debug "2_illumina/mergereads/${PREFIXM}1.fq.gz presents"
+        continue;
+    fi
+
+    anchr mergereads \
+        ../trim/${PREFIX}1.fq.gz ../trim/${PREFIX}2.fq.gz ../trim/${PREFIX}s.fq.gz \
 [% IF opt.prefilter -%]
-    --prefilter [% opt.prefilter %] \
+        --prefilter [% opt.prefilter %] \
 [% END -%]
 [% IF opt.ecphase -%]
-    --ecphase [% opt.ecphase %] \
+        --ecphase [% opt.ecphase %] \
 [% END -%]
-    --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
-    -o mergereads.sh
-bash mergereads.sh
+        --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
+        --prefixm ${PREFIXM} \
+        --prefixu ${PREFIXU} \
+        -o mergereads.sh
+    bash mergereads.sh
 
-log_info "stats of all .fq.gz files"
-echo -e "Table: statMergeReads\n" > statMergeReads.md
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    >> statMergeReads.md
-printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
-
-for NAME in clumped ecco eccc ecct extended merged.raw merged unmerged.raw unmerged.trim U1 U2 Us; do
-    if [ ! -e ${NAME}.fq.gz ]; then
-        continue;
     # Create .cor.fa.gz
     faops interleave \
         -p unmerged \
@@ -79,58 +76,98 @@ for NAME in clumped ecco eccc ecct extended merged.raw merged unmerged.raw unmer
         > ${PREFIXM}.cor.fa
     rm ${PREFIXM}.interleave.fa
     pigz -p [% opt.parallel %] ${PREFIXM}.cor.fa
+
+    log_info "stats of all .fq.gz files"
+    if [ ! -e statMergeReads.md ]; then
+        echo -e "Table: statMergeReads\n" > statMergeReads.md
+            printf "| %s | %s | %s | %s |\n" \
+            "Name" "N50" "Sum" "#" \
+            >> statMergeReads.md
+        printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
     fi
 
+    for NAME in clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim ${PREFIXM}1 ${PREFIXU}1 ${PREFIXU}2 ${PREFIXU}s; do
+        if [ ! -e ${NAME}.fq.gz ]; then
+            continue;
+        fi
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
+    done
     printf "| %s | %s | %s | %s |\n" \
-        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statMergeReads.md
-done
-printf "| %s | %s | %s | %s |\n" \
-    $(echo pe.cor; stat_format pe.cor.fa.gz;) >> statMergeReads.md
-echo >> statMergeReads.md
+        $(echo ${PREFIXM}.cor; stat_format ${PREFIXM}.cor.fa.gz;) >> statMergeReads.md
+    echo >> statMergeReads.md
 
-log_info "clear unneeded .fq.gz files"
-for NAME in temp clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim; do
-    if [ -e ${NAME}.fq.gz ]; then
-        rm ${NAME}.fq.gz
-    fi
-done
+    log_info "clear unneeded .fq.gz files"
+    for NAME in temp clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim; do
+        if [ -e ${NAME}.fq.gz ]; then
+            rm ${NAME}.fq.gz
+        fi
+    done
 
-log_info "stats of insert sizes"
-printf "| %s | %s | %s | %s | %s |\n" \
-    "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
-    >> statMergeReads.md
-printf "|:--|--:|--:|--:|--:|\n" >> statMergeReads.md
-
-#Mean	339.868
-#Median	312
-#Mode	251
-#STDev	134.676
-#PercentOfPairs	36.247
-
-for NAME in ihist.merge1.txt ihist.merge.txt; do
-    printf "| %s " ${NAME} >> statMergeReads.md
-    cat ${NAME} \
-        | perl -nla -e '
-            BEGIN { our $stat = { }; };
-
-            m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
-            $stat->{$1} = $F[1];
-
-            END {
-                printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
-                    $stat->{Mean},
-                    $stat->{Median},
-                    $stat->{STDev},
-                    $stat->{PercentOfPairs};
-            }
-            ' \
+    log_info "stats of insert sizes"
+    printf "| %s | %s | %s | %s | %s |\n" \
+        "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
         >> statMergeReads.md
+    printf "|:--|--:|--:|--:|--:|\n" >> statMergeReads.md
+
+    #Mean	339.868
+    #Median	312
+    #Mode	251
+    #STDev	134.676
+    #PercentOfPairs	36.247
+
+    for NAME in ${PREFIXM}.ihist.merge1.txt ${PREFIXM}.ihist.merge.txt; do
+        printf "| %s " ${NAME} >> statMergeReads.md
+        cat ${NAME} \
+            | perl -nla -e '
+                BEGIN { our $stat = { }; };
+
+                m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
+                $stat->{$1} = $F[1];
+
+                END {
+                    printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
+                        $stat->{Mean},
+                        $stat->{Median},
+                        $stat->{STDev},
+                        $stat->{PercentOfPairs};
+                }
+                ' \
+            >> statMergeReads.md
+    done
 done
 
-cat statMergeReads.md
+log_debug "Combine .cor.fa.gz files"
+if [ -e ../S1.fq.gz ]; then
+    gzip -d -c [MNO].cor.fa.gz |
+        awk '{
+            OFS="\t"; \
+            getline seq; \
+            getline name2; \
+            getline seq2; \
+            print $0,seq,name2,seq2}' |
+        shuf |
+        awk '{OFS="\n"; print $1,$2,$3,$4}' \
+        > ${PREFIXM}.cor.fa
+    pigz -p [% opt.parallel %] ${PREFIXM}.cor.fa
+    rm [MNO].cor.fa.gz
+else
+    mv M.cor.fa.gz pe.cor.fa.gz
+fi
+
+log_debug "Reads stats with faops"
+SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa.gz )
+save SUM_OUT
+
+if [ -s statMergeReads.md ]; then
+    cat statMergeReads.md
+    mv statMergeReads.md ../../
+done
+
 END_TIME=$(date +%s)
 save END_TIME
 RUNTIME=$((END_TIME-START_TIME))
 save RUNTIME
 
-mv statMergeReads.md ../../
+exit;
