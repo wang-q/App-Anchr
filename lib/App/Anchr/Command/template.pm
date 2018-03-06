@@ -581,7 +581,11 @@ mkdir -p 2_illumina/trim
 cd 2_illumina/trim
 
 for PREFIX in R S T; do
-    if [ -e 2_illumina/trim/${PREFIX}1.fq.gz ]; then
+    if [ ! -e ../${PREFIX}1.fq.gz ]; then
+        continue;
+    fi
+
+    if [ -e ${PREFIX}1.fq.gz ]; then
         log_debug "2_illumina/trim/${PREFIX}1.fq.gz presents"
         continue;
     fi
