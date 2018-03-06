@@ -306,78 +306,79 @@ log_warn [% sh %]
 mkdir -p 2_illumina/insertSize
 cd 2_illumina/insertSize
 
-if [ -e ihist.tadpole.txt ]; then
-    exit;
-fi
+for PREFIX in R S T; do
+    if [ ! -e ../${PREFIX}1.fq.gz ]; then
+        next;
+    fi
 
-if [ -e ihist.genome.txt ]; then
-    exit;
-fi
+    if [ -e ${PREFIX}.ihist.tadpole.txt ]; then
+        next;
+    fi
 
-tadpole.sh \
-    in=../R1.fq.gz \
-    in2=../R2.fq.gz \
-    out=tadpole.contig.fasta \
-[% IF opt.prefilter -%]
-    prefilter=[% opt.prefilter %] \
-[% END -%]
-    threads=[% opt.parallel %] \
-    overwrite
-
-bbmap.sh \
-    in=../R1.fq.gz \
-    in2=../R2.fq.gz \
-    out=tadpole.sam.gz \
-    ref=tadpole.contig.fasta \
-    threads=[% opt.parallel %] \
-    pairedonly \
-    reads=[% opt.reads %] \
-    nodisk overwrite
-
-reformat.sh \
-    in=tadpole.sam.gz \
-    ihist=ihist.tadpole.txt \
-    overwrite
-
-picard SortSam \
-    I=tadpole.sam.gz \
-    O=tadpole.sort.bam \
-    SORT_ORDER=coordinate \
-    VALIDATION_STRINGENCY=LENIENT
-
-picard CollectInsertSizeMetrics \
-    I=tadpole.sort.bam \
-    O=insert_size.tadpole.txt \
-    HISTOGRAM_FILE=insert_size.tadpole.pdf
-
-if [ -e ../../1_genome/genome.fa ]; then
-    bbmap.sh \
-        in=../R1.fq.gz \
-        in2=../R2.fq.gz \
-        out=genome.sam.gz \
-        ref=../../1_genome/genome.fa \
+    tadpole.sh \
+        in=../${PREFIX}1.fq.gz \
+        in2=../${PREFIX}2.fq.gz \
+        out=${PREFIX}.tadpole.contig.fasta \
         threads=[% opt.parallel %] \
-        maxindel=0 strictmaxindel \
+        overwrite [% IF opt.prefilter %]prefilter=[% opt.prefilter %][% END %]
+
+    bbmap.sh \
+        in=../${PREFIX}1.fq.gz \
+        in2=../${PREFIX}2.fq.gz \
+        out=${PREFIX}.tadpole.sam.gz \
+        ref=${PREFIX}.tadpole.contig.fasta \
+        threads=[% opt.parallel %] \
+        pairedonly \
         reads=[% opt.reads %] \
         nodisk overwrite
 
     reformat.sh \
-        in=genome.sam.gz \
-        ihist=ihist.genome.txt \
+        in=${PREFIX}.tadpole.sam.gz \
+        ihist=${PREFIX}.ihist.tadpole.txt \
         overwrite
 
     picard SortSam \
-        I=genome.sam.gz \
-        O=genome.sort.bam \
+        I=${PREFIX}.tadpole.sam.gz \
+        O=${PREFIX}.tadpole.sort.bam \
         SORT_ORDER=coordinate \
         VALIDATION_STRINGENCY=LENIENT
 
     picard CollectInsertSizeMetrics \
-        I=genome.sort.bam \
-        O=insert_size.genome.txt \
-        HISTOGRAM_FILE=insert_size.genome.pdf
+        I=${PREFIX}.tadpole.sort.bam \
+        O=${PREFIX}.insert_size.tadpole.txt \
+        HISTOGRAM_FILE=${PREFIX}.insert_size.tadpole.pdf
 
-fi
+    if [ -e ../../1_genome/genome.fa ]; then
+        bbmap.sh \
+            in=../${PREFIX}1.fq.gz \
+            in2=../${PREFIX}2.fq.gz \
+            out=${PREFIX}.genome.sam.gz \
+            ref=../../1_genome/genome.fa \
+            threads=[% opt.parallel %] \
+            maxindel=0 strictmaxindel \
+            reads=[% opt.reads %] \
+            nodisk overwrite
+
+        reformat.sh \
+            in=${PREFIX}.genome.sam.gz \
+            ihist=${PREFIX}.ihist.genome.txt \
+            overwrite
+
+        picard SortSam \
+            I=${PREFIX}.genome.sam.gz \
+            O=${PREFIX}.genome.sort.bam \
+            SORT_ORDER=coordinate \
+            VALIDATION_STRINGENCY=LENIENT
+
+        picard CollectInsertSizeMetrics \
+            I=${PREFIX}.genome.sort.bam \
+            O=${PREFIX}.insert_size.genome.txt \
+            HISTOGRAM_FILE=${PREFIX}.insert_size.genome.pdf
+    fi
+
+    find . -name "${PREFIX}.*.sam.gz" -or -name "${PREFIX}.*.sort.bam" |
+        parallel --no-run-if-empty -j 1 rm
+done
 
 echo -e "Table: statInsertSize\n" > statInsertSize.md
 printf "| %s | %s | %s | %s | %s |\n" \
