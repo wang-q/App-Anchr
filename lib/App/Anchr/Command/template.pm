@@ -217,23 +217,17 @@ log_warn [% sh %]
 mkdir -p 2_illumina/fastqc
 cd 2_illumina/fastqc
 
-if [ ! -e R1_fastqc.html ]; then
-    fastqc -t [% opt.parallel %] \
-        ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
-        -o .
-fi
+for PREFIX in R S T; do
+    if [ ! -e ../${PREFIX}1.fq.gz ]; then
+        next;
+    fi
 
-if [ ! -e S1_fastqc.html ]; then
-    fastqc -t [% opt.parallel %] \
-        ../S1.fq.gz [% IF not opt.se %]../S2.fq.gz[% END %] \
-        -o .
-fi
-
-if [ ! -e T1_fastqc.html ]; then
-    fastqc -t [% opt.parallel %] \
-        ../T1.fq.gz [% IF not opt.se %]../T2.fq.gz[% END %] \
-        -o .
-fi
+    if [ ! -e ${PREFIX}1_fastqc.html ]; then
+        fastqc -t [% opt.parallel %] \
+            ../${PREFIX}1.fq.gz [% IF not opt.se %]../${PREFIX}2.fq.gz[% END %] \
+            -o .
+    fi
+done
 
 exit;
 
@@ -266,23 +260,17 @@ log_warn [% sh %]
 mkdir -p 2_illumina/kmergenie
 cd 2_illumina/kmergenie
 
-if [ ! -e R1.dat.pdf ]; then
-    parallel --no-run-if-empty --linebuffer -k -j 2 "
-        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
-        " ::: R1 [% IF not opt.se %]R2[% END %]
-fi
+for PREFIX in R S T; do
+    if [ ! -e ../${PREFIX}1.fq.gz ]; then
+        next;
+    fi
 
-if [ ! -e S1.dat.pdf ]; then
-    parallel --no-run-if-empty --linebuffer -k -j 2 "
-        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
-        " ::: S1 [% IF not opt.se %]S2[% END %]
-fi
-
-if [ ! -e T1.dat.pdf ]; then
-    parallel --no-run-if-empty --linebuffer -k -j 2 "
-        kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
-        " ::: T1 [% IF not opt.se %]T2[% END %]
-fi
+    if [ ! -e ${PREFIX}1.dat.pdf ]; then
+        parallel --no-run-if-empty --linebuffer -k -j 2 "
+            kmergenie -l 21 -k 121 -s 10 -t [% opt.parallel2 %] --one-pass ../{}.fq.gz -o {}
+            " ::: ${PREFIX}1 [% IF not opt.se %]${PREFIX}2[% END %]
+    fi
+done
 
 exit;
 
