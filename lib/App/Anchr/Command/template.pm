@@ -676,7 +676,7 @@ for PREFIX in R S T; do
     fi
 done
 
-if [ ! -s statTrimReads.md ]; then
+if [ -s statTrimReads.md ]; then
     cat statTrimReads.md
     mv statTrimReads.md ../../
 fi
