@@ -475,61 +475,75 @@ log_warn [% sh %]
 mkdir -p 2_illumina/sgaPreQC
 cd 2_illumina/sgaPreQC
 
-if [ -e preqc_report.pdf ]; then
-    exit;
-fi
+for PREFIX in R S T; do
+    if [ ! -e ../${PREFIX}1.fq.gz ]; then
+        continue;
+    fi
 
-sga preprocess \
+    if [ -e ${PREFIX}.preqc.pdf ]; then
+        continue;
+    fi
+
+    sga preprocess \
 [% IF opt.se -%]
-    ../R1.fq.gz \
+        ../${PREFIX}1.fq.gz \
 [% ELSE -%]
-    ../R1.fq.gz ../R1.fq.gz \
-    --pe-mode 1 \
+        ../${PREFIX}1.fq.gz ../${PREFIX}2.fq.gz \
+        --pe-mode 1 \
 [% END -%]
-    -o reads.pp.fq
+        -o ${PREFIX}.pp.fq
 
-sga index -a ropebwt -t [% opt.parallel %] reads.pp.fq
+    sga index -a ropebwt -t [% opt.parallel %] ${PREFIX}.pp.fq
 
-sga preqc -t [% opt.parallel %] reads.pp.fq > preqc_output
+    sga preqc -t [% opt.parallel %] ${PREFIX}.pp.fq > ${PREFIX}.preqc_output
 
-sga-preqc-report.py preqc_output
+    sga-preqc-report.py ${PREFIX}.preqc_output -o ${PREFIX}.preqc
 
 [% IF opt.sgastats -%]
-sga stats -t [% opt.parallel %] -n [% opt.reads %] reads.pp.fq > stats.txt
+    sga stats -t [% opt.parallel %] -n [% opt.reads %] ${PREFIX}.pp.fq > ${PREFIX}.stats.txt
+[% END -%]
 
+    find . -type f -name "${PREFIX}.pp.*" |
+        parallel --no-run-if-empty -j 1 rm
+
+done
+
+[% IF opt.sgastats -%]
 echo -e "Table: statSgaStats\n" > statSgaStats.md
-printf "| %s | %s |\n" \
-    "Item" "Value" \
+printf "| %s | %s | %s | %s |\n" \
+    "Library" "incorrectBases" "perfectReads" "overlapDepth" \
     >> statSgaStats.md
-printf "|:--|--:|\n" >> statSgaStats.md
+printf "|:--|--:|--:|--:|\n" >> statSgaStats.md
 
 # sga stats
 #*** Stats:
 #380308 out of 149120670 bases are potentially incorrect (0.002550)
 #797208 reads out of 1000000 are perfect (0.797208)
 #Mean overlap depth: 356.41
-cat stats.txt |
-    perl -nl -e '
-        BEGIN { our $stat = { }; };
+for PREFIX in R S T; do
+    if [ ! -e ${PREFIX}.stats.txt ]; then
+        continue;
+    fi
 
-        m{potentially incorrect \(([\d\.]+)\)} and $stat->{incorrectBases} = $1;
-        m{perfect \(([\d\.]+)\)} and $stat->{perfectReads} = $1;
-        m{overlap depth: ([\d\.]+)} and $stat->{overlapDepth} = $1;
+    printf "| %s " "${PREFIX}" >> statSgaStats.md
+    cat ${PREFIX}.stats.txt |
+        perl -nl -e '
+            BEGIN { our $stat = { }; };
 
-        END {
-            for my $key ( qw{incorrectBases perfectReads} ) {
-                printf qq{| %s | %.2f%% |\n}, $key, $stat->{$key} * 100;
+            m{potentially incorrect \(([\d\.]+)\)} and $stat->{incorrectBases} = $1;
+            m{perfect \(([\d\.]+)\)} and $stat->{perfectReads} = $1;
+            m{overlap depth: ([\d\.]+)} and $stat->{overlapDepth} = $1;
+
+            END {
+                printf qq{| %.2f%% | %.2f%% | %s |\n},
+                    $stat->{incorrectBases} * 100,
+                    $stat->{perfectReads} * 100,
+                    $stat->{overlapDepth};
             }
-            for my $key ( qw{overlapDepth} ) {
-                printf qq{| %s | %s |\n}, $key, $stat->{$key};
-            }
-        }
-        ' \
-    >> statSgaStats.md
+            ' \
+        >> statSgaStats.md
+done
 [% END -%]
-
-find . -type f -name "reads.pp.*" |
-    parallel --no-run-if-empty -j 1 rm
 
 cat statSgaStats.md
 
