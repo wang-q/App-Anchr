@@ -392,54 +392,55 @@ printf "|:--|--:|--:|--:|--:|\n" >> statInsertSize.md
 #Mode	251
 #STDev	134.676
 #PercentOfPairs	36.247
-for G in genome tadpole; do
-    if [ ! -e ihist.${G}.txt ]; then
-        continue;
-    fi
+for PREFIX in R S T; do
+    for G in genome tadpole; do
+        if [ ! -e ${PREFIX}.ihist.${G}.txt ]; then
+            continue;
+        fi
 
-    printf "| %s " "${G}.bbtools" >> statInsertSize.md
-    cat ihist.${G}.txt \
-        | perl -nla -e '
-            BEGIN { our $stat = { }; };
+        printf "| %s " "${PREFIX}.${G}.bbtools" >> statInsertSize.md
+        cat ${PREFIX}.ihist.${G}.txt \
+            | perl -nla -e '
+                BEGIN { our $stat = { }; };
 
-            m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
-            $stat->{$1} = $F[1];
+                m{\#(Mean|Median|STDev|PercentOfPairs)} or next;
+                $stat->{$1} = $F[1];
 
-            END {
-                printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
-                    $stat->{Mean},
-                    $stat->{Median},
-                    $stat->{STDev},
-                    $stat->{PercentOfPairs};
-            }
-            ' \
-        >> statInsertSize.md
+                END {
+                    printf qq{| %.1f | %s | %.1f | %.2f%% |\n},
+                        $stat->{Mean},
+                        $stat->{Median},
+                        $stat->{STDev},
+                        $stat->{PercentOfPairs};
+                }
+                ' \
+            >> statInsertSize.md
+    done
 done
 
 # picard CollectInsertSizeMetrics
 #MEDIAN_INSERT_SIZE	MODE_INSERT_SIZE	MEDIAN_ABSOLUTE_DEVIATION	MIN_INSERT_SIZE	MAX_INSERT_SIZE	MEAN_INSERT_SIZE	STANDARD_DEVIATION	READ_PAIRS	PAIR_ORIENTATION	WIDTH_OF_10_PERCENT	WIDTH_OF_20_PERCENT	WIDTH_OF_30_PERCENT	WIDTH_OF_40_PERCENT	WIDTH_OF_50_PERCENT	WIDTH_OF_60_PERCENT	WIDTH_OF_70_PERCENT	WIDTH_OF_80_PERCENT	WIDTH_OF_90_PERCENT	WIDTH_OF_95_PERCENT	WIDTH_OF_99_PERCENT	SAMPLE	LIBRARY	READ_GROUP
 #296	287	14	92	501	294.892521	21.587526	1611331	FR	7	11	17	23	29	35	41	49	63	81	145
-for G in genome tadpole; do
-    if [ ! -e insert_size.${G}.txt ]; then
-        continue;
-    fi
+for PREFIX in R S T; do
+    for G in genome tadpole; do
+        if [ ! -e ${PREFIX}.insert_size.${G}.txt ]; then
+            continue;
+        fi
 
-    cat insert_size.${G}.txt \
-        | G=${G} perl -nla -F"\t" -e '
-            next if @F < 9;
-            next unless /^\d/;
-            printf qq{| %s | %.1f | %s | %.1f | %s |\n},
-                qq{$ENV{G}.picard},
-                $F[5],
-                $F[0],
-                $F[6],
-                $F[8];
-            ' \
-        >> statInsertSize.md
+        cat ${PREFIX}.insert_size.${G}.txt \
+            | GROUP="${PREFIX}.${G}" perl -nla -F"\t" -e '
+                next if @F < 9;
+                next unless /^\d/;
+                printf qq{| %s | %.1f | %s | %.1f | %s |\n},
+                    qq{$ENV{GROUP}.picard},
+                    $F[5],
+                    $F[0],
+                    $F[6],
+                    $F[8];
+                ' \
+            >> statInsertSize.md
+    done
 done
-
-find . -type f -name "*.sam.gz" -or -name "*.sort.bam" \
-    | parallel --no-run-if-empty -j 1 rm
 
 cat statInsertSize.md
 
