@@ -42,14 +42,6 @@ fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
 
-log_info "kmer histogram and peaks"
-if [ ! -e peaks.raw.txt ]; then
-    kmercountexact.sh \
-        in=temp.fq.gz \
-        khist=khist.raw.txt peaks=peaks.raw.txt k=[% opt.cutk %] \
-        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
-fi
-
 [% IF opt.cutoff -%]
 # Remove reads without high depth kmer
 log_info "kmer cutoff with bbnorm.sh"
@@ -96,7 +88,7 @@ if [ ! -e trim.fq.gz ]; then
         ref=[% opt.adapter %] \
         maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
         minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
-        stats=trim.stats.txt overwrite \
+        stats=[% opt.prefix %].trim.stats.txt overwrite \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s trim.fq.gz temp.fq.gz
@@ -109,7 +101,7 @@ if [ ! -e filter.fq.gz ]; then
         out=filter.fq.gz \
         ref=[% FOREACH filter IN opt.filter %][% IF filter == 'adapter' %][% opt.adapter %],[% END %][% IF filter == 'phix' %][% opt.phix %],[% END %][% IF filter == 'artifact' %][% opt.artifact %],[% END %][% END %] \
         k=[% opt.matchk %] cardinality \
-        stats=filter.stats.txt overwrite \
+        stats=[% opt.prefix %].filter.stats.txt overwrite \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s filter.fq.gz temp.fq.gz
@@ -118,7 +110,7 @@ log_info "kmer histogram and peaks again"
 if [ ! -e peaks.final.txt ]; then
     kmercountexact.sh \
         in=temp.fq.gz \
-        khist=khist.final.txt peaks=peaks.final.txt k=[% opt.cutk %] \
+        khist=[% opt.prefix %].khist.txt peaks=[% opt.prefix %].peaks.txt k=[% opt.cutk %] \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 
