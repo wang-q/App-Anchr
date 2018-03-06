@@ -13,6 +13,11 @@ mkdir -p 2_illumina/mergereads
 cd 2_illumina/mergereads
 
 log_info "mergereads.sh"
+START_TIME=$(date +%s)
+save START_TIME
+
+NUM_THREADS=[% opt.parallel %]
+save NUM_THREADS
 
 # save genome size
 ESTIMATED_GENOME_SIZE=[% opt.genome %]
@@ -40,6 +45,37 @@ printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 for NAME in clumped ecco eccc ecct extended merged.raw merged unmerged.raw unmerged.trim U1 U2 Us; do
     if [ ! -e ${NAME}.fq.gz ]; then
         continue;
+    # Create .cor.fa.gz
+    faops interleave \
+        -p unmerged \
+        ${PREFIXU}1.fq.gz \
+        ${PREFIXU}2.fq.gz \
+        > ${PREFIXM}.interleave.fa
+
+    faops interleave \
+        -p single \
+        ${PREFIXU}s.fq.gz \
+        >> ${PREFIXM}.interleave.fa
+
+    faops interleave \
+        -p merged \
+        ${PREFIXM}1.fq.gz \
+        >> ${PREFIXM}.interleave.fa
+
+    # Shuffle interleaved reads.
+    log_info Shuffle interleaved reads.
+    cat ${PREFIXM}.interleave.fa |
+        awk '{
+            OFS="\t"; \
+            getline seq; \
+            getline name2; \
+            getline seq2; \
+            print $0,seq,name2,seq2}' |
+        shuf |
+        awk '{OFS="\n"; print $1,$2,$3,$4}' \
+        > ${PREFIXM}.cor.fa
+    rm ${PREFIXM}.interleave.fa
+    pigz -p [% opt.parallel %] ${PREFIXM}.cor.fa
     fi
 
     printf "| %s | %s | %s | %s |\n" \
@@ -89,5 +125,9 @@ for NAME in ihist.merge1.txt ihist.merge.txt; do
 done
 
 cat statMergeReads.md
+END_TIME=$(date +%s)
+save END_TIME
+RUNTIME=$((END_TIME-START_TIME))
+save RUNTIME
 
 mv statMergeReads.md ../../

@@ -3,13 +3,6 @@
 #----------------------------#
 # Run
 #----------------------------#
-
-START_TIME=$(date +%s)
-save START_TIME
-
-NUM_THREADS=[% opt.parallel %]
-save NUM_THREADS
-
 rm -f temp.fq.gz;
 
 #----------------------------#
@@ -125,55 +118,9 @@ repair.sh \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
     repair overwrite
 
-# Create pe.cor.fa.gz
-faops interleave \
-    -p unmerged \
-    U1.fq.gz \
-    U2.fq.gz \
-    > pe.interleave.fa
-
-faops interleave \
-    -p single \
-    Us.fq.gz \
-    >> pe.interleave.fa
-
-faops interleave \
-    -p merged \
-    merged.fq.gz \
-    >> pe.interleave.fa
-
-#----------------------------#
-# Shuffle interleaved reads.
-#----------------------------#
-log_info Shuffle interleaved reads.
-cat pe.interleave.fa \
-    | awk '{
-        OFS="\t"; \
-        getline seq; \
-        getline name2; \
-        getline seq2; \
-        print $0,seq,name2,seq2}' \
-    | shuf \
-    | awk '{OFS="\n"; print $1,$2,$3,$4}' \
-    > pe.cor.fa
-rm pe.interleave.fa
-pigz -p [% opt.parallel %] pe.cor.fa
-
-log_debug "Reads stats with faops"
-SUM_IN=$( faops n50 -H -N 0 -S [% args.0 %] [% IF args.1 %][% args.1 %][% END %])
-save SUM_IN
-SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa.gz )
-save SUM_OUT
-
 #----------------------------#
 # Done.
 #----------------------------#
-END_TIME=$(date +%s)
-save END_TIME
-
-RUNTIME=$((END_TIME-START_TIME))
-save RUNTIME
-
 log_info Done.
 
 exit 0
