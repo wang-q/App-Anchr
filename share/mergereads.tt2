@@ -21,6 +21,17 @@ clumpify.sh \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
     dedupe dupesubs=0 \
     overwrite
+[% IF args.2 -%]
+log_info "clumpify SE"
+clumpify.sh \
+    in=[% args.2 %] \
+    out=clumpeds.fq.gz \
+    threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
+    dedupe dupesubs=0 \
+    overwrite
+cat clumpeds.fq.gz >> clumped.fq.gz
+rm clumpeds.fq.gz
+[% END -%]
 rm -f temp.fq.gz; ln -s clumped.fq.gz temp.fq.gz
 
 [% FOREACH ecphase IN opt.ecphase -%]
