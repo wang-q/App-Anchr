@@ -546,29 +546,6 @@ EOF
     ) or die Template->error;
 }
 
-sub gen_mergereads {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    return unless $opt->{mergereads};
-    return if $opt->{se};
-
-    $sh_name = "2_mergereads.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '2_mergereads.tt2',
-        {   args => $args,
-            opt  => $opt,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
 sub gen_trim {
     my ( $self, $opt, $args ) = @_;
 
@@ -695,6 +672,30 @@ ln -s ./trim ./Q0L0
 EOF
     $tt->process(
         \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+}
+
+sub gen_mergereads {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{mergereads};
+    return if $opt->{se};
+
+    $sh_name = "2_mergereads.sh";
+    print "Create $sh_name\n";
+
+    $tt->process(
+        '2_mergereads.tt2',
         {   args => $args,
             opt  => $opt,
             sh   => $sh_name,
