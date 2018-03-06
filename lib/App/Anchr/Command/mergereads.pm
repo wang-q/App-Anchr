@@ -15,6 +15,8 @@ sub opt_spec {
         [ "qual|q=i",     "quality score for 3' end",                  { default => 15 }, ],
         [ "len|l=i",      "filter reads less or equal to this length", { default => 60 }, ],
         [ 'ecphase=s',    'Error-correct phases',                      { default => "1,2,3", }, ],
+        [ "prefixm=s",    "prefix of merged reads",                    { default => "M" }, ],
+        [ "prefixu=s",    "prefix of unmerged reads",                  { default => "U" }, ],
         [ "parallel|p=i", "number of threads",                         { default => 16 }, ],
         [ "xmx=s",        "set Java memory usage", ],
         { show_defaults => 1, }
@@ -22,7 +24,7 @@ sub opt_spec {
 }
 
 sub usage_desc {
-    return "anchr mergereads [options] <file1> [file2] [file3]";
+    return "anchr mergereads [options] <R1> [R2] [Rs]";
 }
 
 sub description {

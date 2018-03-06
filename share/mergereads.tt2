@@ -42,7 +42,7 @@ log_info Error-correct phase [% ecphase %]
 # error-correct via overlap
 bbmerge.sh \
     in=temp.fq.gz out=ecco.fq.gz \
-    ihist=ihist.merge1.txt \
+    ihist=[% opt.prefixm %].ihist.merge1.txt \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
@@ -91,7 +91,7 @@ rm temp.fq.gz; ln -s extended.fq.gz temp.fq.gz
 log_info "Read merging"
 bbmerge-auto.sh \
     in=temp.fq.gz out=merged.raw.fq.gz outu=unmerged.raw.fq.gz \
-    ihist=ihist.merge.txt \
+    ihist=[% opt.prefixm %].ihist.merge.txt \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
@@ -101,18 +101,10 @@ bbmerge-auto.sh \
 log_info "Dedupe merged reads"
 clumpify.sh \
     in=merged.raw.fq.gz \
-    out=merged.fq.gz \
+    out=[% opt.prefixm %]1.fq.gz \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
     dedupe dupesubs=0 \
     overwrite
-
-[% IF args.2 -%]
-log_info "Combine unmerged.raw with [% args.2 %]"
-pigz -d -c unmerged.raw.fq.gz [% args.2 %] \
-    > unmerged.raw.fq
-rm unmerged.raw.fq.gz
-pigz unmerged.raw.fq
-[% END -%]
 
 log_info "Quality-trim the unmerged reads"
 bbduk.sh \
@@ -120,12 +112,12 @@ bbduk.sh \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
     qtrim=r trimq=[% opt.qual %] minlen=[% opt.len %] overwrite
 
-# Separates paired reads
+# Separates unmerged reads
 repair.sh \
     in=unmerged.trim.fq.gz \
-    out=U1.fq.gz \
-    out2=U2.fq.gz \
-    outs=Us.fq.gz \
+    out=[% opt.prefixu %]1.fq.gz \
+    out2=[% opt.prefixu %]2.fq.gz \
+    outs=[% opt.prefixu %]s.fq.gz \
     threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %] \
     repair overwrite
 
