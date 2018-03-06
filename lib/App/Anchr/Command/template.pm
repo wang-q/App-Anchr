@@ -574,108 +574,114 @@ sub gen_trim {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-if [ -e 2_illumina/trim/R1.fq.gz ]; then
-    log_debug "2_illumina/trim/R1.fq.gz presents"
-    exit;
-fi
-
 #----------------------------#
 # run
 #----------------------------#
 mkdir -p 2_illumina/trim
-pushd 2_illumina/trim > /dev/null
+cd 2_illumina/trim
 
-anchr trim \
-    [% opt.trim2 %] \
-    --qual "[% opt.qual2 %]" \
-    --len "[% opt.len2 %]" \
-[% IF opt.filter -%]
-    --filter [% opt.filter %] \
-[% END -%]
-[% IF opt.sample2 -%]
-[% IF opt.genome -%]
-    --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
-[% END -%]
-[% END -%]
-    --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
-    ../R1.fq.gz [% IF not opt.se %]../R2.fq.gz[% END %] \
-    -o trim.sh
-bash trim.sh
-
-log_info "stats of all .fq.gz files"
-echo -e "Table: statTrimReads\n" > statTrimReads.md
-printf "| %s | %s | %s | %s |\n" \
-    "Name" "N50" "Sum" "#" \
-    >> statTrimReads.md
-printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
-
-for NAME in clumpify filteredbytile highpass sample trim filter R1 R2 Rs; do
-    if [ ! -e ${NAME}.fq.gz ]; then
+for PREFIX in R S T; do
+    if [ -e 2_illumina/trim/${PREFIX}1.fq.gz ]; then
+        log_debug "2_illumina/trim/${PREFIX}1.fq.gz presents"
         continue;
     fi
 
-    printf "| %s | %s | %s | %s |\n" \
-        $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
-done
-echo >> statTrimReads.md
+    anchr trim \
+        [% opt.trim2 %] \
+        --qual "[% opt.qual2 %]" \
+        --len "[% opt.len2 %]" \
+    [% IF opt.filter -%]
+        --filter [% opt.filter %] \
+    [% END -%]
+    [% IF opt.sample2 -%]
+    [% IF opt.genome -%]
+        --sample $(( [% opt.genome %] * [% opt.sample2 %] )) \
+    [% END -%]
+    [% END -%]
+        --parallel [% opt.parallel %] [% IF opt.xmx %]--xmx [% opt.xmx %][% END %] \
+        ../${PREFIX}1.fq.gz [% IF not opt.se %]../${PREFIX}2.fq.gz[% END %] \
+        --prefix ${PREFIX} \
+        -o trim.sh
+    bash trim.sh
 
-log_info "clear unneeded .fq.gz files"
-for NAME in temp clumpify filteredbytile highpass sample trim; do
-    if [ -e ${NAME}.fq.gz ]; then
-        rm ${NAME}.fq.gz
+    log_info "stats of all .fq.gz files"
+
+    if [ ! -e statTrimReads.md ]; then
+        echo -e "Table: statTrimReads\n" > statTrimReads.md
+        printf "| %s | %s | %s | %s |\n" \
+            "Name" "N50" "Sum" "#" \
+            >> statTrimReads.md
+        printf "|:--|--:|--:|--:|\n" >> statTrimReads.md
+    fi
+
+    for NAME in clumpify filteredbytile highpass sample trim filter ${PREFIX}1 ${PREFIX}2 ${PREFIX}s; do
+        if [ ! -e ${NAME}.fq.gz ]; then
+            continue;
+        fi
+
+        printf "| %s | %s | %s | %s |\n" \
+            $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
+    done
+    echo >> statTrimReads.md
+
+    log_info "clear unneeded .fq.gz files"
+    for NAME in temp clumpify filteredbytile highpass sample trim filter; do
+        if [ -e ${NAME}.fq.gz ]; then
+            rm ${NAME}.fq.gz
+        fi
+    done
+done
+
+for PREFIX in R S T; do
+    if [ ! -s statTrimReads.md ]; then
+        continue;
+    fi
+
+    if [ -e ${PREFIX}.trim.stats.txt ]; then
+        echo >> statTrimReads.md
+        echo '```text' >> statTrimReads.md
+        echo "#${PREFIX}.trim" >> statTrimReads.md
+        cat ${PREFIX}.trim.stats.txt |
+            perl -nla -F"\t" -e '
+                /^#(Matched|Name)/ and print and next;
+                /^#/ and next;
+                $F[2] =~ m{([\d.]+)} and $1 > 0.1 and print;
+            ' \
+            >> statTrimReads.md
+        echo '```' >> statTrimReads.md
+    fi
+
+    if [ -e ${PREFIX}.filter.stats.txt ]; then
+        echo >> statTrimReads.md
+        echo '```text' >> statTrimReads.md
+        echo "#${PREFIX}.filter" >> statTrimReads.md
+        cat ${PREFIX}.filter.stats.txt |
+            perl -nla -F"\t" -e '
+                /^#(Matched|Name)/ and print and next;
+                /^#/ and next;
+                $F[2] =~ m{([\d.]+)} and $1 > 0.01 and print;
+            ' \
+            >> statTrimReads.md
+        echo '```' >> statTrimReads.md
+    fi
+
+    if [ -e ${PREFIX}.peaks.txt ]; then
+        echo >> statTrimReads.md
+        echo '```text' >> statTrimReads.md
+        echo "#${PREFIX}.peaks" >> statTrimReads.md
+        cat ${PREFIX}.peaks.txt |
+            grep "^#" \
+            >> statTrimReads.md
+        echo '```' >> statTrimReads.md
     fi
 done
 
-if [ -e trim.stats.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#trim" >> statTrimReads.md
-    cat trim.stats.txt \
-        | perl -nla -F"\t" -e '
-            /^#(Matched|Name)/ and print and next;
-            /^#/ and next;
-            $F[1] >= 1000 and print;
-        ' \
-        >> statTrimReads.md
-    echo '```' >> statTrimReads.md
+if [ ! -s statTrimReads.md ]; then
+    cat statTrimReads.md
+    mv statTrimReads.md ../../
 fi
 
-if [ -e filter.stats.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#filter" >> statTrimReads.md
-    cat filter.stats.txt \
-        | perl -nla -F"\t" -e '
-            /^#(Matched|Name)/ and print and next;
-            /^#/ and next;
-            $F[1] >= 100 and print;
-        ' \
-        >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-if [ -e peaks.raw.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#peaks.raw" >> statTrimReads.md
-    cat peaks.raw.txt >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-if [ -e peaks.final.txt ]; then
-    echo >> statTrimReads.md
-    echo '```text' >> statTrimReads.md
-    echo "#peaks.final" >> statTrimReads.md
-    cat peaks.final.txt >> statTrimReads.md
-    echo '```' >> statTrimReads.md
-fi
-
-cat statTrimReads.md
-
-mv statTrimReads.md ../../
-
-popd > /dev/null
-
+cd ${BASH_DIR}
 cd 2_illumina
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
