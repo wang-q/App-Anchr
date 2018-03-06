@@ -28,6 +28,7 @@ sub opt_spec {
             "artifact file",
             { default => File::ShareDir::dist_file( 'App-Anchr', 'sequencing_artifacts.fa.gz' ) },
         ],
+        [ "prefix=s", "prefix of trimmed reads", { default => "R" }, ],
         [ "dedupe",   "the uniq step", ],
         [ "tile",     "with normal Illumina names, do tile based filtering", ],
         [ "cutoff=i", "min kmer depth cutoff", ],

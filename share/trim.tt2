@@ -124,17 +124,17 @@ fi
 
 # Revert to normal pair-end fastq files
 log_info "re-pair with repair.sh"
-if [ ! -e R1.trim.fq.gz ]; then
+if [ ! -e [% opt.prefix %]1.trim.fq.gz ]; then
 [% IF args.1 -%]
     repair.sh \
         in=temp.fq.gz \
-        out=R1.fq.gz \
-        out2=R2.fq.gz \
-        outs=Rs.fq.gz \
+        out=[% opt.prefix %]1.fq.gz \
+        out2=[% opt.prefix %]2.fq.gz \
+        outs=[% opt.prefix %]s.fq.gz \
         repair \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 [% ELSE -%]
-    cp -L temp.fq.gz R1.fq.gz
+    cp -L temp.fq.gz [% opt.prefix %]1.fq.gz
 [% END -%]
 fi
 
@@ -147,8 +147,8 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     cd Q{1}L{2}
 
     printf '==> Qual-Len: %s\n'  Q{1}L{2}
-    if [ -e R1.fq.gz ]; then
-        echo '    R1.fq.gz already presents'
+    if [ -e [% opt.prefix %]1.fq.gz ]; then
+        echo '    [% opt.prefix %]1.fq.gz already presents'
         exit;
     fi
 
@@ -157,26 +157,26 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         -t sanger \
         -q {1} \
         -l {2} \
-        -f ../R1.fq.gz \
-        -r ../R2.fq.gz \
-        -o R1.fq \
-        -p R2.fq \
-        -s Rs.fq
+        -f ../[% opt.prefix %]1.fq.gz \
+        -r ../[% opt.prefix %]2.fq.gz \
+        -o [% opt.prefix %]1.fq \
+        -p [% opt.prefix %]2.fq \
+        -s [% opt.prefix %]s.fq
     sickle se \
         -t sanger \
         -q {1} \
         -l {2} \
-        -f ../Rs.fq.gz \
-        -o Rs.temp.fq
-    cat Rs.temp.fq >> Rs.fq
-    rm Rs.temp.fq
+        -f ../[% opt.prefix %]s.fq.gz \
+        -o [% opt.prefix %]s.temp.fq
+    cat [% opt.prefix %]s.temp.fq >> [% opt.prefix %]s.fq
+    rm [% opt.prefix %]s.temp.fq
 [% ELSE -%]
     sickle se \
         -t sanger \
         -q {1} \
         -l {2} \
-        -f ../R1.fq.gz \
-        -o R1.fq
+        -f ../[% opt.prefix %]1.fq.gz \
+        -o [% opt.prefix %]1.fq
 [% END -%]
 
     pigz *.fq
