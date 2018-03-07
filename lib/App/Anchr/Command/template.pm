@@ -626,7 +626,6 @@ for PREFIX in R S T; do
         printf "| %s | %s | %s | %s |\n" \
             $(echo ${NAME}; stat_format ${NAME}.fq.gz;) >> statTrimReads.md
     done
-    echo >> statTrimReads.md
 
     log_info "clear unneeded .fq.gz files"
     for NAME in temp clumpify filteredbytile highpass sample trim filter; do
@@ -640,6 +639,8 @@ for PREFIX in R S T; do
     if [ ! -s statTrimReads.md ]; then
         continue;
     fi
+
+    echo >> statTrimReads.md
 
     if [ -e ${PREFIX}.trim.stats.txt ]; then
         echo >> statTrimReads.md
