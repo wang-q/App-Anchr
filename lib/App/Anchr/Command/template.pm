@@ -686,9 +686,11 @@ cd ${BASH_DIR}
 cd 2_illumina
 
 parallel --no-run-if-empty --linebuffer -k -j 2 "
-    ln -s ./trim/Q{1}L{2}/ ./Q{1}L{2}
+    ln -fs ./trim/Q{1}L{2}/ ./Q{1}L{2}
     " ::: [% opt.qual2 %] ::: [% opt.len2 %]
-ln -s ./trim ./Q0L0
+ln -fs ./trim ./Q0L0
+
+exit 0;
 
 EOF
     $tt->process(
@@ -927,7 +929,7 @@ done
 
 cd ${BASH_DIR}/2_illumina
 
-if [ -e Q0L0/statQuorum.* ]; then
+if [ -e Q0L0/statQuorum.R ]; then
     echo -e "Table: statQuorum\n" > statQuorum.md
     printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
         "Name" "CovIn" "CovOut" "Discard%" \
@@ -937,12 +939,13 @@ if [ -e Q0L0/statQuorum.* ]; then
     printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
         >> statQuorum.md
 
-    for Q in 0 [% opt.qual2 %]; do
-        for L in 0 [% opt.len2 %]; do
-            if [ -e Q${Q}L${L}/statQuorum.* ]; then
-                cat Q${Q}L${L}/statQuorum.* >> statQuorum.md;
-                rm Q${Q}L${L}/statQuorum.*;
-            fi
+    for PREFIX in R S T; do
+        for Q in 0 [% opt.qual2 %]; do
+            for L in 0 [% opt.len2 %]; do
+                if [ -e Q${Q}L${L}/statQuorum.${PREFIX} ]; then
+                    cat Q${Q}L${L}/statQuorum.${PREFIX} >> statQuorum.md;
+                fi
+            done
         done
     done
 
