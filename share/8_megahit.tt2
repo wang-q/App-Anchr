@@ -27,13 +27,7 @@ else
     megahit \
         -t [% opt.parallel %] \
         --k-list 31,41,51,61,71,81 \
-[% IF not opt.se -%]
-        -1 ${DIR_READS}/R1.fq.gz \
-        -2 ${DIR_READS}/R2.fq.gz \
-        -r ${DIR_READS}/Rs.fq.gz \
-[% ELSE -%]
-        -r ${DIR_READS}/R1.fq.gz \
-[% END -%]
+        --12 ${DIR_READS}/pe.cor.fa.gz \
         --min-count 3 \
         -o 8_megahit
 
@@ -57,19 +51,10 @@ cd 8_megahit/anchor
 
 anchr anchors \
     ../megahit.non-contained.fasta \
-[% IF not opt.se -%]
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
-[% ELSE -%]
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-[% END -%]
+    ${DIR_READS}/pe.cor.fa.gz \
     -p [% opt.parallel %] \
     --ratio 0.98 \
     -o anchors.sh
 bash anchors.sh
-
-find . -type f -name "pe.anchor.fa" | xargs rm
-find . -type f -name "anchor.*.fasta" | xargs rm
 
 exit 0;

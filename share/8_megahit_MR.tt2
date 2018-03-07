@@ -23,9 +23,7 @@ else
         -t [% opt.parallel %] \
         --k-min 45 --k-max 225 --k-step 26 \
         --min-count 3 \
-        -1 ${BASH_DIR}/2_illumina/mergereads/U1.fq.gz \
-        -2 ${BASH_DIR}/2_illumina/mergereads/U2.fq.gz \
-        -r ${BASH_DIR}/2_illumina/mergereads/Us.fq.gz,${BASH_DIR}/2_illumina/mergereads/merged.fq.gz \
+        --12 ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz \
         -o 8_megahit_MR
 
     anchr contained \
@@ -48,9 +46,7 @@ cd 8_megahit_MR/anchor
 
 anchr anchors \
     ../megahit.non-contained.fasta \
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
+    ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz \
     -p [% opt.parallel %] \
     --ratio 0.98 \
     -o anchors.sh
