@@ -40,8 +40,6 @@ bsub -w "done([% opt.basename %]-2_trim)" \
 #----------------------------#
 bsub -w "done([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_quorum" "bash 2_quorum.sh"
-bsub -w "done([% opt.basename %]-2_quorum)" \
-    -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statQuorum" "bash 9_statQuorum.sh"
 
 #----------------------------#
 # down sampling, k-unitigs and anchors

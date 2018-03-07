@@ -122,9 +122,6 @@ sub execute {
     # quorum
     $self->gen_quorum( $opt, $args );
 
-    # statQuorum
-    $self->gen_statQuorum( $opt, $args );
-
     # downSampling
     $self->gen_downSampling( $opt, $args );
 
@@ -285,7 +282,6 @@ EOF
     ) or die Template->error;
 
 }
-
 
 sub gen_insertSize {
     my ( $self, $opt, $args ) = @_;

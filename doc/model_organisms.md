@@ -288,10 +288,10 @@ bash 2_kmergenie.sh
 bash 2_insertSize.sh
 bash 2_sgaPreQC.sh
 
-# preprocess Illumina reads
+# trim Illumina reads
 bash 2_trim.sh
 
-# preprocess PacBio reads
+# trim PacBio reads
 bash 3_trimlong.sh
 
 # reads stats
@@ -302,7 +302,6 @@ bash 2_mergereads.sh
 
 # quorum
 bash 2_quorum.sh
-bash 9_statQuorum.sh
 
 ```
 

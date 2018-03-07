@@ -47,9 +47,6 @@ fi
 if [ -e 2_quorum.sh ]; then
     bash 2_quorum.sh;
 fi
-if [ -e 9_statQuorum.sh ]; then
-    bash 9_statQuorum.sh;
-fi
 
 #----------------------------#
 # down sampling, k-unitigs and anchors
