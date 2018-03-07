@@ -916,6 +916,10 @@ for Q in 0 [% opt.qual2 %]; do
         RUNTIME=$((END_TIME-START_TIME))
         save RUNTIME
 
+        # save genome size
+        ESTIMATED_GENOME_SIZE=[% opt.genome %]
+        save ESTIMATED_GENOME_SIZE
+
     done
 done
 
