@@ -110,10 +110,9 @@ JF_SIZE=$(
     ls -l *.fastq |
         awk '{n+=$5} END{s=int(n / 50 * 1.1); if(s>[% opt.jf %])print s;else print "[% opt.jf %]";}'
 )
-save JF_SIZE
 perl -e '
     if(int('$JF_SIZE') > [% opt.jf %]) {
-        print "WARNING: JF_SIZE set too low, increasing JF_SIZE to at least '$JF_SIZE'.\n";
+        print "WARNING: JF_SIZE set too low, increasing JF_SIZE to '$JF_SIZE'.\n";
     }
     '
 
