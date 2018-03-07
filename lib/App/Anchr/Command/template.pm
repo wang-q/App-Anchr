@@ -2051,7 +2051,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     " ::: clumpify filteredbytile sample trim filter
 
 # insertSize
-rm -f 2_illumina/insertSize/tadpole.contig.fasta
+rm -f 2_illumina/insertSize/*tadpole.contig.fasta
 
 # quorum
 find 2_illumina -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
