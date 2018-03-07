@@ -1959,6 +1959,7 @@ sub gen_platanus {
         '8_platanus.tt2',
         {   args => $args,
             opt  => $opt,
+            sh   => $sh_name,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
