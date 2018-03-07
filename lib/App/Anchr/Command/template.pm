@@ -2218,7 +2218,6 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
 
 rm -fr 2_illumina/trim/
 rm -fr 2_illumina/mergereads/
-rm -fr 2_illumina/insertSize/
 
 # pacbio
 rm -fr 3_pacbio/bam
