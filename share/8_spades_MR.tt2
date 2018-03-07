@@ -19,45 +19,54 @@ if [ -e 8_spades_MR/spades.non-contained.fasta ]; then
 else
     log_info "Run spades"
 
+    mkdir -p 8_spades_MR
+    cd 8_spades_MR
+
+    mkdir -p re-pair
+    faops filter -l 0 -a 60 ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz stdout |
+        repair.sh \
+            in=stdin.fa \
+            out=re-pair/R1.fa \
+            out2=re-pair/R2.fa \
+            outs=re-pair/Rs.fa \
+            threads=[% opt.parallel %] \
+            repair overwrite
+
+    # spades seems ignore non-properly paired reads
     spades.py \
         -t [% opt.parallel %] \
         --only-assembler \
         -k 25,55,95,125 \
-        --pe1-1 ${BASH_DIR}/2_illumina/mergereads/U1.fq.gz \
-        --pe1-2 ${BASH_DIR}/2_illumina/mergereads/U2.fq.gz \
-        --pe1-s ${BASH_DIR}/2_illumina/mergereads/Us.fq.gz \
-        --s1 ${BASH_DIR}/2_illumina/mergereads/merged.fq.gz \
-        -o 8_spades_MR
+        -1 re-pair/R1.fa \
+        -2 re-pair/R2.fa \
+        -s re-pair/Rs.fa \
+        -o .
 
     anchr contained \
-        8_spades_MR/contigs.fasta \
-        --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+        contigs.fasta \
+        --len 1000 --idt 0.98 --proportion 0.99999 --parallel [% opt.parallel %] \
         -o stdout \
-        | faops filter -a 1000 -l 0 stdin 8_spades_MR/spades.non-contained.fasta
+        | faops filter -a 1000 -l 0 stdin spades.non-contained.fasta
 fi
 
 log_info "Clear intermediate files"
-find . -type d -path "*8_spades_MR/*" -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
+find . -type d -not -name "anchor" | parallel --no-run-if-empty -j 1 rm -fr
 
 #----------------------------#
 # anchor
 #----------------------------#
 log_info "Create anchors"
 
+cd ${BASH_DIR}
 mkdir -p 8_spades_MR/anchor
 cd 8_spades_MR/anchor
 
 anchr anchors \
     ../spades.non-contained.fasta \
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
+    ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz \
     -p [% opt.parallel %] \
     --ratio 0.98 \
     -o anchors.sh
 bash anchors.sh
-
-find . -type f -name "pe.anchor.fa" | xargs rm
-find . -type f -name "anchor.*.fasta" | xargs rm
 
 exit 0;

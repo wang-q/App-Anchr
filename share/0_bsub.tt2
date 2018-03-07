@@ -163,13 +163,13 @@ bsub -w "ended([% opt.basename %]-5_canu)" \
 #----------------------------#
 # spades, megahit and platanus
 #----------------------------#
-bsub -w "ended([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_quorum)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_spades" "bash 8_spades.sh"
 
-bsub -w "ended([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_quorum)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_megahit" "bash 8_megahit.sh"
 
-bsub -w "ended([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_quorum)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_platanus" "bash 8_platanus.sh"
 
 [% IF opt.mergereads and ! opt.se -%]

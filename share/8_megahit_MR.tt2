@@ -22,8 +22,8 @@ else
     megahit \
         -t [% opt.parallel %] \
         --k-min 45 --k-max 225 --k-step 26 \
-        --min-count 3 \
         --12 ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz \
+        --min-count 3 \
         -o 8_megahit_MR
 
     anchr contained \
