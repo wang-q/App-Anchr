@@ -53,13 +53,7 @@ cd ${DIR_MERGE}/anchor
 
 anchr anchors \
     ../anchor.non-contained.fasta \
-[% IF not opt.se -%]
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/R2.fq.gz \
-    ${BASH_DIR}/2_illumina/trim/Rs.fq.gz \
-[% ELSE -%]
-    ${BASH_DIR}/2_illumina/trim/R1.fq.gz \
-[% END -%]
+    ${BASH_DIR}/2_illumina/trim/pe.cor.fa.gz \
     -p [% opt.parallel %] \
     --ratio 0.98 \
     -o anchors.sh
