@@ -1,6 +1,11 @@
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
+if [ -e 2_illumina/mergereads/pe.cor.fa.gz ]; then
+    log_debug "2_illumina/mergereads/pe.cor.fa.gz presents"
+    exit;
+fi
+
 #----------------------------#
 # run
 #----------------------------#
@@ -80,11 +85,12 @@ for PREFIX in R S T; do
     log_info "stats of all .fq.gz files"
     if [ ! -e statMergeReads.md ]; then
         echo -e "Table: statMergeReads\n" > statMergeReads.md
-            printf "| %s | %s | %s | %s |\n" \
-            "Name" "N50" "Sum" "#" \
-            >> statMergeReads.md
-        printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
     fi
+
+    printf "| %s | %s | %s | %s |\n" \
+        "Name" "N50" "Sum" "#" \
+        >> statMergeReads.md
+    printf "|:--|--:|--:|--:|\n" >> statMergeReads.md
 
     for NAME in clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim ${PREFIXM}1 ${PREFIXU}1 ${PREFIXU}2 ${PREFIXU}s; do
         if [ ! -e ${NAME}.fq.gz ]; then
@@ -98,13 +104,6 @@ for PREFIX in R S T; do
         $(echo ${PREFIXM}.cor; stat_format ${PREFIXM}.cor.fa.gz;) >> statMergeReads.md
     echo >> statMergeReads.md
 
-    log_info "clear unneeded .fq.gz files"
-    for NAME in temp clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim; do
-        if [ -e ${NAME}.fq.gz ]; then
-            rm ${NAME}.fq.gz
-        fi
-    done
-
     log_info "stats of insert sizes"
     printf "| %s | %s | %s | %s | %s |\n" \
         "Group" "Mean" "Median" "STDev" "PercentOfPairs" \
@@ -116,7 +115,6 @@ for PREFIX in R S T; do
     #Mode	251
     #STDev	134.676
     #PercentOfPairs	36.247
-
     for NAME in ${PREFIXM}.ihist.merge1.txt ${PREFIXM}.ihist.merge.txt; do
         printf "| %s " ${NAME} >> statMergeReads.md
         cat ${NAME} \
@@ -136,6 +134,15 @@ for PREFIX in R S T; do
                 ' \
             >> statMergeReads.md
     done
+
+
+    log_info "clear unneeded .fq.gz files"
+    for NAME in temp clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim; do
+        if [ -e ${NAME}.fq.gz ]; then
+            rm ${NAME}.fq.gz
+        fi
+    done
+
 done
 
 log_debug "Combine .cor.fa.gz files"
@@ -149,8 +156,8 @@ if [ -e ../S1.fq.gz ]; then
             print $0,seq,name2,seq2}' |
         shuf |
         awk '{OFS="\n"; print $1,$2,$3,$4}' \
-        > ${PREFIXM}.cor.fa
-    pigz -p [% opt.parallel %] ${PREFIXM}.cor.fa
+        > pe.cor.fa
+    pigz -p [% opt.parallel %] pe.cor.fa
     rm [MNO].cor.fa.gz
 else
     mv M.cor.fa.gz pe.cor.fa.gz
@@ -163,7 +170,7 @@ save SUM_OUT
 if [ -s statMergeReads.md ]; then
     cat statMergeReads.md
     mv statMergeReads.md ../../
-done
+fi
 
 END_TIME=$(date +%s)
 save END_TIME
