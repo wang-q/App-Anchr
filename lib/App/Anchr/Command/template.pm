@@ -840,7 +840,6 @@ for Q in 0 [% opt.qual2 %]; do
         START_TIME=$(date +%s)
 
         cd 2_illumina/Q${Q}L${L}
-        log_info "Qual-Len: Q${Q}L${L}"
 
         for PREFIX in R S T; do
             if [ ! -e ${PREFIX}1.fq.gz ]; then
@@ -869,12 +868,14 @@ for Q in 0 [% opt.qual2 %]; do
                 -o quorum.sh
             bash quorum.sh
 
+            log_info "statQuorum.${PREFIX}"
+
             SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
             SUM_OUT=$( cat environment.json | jq '.SUM_OUT | tonumber' )
             EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
             SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
 
-            printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+            printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
                 "Q${Q}L${L}.${PREFIX}" \
                 $( perl -e "printf qq{%.1f}, ${SUM_IN} / [% opt.genome %];" ) \
                 $( perl -e "printf qq{%.1f}, ${SUM_OUT} / [% opt.genome %];" ) \
@@ -884,11 +885,11 @@ for Q in 0 [% opt.qual2 %]; do
                 $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
                 $( perl -e "printf qq{%.2f}, ${EST_G} / [% opt.genome %]" ) \
                 $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
-                >> statQuorum.tmp
+                > statQuorum.${PREFIX}
 
         done
 
-        log_info "Combine .cor.fa.gz files"
+        log_info "Combine Q${Q}L${L} .cor.fa.gz files"
         if [ -e S1.fq.gz ]; then
             gzip -d -c [RST].cor.fa.gz |
                 awk '{
@@ -906,6 +907,7 @@ for Q in 0 [% opt.qual2 %]; do
             mv R.cor.fa.gz pe.cor.fa.gz
         fi
 
+        rm environment.json
         log_debug "Reads stats with faops"
         SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa.gz )
         save SUM_OUT
@@ -925,7 +927,7 @@ done
 
 cd ${BASH_DIR}/2_illumina
 
-if [ -e Q0L0/statQuorum.tmp ]; then
+if [ -e Q0L0/statQuorum.* ]; then
     echo -e "Table: statQuorum\n" > statQuorum.md
     printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
         "Name" "CovIn" "CovOut" "Discard%" \
@@ -937,15 +939,15 @@ if [ -e Q0L0/statQuorum.tmp ]; then
 
     for Q in 0 [% opt.qual2 %]; do
         for L in 0 [% opt.len2 %]; do
-            if [ -e Q${Q}L${L}/statQuorum.tmp ]; then
-                cat Q${Q}L${L}/statQuorum.tmp >> statQuorum.md;
-                rm statQuorum.tmp;
+            if [ -e Q${Q}L${L}/statQuorum.* ]; then
+                cat Q${Q}L${L}/statQuorum.* >> statQuorum.md;
+                rm Q${Q}L${L}/statQuorum.*;
             fi
         done
     done
 
-    cat statMergeReads.md
-    mv statMergeReads.md ../
+    cat statQuorum.md
+    mv statQuorum.md ../
 fi
 
 EOF
