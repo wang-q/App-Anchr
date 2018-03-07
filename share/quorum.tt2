@@ -249,15 +249,15 @@ save SUM_OUT
 #----------------------------#
 log_info Shuffle interleaved reads.
 mv [% opt.prefix %].cor.fa [% opt.prefix %].interleave.fa
-cat [% opt.prefix %].interleave.fa \
-    | awk '{
+cat [% opt.prefix %].interleave.fa |
+    awk '{
         OFS="\t"; \
         getline seq; \
         getline name2; \
         getline seq2; \
-        print $0,seq,name2,seq2}' \
-    | shuf \
-    | awk '{OFS="\n"; print $1,$2,$3,$4}' \
+        print $0,seq,name2,seq2}' |
+    shuf |
+    awk '{OFS="\n"; print $1,$2,$3,$4}' \
     > [% opt.prefix %].cor.fa
 rm [% opt.prefix %].interleave.fa
 pigz -p [% opt.parallel %] [% opt.prefix %].cor.fa
