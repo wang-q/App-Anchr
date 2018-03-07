@@ -824,73 +824,129 @@ sub gen_quorum {
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
-parallel --no-run-if-empty --linebuffer -k -j 1 "
-    if [ ! -d 2_illumina/Q{1}L{2} ]; then
-        exit;
-    fi
+for Q in 0 [% opt.qual2 %]; do
+    for L in 0 [% opt.len2 %]; do
+        cd ${BASH_DIR}
 
-    cd 2_illumina/Q{1}L{2}
-    echo >&2 '==> Qual-Len: Q{1}L{2} <=='
+        if [ ! -d 2_illumina/Q${Q}L${L} ]; then
+            continue;
+        fi
 
-    if [ ! -e R1.fq.gz ]; then
-        echo >&2 '    R1.fq.gz not exists'
-        exit;
-    fi
+        if [ -e 2_illumina/Q${Q}L${L}/pe.cor.fa.gz ]; then
+            log_debug "2_illumina/Q${Q}L${L}/pe.cor.fa.gz presents"
+            continue;
+        fi
 
-    if [ -e pe.cor.fa.gz ]; then
-        echo >&2 '    pe.cor.fa.gz exists'
-        exit;
-    fi
+        START_TIME=$(date +%s)
 
-    anchr quorum \
-        R1.fq.gz \
-[% IF not opt.se -%]
-        R2.fq.gz \
-        \$(
-            if [ -e Rs.fq.gz ]; then
-                echo Rs.fq.gz;
+        cd 2_illumina/Q${Q}L${L}
+        log_info "Qual-Len: Q${Q}L${L}"
+
+        for PREFIX in R S T; do
+            if [ ! -e ${PREFIX}1.fq.gz ]; then
+                continue;
             fi
-        ) \
+
+            if [ -e ${PREFIX}.cor.fa.gz ]; then
+                echo >&2 "    ${PREFIX}.cor.fa.gz exists"
+                continue;
+            fi
+
+            log_info "Qual-Len: Q${Q}L${L}.${PREFIX}"
+
+            anchr quorum \
+                ${PREFIX}1.fq.gz \
+[% IF not opt.se -%]
+                ${PREFIX}2.fq.gz \
+                $(
+                    if [ -e ${PREFIX}s.fq.gz ]; then
+                        echo ${PREFIX}s.fq.gz;
+                    fi
+                ) \
 [% END -%]
-        -p [% opt.parallel %] \
-        -o quorum.sh
-    bash quorum.sh
+                -p [% opt.parallel %] \
+                --prefix ${PREFIX} \
+                -o quorum.sh
+            bash quorum.sh
 
-    find . -type f -name "quorum_mer_db.jf" | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "k_u_hash_0"       | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "*.tmp"            | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "pe.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "se.renamed.fastq" | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "pe.cor.sub.fa"    | parallel --no-run-if-empty -j 1 rm
-    find . -type f -name "pe.cor.log"       | parallel --no-run-if-empty -j 1 rm
+            SUM_IN=$( cat environment.json | jq '.SUM_IN | tonumber' )
+            SUM_OUT=$( cat environment.json | jq '.SUM_OUT | tonumber' )
+            EST_G=$( cat environment.json | jq '.ESTIMATED_GENOME_SIZE | tonumber' )
+            SECS=$( cat environment.json | jq '.RUNTIME | tonumber' )
 
-    echo >&2
-    " ::: 0 [% opt.qual2 %] ::: 0 [% opt.len2 %]
+            printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+                "Q${Q}L${L}.${PREFIX}" \
+                $( perl -e "printf qq{%.1f}, ${SUM_IN} / [% opt.genome %];" ) \
+                $( perl -e "printf qq{%.1f}, ${SUM_OUT} / [% opt.genome %];" ) \
+                $( perl -e "printf qq{%.2f%%}, (1 - ${SUM_OUT} / ${SUM_IN}) * 100;" ) \
+                $( cat environment.json | jq '.KMER' ) \
+                $( perl -MNumber::Format -e "print Number::Format::format_bytes([% opt.genome %], base => 1000,);" ) \
+                $( perl -MNumber::Format -e "print Number::Format::format_bytes(${EST_G}, base => 1000,);" ) \
+                $( perl -e "printf qq{%.2f}, ${EST_G} / [% opt.genome %]" ) \
+                $( printf "%d:%02d'%02d''\n" $((${SECS}/3600)) $((${SECS}%3600/60)) $((${SECS}%60)) ) \
+                >> statQuorum.tmp
+
+        done
+
+        log_info "Combine .cor.fa.gz files"
+        if [ -e S1.fq.gz ]; then
+            gzip -d -c [RST].cor.fa.gz |
+                awk '{
+                    OFS="\t"; \
+                    getline seq; \
+                    getline name2; \
+                    getline seq2; \
+                    print $0,seq,name2,seq2}' |
+                shuf |
+                awk '{OFS="\n"; print $1,$2,$3,$4}' \
+                > pe.cor.fa
+            pigz -p [% opt.parallel %] pe.cor.fa
+            rm [RST].cor.fa.gz
+        else
+            mv R.cor.fa.gz pe.cor.fa.gz
+        fi
+
+        log_debug "Reads stats with faops"
+        SUM_OUT=$( faops n50 -H -N 0 -S pe.cor.fa.gz )
+        save SUM_OUT
+
+        save START_TIME
+        END_TIME=$(date +%s)
+        save END_TIME
+        RUNTIME=$((END_TIME-START_TIME))
+        save RUNTIME
+
+    done
+done
+
+cd ${BASH_DIR}/2_illumina
+
+if [ -e Q0L0/statQuorum.tmp ]; then
+    echo -e "Table: statQuorum\n" > statQuorum.md
+    printf "| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n" \
+        "Name" "CovIn" "CovOut" "Discard%" \
+        "Kmer" "RealG" "EstG" "Est/Real" \
+        "RunTime" \
+        >> statQuorum.md
+    printf "|:--|--:|--:|--:|--:|--:|--:|--:|--:|\n" \
+        >> statQuorum.md
+
+    for Q in 0 [% opt.qual2 %]; do
+        for L in 0 [% opt.len2 %]; do
+            if [ -e Q${Q}L${L}/statQuorum.tmp ]; then
+                cat Q${Q}L${L}/statQuorum.tmp >> statQuorum.md;
+                rm statQuorum.tmp;
+            fi
+        done
+    done
+
+    cat statMergeReads.md
+    mv statMergeReads.md ../
+fi
 
 EOF
     $tt->process(
         \$template,
-        {   args => $args,
-            opt  => $opt,
-            sh   => $sh_name,
-        },
-        Path::Tiny::path( $args->[0], $sh_name )->stringify
-    ) or die Template->error;
-
-}
-
-sub gen_statQuorum {
-    my ( $self, $opt, $args ) = @_;
-
-    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
-    my $template;
-    my $sh_name;
-
-    $sh_name = "9_statQuorum.sh";
-    print "Create $sh_name\n";
-
-    $tt->process(
-        '9_statQuorum.tt2',
         {   args => $args,
             opt  => $opt,
             sh   => $sh_name,
