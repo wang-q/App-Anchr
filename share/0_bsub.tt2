@@ -31,39 +31,39 @@ bsub -w "ended([% opt.basename %]-2_trim)[% IF opt.cov3 %] && ended([% opt.basen
 #----------------------------#
 # mergereads
 #----------------------------#
-bsub -w "done([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_mergereads" "bash 2_mergereads.sh"
 [% END -%]
 
 #----------------------------#
 # quorum
 #----------------------------#
-bsub -w "done([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-2_quorum" "bash 2_quorum.sh"
 
 #----------------------------#
 # down sampling, k-unitigs and anchors
 #----------------------------#
-bsub -w "done([% opt.basename %]-2_quorum)" \
+bsub -w "ended([% opt.basename %]-2_quorum)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-4_downSampling" "bash 4_downSampling.sh"
 
-bsub -w "done([% opt.basename %]-4_downSampling)" \
+bsub -w "ended([% opt.basename %]-4_downSampling)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-4_kunitigs" "bash 4_kunitigs.sh"
-bsub -w "done([% opt.basename %]-4_kunitigs)" \
+bsub -w "ended([% opt.basename %]-4_kunitigs)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-4_anchors" "bash 4_anchors.sh"
 
 [% IF opt.tadpole -%]
-bsub -w "done([% opt.basename %]-4_anchors)" \
+bsub -w "ended([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md"
 
-bsub -w "done([% opt.basename %]-4_downSampling)" \
+bsub -w "ended([% opt.basename %]-4_downSampling)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-4_tadpole" "bash 4_tadpole.sh"
-bsub -w "done([% opt.basename %]-4_tadpole)" \
+bsub -w "ended([% opt.basename %]-4_tadpole)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-4_tadpoleAnchors" "bash 4_tadpoleAnchors.sh"
-bsub -w "done([% opt.basename %]-4_tadpoleAnchors)" \
+bsub -w "ended([% opt.basename %]-4_tadpoleAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_4_tadpole" "bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md"
 [% ELSE -%]
-bsub -w "done([% opt.basename %]-4_anchors)" \
+bsub -w "ended([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_4_kunitigs" "bash 9_statAnchors.sh"
 [% END -%]
 
@@ -71,26 +71,26 @@ bsub -w "done([% opt.basename %]-4_anchors)" \
 #----------------------------#
 # down sampling mergereads
 #----------------------------#
-bsub -w "done([% opt.basename %]-2_mergereads)" \
+bsub -w "ended([% opt.basename %]-2_mergereads)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-6_downSampling" "bash 6_downSampling.sh"
 
-bsub -w "done([% opt.basename %]-6_downSampling)" \
+bsub -w "ended([% opt.basename %]-6_downSampling)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-6_kunitigs" "bash 6_kunitigs.sh"
-bsub -w "done([% opt.basename %]-6_kunitigs)" \
+bsub -w "ended([% opt.basename %]-6_kunitigs)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-6_anchors" "bash 6_anchors.sh"
 
 [% IF opt.tadpole -%]
-bsub -w "done([% opt.basename %]-6_anchors)" \
+bsub -w "ended([% opt.basename %]-6_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_6_kunitigs" "bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md"
 
-bsub -w "done([% opt.basename %]-6_downSampling)" \
+bsub -w "ended([% opt.basename %]-6_downSampling)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-6_tadpole" "bash 6_tadpole.sh"
-bsub -w "done([% opt.basename %]-6_tadpole)" \
+bsub -w "ended([% opt.basename %]-6_tadpole)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-6_tadpoleAnchors" "bash 6_tadpoleAnchors.sh"
-bsub -w "done([% opt.basename %]-6_tadpoleAnchors)" \
+bsub -w "ended([% opt.basename %]-6_tadpoleAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_6_tadpole" "bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md"
 [% ELSE -%]
-bsub -w "done([% opt.basename %]-4_anchors)" \
+bsub -w "ended([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statAnchors_4_kunitigs" "bash 9_statMRAnchors.sh"
 [% END -%]
 [% END -%]
@@ -99,15 +99,15 @@ bsub -w "done([% opt.basename %]-4_anchors)" \
 # merge anchors
 #----------------------------#
 [% IF opt.tadpole -%]
-bsub -w "done([% opt.basename %]-4_anchors)" \
+bsub -w "ended([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors_4_kunitigs" "bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors"
-bsub -w "done([% opt.basename %]-4_tadpoleAnchors)" \
+bsub -w "ended([% opt.basename %]-4_tadpoleAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors_4_tadpole" "bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors"
 
 [% IF opt.mergereads -%]
-bsub -w "done([% opt.basename %]-6_anchors)" \
+bsub -w "ended([% opt.basename %]-6_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors_6_kunitigs" "bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors"
-bsub -w "done([% opt.basename %]-6_tadpoleAnchors)" \
+bsub -w "ended([% opt.basename %]-6_tadpoleAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors_6_tadpole" "bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors"
 [% END -%]
 
@@ -115,15 +115,15 @@ bsub -w "ended([% opt.basename %]-7_mergeAnchors_4_kunitigs) [% IF opt.tadpole %
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors" "bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors"
 
 [% ELSE -%]
-bsub -w "done([% opt.basename %]-4_anchors)" \
+bsub -w "ended([% opt.basename %]-4_anchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_mergeAnchors" "bash 7_mergeAnchors.sh 4_kunitigs"
 [% END -%]
 
-bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statMergeAnchors" "bash 9_statMergeAnchors.sh"
 
 # anchor sort on ref
-bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-sort_on_ref" \
     '
     if [ -e 1_genome/genome.fa ]; then
@@ -154,28 +154,28 @@ bsub -w "done([% opt.basename %]-7_mergeAnchors)" \
 #----------------------------#
 # canu
 #----------------------------#
-bsub -w "done([% opt.basename %]-3_trimlong)" \
+bsub -w "ended([% opt.basename %]-3_trimlong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-5_canu" "bash 5_canu.sh"
-bsub -w "done([% opt.basename %]-5_canu)" \
+bsub -w "ended([% opt.basename %]-5_canu)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_statCanu" "bash 9_statCanu.sh"
 [% END -%]
 
 #----------------------------#
 # spades, megahit and platanus
 #----------------------------#
-bsub -w "done([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_spades" "bash 8_spades.sh"
 
-bsub -w "done([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_megahit" "bash 8_megahit.sh"
 
-bsub -w "done([% opt.basename %]-2_trim)" \
+bsub -w "ended([% opt.basename %]-2_trim)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_platanus" "bash 8_platanus.sh"
 
 [% IF opt.mergereads and ! opt.se -%]
-bsub -w "done([% opt.basename %]-2_mergereads)" \
+bsub -w "ended([% opt.basename %]-2_mergereads)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_spades_MR" "bash 8_spades_MR.sh"
-bsub -w "done([% opt.basename %]-2_mergereads)" \
+bsub -w "ended([% opt.basename %]-2_mergereads)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-8_megahit_MR" "bash 8_megahit_MR.sh"
 [% END -%]
 
@@ -203,20 +203,20 @@ bsub -w "ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_megahi
         | faops filter -a 1000 -l 0 stdin 7_fillAnchor/contigs.2GS.fasta
     '
 
-bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-contigs_2GS)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors) && ended([% opt.basename %]-contigs_2GS)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
     "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 7_fillAnchor/contigs.2GS.fasta 3"
 
-bsub -w "done([% opt.basename %]-7_anchorLong)" \
+bsub -w "ended([% opt.basename %]-7_anchorLong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
     "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 7_fillAnchor/contigs.2GS.fasta 2"
 
 [% ELSIF opt.cov3 -%]
-bsub -w "done([% opt.basename %]-7_mergeAnchors) && done([% opt.basename %]-5_canu)" \
+bsub -w "ended([% opt.basename %]-7_mergeAnchors) && ended([% opt.basename %]-5_canu)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorLong" \
     "bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz 2"
 
-bsub -w "done([% opt.basename %]-7_anchorLong)" \
+bsub -w "ended([% opt.basename %]-7_anchorLong)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-7_anchorFill" \
     "bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta 1"
 
@@ -231,5 +231,5 @@ bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.fillanchor or opt.co
 bsub -w "ended([% opt.basename %]-7_mergeAnchors) [% IF opt.fillanchor or opt.cov3 %]&& ended([% opt.basename %]-7_anchorFill)[% END %] && ended([% opt.basename %]-8_spades) && ended([% opt.basename %]-8_platanus)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-9_quast" "bash 9_quast.sh"
 
-bsub -w "done([% opt.basename %]-9_quast)" \
+bsub -w "ended([% opt.basename %]-9_quast)" \
     -q [% opt.queue %] -n [% opt.parallel %] -J "[% opt.basename %]-0_cleanup" "bash 0_cleanup.sh"
