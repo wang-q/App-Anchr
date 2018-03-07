@@ -11,40 +11,29 @@ START_TIME=$(date +%s)
 log_info 'Processing pe and/or se library reads'
 
 [% IF args.size == 2 -%]
-if [ ! -e pe.renamed.fastq ]; then
-    rename_filter_fastq \
-        'pe' \
-        <(exec expand_fastq '[% args.0 %]' ) \
-        <(exec expand_fastq '[% args.1 %]' ) \
-        > 'pe.renamed.fastq'
-fi
-
+rename_filter_fastq \
+    'pe' \
+    <(exec expand_fastq '[% args.0 %]' ) \
+    <(exec expand_fastq '[% args.1 %]' ) \
+    > 'pe.renamed.fastq'
 [% ELSIF args.size == 3 -%]
-if [ ! -e pe.renamed.fastq ]; then
-    rename_filter_fastq \
-        'pe' \
-        <(exec expand_fastq '[% args.0 %]' ) \
-        <(exec expand_fastq '[% args.1 %]' ) \
-        > 'pe.renamed.fastq'
-fi
+rename_filter_fastq \
+    'pe' \
+    <(exec expand_fastq '[% args.0 %]' ) \
+    <(exec expand_fastq '[% args.1 %]' ) \
+    > 'pe.renamed.fastq'
 
-if [ ! -e se.renamed.fastq ]; then
-    rename_filter_fastq \
-        'se' \
-        <(exec expand_fastq '[% args.2 %]' ) \
-        '' \
-        > 'se.renamed.fastq'
-fi
-
+rename_filter_fastq \
+    'se' \
+    <(exec expand_fastq '[% args.2 %]' ) \
+    '' \
+    > 'se.renamed.fastq'
 [% ELSE -%]
-if [ ! -e pe.renamed.fastq ]; then
-    rename_filter_fastq \
-        'pe' \
-        <(exec expand_fastq '[% args.0 %]' ) \
-        '' \
-        > 'pe.renamed.fastq'
-fi
-
+rename_filter_fastq \
+    'pe' \
+    <(exec expand_fastq '[% args.0 %]' ) \
+    '' \
+    > 'pe.renamed.fastq'
 [% END -%]
 
 #----------------------------#
