@@ -6,9 +6,6 @@
 START_TIME=$(date +%s)
 save START_TIME
 
-NUM_THREADS=[% opt.parallel %]
-save NUM_THREADS
-
 #----------------------------#
 # Renaming reads
 #----------------------------#
@@ -55,14 +52,6 @@ fi
 # Stats of reads
 #----------------------------#
 head -n 80000 pe.renamed.fastq > pe_data.tmp
-export PE_AVG_READ_LENGTH=$(
-    head -n 40000 pe_data.tmp \
-    | grep --text -v '^+' \
-    | grep --text -v '^@' \
-    | awk '{if(length($1)>31){n+=length($1);m++;}}END{print int(n/m)}'
-)
-save PE_AVG_READ_LENGTH
-log_debug "Average read length $PE_AVG_READ_LENGTH"
 
 KMER=$(
     tail -n 40000 pe_data.tmp \
