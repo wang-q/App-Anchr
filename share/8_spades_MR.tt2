@@ -30,7 +30,7 @@ else
             out2=re-pair/R2.fa \
             outs=re-pair/Rs.fa \
             threads=[% opt.parallel %] \
-            repair overwrite
+            fint overwrite
 
     # spades seems ignore non-properly paired reads
     spades.py \

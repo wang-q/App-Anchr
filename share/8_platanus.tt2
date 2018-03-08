@@ -32,7 +32,7 @@ else
             out=pe.fa \
             outs=se.fa \
             threads=[% opt.parallel %] \
-            repair overwrite
+            fint overwrite
 
     if [ -s pe.fa ]; then
         platanus assemble -t [% opt.parallel %] -m 100 \
