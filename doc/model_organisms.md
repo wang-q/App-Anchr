@@ -633,9 +633,13 @@ cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.f
 
 * Illumina
 
-    * MiSeq (PE150) [ERX1999216](https://www.ncbi.nlm.nih.gov/sra/ERX1999216) ERR1938683 PRJEB19900
-    * HiSeq 2500 (PE150, nextera) [SRX2058864](https://www.ncbi.nlm.nih.gov/sra/SRX2058864)
-      SRR4074255 PRJNA340312
+    * [ERX1999216](https://www.ncbi.nlm.nih.gov/sra/ERX1999216)
+
+        MiSeq (PE150) ERR1938683 PRJEB19900
+
+    * [SRX2058864](https://www.ncbi.nlm.nih.gov/sra/SRX2058864)
+
+        HiSeq 2500 (PE150, nextera) SRR4074255 PRJNA340312
 
 ```bash
 cd ${HOME}/data/anchr/s288c
@@ -1707,7 +1711,8 @@ cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
 
         HiSeq 2500 pe120, insert size 200(138)
 
-    * SRX697551 SRX697546
+    * [SRX697546](https://www.ncbi.nlm.nih.gov/sra/SRX697546) SRR1571299 7.5G
+    * [SRX697551](https://www.ncbi.nlm.nih.gov/sra/SRX697551) SRR1571322 4G
 
         HiSeq 2000 pe100, insert size 200(68)
 
@@ -1743,9 +1748,6 @@ cat << EOF > sra_md5.txt
 EOF
 
 md5sum --check sra_md5.txt
-
-pigz -d -c SRR1571299_1.fastq.gz SRR1571322_1.fastq.gz | pigz > pe100_1.fq.gz
-pigz -d -c SRR1571299_2.fastq.gz SRR1571322_2.fastq.gz | pigz > pe100_2.fq.gz
 
 ```
 
@@ -1785,7 +1787,6 @@ find fasta -type f -name "*.subreads.fasta.gz" \
 
 ```bash
 rsync -avP \
-    --exclude="SRR15*" \
     --exclude="*.tgz" \
     ~/data/anchr/n2/ \
     wangq@202.119.37.251:data/anchr/n2
