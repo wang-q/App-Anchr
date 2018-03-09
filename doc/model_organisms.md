@@ -1697,11 +1697,19 @@ cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
 
 * Illumina
 
+    * [SRX1321528](https://www.ncbi.nlm.nih.gov/sra/SRX1321528) SRR2598966
+
+        HiSeq 2500 pe120, insert size 200(138)
+
+    * SRX697551 SRX697546
+
+        HiSeq 2000 pe100, insert size 200(68)
+
     * Other SRA
-        * SRX770040 - [insert size](https://www.ncbi.nlm.nih.gov/sra/SRX770040[accn]) is 500-600 bp
-        * ERR1039478 - adaptor contamination "ACTTCCAGGGATTTATAAGCCGATGACGTCATAACATCCCTGACCCTTTA"
-        * DRR008443 - GA II
-        * SRR065390 - GA II
+        * [SRX770040](https://www.ncbi.nlm.nih.gov/sra/SRX770040) - GEO
+        * ERX1118232 - ERR1039478, 9.8G
+        * DRX007633 - DRR008443 - GA II
+        * SRX026594 - SRR065390 - GA II
 
 ```bash
 # Downloading from ena with aria2
@@ -1709,29 +1717,29 @@ mkdir -p ~/data/anchr/n2/2_illumina
 cd ~/data/anchr/n2/2_illumina
 
 cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR157/009/SRR1571299
-ftp://ftp.sra.ebi.ac.uk/vol1/srr/SRR157/002/SRR1571322
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR259/006/SRR2598966/SRR2598966_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR259/006/SRR2598966/SRR2598966_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR157/009/SRR1571299/SRR1571299_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR157/009/SRR1571299/SRR1571299_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR157/002/SRR1571322/SRR1571322_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR157/002/SRR1571322/SRR1571322_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-8b6c83b413af32eddb58c12044c5411b        SRR1571299
-1951826a35d31272615afa19ea9a552c        SRR1571322
+1f3f5dba991ad565263281c0770a12fa SRR2598966_1.fastq.gz
+7fb98259f2f3feb7b82ba862ae57996a SRR2598966_2.fastq.gz
+60e8b2981855b0af44a2ade68c09915f SRR1571299_1.fastq.gz
+3f0e9d29a27df4f424d59a9d38196a6f SRR1571299_2.fastq.gz
+11778477088b22a520218e236cc34502 SRR1571322_1.fastq.gz
+5ac12fa22126e4393fc18a33cc5e7233 SRR1571322_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
-for sra in SRR1571{299,322}; do
-    echo ${sra}
-    fastq-dump --split-files ./${sra}
-done
-
-cat SRR1571{299,322}_1.fastq > R1.fq
-cat SRR1571{299,322}_2.fastq > R2.fq
-
-find . -name "*.fq" | parallel -j 2 pigz -p 8
-rm *.fastq
+pigz -d -c SRR1571{299,322}_1.fastq.gz | pigz > pe100_1.fq.gz
+pigz -d -c SRR1571{299,322}_2.fastq.gz | pigz > pe100_2.fq.gz
 
 ```
 
