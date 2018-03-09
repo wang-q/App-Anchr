@@ -134,7 +134,7 @@ for PREFIX in R S T; do
                 ' \
             >> statMergeReads.md
     done
-
+    echo >> statMergeReads.md
 
     log_info "clear unneeded .fq.gz files"
     for NAME in temp clumped ecco eccc ecct extended merged.raw unmerged.raw unmerged.trim; do
