@@ -22,8 +22,12 @@
     - [iso_1: run](#iso-1-run)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
-    - [n2: template](#n2-template)
-    - [n2: run](#n2-run)
+    - [n2_pe120: symlink](#n2-pe120-symlink)
+    - [n2_pe120: template](#n2-pe120-template)
+    - [n2_pe120: run](#n2-pe120-run)
+    - [n2_pe100: symlink](#n2-pe100-symlink)
+    - [n2_pe100: template](#n2-pe100-template)
+    - [n2_pe100: run](#n2-pe100-run)
 - [*Arabidopsis thaliana* Col-0](#arabidopsis-thaliana-col-0)
     - [col_0: download](#col-0-download)
     - [col_0: template](#col-0-template)
@@ -250,6 +254,8 @@ rsync -avP \
 # rsync -avP wangq@202.119.37.251:data/anchr/e_coli/ ~/data/anchr/e_coli
 
 ```
+
+* template
 
 `--cov2 "40 60 80 100"` introduced ~10 SNPs and 1 misassembly.
 
@@ -1812,6 +1818,23 @@ anchr template \
     --qual3 "trim" \
     --mergereads \
     --ecphase "1,3" \
+## n2_pe100: symlink
+
+```bash
+mkdir -p ~/data/anchr/n2_pe100/1_genome
+cd ~/data/anchr/n2_pe100/1_genome
+
+ln -fs ../../n2/1_genome/genome.fa genome.fa
+ln -fs ../../n2/1_genome/paralogs.fas paralogs.fas
+
+mkdir -p ~/data/anchr/n2_pe100/2_illumina
+cd ~/data/anchr/n2_pe100/2_illumina
+
+ln -fs ../../n2/2_illumina/pe100_1.fq.gz R1.fq.gz
+ln -fs ../../n2/2_illumina/pe100_2.fq.gz R2.fq.gz
+
+```
+
 ## n2_pe100: template
 
 ```bash
