@@ -280,6 +280,7 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
         $yml->{$key} = $yml2->{$key};
     }
 
+[% IF opt.keepedge -%]
     # repeats on the edge hurt assembling, so fill edges near big island by [% opt.fill %]
     for my $key ( sort keys $yml ) {
         my $length = AlignDB::IntSpan->new( $yml_chr->{$key} )->max;
@@ -291,14 +292,14 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
         my $begin = $set->min;
         my $end = $set->max;
 
-        if ( $sets[0]->size >= 300 ) {
+        if ( $sets[0]->size >= [% opt.min %] ) {
             my $new_begin = $begin - [% opt.fill %];
             $new_begin = 1 if $new_begin < 1;
 
             $set->add_pair($new_begin, $begin);
         }
 
-        if ( $sets[-1]->size >= 300 ) {
+        if ( $sets[-1]->size >= [% opt.min %] ) {
             my $new_end = $end + [% opt.fill %];
             $new_end = $length if $new_end > $length;
 
@@ -307,6 +308,7 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
 
         $yml->{$key} = $set->runlist;
     }
+[% END -%]
 
     YAML::Syck::DumpFile( q{contig.proper.yml}, $yml );
     '

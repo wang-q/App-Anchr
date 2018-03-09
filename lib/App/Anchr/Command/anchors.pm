@@ -15,9 +15,10 @@ sub opt_spec {
         [ 'mincov=i',     'minimal coverage of reads',              { default => 3, }, ],
         [ 'lower=i',      'lower limit of coverage ranges',         { default => 20, }, ],
         [ 'scale=i',      'the scale factor k for MAD',             { default => 3, }, ],
-        [ 'ratio=f',      'consider as anchor',                     { default => 0.95, }, ],
-        [ 'fill=i',       'fill holes short than or equal to this', { default => 30, }, ],
+        [ 'ratio=f',      'consider as anchor',                     { default => 0.98, }, ],
+        [ 'fill=i',       'fill holes short than or equal to this', { default => 10, }, ],
         [ 'longest',      'only keep the longest proper region', ],
+        [ 'keepedge',     'keep edges of anchors', ],
         [ 'parallel|p=i', 'number of threads',                      { default => 8, }, ],
         { show_defaults => 1, }
     );
