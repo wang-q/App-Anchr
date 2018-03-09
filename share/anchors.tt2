@@ -39,6 +39,8 @@ MAPPED_RATIO=$(
     echo "print ${COUNT_MAPPED}/(${COUNT_MAPPED} + ${COUNT_UNMAPPED})" | perl
 )
 save MAPPED_RATIO
+find . -type f -name "mapped.sam"     | parallel --no-run-if-empty -j 1 rm
+find . -type f -name "unmapped.sam"   | parallel --no-run-if-empty -j 1 rm
 
 #----------------------------#
 # basecov
@@ -209,6 +211,7 @@ cat basecov.txt |
         }
     ' \
     > contig.covered.txt
+find . -type f -name "basecov.txt"    | parallel --no-run-if-empty -j 1 rm
 
 #----------------------------#
 # anchor
@@ -388,10 +391,6 @@ anchr contained \
 #----------------------------#
 # Done.
 #----------------------------#
-find . -type f -name "mapped.sam"     | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "unmapped.sam"   | parallel --no-run-if-empty -j 1 rm
-find . -type f -name "basecov.txt"    | parallel --no-run-if-empty -j 1 rm
-
 find . -type f -name "pe.anchor.fa"   | parallel --no-run-if-empty -j 1 rm
 find . -type f -name "anchor.*.fasta" | parallel --no-run-if-empty -j 1 rm
 
