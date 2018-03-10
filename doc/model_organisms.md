@@ -20,8 +20,12 @@
     - [s288c_HiSeq: run](#s288c-hiseq-run)
 - [*Drosophila melanogaster* iso-1](#drosophila-melanogaster-iso-1)
     - [iso_1: download](#iso-1-download)
-    - [iso_1: template](#iso-1-template)
-    - [iso_1: run](#iso-1-run)
+    - [iso_1_HiSeq_2000: symlink](#iso-1-hiseq-2000-symlink)
+    - [iso_1_HiSeq_2000: template](#iso-1-hiseq-2000-template)
+    - [iso_1_HiSeq_2000: run](#iso-1-hiseq-2000-run)
+    - [iso_1_HiSeq_2500: symlink](#iso-1-hiseq-2500-symlink)
+    - [iso_1_HiSeq_2500: template](#iso-1-hiseq-2500-template)
+    - [iso_1_HiSeq_2500: run](#iso-1-hiseq-2500-run)
 - [*Caenorhabditis elegans* N2](#caenorhabditis-elegans-n2)
     - [n2: download](#n2-download)
     - [n2_pe120: symlink](#n2-pe120-symlink)
@@ -1363,45 +1367,68 @@ cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.f
 
 * Illumina
 
-    * [ERX645969](http://www.ebi.ac.uk/ena/data/view/ERX645969): ERR701706-ERR701711
-    * SRR306628 labels ycnbwsp instead of iso-1.
+    * [ERX645969](https://www.ncbi.nlm.nih.gov/sra/?term=ERX645969)
+
+        ERR701706-ERR701711 HiSeq 2000
+
+    * [ERX645975](https://www.ncbi.nlm.nih.gov/sra/?term=ERX645975)
+
+        ERR701712 ERR701713 HiSeq 2500 laboratory strain nos-GAL4; UAS-DCR2
+
+    * SRX081846 labels ycnbwsp instead of iso-1.
 
 ```bash
 mkdir -p ~/data/anchr/iso_1/2_illumina
 cd ~/data/anchr/iso_1/2_illumina
 
 cat << EOF > sra_ftp.txt
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701706
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701707
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701708
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701709
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701710
-ftp://ftp.sra.ebi.ac.uk/vol1/err/ERR701/ERR701711
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701706/ERR701706_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701706/ERR701706_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701707/ERR701707_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701707/ERR701707_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701708/ERR701708_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701708/ERR701708_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701709/ERR701709_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701709/ERR701709_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701710/ERR701710_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701710/ERR701710_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701711/ERR701711_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701711/ERR701711_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701712/ERR701712_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701712/ERR701712_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701713/ERR701713_1.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR701/ERR701713/ERR701713_2.fastq.gz
 EOF
 
 aria2c -x 9 -s 3 -c -i sra_ftp.txt
 
 cat << EOF > sra_md5.txt
-c0c877f8ba0bba7e26597e415d7591e1        ERR701706
-8737074782482ced94418a579bc0e8db        ERR701707
-e638730be88ee74102511c5091850359        ERR701708
-d2bf01cb606e5d2ccad76bd1380e17a3        ERR701709
-a51e6c1c09f225f1b6628b614c046ed0        ERR701710
-dab2d1f14eff875f456045941a955b51        ERR701711
+a8a6c25c6c5c0fd0614cf922c2d362ce ERR701706_1.fastq.gz
+7505f2615e64b9a23aa7b94d3fa0424b ERR701706_2.fastq.gz
+f936e6a30cadb5ce23ab6fd3c37bbaed ERR701707_1.fastq.gz
+bfd0a93a6a8381502a538a8154ee3837 ERR701707_2.fastq.gz
+d731ac125513744c6d3225e97c3d03f5 ERR701708_1.fastq.gz
+880638916636194987184d46db86b88e ERR701708_2.fastq.gz
+d92e991965b291d1f642a8cb021f816a ERR701709_1.fastq.gz
+fbd57f2c1b06f4b8e2f06f8f9df51758 ERR701709_2.fastq.gz
+62abb11673775412afdceabf49360abc ERR701710_1.fastq.gz
+dc4022980881e459b565997574311299 ERR701710_2.fastq.gz
+3fca504995f8fac6083a916a2af2d702 ERR701711_1.fastq.gz
+30b14bd452a5386efa2da48c262815b9 ERR701711_2.fastq.gz
+a6066532b411192be13e9ff5231092f8 ERR701712_1.fastq.gz
+d6ca4111786d6d554a615ea3a9a76137 ERR701712_2.fastq.gz
+df6285d1c8f8f1a62396064e68eaba65 ERR701713_1.fastq.gz
+668c7a8e70b1186584367609112f7909 ERR701713_2.fastq.gz
 EOF
 
 md5sum --check sra_md5.txt
 
-for sra in ERR7017{06,07,08,09,10,11}; do
-    echo ${sra}
-    fastq-dump --split-files ./${sra}
-done
+pigz -d -c ERR7017{06..11}_1.fastq.gz | pigz > HiSeq_2000_1.fq.gz
+pigz -d -c ERR7017{06..11}_2.fastq.gz | pigz > HiSeq_2000_2.fq.gz
 
-cat ERR7017{06,07,08,09,10,11}_1.fastq > R1.fq
-cat ERR7017{06,07,08,09,10,11}_2.fastq > R2.fq
+pigz -d -c ERR7017{12,13}_1.fastq.gz | pigz > HiSeq_2500_1.fq.gz
+pigz -d -c ERR7017{12,13}_2.fastq.gz | pigz > HiSeq_2500_2.fq.gz
 
-find . -name "*.fq" | parallel -j 2 pigz -p 8
-rm *.fastq
 ```
 
 * PacBio
@@ -1467,8 +1494,6 @@ cat 3_pacbio/fasta/*.fasta > 3_pacbio/pacbio.fasta
 
 ```
 
-## iso_1: template
-
 * Rsync to hpcc
 
 ```bash
@@ -1482,47 +1507,70 @@ rsync -avP \
 
 ```
 
-* template
+## iso_1_HiSeq_2000: symlink
 
 ```bash
-WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=iso_1
+mkdir -p ~/data/anchr/iso_1_HiSeq_2000/1_genome
+cd ~/data/anchr/iso_1_HiSeq_2000/1_genome
 
-cd ${WORKING_DIR}/${BASE_NAME}
+ln -fs ../../iso_1/1_genome/genome.fa genome.fa
+ln -fs ../../iso_1/1_genome/paralogs.fas paralogs.fas
 
-anchr template \
-    . \
-    --basename ${BASE_NAME} \
-    --queue largemem \
-    --genome 137567477 \
-    --is_euk \
-    --trim2 "--dedupe" \
-    --cov2 "40 80 all" \
-    --qual2 "25 30" \
-    --len2 "60" \
-    --filter "adapter,phix,artifact" \
-    --tadpole \
-    --cov3 "all" \
-    --qual3 "trim" \
-    --mergereads \
-    --ecphase "1,3" \
-    --insertsize \
-    --sgapreqc \
-    --parallel 24
+mkdir -p ~/data/anchr/iso_1_HiSeq_2000/2_illumina
+cd ~/data/anchr/iso_1_HiSeq_2000/2_illumina
+
+ln -fs ../../iso_1/2_illumina/HiSeq_2000_1.fq.gz R1.fq.gz
+ln -fs ../../iso_1/2_illumina/HiSeq_2000_2.fq.gz R2.fq.gz
 
 ```
 
-## iso_1: run
+## iso_1_HiSeq_2000: template
 
 ```bash
 WORKING_DIR=${HOME}/data/anchr
-BASE_NAME=iso_1
+BASE_NAME=iso_1_HiSeq_2000
 
 cd ${WORKING_DIR}/${BASE_NAME}
 
-bash 0_bsub.sh
-#bash 0_master.sh
+rm *.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --queue mpi \
+    --genome 137567477 \
+    --is_euk \
+    --fastqc \
+    --kmergenie \
+    --insertsize \
+    --sgapreqc \
+    --trim2 "--dedupe" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 80 all" \
+    --tadpole \
+    --statp 5 \
+    --redoanchors \
+    --parallel 24 \
+    --xmx 110g
 
+```
+
+## iso_1_HiSeq_2000: run
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=iso_1_HiSeq_2000
+
+cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
+
+bash 0_bsub.sh
+#bkill -J "${BASE_NAME}-*"
+
+#bash 0_master.sh
 #bash 0_cleanup.sh
 
 ```
@@ -1728,6 +1776,74 @@ Table: statFinal
 | platanus.non-contained |   161171 | 118868321 |   3126 |
 | platanus.anchor        |   138366 | 115019300 |   6917 |
 
+
+## iso_1_HiSeq_2500: symlink
+
+```bash
+mkdir -p ~/data/anchr/iso_1_HiSeq_2500/1_genome
+cd ~/data/anchr/iso_1_HiSeq_2500/1_genome
+
+ln -fs ../../iso_1/1_genome/genome.fa genome.fa
+ln -fs ../../iso_1/1_genome/paralogs.fas paralogs.fas
+
+mkdir -p ~/data/anchr/iso_1_HiSeq_2500/2_illumina
+cd ~/data/anchr/iso_1_HiSeq_2500/2_illumina
+
+ln -fs ../../iso_1/2_illumina/HiSeq_2500_1.fq.gz R1.fq.gz
+ln -fs ../../iso_1/2_illumina/HiSeq_2500_2.fq.gz R2.fq.gz
+
+```
+
+## iso_1_HiSeq_2500: template
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=iso_1_HiSeq_2500
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+rm *.sh
+anchr template \
+    . \
+    --basename ${BASE_NAME} \
+    --queue mpi \
+    --genome 137567477 \
+    --is_euk \
+    --fastqc \
+    --kmergenie \
+    --insertsize \
+    --sgapreqc \
+    --trim2 "--dedupe" \
+    --qual2 "25" \
+    --len2 "60" \
+    --filter "adapter,phix,artifact" \
+    --mergereads \
+    --ecphase "1,2,3" \
+    --cov2 "40 80 all" \
+    --tadpole \
+    --statp 5 \
+    --redoanchors \
+    --parallel 24 \
+    --xmx 110g
+
+```
+
+## iso_1_HiSeq_2500: run
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=iso_1_HiSeq_2500
+
+cd ${WORKING_DIR}/${BASE_NAME}
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
+
+bash 0_bsub.sh
+#bkill -J "${BASE_NAME}-*"
+
+#bash 0_master.sh
+#bash 0_cleanup.sh
+
+```
 
 # *Caenorhabditis elegans* N2
 
