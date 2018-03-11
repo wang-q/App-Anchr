@@ -306,7 +306,7 @@ WORKING_DIR=${HOME}/data/anchr
 BASE_NAME=e_coli
 
 cd ${WORKING_DIR}/${BASE_NAME}
-#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ 2_illumina/trim 2_illumina/mergereads statReads.md 
+#rm -fr 4_*/ 6_*/ 7_*/ 8_*/ && rm -fr 2_illumina/trim 2_illumina/mergereads statReads.md 
 
 bash 0_bsub.sh
 #bkill -J "${BASE_NAME}-*"
@@ -623,11 +623,8 @@ Table: statFinal
 * Reference genome
 
 ```bash
-mkdir -p ${HOME}/data/anchr/s288c
-cd ${HOME}/data/anchr/s288c
-
-mkdir -p 1_genome
-cd 1_genome
+mkdir -p ${HOME}/data/anchr/s288c/1_genome
+cd ${HOME}/data/anchr/s288c/1_genome
 
 wget -N ftp://ftp.ensembl.org/pub/release-82/fasta/saccharomyces_cerevisiae/dna/Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz
 faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
@@ -635,6 +632,7 @@ faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
     genome.fa
 
 cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fas
+
 ```
 
 * Illumina
@@ -648,10 +646,8 @@ cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.f
         HiSeq 2500 (PE150, nextera) SRR4074255 PRJNA340312
 
 ```bash
-cd ${HOME}/data/anchr/s288c
-
-mkdir -p 2_illumina
-cd 2_illumina
+mkdir -p ${HOME}/data/anchr/s288c/2_illumina
+cd ${HOME}/data/anchr/s288c/2_illumina
 
 cat << EOF > sra_ftp.txt
 ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR193/003/ERR1938683/ERR1938683_1.fastq.gz
@@ -671,12 +667,6 @@ EOF
 
 md5sum --check sra_md5.txt
 
-ln -fs ERR1938683_1.fastq.gz R1.fq.gz
-ln -fs ERR1938683_2.fastq.gz R2.fq.gz
-
-#ln -fs SRR4074255_1.fastq.gz S1.fq.gz
-#ln -fs SRR4074255_2.fastq.gz S2.fq.gz
-
 ```
 
 * PacBio
@@ -690,10 +680,8 @@ ln -fs ERR1938683_2.fastq.gz R2.fq.gz
     with RS II and P6C4.
 
 ```bash
-cd ${HOME}/data/anchr/s288c
-
-mkdir -p 3_pacbio
-cd 3_pacbio
+mkdir -p ${HOME}/data/anchr/s288c/3_pacbio
+cd ${HOME}/data/anchr/s288c/3_pacbio
 
 # download from sra
 cat <<EOF > hdf5.txt
@@ -761,6 +749,8 @@ rsync -avP \
     wangq@202.119.37.251:data/anchr/s288c
 
 # rsync -avP wangq@202.119.37.251:data/anchr/s288c/ ~/data/anchr/s288c
+# rsync -avP wangq@202.119.37.251:data/anchr/s288c_MiSeq/ ~/data/anchr/s288c_MiSeq
+# rsync -avP wangq@202.119.37.251:data/anchr/s288c_HiSeq/ ~/data/anchr/s288c_HiSeq
 
 ```
 
@@ -1503,7 +1493,9 @@ rsync -avP \
     ~/data/anchr/iso_1/ \
     wangq@202.119.37.251:data/anchr/iso_1
 
-#rsync -avP wangq@202.119.37.251:data/anchr/iso_1/ ~/data/anchr/iso_1
+# rsync -avP wangq@202.119.37.251:data/anchr/iso_1/ ~/data/anchr/iso_1
+# rsync -avP wangq@202.119.37.251:data/anchr/iso_1_HiSeq_2000/ ~/data/anchr/iso_1_HiSeq_2000
+# rsync -avP wangq@202.119.37.251:data/anchr/iso_1_HiSeq_2500/ ~/data/anchr/iso_1_HiSeq_2500
 
 ```
 
@@ -2124,6 +2116,8 @@ rsync -avP \
     wangq@202.119.37.251:data/anchr/n2
 
 # rsync -avP wangq@202.119.37.251:data/anchr/n2/ ~/data/anchr/n2
+# rsync -avP wangq@202.119.37.251:data/anchr/n2_pe120/ ~/data/anchr/n2_pe120
+# rsync -avP wangq@202.119.37.251:data/anchr/n2_pe100/ ~/data/anchr/n2_pe100
 
 ```
 
@@ -2934,6 +2928,8 @@ rsync -avP \
     wangq@202.119.37.251:data/anchr/col_0
 
 # rsync -avP wangq@202.119.37.251:data/anchr/col_0/ ~/data/anchr/col_0
+# rsync -avP wangq@202.119.37.251:data/anchr/col_0_MiSeq/ ~/data/anchr/col_0_MiSeq
+# rsync -avP wangq@202.119.37.251:data/anchr/col_0_HiSeq/ ~/data/anchr/col_0_HiSeq
 
 ```
 
