@@ -47,7 +47,7 @@ for D in Bcer Mabs Rsph Vcho VchoH MabsF RsphF VchoF; do
         wangq@202.119.37.251:data/anchr/${D}
 done
 
-for D in Bcer Rsph Mabs Vcho VchoH RsphF MabsF VchoF; do
+for D in Bcer Mabs Rsph Vcho VchoH MabsF RsphF VchoF; do
     rsync -avP \
         wangq@202.119.37.251:data/anchr/${D}/ \
         ~/data/anchr/${D}
