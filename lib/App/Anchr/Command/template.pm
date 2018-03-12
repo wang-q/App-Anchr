@@ -746,8 +746,8 @@ log_warn [% sh %]
 for X in [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
-    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta ]; then
-        echo "  pacbio.X${X}.raw.fasta presents";
+    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta.gz ]; then
+        echo "  pacbio.X${X}.raw.fasta.gz presents";
         continue;
     fi
 
@@ -755,31 +755,33 @@ for X in [% opt.cov3 %]; do
     if [[ ${X} == "all" ]]; then
         pushd 3_pacbio > /dev/null
 
-        ln -s pacbio.fasta pacbio.X${X}.raw.fasta
+        ln -s pacbio.fasta.gz pacbio.X${X}.raw.fasta.gz
 
         popd > /dev/null
         continue;
     fi
 
     faops split-about -m 1 -l 0 \
-        3_pacbio/pacbio.fasta \
+        3_pacbio/pacbio.fasta.gz \
         $(( [% opt.genome %] * ${X} )) \
         3_pacbio
 
-    mv 3_pacbio/000.fa "3_pacbio/pacbio.X${X}.raw.fasta"
+    cat 3_pacbio/000.fa | pigz > "3_pacbio/pacbio.X${X}.raw.fasta.gz"
+    rm 3_pacbio/000.fa
 done
 
 for X in  [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
-    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta ]; then
-        echo "  pacbio.X${X}.trim.fasta presents";
+    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta.gz ]; then
+        echo "  pacbio.X${X}.trim.fasta.gz presents";
         continue;
     fi
 
     anchr trimlong --parallel [% opt.parallel2 %] -v \
-        "3_pacbio/pacbio.X${X}.raw.fasta" \
-        -o "3_pacbio/pacbio.X${X}.trim.fasta"
+        "3_pacbio/pacbio.X${X}.raw.fasta.gz" \
+        -o stdout |
+        pigz > "3_pacbio/pacbio.X${X}.trim.fasta.gz"
 done
 
 EOF
@@ -1730,8 +1732,8 @@ log_warn 5_canu.sh
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     echo >&2 '==> Group X{1}-{2}'
 
-    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta ]; then
-        echo >&2 '  3_pacbio/pacbio.X{1}.{2}.fasta not exists'
+    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta.gz ]; then
+        echo >&2 '  3_pacbio/pacbio.X{1}.{2}.fasta.gz not exists'
         exit;
     fi
 
@@ -1746,7 +1748,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         gnuplot="/dev/null" gnuplotTested=true \
         useGrid=false \
         genomeSize=[% opt.genome %] \
-        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta
+        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta.gz
     " ::: [% opt.cov3 %] ::: [% opt.qual3 %]
 
 # sometimes canu failed
