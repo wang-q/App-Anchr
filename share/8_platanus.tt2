@@ -70,10 +70,10 @@ else
             -o stdout \
             | faops filter -a 1000 -l 0 stdin platanus.non-contained.fasta
     fi
-fi
 
-log_info "Clear intermediate files"
-find . -type f -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
+    log_info "Clear intermediate files"
+    find . -type f -name "[ps]e.fa" | parallel --no-run-if-empty -j 1 rm
+fi
 
 #----------------------------#
 # anchor
