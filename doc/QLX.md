@@ -1270,3 +1270,76 @@ quast --no-check --threads 16 \
 
 ```
 
+
+## sga assemble
+
+```bash
+WORKING_DIR=${HOME}/data/anchr
+BASE_NAME=QLX
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+mkdir -p sga
+cd sga
+
+# The minimum overlap to use when computing the graph.
+# The final assembly can be performed with this overlap or greater
+MIN_OVERLAP=55
+
+# The overlap value to use for the final assembly
+ASSEMBLE_OVERLAP=111
+
+# Branch trim length
+TRIM_LENGTH=400
+
+# The minimum length of contigs to include in a scaffold
+MIN_CONTIG_LENGTH=200
+
+# Preprocess the data to remove ambiguous basecalls
+sga preprocess -o reads.pp.fa ${WORKING_DIR}/${BASE_NAME}/2_illumina/trim/pe.cor.fa.gz
+
+# Build the index that will be used for error correction
+# As the error corrector does not require the reverse BWT, suppress
+# construction of the reversed index
+sga index -a ropebwt -t 16 reads.pp.fa
+sga filter -t 16 reads.pp.fa
+
+# Compute the structure of the string graph
+sga overlap -m $MIN_OVERLAP -t 16 reads.pp.filter.pass.fa
+
+# Perform the contig assembly
+sga assemble -m $ASSEMBLE_OVERLAP --min-branch-length $TRIM_LENGTH -o primary reads.pp.filter.pass.asqg.gz
+
+
+anchr contained \
+    $( find . -name "primary*.fa" ) \
+    --len 1000 --idt 0.98 --proportion 0.99999 --parallel 16 \
+    -o stdout \
+    | faops filter -a 1000 -l 0 stdin sga.non-contained.fasta
+
+anchr orient \
+    sga.non-contained.fasta \
+    --len 1000 --idt 0.98 --parallel 16 \
+    -o sga.orient.fasta
+anchr merge \
+    sga.orient.fasta --len 1000 --idt 0.999 --parallel 16 \
+    -o sga.merge0.fasta
+anchr contained \
+    sga.merge0.fasta \
+    --len 1000 --idt 0.98 --proportion 0.99 --parallel 16 \
+    -o sga.fasta
+
+cd ${WORKING_DIR}/${BASE_NAME}
+
+rm -fr 9_qa_sga
+quast --no-check --threads 16 \
+    -R 1_genome/genome.fa \
+    sga/sga.non-contained.fasta \
+    sga/primary-contigs.fa \
+    sga/primary-variants.fa \
+    1_genome/paralogs.fas \
+    --label "sga.non-contained,sga.contigs,sga.variants,paralogs" \
+    -o 9_qa_sga
+
+```
+
