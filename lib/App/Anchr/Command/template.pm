@@ -1376,7 +1376,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
+    if [ -d 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor ]; then
+        rm -fr 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
+    fi
     mkdir -p 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
     cd 4_kunitigs/Q{1}L{2}X{3}P{4}/anchor
 
@@ -1418,7 +1420,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
+    if [ -d 4_tadpole/Q{1}L{2}X{3}P{4}/anchor ]; then
+        rm -fr 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
+    fi
     mkdir -p 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
     cd 4_tadpole/Q{1}L{2}X{3}P{4}/anchor
 
@@ -1472,7 +1476,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 6_kunitigs/MRX{1}P{2}/anchor
+    if [ -d 6_kunitigs/MRX{1}P{2}/anchor ]; then
+        rm -fr 6_kunitigs/MRX{1}P{2}/anchor
+    fi
     mkdir -p 6_kunitigs/MRX{1}P{2}/anchor
     cd 6_kunitigs/MRX{1}P{2}/anchor
 
@@ -1514,7 +1520,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 6_tadpole/MRX{1}P{2}/anchor
+    if [ -d 6_tadpole/MRX{1}P{2}/anchor ]; then
+        rm -fr 6_tadpole/MRX{1}P{2}/anchor
+    fi
     mkdir -p 6_tadpole/MRX{1}P{2}/anchor
     cd 6_tadpole/MRX{1}P{2}/anchor
 
@@ -1557,7 +1565,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 6_megahit/MRX{1}P{2}/anchor
+    if [ -d 6_megahit/MRX{1}P{2}/anchor ]; then
+        rm -fr 6_megahit/MRX{1}P{2}/anchor
+    fi
     mkdir -p 6_megahit/MRX{1}P{2}/anchor
     cd 6_megahit/MRX{1}P{2}/anchor
 
@@ -1602,7 +1612,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
         exit;
     fi
 
-    rm -fr 6_spades/MRX{1}P{2}/anchor
+    if [ -d 6_spades/MRX{1}P{2}/anchor ]; then
+        rm -fr 6_spades/MRX{1}P{2}/anchor
+    fi
     mkdir -p 6_spades/MRX{1}P{2}/anchor
     cd 6_spades/MRX{1}P{2}/anchor
 

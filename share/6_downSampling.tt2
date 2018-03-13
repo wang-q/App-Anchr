@@ -9,7 +9,9 @@ fi
 parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo '==> MRX{}'
 
-    rm -fr 6_downSampling/MRX{}
+    if [ -d 6_downSampling/MRX{} ]; then
+        rm -fr 6_downSampling/MRX{}
+    fi
 
     # shortcut if cov2 == all
     if [[ {} == "all" ]]; then

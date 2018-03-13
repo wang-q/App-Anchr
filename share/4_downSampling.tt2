@@ -7,7 +7,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     fi
     echo '==> Q{1}L{2}X{3}'
 
-    rm -fr 4_downSampling/Q{1}L{2}X{3}
+    if [ -d 4_downSampling/Q{1}L{2}X{3} ]; then
+        rm -fr 4_downSampling/Q{1}L{2}X{3}
+    fi
 
     # shortcut if cov2 == all
     if [[ {3} == "all" ]]; then
