@@ -126,7 +126,9 @@ cat contigs.coverage.tsv |
 
             my $lower = ( $median - $k * $MAD ) / 3;
             $lower = [% opt.mincov %] if $lower < [% opt.mincov %];
+[% IF opt.lower -%]
             $lower = [% opt.lower %] if $lower > [% opt.lower %];
+[% END -%]
             my $upper = ( $median + $k * $MAD ) * 1.5;
             $upper = $median * 2 if $upper > $median * 2;
 
