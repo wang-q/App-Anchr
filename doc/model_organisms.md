@@ -3657,6 +3657,8 @@ rsync -avP \
     wangq@202.119.37.251:data/anchr/nip
 
 # rsync -avP wangq@202.119.37.251:data/anchr/nip/ ~/data/anchr/nip
+# rsync -avP wangq@202.119.37.251:data/anchr/nip_pe300/ ~/data/anchr/nip_pe300
+# rsync -avP wangq@202.119.37.251:data/anchr/nip_pe180/ ~/data/anchr/nip_pe180
 
 ```
 
