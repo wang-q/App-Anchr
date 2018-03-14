@@ -47,7 +47,7 @@ bbmerge.sh \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
 [% END -%]
-    ecco mix vstrict ordered overwrite
+    ecco mix vstrict overwrite
 rm temp.fq.gz; ln -s ecco.fq.gz temp.fq.gz
 [% END -%]
 
@@ -72,7 +72,7 @@ tadpole.sh \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
 [% END -%]
-    ecc tossjunk tossdepth=2 tossuncorrectable ordered overwrite
+    ecc tossjunk tossdepth=2 tossuncorrectable overwrite
 rm temp.fq.gz; ln -s ecct.fq.gz temp.fq.gz
 [% END -%]
 
@@ -85,7 +85,7 @@ tadpole.sh \
 [% IF opt.prefilter -%]
     prefilter=[% opt.prefilter %]  \
 [% END -%]
-    ordered mode=extend el=20 er=20 k=62 overwrite
+    mode=extend el=20 er=20 k=62 overwrite
 rm temp.fq.gz; ln -s extended.fq.gz temp.fq.gz
 
 log_info "Read merging"

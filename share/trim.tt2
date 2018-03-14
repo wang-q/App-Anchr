@@ -87,7 +87,7 @@ if [ ! -e trim.fq.gz ]; then
         out=trim.fq.gz \
         ref=[% opt.adapter %] \
         maxns=0 ktrim=r k=[% opt.trimk %] mink=11 hdist=1 tbo tpe \
-        minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 ordered \
+        minlen=[% opt.len.split('\s+').0 %] qtrim=r trimq=[% opt.trimq %] ftm=5 \
         stats=[% opt.prefix %].trim.stats.txt overwrite \
         threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
