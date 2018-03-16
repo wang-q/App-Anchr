@@ -19,7 +19,7 @@ like( $result->error, qr{need .+input file}, 'need infile' );
 $result = test_app( 'App::Anchr' => [qw(trim t/not_exists t/not_exists)] );
 like( $result->error, qr{doesn't exist}, 'infile not exists' );
 
-$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -a t/not_exists)] );
+$result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz --adapter t/not_exists)] );
 like( $result->error, qr{doesn't exist}, 'adapter file not exists' );
 
 $result = test_app( 'App::Anchr' => [qw(trim t/R1.fq.gz t/R2.fq.gz -o stdout)] );

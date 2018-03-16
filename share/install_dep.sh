@@ -17,12 +17,17 @@ do
     check_install ${package}
 done
 
-for package in abyss fastqc samtools seqtk;
+for package in abyss fastqc samtools seqtk sickle;
 do
     check_install ${package}
 done
 
-for package in bbtools minimap miniasm poa sickle sga;
+for package in minimap miniasm sga;
+do
+    check_install brewsci/bio/${package};
+done
+
+for package in bbtools poa ;
 do
     check_install brewsci/science/${package};
 done
