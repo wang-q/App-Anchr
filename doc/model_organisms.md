@@ -725,8 +725,9 @@ do
 done
 
 cd ~/data/anchr/s288c
-cat 3_pacbio/fasta/*.fasta \
-    | faops dazz -l 0 -p long stdin 3_pacbio/pacbio.fasta
+cat 3_pacbio/fasta/*.fasta |
+    faops dazz -l 0 -p long stdin stdout |
+    pigz > 3_pacbio/pacbio.fasta.gz
 
 ```
 
