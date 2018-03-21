@@ -7,19 +7,19 @@
 #----------------------------#
 hash seqtk 2>/dev/null || {
     echo >&2 "seqtk is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/seqtk";
+    echo >&2 "Install with homebrew: brew install seqtk";
     exit 1;
 }
 
 hash fastqc 2>/dev/null || {
     echo >&2 "fastqc is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/fastqc";
+    echo >&2 "Install with homebrew: brew install fastqc";
     exit 1;
 }
 
 hash sickle 2>/dev/null || {
     echo >&2 "sickle is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/sickle";
+    echo >&2 "Install with homebrew: brew install sickle";
     exit 1;
 }
 
