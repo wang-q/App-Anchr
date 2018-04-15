@@ -57,8 +57,9 @@ for strain in e_coli s288c iso_1 n2 col_0 nip a17; do
 done
 
 for strain in Bcer Rsph Mabs Vcho; do
-    mkdir -p ~/data/anchr/paralogs/genomes/${strain}
-    faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
+    egaz prepseq \
+        ~/data/anchr/${strain}/1_genome/genome.fa -o ${strain} \
+        --repeatmasker '--parallel 16' -v
 done
 
 for strain in Sfle Vpar Lmon Lpne Cdif Cjej Ngon Nmen Bper Cdip Ftul Hinf; do
@@ -98,23 +99,16 @@ bash model/5_circos_cmd.sh
 ```bash
 cd ~/data/anchr/paralogs
 
-perl ~/Scripts/egaz/self_batch.pl \
-    --working_dir ~/data/anchr/paralogs \
-    --seq_dir ~/data/anchr/paralogs/genomes \
-    -c ~/data/anchr/paralogs/taxon.csv \
-    --length 1000 \
-    --name gage \
-    -t Bcer \
-    -q Rsph \
-    -q Mabs \
-    -q Vcho \
-    --parallel 16
+egaz template \
+    genomes/Bcer genomes/Rsph genomes/Mabs genomes/Vcho \
+    -o gage/ \
+    --self \
+    --taxon taxon.csv \
+    --length 1000 --parallel 16 -v
 
-bash gage/1_real_chr.sh
-bash gage/2_file_rm.sh
-bash gage/3_self_cmd.sh
-bash gage/4_proc_cmd.sh
-bash gage/5_circos_cmd.sh
+bash gage/1_self_cmd.sh
+bash gage/3_proc_cmd.sh
+
 ```
 
 ```bash

@@ -65,7 +65,7 @@ done
     * Taxid: [222523](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=222523)
     * RefSeq assembly accession:
       [GCF_000008005.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/008/005/GCF_000008005.1_ASM800v1/GCF_000008005.1_ASM800v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0797
+    * Proportion of paralogs (> 1000 bp): 0.0344
 
 ```bash
 mkdir -p ${HOME}/data/anchr/Bcer
@@ -435,7 +435,7 @@ Table: statFinal
         * Taxid: [561007](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=561007)
         * RefSeq assembly accession:
           [GCF_000069185.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/069/185/GCF_000069185.1_ASM6918v1/GCF_000069185.1_ASM6918v1_assembly_report.txt)
-        * Proportion of paralogs (> 1000 bp): 0.0168
+        * Proportion of paralogs (> 1000 bp): 0.0164
     * *Mycobacterium abscessus* 6G-0125-R
         * RefSeq assembly accession: GCF_000270985.1
 
@@ -784,7 +784,7 @@ Table: statFinal
     * Taxid: [272943](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=272943)
     * RefSeq assembly accession:
       [GCF_000012905.2](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
-    * Proportion of paralogs (> 1000 bp): 0.0286
+    * Proportion of paralogs (> 1000 bp): 0.0293
 
 ```bash
 mkdir -p ${HOME}/data/anchr/Rsph
@@ -1140,7 +1140,7 @@ Table: statFinal
         * Taxid: [243277](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=243277)
         * RefSeq assembly accession:
           [GCF_000006745.1](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/745/GCF_000006745.1_ASM674v1/GCF_000006745.1_ASM674v1_assembly_report.txt)
-        * Proportion of paralogs (> 1000 bp): 0.0210
+        * Proportion of paralogs (> 1000 bp): 0.0216
     * *Vibrio cholerae* CP1032(5)
         * RefSeq assembly accession: GCF_000279305.1
 
