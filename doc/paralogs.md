@@ -51,15 +51,26 @@ perl        ~/Scripts/withncbi/taxon/strain_info.pl \
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli s288c iso_1 n2 col_0 nip a17; do
-    mkdir -p ~/data/anchr/paralogs/genomes/${strain}
-    faops split-name ~/data/anchr/${strain}/1_genome/genome.fa ~/data/anchr/paralogs/genomes/${strain}
-done
+for strain in e_coli Bcer Rsph Mabs Vcho; do
+    if [ -d ${strain} ]; then
+        echo >&2 Skip ${strain};
+        continue;
+    fi
 
-for strain in Bcer Rsph Mabs Vcho; do
     egaz prepseq \
         ~/data/anchr/${strain}/1_genome/genome.fa -o ${strain} \
         --repeatmasker '--parallel 16' -v
+done
+
+for strain in s288c iso_1 n2 col_0 nip a17; do
+    if [ -d ${strain} ]; then
+        echo >&2 Skip ${strain};
+        continue;
+    fi
+
+    egaz prepseq \
+        ~/data/anchr/${strain}/1_genome/genome.fa -o ${strain} \
+        -v
 done
 
 for strain in Sfle Vpar Lmon Lpne Cdif Cjej Ngon Nmen Bper Cdip Ftul Hinf; do
@@ -74,31 +85,6 @@ done
 ```bash
 cd ~/data/anchr/paralogs
 
-perl ~/Scripts/egaz/self_batch.pl \
-    --working_dir ~/data/anchr/paralogs \
-    --seq_dir ~/data/anchr/paralogs/genomes \
-    -c ~/data/anchr/paralogs/taxon.csv \
-    --length 1000 \
-    --norm \
-    --name model \
-    -q s288c \
-    -q iso_1 \
-    -q n2 \
-    -q col_0 \
-    -q nip \
-    -q a17 \
-    -t e_coli \
-    --parallel 16
-
-bash model/1_real_chr.sh
-bash model/3_self_cmd.sh
-bash model/4_proc_cmd.sh
-bash model/5_circos_cmd.sh
-```
-
-```bash
-cd ~/data/anchr/paralogs
-
 egaz template \
     genomes/Bcer genomes/Rsph genomes/Mabs genomes/Vcho \
     -o gage/ \
@@ -108,6 +94,22 @@ egaz template \
 
 bash gage/1_self_cmd.sh
 bash gage/3_proc_cmd.sh
+
+```
+
+```bash
+cd ~/data/anchr/paralogs
+
+egaz template \
+    genomes/e_coli genomes/s288c genomes/iso_1 genomes/n2 \
+    genomes/col_0 genomes/nip \
+    -o model/ \
+    --self \
+    --taxon taxon.csv \
+    --length 1000 --parallel 16 -v
+
+bash model/1_self_cmd.sh
+bash model/3_proc_cmd.sh
 
 ```
 
