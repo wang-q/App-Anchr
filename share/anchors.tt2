@@ -278,16 +278,16 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
 
     my $yml = {};
 
-    for my $key ( sort keys $yml1 ) {
+    for my $key ( sort keys %{$yml1} ) {
         $yml->{$key} = $yml1->{$key};
     }
-    for my $key ( sort keys $yml2 ) {
+    for my $key ( sort keys %{$yml2} ) {
         $yml->{$key} = $yml2->{$key};
     }
 
 [% IF opt.keepedge -%]
     # repeats on the edge hurt assembling, so fill edges near big island by [% opt.fill %]
-    for my $key ( sort keys $yml ) {
+    for my $key ( sort keys %{$yml} ) {
         my $length = AlignDB::IntSpan->new( $yml_chr->{$key} )->max;
 
         my $set = AlignDB::IntSpan->new( $yml->{$key} );
@@ -323,7 +323,7 @@ jrunlist stat sr.chr.sizes contig.proper.yml -o contig.proper.csv
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml = YAML::Syck::LoadFile( q{contig.proper.yml} );
 
-    for my $key ( sort keys $yml ) {
+    for my $key ( sort keys %{$yml} ) {
         my $runlist = $yml->{$key};
         my $intspan = AlignDB::IntSpan->new($runlist);
         my @sets = sort { $b->size <=> $a->size } $intspan->sets;
@@ -337,7 +337,7 @@ jrunlist cover longest.regions.txt -o anchor.yml
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml = YAML::Syck::LoadFile( q{contig.proper.yml} );
 
-    for my $key ( sort keys $yml ) {
+    for my $key ( sort keys %{$yml} ) {
         my $runlist = $yml->{$key};
         printf "%s:%s\n", $key, $runlist;
     }
@@ -355,7 +355,7 @@ jrunlist compare sr.chr.yml anchor.yml --op diff -o others.yml
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml = YAML::Syck::LoadFile( q{others.yml} );
 
-    for my $key ( sort keys $yml ) {
+    for my $key ( sort keys %{$yml} ) {
         my $runlist = $yml->{$key};
         printf "%s:%s\n", $key, $runlist;
     }
