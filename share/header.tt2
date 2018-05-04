@@ -34,6 +34,9 @@ log_debug () {
 #----------------------------#
 set +e
 
+# set stacksize to unlimited
+ulimit -s unlimited
+
 signaled () {
     log_warn Interrupted
     exit 1
