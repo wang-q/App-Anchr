@@ -6,7 +6,9 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "create executing bash files";
+sub abstract {
+    return 'create executing bash files';
+}
 
 sub opt_spec {
     return (
@@ -51,6 +53,9 @@ sub opt_spec {
         [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
         [ "mergemax=i", "max length of merged overlaps", { default => 30 }, ],
         [ "fillmax=i",  "max length of gaps",            { default => 2000 }, ],
+        [],
+        [ 'trinity', 'de novo rna-seq', ],
+        [ "rnamin=i", "minimum assembled contig length", { default => 200 }, ],
         { show_defaults => 1, }
     );
 }
@@ -175,6 +180,9 @@ sub execute {
 
     # statOtherAnchors
     $self->gen_statOtherAnchors( $opt, $args );
+
+    # trinity
+    $self->gen_trinity( $opt, $args );
 
     # quast
     $self->gen_quast( $opt, $args );
@@ -1998,6 +2006,74 @@ sub gen_statOtherAnchors {
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
 
+}
+
+
+sub gen_trinity {
+    my ( $self, $opt, $args ) = @_;
+
+    my $tt = Template->new( INCLUDE_PATH => [ File::ShareDir::dist_dir('App-Anchr') ], );
+    my $template;
+    my $sh_name;
+
+    return unless $opt->{trinity};
+
+    $sh_name = "8_trinity.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 DIR_READS"
+
+DIR_READS=${1:-"2_illumina/trim"}
+
+# Convert to abs path
+DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
+
+#----------------------------#
+# trinity
+#----------------------------#
+mkdir -p 8_trinity
+cd 8_trinity
+
+mkdir -p re-pair
+faops filter -l 0 -a 60 ${DIR_READS}/pe.cor.fa.gz stdout |
+    repair.sh \
+        in=stdin.fa \
+        out=re-pair/R1.fa \
+        out2=re-pair/R2.fa \
+        outs=re-pair/Rs.fa \
+        threads=[% opt.parallel %] \
+        fint overwrite
+
+Trinity \
+    --seqType fa \
+    --left   re-pair/R1.fa \
+    --right  re-pair/R2.fa \
+    --single re-pair/Rs.fa \
+    --max_memory [% opt.xmx FILTER upper %] \
+    --CPU [% opt.parallel %] \
+    --bypass_java_version_check \
+    --min_contig_length [% opt.rnamin %] \
+    --output trinity_out_dir \
+
+#rm -fr chrysalis
+
+exit;
+
+EOF
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+            sh   => $sh_name,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 }
 
 sub gen_quast {
