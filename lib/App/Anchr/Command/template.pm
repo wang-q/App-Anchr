@@ -2008,7 +2008,6 @@ sub gen_statOtherAnchors {
 
 }
 
-
 sub gen_trinity {
     my ( $self, $opt, $args ) = @_;
 
@@ -2017,6 +2016,29 @@ sub gen_trinity {
     my $sh_name;
 
     return unless $opt->{trinity};
+
+    #@type Path::Tiny
+    my $statbin;
+    {    # find util/TrinityStats.pl
+        my $bin  = IPC::Cmd::can_run("Trinity");
+        my $path = Path::Tiny::path($bin)->realpath;
+
+        if ( $path->parent->child("util")->is_dir ) {
+            $statbin = $path->parent()->child("util/TrinityStats.pl");
+        }
+        else {
+            $statbin = $path->parent(2)->child("libexec/util/TrinityStats.pl");
+        }
+        if ( !$statbin->is_file ) {
+            print STDERR YAML::Syck::Dump(
+                {   "bin"    => $bin,
+                    "path"   => $path,
+                    "wanted" => $statbin
+                }
+            );
+            Carp::croak "Can't find TrinityStats.pl\n";
+        }
+    }
 
     $sh_name = "8_trinity.sh";
     print "Create $sh_name\n";
@@ -2034,11 +2056,91 @@ DIR_READS=${1:-"2_illumina/trim"}
 # Convert to abs path
 DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
 
+if [ -e 8_trinity/Trinity.fasta ]; then
+    log_info "8_trinity/Trinity.fasta presents"
+    exit;
+fi
+
 #----------------------------#
 # trinity
 #----------------------------#
+log_info "Run trinity"
+
 mkdir -p 8_trinity
 cd 8_trinity
+
+mkdir -p re-pair
+parallel --no-run-if-empty --linebuffer -k -j 3 "
+    if [ ! -e ${DIR_READS}/{}.fq.gz ]; then
+        exit;
+    fi
+
+    pigz -dcf ${DIR_READS}/{}.fq.gz > re-pair/{}.fq
+    " ::: R1 R2 Rs
+
+Trinity \
+    --seqType fq \
+    --left   re-pair/R1.fq \
+    --right  re-pair/R2.fq \
+    --single re-pair/Rs.fq \
+    --max_memory [% opt.xmx FILTER upper %] \
+    --CPU [% opt.parallel %] \
+    --bypass_java_version_check \
+    --no_version_check  \
+    --min_contig_length [% opt.rnamin %] \
+    --output trinity_out_dir \
+
+perl [% statbin %] \
+    trinity_out_dir/Trinity.fasta \
+    > trinity_out_dir/Trinity.stats
+
+cp trinity_out_dir/Trinity.fasta  .
+cp trinity_out_dir/Trinity.stats  .
+cp trinity_out_dir/Trinity.timing .
+
+rm -fr trinity_out_dir
+
+exit;
+
+EOF
+    $tt->process(
+        \$template,
+        {   args    => $args,
+            opt     => $opt,
+            sh      => $sh_name,
+            statbin => $statbin,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
+
+    $sh_name = "8_trinity_cor.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 DIR_READS"
+
+DIR_READS=${1:-"2_illumina/trim"}
+
+# Convert to abs path
+DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
+
+if [ -e 8_trinity_cor/Trinity.fasta ]; then
+    log_info "8_trinity_cor/Trinity.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# trinity
+#----------------------------#
+log_info "Run trinity"
+
+mkdir -p 8_trinity_cor
+cd 8_trinity_cor
 
 mkdir -p re-pair
 faops filter -l 0 -a 60 ${DIR_READS}/pe.cor.fa.gz stdout |
@@ -2058,22 +2160,110 @@ Trinity \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
     --bypass_java_version_check \
+    --no_version_check  \
     --min_contig_length [% opt.rnamin %] \
     --output trinity_out_dir \
 
-#rm -fr chrysalis
+perl [% statbin %] \
+    trinity_out_dir/Trinity.fasta \
+    > trinity_out_dir/Trinity.stats
+
+cp trinity_out_dir/Trinity.fasta  .
+cp trinity_out_dir/Trinity.stats  .
+cp trinity_out_dir/Trinity.timing .
+
+rm -fr trinity_out_dir
+rm -fr re-pair
 
 exit;
 
 EOF
     $tt->process(
         \$template,
-        {   args => $args,
-            opt  => $opt,
-            sh   => $sh_name,
+        {   args    => $args,
+            opt     => $opt,
+            sh      => $sh_name,
+            statbin => $statbin,
         },
         Path::Tiny::path( $args->[0], $sh_name )->stringify
     ) or die Template->error;
+
+    if ( !$opt->{se} and $opt->{mergereads} ) {
+        $sh_name = "8_trinity_MR.sh";
+        print "Create $sh_name\n";
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+#----------------------------#
+# set parameters
+#----------------------------#
+USAGE="Usage: $0 DIR_READS"
+
+DIR_READS=${1:-"2_illumina/trim"}
+
+# Convert to abs path
+DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
+
+if [ -e 8_trinity/Trinity.fasta ]; then
+    log_info "8_trinity/Trinity.fasta presents"
+    exit;
+fi
+
+#----------------------------#
+# trinity
+#----------------------------#
+log_info "Run trinity"
+
+mkdir -p 8_trinity_MR
+cd 8_trinity_MR
+
+mkdir -p re-pair
+faops filter -l 0 -a 60 ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz stdout |
+    repair.sh \
+        in=stdin.fa \
+        out=re-pair/R1.fa \
+        out2=re-pair/R2.fa \
+        outs=re-pair/Rs.fa \
+        threads=[% opt.parallel %] \
+        fint overwrite
+
+Trinity \
+    --seqType fq \
+    --left   ${DIR_READS}/R1.fq.gz \
+    --right  ${DIR_READS}/R2.fq.gz \
+    --single ${DIR_READS}/Rs.fq.gz \
+    --max_memory [% opt.xmx FILTER upper %] \
+    --CPU [% opt.parallel %] \
+    --bypass_java_version_check \
+    --no_version_check  \
+    --min_contig_length [% opt.rnamin %] \
+    --output trinity_out_dir \
+
+perl [% statbin %] \
+    trinity_out_dir/Trinity.fasta \
+    > trinity_out_dir/Trinity.stats
+
+cp trinity_out_dir/Trinity.fasta  .
+cp trinity_out_dir/Trinity.stats  .
+cp trinity_out_dir/Trinity.timing .
+
+rm -fr trinity_out_dir
+
+exit;
+
+EOF
+        $tt->process(
+            \$template,
+            {   args    => $args,
+                opt     => $opt,
+                sh      => $sh_name,
+                statbin => $statbin,
+            },
+            Path::Tiny::path( $args->[0], $sh_name )->stringify
+        ) or die Template->error;
+    }
+
 }
 
 sub gen_quast {
