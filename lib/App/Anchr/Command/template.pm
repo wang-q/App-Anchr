@@ -2098,6 +2098,7 @@ cp trinity_out_dir/Trinity.stats  .
 cp trinity_out_dir/Trinity.timing .
 
 rm -fr trinity_out_dir
+rm -fr re-pair
 
 exit;
 
@@ -2232,6 +2233,7 @@ cp trinity_out_dir/Trinity.stats  .
 cp trinity_out_dir/Trinity.timing .
 
 rm -fr trinity_out_dir
+rm -fr re-pair
 
 exit;
 
