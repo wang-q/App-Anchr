@@ -2076,13 +2076,12 @@ parallel --no-run-if-empty --linebuffer -k -j 3 "
     fi
 
     pigz -dcf ${DIR_READS}/{}.fq.gz > re-pair/{}.fq
-    " ::: R1 R2 Rs
+    " ::: R1 R2
 
 Trinity \
     --seqType fq \
     --left   re-pair/R1.fq \
     --right  re-pair/R2.fq \
-    --single re-pair/Rs.fq \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
     --bypass_java_version_check \
@@ -2143,20 +2142,12 @@ mkdir -p 8_trinity_cor
 cd 8_trinity_cor
 
 mkdir -p re-pair
-faops filter -l 0 -a 60 ${DIR_READS}/pe.cor.fa.gz stdout |
-    repair.sh \
-        in=stdin.fa \
-        out=re-pair/R1.fa \
-        out2=re-pair/R2.fa \
-        outs=re-pair/Rs.fa \
-        threads=[% opt.parallel %] \
-        fint overwrite
+pigz -dcf ${DIR_READS}/pe.cor.fa.gz > re-pair/pe.cor.fa
 
 Trinity \
     --seqType fa \
-    --left   re-pair/R1.fa \
-    --right  re-pair/R2.fa \
-    --single re-pair/Rs.fa \
+    --single re-pair/pe.cor.fa \
+    --run_as_paired \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
     --bypass_java_version_check \
@@ -2200,13 +2191,13 @@ log_warn [% sh %]
 #----------------------------#
 USAGE="Usage: $0 DIR_READS"
 
-DIR_READS=${1:-"2_illumina/trim"}
+DIR_READS=${1:-"2_illumina/mergereads"}
 
 # Convert to abs path
 DIR_READS="$(cd "$(dirname "$DIR_READS")"; pwd)/$(basename "$DIR_READS")"
 
-if [ -e 8_trinity/Trinity.fasta ]; then
-    log_info "8_trinity/Trinity.fasta presents"
+if [ -e 8_trinity_MR/Trinity.fasta ]; then
+    log_info "8_trinity_MR/Trinity.fasta presents"
     exit;
 fi
 
@@ -2219,20 +2210,12 @@ mkdir -p 8_trinity_MR
 cd 8_trinity_MR
 
 mkdir -p re-pair
-faops filter -l 0 -a 60 ${BASH_DIR}/2_illumina/mergereads/pe.cor.fa.gz stdout |
-    repair.sh \
-        in=stdin.fa \
-        out=re-pair/R1.fa \
-        out2=re-pair/R2.fa \
-        outs=re-pair/Rs.fa \
-        threads=[% opt.parallel %] \
-        fint overwrite
+pigz -dcf ${DIR_READS}/pe.cor.fa.gz > re-pair/pe.cor.fa
 
 Trinity \
-    --seqType fq \
-    --left   ${DIR_READS}/R1.fq.gz \
-    --right  ${DIR_READS}/R2.fq.gz \
-    --single ${DIR_READS}/Rs.fq.gz \
+    --seqType fa \
+    --single re-pair/pe.cor.fa \
+    --run_as_paired \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
     --bypass_java_version_check \
