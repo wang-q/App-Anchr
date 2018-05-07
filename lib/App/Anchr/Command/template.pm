@@ -2142,12 +2142,9 @@ log_info "Run trinity"
 mkdir -p 8_trinity_cor
 cd 8_trinity_cor
 
-mkdir -p re-pair
-pigz -dcf ${DIR_READS}/pe.cor.fa.gz > re-pair/pe.cor.fa
-
 Trinity \
     --seqType fa \
-    --single re-pair/pe.cor.fa \
+    --single ${DIR_READS}/pe.cor.fa.gz \
     --run_as_paired \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
@@ -2165,7 +2162,6 @@ cp trinity_out_dir/Trinity.stats  .
 cp trinity_out_dir/Trinity.timing .
 
 rm -fr trinity_out_dir
-rm -fr re-pair
 
 exit;
 
@@ -2210,12 +2206,9 @@ log_info "Run trinity"
 mkdir -p 8_trinity_MR
 cd 8_trinity_MR
 
-mkdir -p re-pair
-pigz -dcf ${DIR_READS}/pe.cor.fa.gz > re-pair/pe.cor.fa
-
 Trinity \
     --seqType fa \
-    --single re-pair/pe.cor.fa \
+    --single ${DIR_READS}/pe.cor.fa.gz \
     --run_as_paired \
     --max_memory [% opt.xmx FILTER upper %] \
     --CPU [% opt.parallel %] \
@@ -2233,7 +2226,6 @@ cp trinity_out_dir/Trinity.stats  .
 cp trinity_out_dir/Trinity.timing .
 
 rm -fr trinity_out_dir
-rm -fr re-pair
 
 exit;
 
