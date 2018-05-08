@@ -82,6 +82,8 @@ else
     touch k_unitigs.fasta
 fi
 
+rm k_unitigs_K*.fasta
+
 fi
 
 #----------------------------#
