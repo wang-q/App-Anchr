@@ -36,7 +36,7 @@ for strain in Bper Cdif Cdip Cjej Ftul Hinf Lmon Lpne Ngon Nmen Sfle Vpar; do
 done
 
 # soft-masked by ensembl 
-for strain in s288c iso_1 n2 col_0 nip a17; do
+for strain in s288c iso_1 n2 col_0 nip; do
     if [ -d ${strain} ]; then
         echo >&2 Skip ${strain};
         continue;
