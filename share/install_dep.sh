@@ -12,38 +12,24 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     check_install jdk
 fi
 
-for package in graphviz jq parallel pigz;
-do
+for package in graphviz jq parallel pigz; do
     check_install ${package}
 done
 
-for package in abyss fastqc samtools seqtk sickle;
-do
+for package in abyss fastqc samtools seqtk sickle; do
     check_install ${package}
 done
 
-for package in minimap miniasm sga;
-do
+for package in bbtools masurca minimap miniasm sga; do
     check_install brewsci/bio/${package};
 done
 
-for package in bbtools poa ;
-do
+for package in poa; do
     check_install brewsci/science/${package};
 done
 
 for package in faops jrange sparsemem dazz_db@20161112 daligner@20170203; do
     check_install wang-q/tap/${package};
 done
-
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    if brew list --versions jellyfish > /dev/null; then
-        brew unlink jellyfish
-    fi
-    check_install wang-q/tap/jellyfish@2.2.4
-    brew unlink jellyfish@2.2.4 && brew link jellyfish@2.2.4
-    check_install wang-q/tap/quorum@1.1.1
-    check_install wang-q/tap/superreads
-fi
 
 exit 0

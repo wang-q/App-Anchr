@@ -34,7 +34,7 @@ hash faops 2>/dev/null || {
 #----------------------------#
 hash jellyfish 2>/dev/null || {
     echo >&2 "jellyfish is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install homebrew/science/jellyfish";
+    echo >&2 "Install with homebrew: brew install brewsci/bio/jellyfish";
     exit 1;
 }
 
@@ -45,9 +45,9 @@ hash jq 2>/dev/null || {
 }
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    hash create_k_unitigs_large_k 2>/dev/null || {
-        echo >&2 "superreads is required but it's not installed.";
-        echo >&2 "Install with homebrew: brew install wang-q/tap/superreads";
+    hash masurca 2>/dev/null || {
+        echo >&2 "masurca is required but it's not installed.";
+        echo >&2 "Install with homebrew: brew install brewsci/bio/masurca";
         exit 1;
     }
 fi
