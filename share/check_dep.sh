@@ -61,15 +61,9 @@ hash bbmap.sh 2>/dev/null || {
     exit 1;
 }
 
-hash jrunlist 2>/dev/null || {
-    echo >&2 "jrunlist is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/jrunlist";
-    exit 1;
-}
-
-hash runlist 2>/dev/null || {
-    echo >&2 "runlist is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm App::RL";
+hash spanr 2>/dev/null || {
+    echo >&2 "spanr is required but it's not installed.";
+    echo >&2 "Install with cargo: cargo install intspan";
     exit 1;
 }
 
@@ -77,7 +71,6 @@ hash runlist 2>/dev/null || {
 # group anchors
 #----------------------------#
 # faops
-# runlist
 
 hash dot 2>/dev/null || {
     echo >&2 "GraphViz is required but it's not installed.";

@@ -11,7 +11,7 @@ fi
 
 log_debug "SR sizes"
 faops size SR.fasta > sr.chr.sizes
-jrunlist genome sr.chr.sizes -o sr.chr.yml
+spanr genome sr.chr.sizes -o sr.chr.yml
 
 #----------------------------#
 # Mapping reads
@@ -226,8 +226,8 @@ save OPT_FILL
 save OPT_MIN
 
 # covered region
-jrunlist cover contig.covered.txt -o contig.covered.yml
-jrunlist stat sr.chr.sizes contig.covered.yml -o contig.covered.csv
+spanr cover contig.covered.txt -o contig.covered.yml
+spanr stat sr.chr.sizes contig.covered.yml -o contig.covered.csv
 
 # fill all holes of [% opt.ratio %] covered contigs
 cat contig.covered.csv |
@@ -241,14 +241,14 @@ cat contig.covered.csv |
     sort -n \
     > fill_all.txt
 
-jrunlist some contig.covered.yml fill_all.txt -o contig.fill_all.yml
+spanr some contig.covered.yml fill_all.txt -o contig.fill_all.yml
 rm -f contig.fill_all.temp.yml; ln -s contig.fill_all.yml contig.fill_all.temp.yml
 
 if [ -s fill_all.txt ]; then
-    jrunlist span contig.fill_all.temp.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
+    spanr span contig.fill_all.temp.yml --op fill -n [% opt.fill * 10 %] -o contig.fill_all.1.yml
     rm contig.fill_all.temp.yml; ln -s contig.fill_all.1.yml contig.fill_all.temp.yml
 
-    jrunlist span contig.fill_all.temp.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
+    spanr span contig.fill_all.temp.yml --op excise -n [% opt.min %] -o contig.fill_all.2.yml
     rm contig.fill_all.temp.yml; ln -s contig.fill_all.2.yml contig.fill_all.temp.yml
 fi
 
@@ -258,14 +258,14 @@ cat sr.chr.sizes |
     grep -Fx -f fill_all.txt -v \
     > fill_hole.txt
 
-jrunlist some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
+spanr some contig.covered.yml fill_hole.txt -o contig.fill_hole.yml
 rm -f contig.fill_hole.temp.yml; ln -s contig.fill_hole.yml contig.fill_hole.temp.yml
 
 if [ -s fill_hole.txt ]; then
-    jrunlist span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
+    spanr span contig.fill_hole.yml --op fill -n [% opt.fill %] -o contig.fill_hole.1.yml
     rm contig.fill_hole.temp.yml; ln -s contig.fill_hole.1.yml contig.fill_hole.temp.yml
 
-    jrunlist span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill_hole.2.yml
+    spanr span contig.fill_hole.1.yml --op excise -n [% opt.min %] -o contig.fill_hole.2.yml
     rm contig.fill_hole.temp.yml; ln -s contig.fill_hole.2.yml contig.fill_hole.temp.yml
 fi
 
@@ -317,7 +317,7 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
 
     YAML::Syck::DumpFile( q{contig.proper.yml}, $yml );
     '
-jrunlist stat sr.chr.sizes contig.proper.yml -o contig.proper.csv
+spanr stat sr.chr.sizes contig.proper.yml -o contig.proper.csv
 
 [% IF opt.longest -%]
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
@@ -332,7 +332,7 @@ perl -MYAML::Syck -MAlignDB::IntSpan -e '
     ' \
     > longest.regions.txt
 
-jrunlist cover longest.regions.txt -o anchor.yml
+spanr cover longest.regions.txt -o anchor.yml
 [% ELSE %]
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml = YAML::Syck::LoadFile( q{contig.proper.yml} );
@@ -350,7 +350,7 @@ ln -s contig.proper.yml anchor.yml
 #----------------------------#
 # others
 #----------------------------#
-jrunlist compare sr.chr.yml anchor.yml --op diff -o others.yml
+spanr compare sr.chr.yml anchor.yml --op diff -o others.yml
 
 perl -MYAML::Syck -MAlignDB::IntSpan -e '
     my $yml = YAML::Syck::LoadFile( q{others.yml} );
