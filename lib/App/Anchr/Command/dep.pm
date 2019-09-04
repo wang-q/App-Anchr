@@ -6,10 +6,10 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => 'check or install dependances';
+use constant abstract => 'check or install dependencies';
 
 sub opt_spec {
-    return ( [ 'install', 'install dependances', ], { show_defaults => 1, } );
+    return ( [ 'install', 'install dependencies', ], { show_defaults => 1, } );
 }
 
 sub usage_desc {
@@ -75,11 +75,11 @@ sub execute {
         }
     }
     else {
-        $stopwatch->block_message("Check other dependances");
+        $stopwatch->block_message("Check other dependencies");
 
         my $sh = File::ShareDir::dist_file( 'App-Anchr', 'check_dep.sh' );
         if ( IPC::Cmd::run( command => [ "bash", $sh ], verbose => 1, ) ) {
-            $stopwatch->block_message("OK: all dependances present");
+            $stopwatch->block_message("OK: all dependencies present");
         }
         else {
             $stopwatch->block_message("*Failed*");
