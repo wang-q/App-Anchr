@@ -83,7 +83,7 @@ brew unlink gnuplot
 brew link gnuplot@4 --force
 
 brew install r
-brew install kmergenie --with-maxkmer=200
+brew install wangq/tap/kmergenie@1.7051
 
 brew install kmc --HEAD
 
@@ -184,7 +184,6 @@ tar xvfz p6c4_ecoli_RSII_DDR2_with_15kb_cut_E01_1.tar.gz
 mkdir -p ~/data/anchr/e_coli/3_pacbio/bam
 cd ~/data/anchr/e_coli/3_pacbio/bam
 
-source ~/share/pitchfork/deployment/setup-env.sh
 bax2bam ../E01_1/Analysis_Results/*.bax.h5
 
 # convert .subreads.bam to fasta
