@@ -160,10 +160,4 @@ hash fasops 2>/dev/null || {
     exit 1;
 }
 
-hash rangeops 2>/dev/null || {
-    echo >&2 "rangeops is required but it's not installed.";
-    echo >&2 "Install with cpanm: cpanm App::Rangeops";
-    exit 1;
-}
-
 echo OK

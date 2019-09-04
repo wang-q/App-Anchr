@@ -80,8 +80,8 @@ faops replace ${MY_TMP_DIR}/strand.fa ${MY_TMP_DIR}/replace.tsv ${MY_TMP_DIR}/re
 
 log_info "Sort"
 faops size ${MY_TMP_DIR}/replace.fa | cut -f 1 > ${MY_TMP_DIR}/heads.list
-# rangeops would remove invalid headers
-rangeops sort ${MY_TMP_DIR}/heads.list -o stdout > ${MY_TMP_DIR}/heads.sort
+# remove invalid headers
+linkr sort ${MY_TMP_DIR}/heads.list -o stdout > ${MY_TMP_DIR}/heads.sort
 # append invalid headers
 grep -Fx -f ${MY_TMP_DIR}/heads.sort -v ${MY_TMP_DIR}/heads.list >> ${MY_TMP_DIR}/heads.sort
 
