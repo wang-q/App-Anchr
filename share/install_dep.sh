@@ -9,14 +9,14 @@ check_install () {
 }
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    check_install jdk
+    check_install openjdk@9
 fi
 
 for package in graphviz jq parallel pigz; do
     check_install ${package}
 done
 
-for package in abyss fastqc samtools seqtk sickle; do
+for package in fastqc samtools sickle; do
     check_install ${package}
 done
 

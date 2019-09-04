@@ -5,12 +5,6 @@
 #----------------------------#
 # prepare
 #----------------------------#
-hash seqtk 2>/dev/null || {
-    echo >&2 "seqtk is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install seqtk";
-    exit 1;
-}
-
 hash fastqc 2>/dev/null || {
     echo >&2 "fastqc is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install fastqc";
