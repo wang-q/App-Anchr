@@ -22,7 +22,7 @@ sub opt_spec {
             { default => File::ShareDir::dist_file( 'App-Anchr', 'illumina_adapters.fa' ) },
         ],
         [   "phix=s", "phix file",
-            { default => File::ShareDir::dist_file( 'App-Anchr', 'phix174_ill.ref.fa' ) },
+            { default => File::ShareDir::dist_file( 'App-Anchr', 'phix174.fa' ) },
         ],
         [   "artifact=s",
             "artifact file",
