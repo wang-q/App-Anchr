@@ -238,7 +238,7 @@ anchr template \
     --trim2 "--dedupe --tile --cutoff 5 --cutk 31" \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80" \
@@ -748,7 +748,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 60 80 all" \
@@ -1023,7 +1023,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80" \
@@ -1492,7 +1492,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80 all" \
@@ -1753,7 +1753,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80 all" \
@@ -2114,7 +2114,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,3" \
     --cov2 "40 60 80 all" \
@@ -2412,7 +2412,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,3" \
     --cov2 "40 60 all" \
@@ -2927,7 +2927,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,3" \
     --cov2 "40 50 60 all" \
@@ -3198,7 +3198,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,3" \
     --cov2 "40 50 60 all" \
@@ -3655,7 +3655,7 @@ anchr template \
     --trim2 "--dedupe" \
     --qual2 "25" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,3" \
     --cov2 "40 60 80 all" \

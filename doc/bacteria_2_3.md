@@ -190,7 +190,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -493,7 +493,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -797,7 +797,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -1098,7 +1098,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -1358,7 +1358,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
@@ -1543,7 +1543,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -1830,7 +1830,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -2168,7 +2168,7 @@ anchr template \
     --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "all" \
     --qual3 "trim" \
@@ -2433,7 +2433,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \
@@ -2700,7 +2700,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \
@@ -3051,7 +3051,7 @@ anchr template \
     --sample 300 \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80" \
@@ -3416,7 +3416,7 @@ anchr template \
     --sample 300 \
     --qual2 "20 25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --mergereads \
     --ecphase "1,2,3" \
     --cov2 "40 80" \
@@ -3786,7 +3786,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --cov3 "80 all" \
     --qual3 "trim" \

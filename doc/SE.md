@@ -78,7 +78,7 @@ anchr template \
     --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --parallel 24
 
@@ -148,7 +148,7 @@ anchr template \
     --cov2 "40 80 all" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --parallel 24
 

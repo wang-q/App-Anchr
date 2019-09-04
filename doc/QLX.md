@@ -63,7 +63,7 @@ anchr template \
     --cov2 "40 80" \
     --qual2 "20 25 30 35" \
     --len2 "60 90" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --parallel 16
 
@@ -86,7 +86,7 @@ anchr template \
     --cov2 "20 30 40 50 60 80 120 160 200" \
     --qual2 "25 30" \
     --len2 "60" \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --tadpole \
     --mergereads \
     --ecphase "1,2,3" \

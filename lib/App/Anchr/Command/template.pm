@@ -12,8 +12,8 @@ sub abstract {
 
 sub opt_spec {
     return (
-        [ "basename=s", "the basename of this genome, default is the working directory", ],
-        [ "queue=s",      "QUEUE_NAME",        { default => "mpi" }, ],
+        [ "basename=s",   "the basename of this genome, default is the working directory", ],
+        [ "queue=s",      "QUEUE_NAME", { default => "mpi" }, ],
         [ "genome=i",     "your best guess of the haploid genome size", ],
         [ "is_euk",       "eukaryotes or not", ],
         [ "se",           "single end mode for Illumina", ],
@@ -27,34 +27,35 @@ sub opt_spec {
         [ 'insertsize', 'calc the insert sizes', ],
         [ 'sgapreqc',   'run sga preqc', ],
         [ 'sgastats',   'run sga stats', ],
-        [ "reads=i", "how many reads to estimate insert size", { default => 1000000 }, ],
+        [ "reads=i",    "how many reads to estimate insert size", { default => 1000000 }, ],
         [],
-        [ "trim2=s",   "opts for trimming Illumina reads",          { default => "--dedupe" }, ],
+        [ "trim2=s",   "opts for trimming Illumina reads", { default => "--dedupe" }, ],
         [ "sample2=i", "total sampling coverage of Illumina reads", ],
-        [ "qual2=s",   "quality threshold",                         { default => "25 30" }, ],
-        [ "len2=s",    "filter reads less or equal to this length", { default => "60" }, ],
-        [ "filter=s",  "adapter, phix, artifact",                   { default => "adapter" }, ],
+        [ "qual2=s",  "quality threshold",                         { default => "25 30" }, ],
+        [ "len2=s",   "filter reads less or equal to this length", { default => "60" }, ],
+        [ "filter=s", "adapter, artifact",                         { default => "adapter" }, ],
         [],
+        [ 'noquorum',    'skip quorum', ],
         [ 'mergereads',  'also run the mergereads approach', ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
-        [ 'ecphase=s', 'Error-correct phases', { default => "1,2,3", }, ],
+        [ 'ecphase=s',   'Error-correct phases', { default => "1,2,3", }, ],
         [],
-        [ "cov2=s",      "down sampling coverage of Illumina reads", { default => "40 80" }, ],
-        [ 'tadpole',     'use tadpole to create k-unitigs', ],
-        [ 'megahit',     'feed megahit with sampled mergereads', ],
-        [ 'spades',      'feed spades with sampled mergereads', ],
-        [ "splitp=i",    "parts of splitting",                       { default => 50 }, ],
-        [ "statp=i",     "parts of stats",                           { default => 50 }, ],
+        [ "cov2=s",  "down sampling coverage of Illumina reads", { default => "40 80" }, ],
+        [ 'tadpole', 'use tadpole to create k-unitigs', ],
+        [ 'megahit', 'feed megahit with sampled mergereads', ],
+        [ 'spades',  'feed spades with sampled mergereads', ],
+        [ "splitp=i",    "parts of splitting", { default => 50 }, ],
+        [ "statp=i",     "parts of stats",     { default => 50 }, ],
         [ 'redoanchors', 'redo anchors when merging anchors', ],
         [],
-        [ "cov3=s", "down sampling coverage of PacBio reads", ],
+        [ "cov3=s",  "down sampling coverage of PacBio reads", ],
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
         [],
         [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
         [ "mergemax=i", "max length of merged overlaps", { default => 30 }, ],
         [ "fillmax=i",  "max length of gaps",            { default => 2000 }, ],
         [],
-        [ 'trinity', 'de novo rna-seq', ],
+        [ 'trinity',  'de novo rna-seq', ],
         [ "rnamin=i", "minimum assembled contig length", { default => 200 }, ],
         { show_defaults => 1, }
     );
@@ -832,7 +833,97 @@ sub gen_quorum {
 
     $sh_name = "2_quorum.sh";
     print "Create $sh_name\n";
-    $template = <<'EOF';
+
+    if ( $opt->{noquorum} ) {
+        $template = <<'EOF';
+[% INCLUDE header.tt2 %]
+log_warn [% sh %]
+
+for Q in 0 [% opt.qual2 %]; do
+    for L in 0 [% opt.len2 %]; do
+        cd ${BASH_DIR}
+
+        if [ ! -d 2_illumina/Q${Q}L${L} ]; then
+            continue;
+        fi
+
+        if [ -e 2_illumina/Q${Q}L${L}/pe.cor.fa.gz ]; then
+            log_debug "2_illumina/Q${Q}L${L}/pe.cor.fa.gz presents"
+            continue;
+        fi
+
+        cd 2_illumina/Q${Q}L${L}
+
+        for PREFIX in R S T; do
+            if [ ! -e ${PREFIX}1.fq.gz ]; then
+                continue;
+            fi
+
+            if [ -e ${PREFIX}.cor.fa.gz ]; then
+                echo >&2 "    ${PREFIX}.cor.fa.gz exists"
+                continue;
+            fi
+
+            log_info "Qual-Len: Q${Q}L${L}.${PREFIX}"
+            log_info "    faops interleave"
+
+            # Create .cor.fa.gz
+            faops interleave \
+                -p pe \
+                ${PREFIX}1.fq.gz \
+[% IF not opt.se -%]
+                ${PREFIX}2.fq.gz \
+[% END -%]
+                > ${PREFIX}.interleave.fa
+
+            if [ -e ${PREFIX}s.fq.gz ]; then
+                faops interleave \
+                    -p se \
+                    ${PREFIX}s.fq.gz \
+                    >> ${PREFIX}.interleave.fa
+            fi
+
+            # Shuffle interleaved reads.
+            log_info Shuffle interleaved reads.
+            cat ${PREFIX}.interleave.fa |
+                awk '{
+                    OFS="\t"; \
+                    getline seq; \
+                    getline name2; \
+                    getline seq2; \
+                    print $0,seq,name2,seq2}' |
+                shuf |
+                awk '{OFS="\n"; print $1,$2,$3,$4}' \
+                > ${PREFIX}.cor.fa
+            rm ${PREFIX}.interleave.fa
+            pigz -p [% opt.parallel %] ${PREFIX}.cor.fa
+
+        done
+
+        log_info "Combine Q${Q}L${L} .cor.fa.gz files"
+        if [ -e S1.fq.gz ]; then
+            gzip -d -c [RST].cor.fa.gz |
+                awk '{
+                    OFS="\t"; \
+                    getline seq; \
+                    getline name2; \
+                    getline seq2; \
+                    print $0,seq,name2,seq2}' |
+                shuf |
+                awk '{OFS="\n"; print $1,$2,$3,$4}' \
+                > pe.cor.fa
+            pigz -p [% opt.parallel %] pe.cor.fa
+            rm [RST].cor.fa.gz
+        else
+            mv R.cor.fa.gz pe.cor.fa.gz
+        fi
+    done
+done
+
+EOF
+    }
+    else {
+        $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn [% sh %]
 
@@ -964,6 +1055,7 @@ if [ -e Q0L0/statQuorum.R ]; then
 fi
 
 EOF
+    }
     $tt->process(
         \$template,
         {   args => $args,

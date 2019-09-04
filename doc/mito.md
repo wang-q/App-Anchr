@@ -53,7 +53,7 @@ cd ${HOME}/data/anchr/s288cMito/2_illumina/ref
 anchr trim \
     --dedupe \
     --qual 20 --len 60 \
-    --filter "adapter,phix,artifact" \
+    --filter "adapter,artifact" \
     --artifact ../../1_genome/ref.fa \
     --matchk 31 \
     --parallel 16 \
