@@ -101,67 +101,17 @@ brew install wang-q/tap/platanus
 
 ## PacBio specific tools
 
-PacBio is switching its data format from `hdf5` to `bam`, but at now (early 2017) the majority of
-public available PacBio data are still in formats of `.bax.h5` or `hdf5.tgz`. For dealing with these
-files, PacBio releases some tools which can be installed by another specific tool, named
-`pitchfork`.
-
-Their tools *can* be compiled under macOS with Homebrew.
-
-* Install some third party tools
+PacBio is switching its data format from `hdf5` to `bam`, but many public available PacBio data are
+still in formats of `.bax.h5` or `hdf5.tgz`. To deali with these files, PacBio releases some tools
+which can be installed by `bioconda`.
 
 ```bash
-brew install md5sha1sum
-brew install zlib boost openblas
-brew install python cmake ccache hdf5
-brew install samtools
+# https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
-brew cleanup --force # only keep the latest version
-```
-
-* Compiling with `pitchfork`
-
-```bash
-mkdir -p ~/share/pitchfork
-git clone https://github.com/PacificBiosciences/pitchfork ~/share/pitchfork
-cd ~/share/pitchfork
-
-cat <<EOF > settings.mk
-HAVE_ZLIB     = $(brew --prefix)/Cellar/$(brew list --versions zlib     | sed 's/ /\//')
-HAVE_BOOST    = $(brew --prefix)/Cellar/$(brew list --versions boost    | sed 's/ /\//')
-HAVE_OPENBLAS = $(brew --prefix)/Cellar/$(brew list --versions openblas | sed 's/ /\//')
-
-HAVE_PYTHON   = $(brew --prefix)/bin/python
-HAVE_CMAKE    = $(brew --prefix)/bin/cmake
-HAVE_CCACHE   = $(brew --prefix)/Cellar/$(brew list --versions ccache | sed 's/ /\//')/bin/ccache
-HAVE_HDF5     = $(brew --prefix)/Cellar/$(brew list --versions hdf5   | sed 's/ /\//')
-
-EOF
-
-# fix several Makefiles
-sed -i".bak" "/rsync/d" ~/share/pitchfork/ports/python/virtualenv/Makefile
-
-sed -i".bak" "s/-- third-party\/cpp-optparse/--remote/" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-sed -i".bak" "/third-party\/gtest/d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-sed -i".bak" "/ccache /d" ~/share/pitchfork/ports/pacbio/bam2fastx/Makefile
-
-cd ~/share/pitchfork
-make pip
-deployment/bin/pip install --upgrade pip setuptools wheel virtualenv
-
-make bax2bam
-```
-
-* Compiled binary files are in `~/share/pitchfork/deployment`. Run `source
-  ~/share/pitchfork/deployment/setup-env.sh` will bring this path to your `$PATH`. This action would
-  also pollute your bash environment, if anything went wrong, restart your terminal.
-
-```bash
-source ~/share/pitchfork/deployment/setup-env.sh
+conda install bax2bam
 
 bax2bam --help
 ```
-
 
 # *Escherichia coli* str. K-12 substr. MG1655
 
@@ -191,6 +141,7 @@ cat U00096.fa |
     > genome.fa
 
 cp ${HOME}/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
+
 ```
 
 * Illumina
