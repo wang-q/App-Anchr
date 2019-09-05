@@ -20,7 +20,7 @@ for package in fastqc samtools sickle; do
     check_install ${package}
 done
 
-for package in bbtools masurca minimap miniasm sga; do
+for package in bbtools minimap miniasm sga; do
     check_install brewsci/bio/${package};
 done
 
@@ -31,5 +31,9 @@ done
 for package in faops jrange sparsemem dazz_db@20161112 daligner@20170203; do
     check_install wang-q/tap/${package};
 done
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    check_install brewsci/bio/masurca
+fi
 
 exit 0

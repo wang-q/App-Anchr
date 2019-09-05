@@ -9,6 +9,9 @@ save START_TIME
 NUM_THREADS=[% opt.parallel %]
 save NUM_THREADS
 
+# Add masurca to $PATH
+export PATH="$(readlink -f $(which masurca) | xargs dirname):$PATH"
+
 #----------------------------#
 # Read stats of PE reads
 #----------------------------#
