@@ -6,7 +6,7 @@ use autodie;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => "break long reads by anthors";
+use constant abstract => "break long reads by anchors";
 
 sub opt_spec {
     return (

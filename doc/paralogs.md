@@ -47,18 +47,6 @@ for strain in s288c iso_1 n2 col_0 nip; do
         -v
 done
 
-# organelles, don't mask
-for strain in s288cO col_0O nipO; do
-    if [ -d ${strain} ]; then
-        echo >&2 Skip ${strain};
-        continue;
-    fi
-
-    egaz prepseq \
-        ~/data/anchr/${strain}/1_genome/genome.fa -o ${strain} \
-        -v
-done
-
 ```
 
 ## Self-alignments
@@ -107,20 +95,5 @@ egaz template \
 bash model/1_self.sh
 bash model/3_proc.sh
 bash model/4_circos.sh
-
-```
-
-```bash
-cd ~/data/anchr/paralogs
-
-egaz template \
-    genomes/s288cO genomes/col_0O genomes/nipO \
-    --self -o organelle/ \
-    --circos \
-    --length 200 --parallel 16 -v
-
-bash organelle/1_self.sh
-bash organelle/3_proc.sh
-bash organelle/4_circos.sh
 
 ```

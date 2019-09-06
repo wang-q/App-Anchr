@@ -104,11 +104,11 @@ aria2c -x 9 -s 3 -c http://ccb.jhu.edu/gage_b/datasets/B_cereus_MiSeq.tar.gz
 tar xvf B_cereus_MiSeq.tar.gz raw/frag_1__cov100x.fastq
 tar xvf B_cereus_MiSeq.tar.gz raw/frag_2__cov100x.fastq
 
-cat raw/frag_1__cov100x.fastq \
-    | pigz -p 8 -c \
+cat raw/frag_1__cov100x.fastq |
+    pigz -p 8 -c \
     > R1.fq.gz
-cat raw/frag_2__cov100x.fastq \
-    | pigz -p 8 -c \
+cat raw/frag_2__cov100x.fastq |
+    pigz -p 8 -c \
     > R2.fq.gz
 
 rm -fr raw

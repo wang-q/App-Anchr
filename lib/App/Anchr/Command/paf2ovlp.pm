@@ -10,7 +10,7 @@ use MCE::Candy;
 use App::Anchr -command;
 use App::Anchr::Common;
 
-use constant abstract => 'minimap paf to ovelaps';
+use constant abstract => 'minimap paf to overlaps';
 
 sub opt_spec {
     return (
