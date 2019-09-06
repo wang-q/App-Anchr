@@ -140,7 +140,10 @@ cat U00096.fa |
     ' \
     > genome.fa
 
-cp ${HOME}/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas paralogs.fas
+cat ${HOME}/data/anchr/paralogs/model/Results/e_coli/e_coli.multi.fas |
+    faops filter -N -d stdin stdout |
+    faops filter stdin stdout \
+    > paralogs.fa
 
 ```
 
