@@ -658,35 +658,47 @@ cd ${HOME}/data/anchr/${BASE_NAME}
 
 mkdir -p miniasm
 
-minimap -Sw5 -L100 -m0 -t16 \
-    3_pacbio/pacbio.40x.fasta 3_pacbio/pacbio.40x.fasta \
-    > miniasm/pacbio.40x.paf
+gzip -dcf 3_pacbio/pacbio.X80.raw.fasta.gz > miniasm/pacbio.X80.raw.fasta
 
-miniasm miniasm/pacbio.40x.paf > miniasm/utg.noseq.gfa
+time minimap -Sw5 -L100 -m0 -t16 \
+    miniasm/pacbio.X80.raw.fasta miniasm/pacbio.X80.raw.fasta \
+    > miniasm/pacbio.80x.paf
+#real    0m19.743s
+#user    1m58.954s
+#sys     0m10.610s
 
-miniasm -f 3_pacbio/pacbio.40x.fasta miniasm/pacbio.40x.paf \
+miniasm miniasm/pacbio.80x.paf > miniasm/utg.noseq.gfa
+
+miniasm -f miniasm/pacbio.X80.raw.fasta miniasm/pacbio.80x.paf \
     > miniasm/utg.gfa
 
 awk '/^S/{print ">"$2"\n"$3}' miniasm/utg.gfa > miniasm/utg.fa
 
 minimap 1_genome/genome.fa miniasm/utg.fa | minidot - > miniasm/utg.eps
+
 ```
 
 ```bash
-#real    0m19.504s
-#user    1m11.237s
-#sys     0m18.500s
-time anchr paf2ovlp --parallel 16 miniasm/pacbio.40x.paf -o miniasm/pacbio.40x.ovlp.tsv
+time anchr paf2ovlp --parallel 16 miniasm/pacbio.80x.paf -o miniasm/pacbio.80x.ovlp.tsv
+#real    1m8.334s
+#user    3m47.480s
+#sys     0m55.144s
 
-#real    0m19.451s
-#user    0m43.343s
-#sys     0m9.734s
-time anchr paf2ovlp --parallel 4 miniasm/pacbio.40x.paf -o miniasm/pacbio.40x.ovlp.tsv
+time anchr paf2ovlp --parallel 4 miniasm/pacbio.80x.paf -o miniasm/pacbio.80x.ovlp.tsv
+#real    1m8.601s
+#user    2m35.514s
+#sys     0m32.165s
 
-#real    0m17.324s
-#user    0m9.276s
-#sys     1m23.833s
-time jrange covered miniasm/pacbio.40x.paf --longest --paf -o miniasm/pacbio.40x.pos.txt
+time jrange covered miniasm/pacbio.80x.paf --longest --paf -o miniasm/pacbio.80x.ranges
+#real    0m11.531s
+#user    0m15.590s
+#sys     0m2.310s
+
+time ovlpr covered miniasm/pacbio.80x.paf --longest --paf -o miniasm/pacbio.80x.ranges
+#real    0m9.309s
+#user    0m9.215s
+#sys     0m0.096s
+
 ```
 
 ## Local corrections
