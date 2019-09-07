@@ -2574,6 +2574,7 @@ rm -fr 3_pacbio/fasta
 rm -fr 3_pacbio/untar
 
 rm 3_pacbio/pacbio.X*.fasta
+rm 3_pacbio/pacbio.X*.fasta.gz
 
 # down sampling
 rm -fr 4_downSampling
