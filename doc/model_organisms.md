@@ -239,7 +239,7 @@ anchr template \
     --sgapreqc \
     --sgastats \
     --trim2 "--dedupe --tile --cutoff 5 --cutk 31" \
-    --qual2 "20 25 30" \
+    --qual2 "25 30" \
     --len2 "60" \
     --filter "adapter,artifact" \
     --mergereads \
@@ -308,12 +308,16 @@ Table: statReads
 | Name       |     N50 |     Sum |        # |
 |:-----------|--------:|--------:|---------:|
 | Genome     | 4641652 | 4641652 |        1 |
-| Paralogs   |    1934 |  195673 |      106 |
+| Paralogs   |    1736 |  184052 |      105 |
 | Illumina.R |     151 |   1.73G | 11458940 |
-| trim.R     |     149 |   1.43G | 10373822 |
-| Q20L60     |     149 |   1.41G | 10234457 |
-| Q25L60     |     148 |   1.32G |  9948384 |
-| Q30L60     |     128 |   1.11G |  9318689 |
+| trim.R     |     149 |   1.43G | 10372386 |
+| Q25L60     |     148 |   1.32G |  9947136 |
+| Q30L60     |     128 |   1.11G |  9317618 |
+| PacBio     |   13982 | 748.51M |    87225 |
+| X80.raw    |   13990 | 371.34M |    44005 |
+| X80.trim   |   13614 | 339.07M |    38722 |
+| Xall.raw   |   13982 | 748.51M |    87225 |
+| Xall.trim  |   13630 | 688.58M |    77687 |
 
 
 Table: statTrimReads
@@ -321,46 +325,44 @@ Table: statTrimReads
 | Name           | N50 |     Sum |        # |
 |:---------------|----:|--------:|---------:|
 | clumpify       | 151 |   1.73G | 11439000 |
-| filteredbytile | 151 |   1.67G | 11071898 |
-| highpass       | 151 |   1.66G | 11000336 |
-| trim           | 149 |   1.43G | 10373822 |
-| filter         | 149 |   1.43G | 10373822 |
-| R1             | 150 | 736.66M |  5186911 |
-| R2             | 144 | 690.99M |  5186911 |
+| filteredbytile | 151 |   1.67G | 11070014 |
+| highpass       | 151 |   1.66G | 10999036 |
+| trim           | 149 |   1.43G | 10372888 |
+| filter         | 149 |   1.43G | 10372386 |
+| R1             | 150 | 736.56M |  5186193 |
+| R2             | 144 |  690.9M |  5186193 |
 | Rs             |   0 |       0 |        0 |
 
 
 ```text
 #R.trim
-#Matched        17807   0.16188%
-#Name   Reads   ReadsPct
+#Matched	17785	0.16170%
+#Name	Reads	ReadsPct
 ```
 
 ```text
 #R.filter
-#Matched        0       0.00000%
-#Name   Reads   ReadsPct
+#Matched	501	0.00483%
+#Name	Reads	ReadsPct
 ```
 
 ```text
 #R.peaks
-#k      31
-#unique_kmers   20758839
-#error_kmers    16233867
-#genomic_kmers  4524972
-#main_peak      246
-#genome_size_in_peaks   4594276
-#genome_size    4626768
-#haploid_genome_size    4626768
-#fold_coverage  246
-#haploid_fold_coverage  246
-#ploidy 1
-#percent_repeat_in_peaks        1.509
-#percent_repeat 1.750
-#start  center  stop    max     volume
+#k	31
+#unique_kmers	20744856
+#error_kmers	16219973
+#genomic_kmers	4524883
+#main_peak	246
+#genome_size_in_peaks	4597085
+#genome_size	4626540
+#haploid_genome_size	4626540
+#fold_coverage	246
+#haploid_fold_coverage	246
+#ploidy	1
+#percent_repeat_in_peaks	1.573
+#percent_repeat	1.750
+#start	center	stop	max	volume
 ```
-
-
 
 
 Table: statMergeReads
