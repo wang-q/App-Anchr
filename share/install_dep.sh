@@ -28,7 +28,7 @@ for package in poa; do
     check_install brewsci/science/${package};
 done
 
-for package in faops jrange sparsemem dazz_db@20161112 daligner@20170203; do
+for package in faops sparsemem dazz_db@20161112 daligner@20170203; do
     check_install wang-q/tap/${package};
 done
 

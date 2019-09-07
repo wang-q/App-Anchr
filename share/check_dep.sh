@@ -84,12 +84,6 @@ hash daligner 2>/dev/null || {
     exit 1;
 }
 
-hash jrange 2>/dev/null || {
-    echo >&2 "jrange is required but it's not installed.";
-    echo >&2 "Install with homebrew: brew install wang-q/tap/jrange";
-    exit 1;
-}
-
 hash minimap 2>/dev/null || {
     echo >&2 "minimap is required but it's not installed.";
     echo >&2 "Install with homebrew: brew install homebrew/science/minimap";
@@ -151,12 +145,6 @@ hash sparsemem 2>/dev/null || {
 hash fasops 2>/dev/null || {
     echo >&2 "fasops is required but it's not installed.";
     echo >&2 "Install with cpanm: cpanm App::Fasops";
-    exit 1;
-}
-
-hash linkr 2>/dev/null || {
-    echo >&2 "linkr is required but it's not installed.";
-    echo >&2 "Install with cargo: cargo install intspan";
     exit 1;
 }
 
