@@ -519,10 +519,9 @@ Table: statCanu
 | Name                |     N50 |     Sum |     # |
 |:--------------------|--------:|--------:|------:|
 | Genome              | 4641652 | 4641652 |     1 |
-| Paralogs            |    1934 |  195673 |   106 |
-| X80.trim.corrected  |   16807 | 176.08M | 11225 |
-| Xall.trim.corrected |   20099 | 176.21M |  9730 |
-| X80.trim.contig     | 4657917 | 4657917 |     1 |
+| X80.trim.corrected  |   16792 | 176.13M | 11231 |
+| Xall.trim.corrected |   20090 | 176.31M |  9734 |
+| X80.trim.contig     | 4657920 | 4657920 |     1 |
 | Xall.trim.contig    | 4678422 | 4678422 |     1 |
 
 

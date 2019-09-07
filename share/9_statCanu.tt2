@@ -13,7 +13,7 @@ if [ -e 1_genome/genome.fa ]; then
 fi
 if [ -e 1_genome/paralogs.fas ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fas;) >> statCanu.md
+        $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fa;) >> statCanu.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "
