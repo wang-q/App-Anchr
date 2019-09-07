@@ -16,9 +16,6 @@ sub opt_spec {
         [ "tmp=s",        "user defined tempdir", ],
         [ "parallel|p=i", "number of threads",          { default => 8 }, ],
         [ "verbose|v",    "verbose mode", ],
-        [   "jvm=s",
-            "jvm parameters for jrange, e.g. '-d64 -server -Xms1g -Xmx64g -XX:-UseGCOverheadLimit'",
-        ],
         { show_defaults => 1, }
     );
 }
@@ -30,10 +27,14 @@ sub usage_desc {
 sub description {
     my $desc;
     $desc .= ucfirst(abstract) . ".\n";
-    $desc .= "\tAll operations are running in a tempdir and no intermediate files are kept.\n";
-    $desc
-        .= "\tThe inaccuracy of overlap boundary identified by mininap may loose some parts of reads, ";
-    $desc .= "\tbut also prevent adaptor or chimeric sequences joining with good parts of reads.\n";
+    $desc .= <<'MARKDOWN';
+
+All operations are running in a tempdir and no intermediate files are kept.
+
+The inaccuracy of overlap boundary identified by mininap may loose some parts of reads,
+but also prevent adaptor or chimeric sequences joining with good parts of reads.
+
+MARKDOWN
     return $desc;
 }
 
@@ -99,16 +100,7 @@ sub execute {
 
     {    # paf to covered
         my $cmd;
-        if ( $opt->{jvm} ) {
-            my $jrange_path = `jrange path`;
-            chomp $jrange_path;
-            $cmd .= sprintf "java %s -jar %s", $opt->{jvm}, $jrange_path;
-        }
-        else {
-            $cmd .= "jrange";
-        }
-
-        $cmd .= " covered $basename.paf";
+        $cmd .= "ovlpr covered $basename.paf";
         $cmd .= " --coverage $opt->{coverage} --len $opt->{len} --longest --paf";
         $cmd .= " -o $basename.covered.txt";
         App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
