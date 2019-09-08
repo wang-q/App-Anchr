@@ -110,7 +110,7 @@ sub execute {
         }
     }
 
-    {    # Outputs. stdout is handeld by faops
+    {    # Outputs. stdout is handled by faops
         my $cmd;
         $cmd .= "faops region -l 0 $infile $basename.covered.txt $opt->{outfile}";
         App::Anchr::Common::exec_cmd( $cmd, { verbose => $opt->{verbose}, } );
