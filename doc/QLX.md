@@ -689,6 +689,11 @@ time anchr paf2ovlp --parallel 4 miniasm/pacbio.80x.paf -o miniasm/pacbio.80x.ov
 #user    2m35.514s
 #sys     0m32.165s
 
+time ovlpr paf2ovlp miniasm/pacbio.80x.paf -o miniasm/pacbio.80x.ovlp.tsv
+#real    0m4.705s
+#user    0m3.716s
+#sys     0m0.223s
+
 time jrange covered miniasm/pacbio.80x.paf --longest --paf -o miniasm/pacbio.80x.ranges
 #real    0m11.531s
 #user    0m15.590s
