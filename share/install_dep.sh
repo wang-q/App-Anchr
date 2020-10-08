@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 check_install () {
-    if brew list --versions $1 > /dev/null; then
+    if brew list --versions "$1" > /dev/null; then
         echo "$1 already installed"
     else
-        brew install $1;
+        brew install "$1";
     fi
 }
 
@@ -24,6 +24,7 @@ for package in bbtools minimap miniasm sga; do
     check_install brewsci/bio/${package};
 done
 
+# shellcheck disable=SC2043
 for package in poa; do
     check_install brewsci/science/${package};
 done
