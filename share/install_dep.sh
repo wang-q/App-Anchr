@@ -9,7 +9,7 @@ check_install () {
 }
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    check_install adoptopenjdk
+    check_install adoptopenjdk@11
 fi
 
 for package in graphviz jq parallel pigz; do
