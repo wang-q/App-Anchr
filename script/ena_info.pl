@@ -25,7 +25,7 @@ use Text::CSV_XS;
     )
     = Getopt::Long::Descriptive::describe_options(
     <<'MARKDOWN',
-Grab information from ena.
+Grab information from ENA.
 
 Usage: perl %c [options] <infile.csv> > <outfile.json>
 
