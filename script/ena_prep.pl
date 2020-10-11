@@ -8,7 +8,6 @@ use YAML::Syck qw();
 
 use Path::Tiny qw();
 use Text::CSV_XS qw();
-use URI;
 
 #----------------------------------------------------------#
 # GetOpt section

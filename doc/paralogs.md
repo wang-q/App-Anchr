@@ -19,6 +19,11 @@ for strain in e_coli Bcer Mabs Rsph Vcho; do
         continue;
     fi
 
+    if [ ! -e ~/data/anchr/${strain}/1_genome/genome.fa ]; then
+        echo >&2 Skip ${strain};
+        continue;
+    fi
+
     egaz prepseq \
         ~/data/anchr/${strain}/1_genome/genome.fa -o ${strain} \
         --repeatmasker '--parallel 16' -v
