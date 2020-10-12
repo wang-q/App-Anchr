@@ -48,7 +48,7 @@ sub opt_spec {
         [ "statp=i",     "parts of stats",     { default => 50 }, ],
         [ 'redoanchors', 'redo anchors when merging anchors', ],
         [],
-        [ "cov3=s",  "down sampling coverage of PacBio reads", ],
+        [ "cov3=s",  "down sampling coverage of PacBio/NanoPore reads", ],
         [ "qual3=s", "raw and/or trim", { default => "trim" } ],
         [],
         [ 'fillanchor', 'fill gaps among anchors with 2GS contigs', ],
@@ -755,42 +755,42 @@ log_warn [% sh %]
 for X in [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
-    if [ -e 3_pacbio/pacbio.X${X}.raw.fasta.gz ]; then
-        echo "  pacbio.X${X}.raw.fasta.gz presents";
+    if [ -e 3_long/L.X${X}.raw.fasta.gz ]; then
+        echo "  L.X${X}.raw.fasta.gz presents";
         continue;
     fi
 
     # shortcut if cov3 == all
     if [[ ${X} == "all" ]]; then
-        pushd 3_pacbio > /dev/null
+        pushd 3_long > /dev/null
 
-        ln -s pacbio.fasta.gz pacbio.X${X}.raw.fasta.gz
+        ln -s L.fasta.gz L.X${X}.raw.fasta.gz
 
         popd > /dev/null
         continue;
     fi
 
     faops split-about -m 1 -l 0 \
-        3_pacbio/pacbio.fasta.gz \
+        3_long/L.fasta.gz \
         $(( [% opt.genome %] * ${X} )) \
-        3_pacbio
+        3_long
 
-    cat 3_pacbio/000.fa | pigz > "3_pacbio/pacbio.X${X}.raw.fasta.gz"
-    rm 3_pacbio/000.fa
+    cat 3_long/000.fa | pigz > "3_long/L.X${X}.raw.fasta.gz"
+    rm 3_long/000.fa
 done
 
 for X in  [% opt.cov3 %]; do
     printf "==> Coverage: %s\n" ${X}
 
-    if [ -e 3_pacbio/pacbio.X${X}.trim.fasta.gz ]; then
-        echo "  pacbio.X${X}.trim.fasta.gz presents";
+    if [ -e 3_long/L.X${X}.trim.fasta.gz ]; then
+        echo "  L.X${X}.trim.fasta.gz presents";
         continue;
     fi
 
     anchr trimlong --parallel [% opt.parallel2 %] -v \
-        "3_pacbio/pacbio.X${X}.raw.fasta.gz" \
+        "3_long/L.X${X}.raw.fasta.gz" \
         -o stdout |
-        pigz > "3_pacbio/pacbio.X${X}.trim.fasta.gz"
+        pigz > "3_long/L.X${X}.trim.fasta.gz"
 done
 
 EOF
@@ -1844,8 +1844,8 @@ log_warn 5_canu.sh
 parallel --no-run-if-empty --linebuffer -k -j 1 "
     echo >&2 '==> Group X{1}-{2}'
 
-    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta.gz ]; then
-        echo >&2 '  3_pacbio/pacbio.X{1}.{2}.fasta.gz not exists'
+    if [ ! -e 3_long/L.X{1}.{2}.fasta.gz ]; then
+        echo >&2 '  3_long/L.X{1}.{2}.fasta.gz not exists'
         exit;
     fi
 
@@ -1860,7 +1860,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         gnuplot="/dev/null" gnuplotTested=true \
         useGrid=false \
         genomeSize=[% opt.genome %] \
-        -pacbio-raw 3_pacbio/pacbio.X{1}.{2}.fasta.gz
+        -L-raw 3_long/L.X{1}.{2}.fasta.gz
     " ::: [% opt.cov3 %] ::: [% opt.qual3 %]
 
 # sometimes canu failed
@@ -1886,8 +1886,8 @@ log_warn 5_canu.sh
 
 echo >&2 '==> Group X[% cov %]-[% qual %]'
 
-if [ ! -e 3_pacbio/pacbio.X[% cov %].[% qual %].fasta ]; then
-    echo >&2 '  3_pacbio/pacbio.X{[% cov %].[% qual %].fasta not exists'
+if [ ! -e 3_long/L.X[% cov %].[% qual %].fasta ]; then
+    echo >&2 '  3_long/L.X{[% cov %].[% qual %].fasta not exists'
     exit;
 fi
 
@@ -1902,7 +1902,7 @@ canu \
     gnuplotTested=true \
     useGrid=false \
     genomeSize=[% opt.genome %] \
-    -pacbio-raw 3_pacbio/pacbio.X[% cov %].[% qual %].fasta
+    -L-raw 3_long/L.X[% cov %].[% qual %].fasta
 
 # sometimes canu failed
 exit;
@@ -2387,9 +2387,9 @@ sub gen_cleanup {
 log_warn [% sh %]
 
 # bax2bam
-rm -fr 3_pacbio/bam/*
-rm -fr 3_pacbio/fasta/*
-rm -fr 3_pacbio/untar/*
+rm -fr 3_long/bam/*
+rm -fr 3_long/fasta/*
+rm -fr 3_long/untar/*
 
 # illumina
 parallel --no-run-if-empty --linebuffer -k -j 1 "
@@ -2568,13 +2568,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
 rm -fr 2_illumina/trim/
 rm -fr 2_illumina/mergereads/
 
-# pacbio
-rm -fr 3_pacbio/bam
-rm -fr 3_pacbio/fasta
-rm -fr 3_pacbio/untar
+# Long
+rm -fr 3_long/bam
+rm -fr 3_long/fasta
+rm -fr 3_long/untar
 
-rm 3_pacbio/pacbio.X*.fasta
-rm 3_pacbio/pacbio.X*.fasta.gz
+rm 3_long/L.X*.fasta
+rm 3_long/L.X*.fasta.gz
 
 # down sampling
 rm -fr 4_downSampling

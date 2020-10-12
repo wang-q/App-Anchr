@@ -60,9 +60,9 @@ for PREFIX in R S T; do
         >> statReads.md
 done
 
-if [ -e 3_pacbio/pacbio.fasta.gz ]; then
+if [ -e 3_long/L.fasta.gz ]; then
     printf "| %s | %s | %s | %s |\n" \
-        $(echo "PacBio"; stat_format 3_pacbio/pacbio.fasta.gz;) >> statReads.md
+        $(echo "L"; stat_format 3_long/L.fasta.gz;) >> statReads.md
 fi
 
 parallel --no-run-if-empty -k -j 2 "
@@ -73,7 +73,7 @@ parallel --no-run-if-empty -k -j 2 "
             '
     }
 
-    if [ ! -e 3_pacbio/pacbio.X{1}.{2}.fasta.gz ]; then
+    if [ ! -e 3_long/L.X{1}.{2}.fasta.gz ]; then
         exit;
     fi
 
@@ -81,7 +81,7 @@ parallel --no-run-if-empty -k -j 2 "
         \$(
             echo X{1}.{2};
             stat_format \
-                3_pacbio/pacbio.X{1}.{2}.fasta.gz;
+                3_long/L.X{1}.{2}.fasta.gz;
         )
     " ::: [% opt.cov3 %] ::: raw trim \
     >> statReads.md
