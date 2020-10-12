@@ -1860,7 +1860,7 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
         gnuplot="/dev/null" gnuplotTested=true \
         useGrid=false \
         genomeSize=[% opt.genome %] \
-        -L-raw 3_long/L.X{1}.{2}.fasta.gz
+        -pacbio-raw 3_long/L.X{1}.{2}.fasta.gz
     " ::: [% opt.cov3 %] ::: [% opt.qual3 %]
 
 # sometimes canu failed
