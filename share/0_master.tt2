@@ -61,10 +61,10 @@ fi
 if [ -e 4_anchors.sh ]; then
     bash 4_anchors.sh;
 fi
-[% IF opt.tadpole -%]
 if [ -e 9_statAnchors.sh ]; then
     bash 9_statAnchors.sh 4_kunitigs statKunitigsAnchors.md
 fi
+[% IF opt.tadpole -%]
 
 if [ -e 4_tadpole.sh ]; then
     bash 4_tadpole.sh
@@ -74,10 +74,6 @@ if [ -e 4_tadpoleAnchors.sh ]; then
 fi
 if [ -e 9_statAnchors.sh ]; then
     bash 9_statAnchors.sh 4_tadpole statTadpoleAnchors.md
-fi
-[% ELSE -%]
-if [ -e 9_statAnchors.sh ]; then
-    bash 9_statAnchors.sh;
 fi
 [% END -%]
 
@@ -94,10 +90,10 @@ fi
 if [ -e 6_anchors.sh ]; then
     bash 6_anchors.sh;
 fi
-[% IF opt.tadpole -%]
 if [ -e 9_statMRAnchors.sh ]; then
     bash 9_statMRAnchors.sh 6_kunitigs statMRKunitigsAnchors.md
 fi
+[% IF opt.tadpole -%]
 
 if [ -e 6_tadpole.sh ]; then
     bash 6_tadpole.sh
@@ -108,59 +104,58 @@ fi
 if [ -e 9_statMRAnchors.sh ]; then
     bash 9_statMRAnchors.sh 6_tadpole statMRTadpoleAnchors.md
 fi
-[% ELSE -%]
-if [ -e 9_statMRAnchors.sh ]; then
-    bash 9_statMRAnchors.sh;
-fi
 [% END -%]
 
 #----------------------------#
 # merge anchors
 #----------------------------#
-[% IF opt.tadpole -%]
 if [ -e 7_mergeAnchors.sh ]; then
     bash 7_mergeAnchors.sh 4_kunitigs 7_mergeKunitigsAnchors;
+[% IF opt.tadpole -%]
     bash 7_mergeAnchors.sh 4_tadpole 7_mergeTadpoleAnchors;
+[% END -%]
+fi
 
 [% IF opt.mergereads -%]
+if [ -e 7_mergeAnchors.sh ]; then
     bash 7_mergeAnchors.sh 6_kunitigs 7_mergeMRKunitigsAnchors
+[% IF opt.tadpole -%]
     bash 7_mergeAnchors.sh 6_tadpole 7_mergeMRTadpoleAnchors
 [% END -%]
-
-    bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors;
-fi
-[% ELSE -%]
-if [ -e 7_mergeAnchors.sh ]; then
-    bash 7_mergeAnchors.sh 4_kunitigs;
 fi
 [% END -%]
+
+if [ -e 7_mergeAnchors.sh ]; then
+    bash 7_mergeAnchors.sh 7_merge 7_mergeAnchors;
+fi
 
 if [ -e 7_mergeAnchors.sh ]; then
     bash 9_statMergeAnchors.sh
 fi
 
 # anchor sort on ref
-if [ -e 1_genome/genome.fa ]; then
-    for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
-        if [ ! -d ${D} ]; then
-            continue;
-        fi
+if [ hash bbmap.sh 2>/dev/null ]; then
+    if [ -e 1_genome/genome.fa ]; then
+        for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
+            if [ ! -d ${D} ]; then
+                continue;
+            fi
 
-        bash ~/Scripts/cpan/App-Anchr/share/sort_on_ref.sh \
-            ${D}/anchor.merge.fasta 1_genome/genome.fa ${D}/anchor.sort
-        nucmer -l 200 1_genome/genome.fa ${D}/anchor.sort.fa
-        mummerplot --postscript out.delta -p anchor.sort --small
+            sort_on_ref.sh ${D}/anchor.merge.fasta 1_genome/genome.fa ${D}/anchor.sort
+            nucmer -l 200 1_genome/genome.fa ${D}/anchor.sort.fa
+            mummerplot --postscript out.delta -p anchor.sort --small
 
-        # mummerplot files
-        rm *.[fr]plot
-        rm out.delta
-        rm *.gp
-        mv anchor.sort.ps ${D}/
+            # mummerplot files
+            rm *.[fr]plot
+            rm out.delta
+            rm *.gp
+            mv anchor.sort.ps ${D}/
 
-        # minidot
-        minimap ${D}/anchor.sort.fa 1_genome/genome.fa \
-            | minidot - > ${D}/anchor.minidot.eps
-    done
+            # minidot
+            minimap ${D}/anchor.sort.fa 1_genome/genome.fa |
+                minidot - > ${D}/anchor.minidot.eps
+        done
+    fi
 fi
 
 #----------------------------#
