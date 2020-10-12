@@ -13,7 +13,7 @@ Paralogs detected here **may** overlap with transposons/retrotransposons.
 mkdir -p ~/data/anchr/paralogs/genomes
 cd ~/data/anchr/paralogs/genomes
 
-for strain in e_coli Bcer Mabs Rsph Vcho; do
+for strain in mg1655 dh5alpha Bcer Mabs Rsph Vcho; do
     if [ -d ${strain} ]; then
         echo >&2 Skip ${strain};
         continue;
@@ -60,6 +60,21 @@ done
 cd ~/data/anchr/paralogs
 
 egaz template \
+    genomes/mg1655 genomes/dh5alpha \
+    --self -o e_coli/ \
+    --circos \
+    --length 1000 --parallel 16 -v
+
+bash e_coli/1_self.sh
+bash e_coli/3_proc.sh
+bash e_coli/4_circos.sh
+
+```
+
+```bash
+cd ~/data/anchr/paralogs
+
+egaz template \
     genomes/Bcer genomes/Mabs genomes/Rsph genomes/Vcho \
     --self -o gage/ \
     --circos \
@@ -92,7 +107,7 @@ bash otherbac/4_circos.sh
 cd ~/data/anchr/paralogs
 
 egaz template \
-    genomes/e_coli genomes/s288c genomes/iso_1 genomes/n2 genomes/col_0 genomes/nip \
+    genomes/s288c genomes/iso_1 genomes/n2 genomes/col_0 genomes/nip \
     --self -o model/ \
     --circos \
     --length 1000 --parallel 16 -v
