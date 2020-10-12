@@ -93,7 +93,7 @@ EOF
 
 faops replace GCF_000196095.1_ASM19609v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Vpar/Vpar.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Vpar/Vpar.multi.fas paralogs.fa
 
 ```
 
@@ -394,7 +394,7 @@ EOF
 
 faops replace GCF_000008485.1_ASM848v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Lpne/Lpne.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Lpne/Lpne.multi.fas paralogs.fa
 
 ```
 
@@ -700,7 +700,7 @@ EOF
 
 faops replace GCF_000006845.1_ASM684v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Ngon/Ngon.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Ngon/Ngon.multi.fas paralogs.fa
 
 ```
 
@@ -1000,7 +1000,7 @@ EOF
 
 faops replace GCF_000008805.1_ASM880v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Nmen/Nmen.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Nmen/Nmen.multi.fas paralogs.fa
 
 ```
 
@@ -1304,7 +1304,7 @@ EOF
 
 faops replace GCF_000195715.1_ASM19571v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Bper/Bper.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Bper/Bper.multi.fas paralogs.fa
 
 ```
 
@@ -1448,7 +1448,7 @@ EOF
 
 faops replace GCF_000195815.1_ASM19581v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Cdip/Cdip.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Cdip/Cdip.multi.fas paralogs.fa
 
 ```
 
@@ -1735,7 +1735,7 @@ EOF
 
 faops replace GCF_000008985.1_ASM898v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Ftul/Ftul.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Ftul/Ftul.multi.fas paralogs.fa
 
 ```
 
@@ -2069,7 +2069,7 @@ EOF
 
 faops replace GCF_000006925.2_ASM692v2_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Sfle/Sfle.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Sfle/Sfle.multi.fas paralogs.fa
 
 ```
 
@@ -2358,7 +2358,7 @@ EOF
 
 faops replace GCF_000027305.1_ASM2730v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Hinf/Hinf.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Hinf/Hinf.multi.fas paralogs.fa
 
 ```
 
@@ -2647,7 +2647,7 @@ EOF
 
 faops replace GCF_000196035.1_ASM19603v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Lmon/Lmon.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Lmon/Lmon.multi.fas paralogs.fa
 
 ```
 
@@ -2993,7 +2993,7 @@ EOF
 
 faops replace GCF_000009205.1_ASM920v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Cdif/Cdif.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Cdif/Cdif.multi.fas paralogs.fa
 
 ```
 
@@ -3358,7 +3358,7 @@ EOF
 
 faops replace GCF_000009085.1_ASM908v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/otherbac/Results/Cjej/Cjej.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/otherbac/Results/Cjej/Cjej.multi.fas paralogs.fa
 
 ```
 
@@ -3723,8 +3723,8 @@ EOF
 
 faops replace GCF_000840245.1_ViralProj14204_genomic.fna.gz replace.tsv genome.fa
 
-#cp ~/data/anchr/paralogs/otherbac/Results/lambda/lambda.multi.fas paralogs.fas
-touch paralogs.fas
+#cp ~/data/anchr/paralogs/otherbac/Results/lambda/lambda.multi.fas paralogs.fa
+touch paralogs.fa
 
 ```
 

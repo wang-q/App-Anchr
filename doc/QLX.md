@@ -29,7 +29,7 @@ mkdir -p ${HOME}/data/anchr/${BASE_NAME}/1_genome
 cd ${HOME}/data/anchr/${BASE_NAME}/1_genome
 
 cp ~/data/anchr/e_coli/1_genome/genome.fa .
-cp ~/data/anchr/e_coli/1_genome/paralogs.fas .
+cp ~/data/anchr/e_coli/1_genome/paralogs.fa .
 
 ```
 
@@ -563,7 +563,7 @@ rm -fr 9_quast_mergeKunitigsQxx
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     $( parallel -k 'printf "7_mergeKunitigsQ{1}/anchor.merge.fasta "' ::: ${READ_QUAL} ) \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "$( parallel -k 'printf "mergeQ{1},"' ::: ${READ_QUAL} )paralogs" \
     -o 9_quast_mergeKunitigsQxx
 
@@ -583,7 +583,7 @@ quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     7_mergeKunitigsQ0L0/anchor.merge.fasta \
     $( parallel -k 'printf "7_mergeKunitigsQ{1}L{2}/anchor.merge.fasta "' ::: ${READ_QUAL} ::: ${READ_LEN} ) \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "Q0L0,$( parallel -k 'printf "mergeQ{1}L{2},"' ::: ${READ_QUAL} ::: ${READ_LEN} )paralogs" \
     -o 9_qa_mergeQxxLxx
 
@@ -615,7 +615,7 @@ rm -fr 9_qa_mergeQxxXxx
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     $( parallel -k 'printf "7_mergeKunitigsQ{1}X{2}/anchor.merge.fasta "' ::: 0 ${READ_QUAL} ::: ${COVERAGE2} ) \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "$( parallel -k 'printf "mergeQ{1}X{2},"' ::: 0 ${READ_QUAL} ::: ${COVERAGE2} )paralogs" \
     -o 9_qa_mergeQxxXxx
 
@@ -636,7 +636,7 @@ rm -fr 9_quast_mergeTadpoleQxxXxx
 quast --no-check --threads 16 \
     -R 1_genome/genome.fa \
     $( parallel -k 'printf "7_mergeTadpoleQ{1}X{2}/anchor.merge.fasta "' ::: 0 ${READ_QUAL} ::: ${COVERAGE2} ) \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "$( parallel -k 'printf "mergeQ{1}X{2},"' ::: 0 ${READ_QUAL} ::: ${COVERAGE2} )paralogs" \
     -o 9_quast_mergeTadpoleQxxXxx
 
@@ -803,7 +803,7 @@ quast --no-check --threads 16 \
     localCor/globalTrim/${BASE_NAME}.contigs.fasta \
     canu-raw-40x/${BASE_NAME}.contigs.fasta \
     canu-trim-40x/${BASE_NAME}.contigs.fasta \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "anchor,localCor,localCorIndep,localTrim,globalTrim,40x,40x.trim,paralogs" \
     -o 9_qa_localCor
 
@@ -1184,7 +1184,7 @@ quast --no-check --threads 16 \
     abyss/abyss.non-contained.fasta \
     abyss/abyss.fasta \
     7_mergeKunitigsQ0/anchor.merge.fasta \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "$( parallel -k 'printf "K{1}-{2},"' ::: 31 41 51 61 71 81 ::: unitigs contigs scaffolds )abyss.non-contained,abyss,Kunitigs,paralogs" \
     -o 9_qa_abyss
 
@@ -1257,7 +1257,7 @@ quast --no-check --threads 16 \
     sga/sga.non-contained.fasta \
     sga/primary-contigs.fa \
     sga/primary-variants.fa \
-    1_genome/paralogs.fas \
+    1_genome/paralogs.fa \
     --label "sga.non-contained,sga.contigs,sga.variants,paralogs" \
     -o 9_qa_sga
 

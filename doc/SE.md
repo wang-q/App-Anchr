@@ -39,7 +39,7 @@ mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
 cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
 cp ../../e_coli/1_genome/genome.fa .
-cp ../../e_coli/1_genome/paralogs.fas .
+cp ../../e_coli/1_genome/paralogs.fa .
 
 ```
 
@@ -109,7 +109,7 @@ mkdir -p ${WORKING_DIR}/${BASE_NAME}/1_genome
 cd ${WORKING_DIR}/${BASE_NAME}/1_genome
 
 cp ../../e_coli/1_genome/genome.fa .
-cp ../../e_coli/1_genome/paralogs.fas .
+cp ../../e_coli/1_genome/paralogs.fa .
 
 ```
 

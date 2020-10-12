@@ -11,7 +11,7 @@ if [ -e 1_genome/genome.fa ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "Genome";   faops n50 -H -S -C 1_genome/genome.fa;) >> statCanu.md
 fi
-if [ -e 1_genome/paralogs.fas ]; then
+if [ -e 1_genome/paralogs.fa ]; then
     printf "| %s | %s | %s | %s |\n" \
         $(echo "Paralogs"; faops n50 -H -S -C 1_genome/paralogs.fa;) >> statCanu.md
 fi

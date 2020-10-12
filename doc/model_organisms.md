@@ -60,7 +60,7 @@ faops order Saccharomyces_cerevisiae.R64-1-1.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,VI,VII,VIII,IX,X,XI,XII,XIII,XIV,XV,XVI,Mito}; do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/s288c/s288c.multi.fas 1_genome/paralogs.fa
 
 ```
 
@@ -191,7 +191,7 @@ mkdir -p ~/data/anchr/s288c_MiSeq/1_genome
 cd ~/data/anchr/s288c_MiSeq/1_genome
 
 ln -fs ../../s288c/1_genome/genome.fa genome.fa
-ln -fs ../../s288c/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../s288c/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/s288c_MiSeq/2_illumina
 cd ~/data/anchr/s288c_MiSeq/2_illumina
@@ -466,7 +466,7 @@ mkdir -p ~/data/anchr/s288c_HiSeq/1_genome
 cd ~/data/anchr/s288c_HiSeq/1_genome
 
 ln -fs ../../s288c/1_genome/genome.fa genome.fa
-ln -fs ../../s288c/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../s288c/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/s288c_HiSeq/2_illumina
 cd ~/data/anchr/s288c_HiSeq/2_illumina
@@ -782,7 +782,7 @@ faops order Drosophila_melanogaster.BDGP6.dna_sm.toplevel.fa.gz \
     <(for chr in {2L,2R,3L,3R,4,X,Y,dmel_mitochondrion_genome}; do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/iso_1/iso_1.multi.fas 1_genome/paralogs.fa
 ```
 
 * Illumina
@@ -936,7 +936,7 @@ mkdir -p ~/data/anchr/iso_1_HiSeq_2000/1_genome
 cd ~/data/anchr/iso_1_HiSeq_2000/1_genome
 
 ln -fs ../../iso_1/1_genome/genome.fa genome.fa
-ln -fs ../../iso_1/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../iso_1/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/iso_1_HiSeq_2000/2_illumina
 cd ~/data/anchr/iso_1_HiSeq_2000/2_illumina
@@ -1197,7 +1197,7 @@ mkdir -p ~/data/anchr/iso_1_HiSeq_2500/1_genome
 cd ~/data/anchr/iso_1_HiSeq_2500/1_genome
 
 ln -fs ../../iso_1/1_genome/genome.fa genome.fa
-ln -fs ../../iso_1/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../iso_1/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/iso_1_HiSeq_2500/2_illumina
 cd ~/data/anchr/iso_1_HiSeq_2500/2_illumina
@@ -1456,7 +1456,7 @@ faops order Caenorhabditis_elegans.WBcel235.dna_sm.toplevel.fa.gz \
     <(for chr in {I,II,III,IV,V,X,MtDNA}; do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/n2/n2.multi.fas 1_genome/paralogs.fa
 ```
 
 * Illumina
@@ -1558,7 +1558,7 @@ mkdir -p ~/data/anchr/n2_pe120/1_genome
 cd ~/data/anchr/n2_pe120/1_genome
 
 ln -fs ../../n2/1_genome/genome.fa genome.fa
-ln -fs ../../n2/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../n2/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/n2_pe120/2_illumina
 cd ~/data/anchr/n2_pe120/2_illumina
@@ -1853,7 +1853,7 @@ mkdir -p ~/data/anchr/n2_pe100/1_genome
 cd ~/data/anchr/n2_pe100/1_genome
 
 ln -fs ../../n2/1_genome/genome.fa genome.fa
-ln -fs ../../n2/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../n2/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/n2_pe100/2_illumina
 cd ~/data/anchr/n2_pe100/2_illumina
@@ -2371,7 +2371,7 @@ mkdir -p ~/data/anchr/col_0_MiSeq/1_genome
 cd ~/data/anchr/col_0_MiSeq/1_genome
 
 ln -fs ../../col_0/1_genome/genome.fa genome.fa
-ln -fs ../../col_0/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../col_0/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/col_0_MiSeq/2_illumina
 cd ~/data/anchr/col_0_MiSeq/2_illumina
@@ -2639,7 +2639,7 @@ mkdir -p ~/data/anchr/col_0_HiSeq/1_genome
 cd ~/data/anchr/col_0_HiSeq/1_genome
 
 ln -fs ../../col_0/1_genome/genome.fa genome.fa
-ln -fs ../../col_0/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../col_0/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/col_0_HiSeq/2_illumina
 cd ~/data/anchr/col_0_HiSeq/2_illumina
@@ -2991,7 +2991,7 @@ faops order Oryza_sativa.IRGSP-1.0.29.dna_sm.toplevel.fa.gz \
     <(for chr in $(seq 1 1 12); do echo $chr; done) \
     genome.fa
 
-cp ~/data/anchr/paralogs/model/Results/nip/nip.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/model/Results/nip/nip.multi.fas paralogs.fa
 
 ```
 
@@ -3094,7 +3094,7 @@ mkdir -p ~/data/anchr/nip_pe300/1_genome
 cd ~/data/anchr/nip_pe300/1_genome
 
 ln -fs ../../nip/1_genome/genome.fa genome.fa
-ln -fs ../../nip/1_genome/paralogs.fas paralogs.fas
+ln -fs ../../nip/1_genome/paralogs.fa paralogs.fa
 
 mkdir -p ~/data/anchr/nip_pe300/2_illumina
 cd ~/data/anchr/nip_pe300/2_illumina

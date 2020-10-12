@@ -84,7 +84,7 @@ EOF
 
 faops replace GCF_000008005.1_ASM800v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/gage/Results/Bcer/Bcer.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Bcer/Bcer.multi.fas paralogs.fa
 
 ```
 
@@ -199,7 +199,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -456,7 +456,7 @@ EOF
 
 faops replace GCF_000069185.1_ASM6918v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/gage/Results/Mabs/Mabs.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Mabs/Mabs.multi.fas paralogs.fa
 
 ```
 
@@ -569,7 +569,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -808,7 +808,7 @@ EOF
 
 faops replace GCF_000012905.2_ASM1290v2_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/gage/Results/Rsph/Rsph.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Rsph/Rsph.multi.fas paralogs.fa
 
 ```
 
@@ -923,7 +923,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -1161,7 +1161,7 @@ EOF
 
 faops replace GCF_000006745.1_ASM674v1_genomic.fna.gz replace.tsv genome.fa
 
-cp ~/data/anchr/paralogs/gage/Results/Vcho/Vcho.multi.fas paralogs.fas
+cp ~/data/anchr/paralogs/gage/Results/Vcho/Vcho.multi.fas paralogs.fa
 
 ```
 
@@ -1275,7 +1275,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -1497,7 +1497,7 @@ mkdir -p ${HOME}/data/anchr/VchoH/1_genome
 cd ${HOME}/data/anchr/VchoH/1_genome
 
 cp ~/data/anchr/Vcho/1_genome/genome.fa .
-cp ~/data/anchr/Vcho/1_genome/paralogs.fas .
+cp ~/data/anchr/Vcho/1_genome/paralogs.fa .
 
 ```
 
@@ -1615,7 +1615,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -1833,7 +1833,7 @@ mkdir -p ${HOME}/data/anchr/RsphF/1_genome
 cd ${HOME}/data/anchr/RsphF/1_genome
 
 cp ~/data/anchr/Rsph/1_genome/genome.fa .
-cp ~/data/anchr/Rsph/1_genome/paralogs.fas .
+cp ~/data/anchr/Rsph/1_genome/paralogs.fa .
 
 ```
 
@@ -1941,7 +1941,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -2251,7 +2251,7 @@ mkdir -p 1_genome
 cd 1_genome
 
 cp ~/data/anchr/Mabs/1_genome/genome.fa .
-cp ~/data/anchr/Mabs/1_genome/paralogs.fas .
+cp ~/data/anchr/Mabs/1_genome/paralogs.fa .
 
 ```
 
@@ -2360,7 +2360,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
@@ -2618,7 +2618,7 @@ mkdir -p 1_genome
 cd 1_genome
 
 cp ~/data/anchr/Vcho/1_genome/genome.fa .
-cp ~/data/anchr/Vcho/1_genome/paralogs.fas .
+cp ~/data/anchr/Vcho/1_genome/paralogs.fa .
 
 ```
 
@@ -2727,7 +2727,7 @@ bsub -w "ended(${BASE_NAME}-9_statFinal)" \
         8_competitor/velvet_ctg.fasta \
         7_mergeAnchors/anchor.merge.fasta \
         7_mergeAnchors/others.non-contained.fasta \
-        1_genome/paralogs.fas \
+        1_genome/paralogs.fa \
         --label "abyss,cabog,mira,msrca,sga,soap,spades,velvet,merge,others,paralogs" \
         -o 9_quast_competitor
     '
