@@ -343,15 +343,15 @@ for PREFIX in R S T; do
         overwrite
 
     picard SortSam \
-        I=${PREFIX}.tadpole.sam.gz \
-        O=${PREFIX}.tadpole.sort.bam \
-        SORT_ORDER=coordinate \
-        VALIDATION_STRINGENCY=LENIENT
+        -I ${PREFIX}.tadpole.sam.gz \
+        -O ${PREFIX}.tadpole.sort.bam \
+        -SORT_ORDER coordinate \
+        -VALIDATION_STRINGENCY LENIENT
 
     picard CollectInsertSizeMetrics \
-        I=${PREFIX}.tadpole.sort.bam \
-        O=${PREFIX}.insert_size.tadpole.txt \
-        HISTOGRAM_FILE=${PREFIX}.insert_size.tadpole.pdf
+        -I ${PREFIX}.tadpole.sort.bam \
+        -O ${PREFIX}.insert_size.tadpole.txt \
+        -HISTOGRAM_FILE ${PREFIX}.insert_size.tadpole.pdf
 
     if [ -e ../../1_genome/genome.fa ]; then
         bbmap.sh \
@@ -370,15 +370,15 @@ for PREFIX in R S T; do
             overwrite
 
         picard SortSam \
-            I=${PREFIX}.genome.sam.gz \
-            O=${PREFIX}.genome.sort.bam \
-            SORT_ORDER=coordinate \
-            VALIDATION_STRINGENCY=LENIENT
+            -I ${PREFIX}.genome.sam.gz \
+            -O ${PREFIX}.genome.sort.bam \
+            -SORT_ORDER coordinate \
+            -VALIDATION_STRINGENCY LENIENT
 
         picard CollectInsertSizeMetrics \
-            I=${PREFIX}.genome.sort.bam \
-            O=${PREFIX}.insert_size.genome.txt \
-            HISTOGRAM_FILE=${PREFIX}.insert_size.genome.pdf
+            -I ${PREFIX}.genome.sort.bam \
+            -O ${PREFIX}.insert_size.genome.txt \
+            -HISTOGRAM_FILE ${PREFIX}.insert_size.genome.pdf
     fi
 
     find . -name "${PREFIX}.*.sam.gz" -or -name "${PREFIX}.*.sort.bam" |
