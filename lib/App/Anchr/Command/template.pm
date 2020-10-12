@@ -1857,7 +1857,6 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
     canu \
         -p [% opt.basename %] \
         -d 5_canu_X{1}-{2} \
-        gnuplot="/dev/null" gnuplotTested=true \
         useGrid=false \
         genomeSize=[% opt.genome %] \
         -pacbio-raw 3_long/L.X{1}.{2}.fasta.gz
