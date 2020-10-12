@@ -58,21 +58,17 @@ MY_TMP_DIR=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'`
 log_info "Temp dir: ${MY_TMP_DIR}"
 
 log_info "To positive strands"
-perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f ${FA_FILE} -g ${REF_FILE} \
-    --length 500 -o ${MY_TMP_DIR}/replace.tsv
+egaz ${FA_FILE} ${REF_FILE} --length 500 -o ${MY_TMP_DIR}/replace.tsv
 
-cat ${MY_TMP_DIR}/replace.tsv \
-    | perl -nla -e '/\(\-\)/ and print $F[0];' \
+cat ${MY_TMP_DIR}/replace.tsv |
+    perl -nla -e '/\(\-\)/ and print $F[0];' \
     > ${MY_TMP_DIR}/rc.list
 
 faops rc -l 0 -f ${MY_TMP_DIR}/rc.list ${FA_FILE} ${MY_TMP_DIR}/strand.fa
 
 log_info "Recreate replace.tsv"
 # now all positive strands
-perl ~/Scripts/egaz/sparsemem_exact.pl \
-    -f ${MY_TMP_DIR}/strand.fa -g ${REF_FILE} \
-    --length 500 -o ${MY_TMP_DIR}/replace.tsv
+egaz ${MY_TMP_DIR}/strand.fa --length 500 -o ${MY_TMP_DIR}/replace.tsv
 
 log_info "Replace headers"
 # pretend to be a fas file
