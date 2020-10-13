@@ -134,7 +134,7 @@ if [ -e 7_mergeAnchors.sh ]; then
 fi
 
 # anchor sort on ref
-if [ hash egaz 2>/dev/null ]; then
+if hash egaz 2>/dev/null; then
     if [ -e 1_genome/genome.fa ]; then
         for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
             if [ ! -d ${D} ]; then
