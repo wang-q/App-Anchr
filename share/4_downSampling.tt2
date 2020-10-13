@@ -8,7 +8,8 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     echo '==> Q{1}L{2}X{3}'
 
     if [ -d 4_downSampling/Q{1}L{2}X{3} ]; then
-        rm -fr 4_downSampling/Q{1}L{2}X{3}
+        echo '    Skip'
+        exit
     fi
 
     # shortcut if cov2 == all
@@ -36,9 +37,9 @@ parallel --no-run-if-empty --linebuffer -k -j 2 "
     for i in \$( seq 0 1 \${MAX_SERIAL} ); do
         P=\$( printf '%03d' \${i})
         printf \"  * Part: %s\n\" \${P}
-        
+
         mkdir -p \"4_downSampling/Q{1}L{2}X{3}P\${P}\"
-        
+
         mv  \"4_downSampling/Q{1}L{2}X{3}/\${P}.fa\" \
             \"4_downSampling/Q{1}L{2}X{3}P\${P}/pe.cor.fa\"
         cp 2_illumina/Q{1}L{2}/environment.json \"4_downSampling/Q{1}L{2}X{3}P\${P}\"

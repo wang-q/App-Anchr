@@ -134,7 +134,7 @@ if [ -e 7_mergeAnchors.sh ]; then
 fi
 
 # anchor sort on ref
-if [ hash bbmap.sh 2>/dev/null ]; then
+if [ hash egaz 2>/dev/null ]; then
     if [ -e 1_genome/genome.fa ]; then
         for D in 7_mergeAnchors 7_mergeKunitigsAnchors 7_mergeTadpoleAnchors 7_mergeMRKunitigsAnchors 7_mergeMRTadpoleAnchors; do
             if [ ! -d ${D} ]; then
@@ -216,10 +216,10 @@ if [ -e 7_anchorFill.sh ]; then
 fi
 [% ELSE -%]
 if [ -e 7_anchorLong.sh ]; then
-    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_Xall-trim/[% opt.basename %].correctedReads.fasta.gz 2;
+    bash 7_anchorLong.sh 7_mergeAnchors/anchor.merge.fasta 5_canu_X[% opt.cov3.split(' ').0 %]-[% opt.qual3.split(' ').0 %]/[% opt.basename %].correctedReads.fasta.gz 2;
 fi
 if [ -e 7_anchorFill.sh ]; then
-    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_Xall-trim/[% opt.basename %].contigs.fasta 1;
+    bash 7_anchorFill.sh 7_anchorLong/contig.fasta 5_canu_X[% opt.cov3.split(' ').0 %]-[% opt.qual3.split(' ').0 %]/[% opt.basename %].contigs.fasta 1;
 fi
 [% END -%]
 
