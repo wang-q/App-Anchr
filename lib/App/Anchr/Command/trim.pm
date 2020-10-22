@@ -29,7 +29,7 @@ sub opt_spec {
         [ "dedupe",       "the uniq step", ],
         [ "tile",         "with normal Illumina names, do tile based filtering", ],
         [ "cutoff=i",     "min kmer depth cutoff", ],
-        [ "sample=i",     "the sample step", ],
+        [ "sample=i",     "the sampling step", ],
         [ "parallel|p=i", "number of threads", { default => 16 }, ],
         [ "xmx=s",        "set Java memory usage", ],
         { show_defaults => 1, }

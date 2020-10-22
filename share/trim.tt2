@@ -37,7 +37,7 @@ if [ ! -e filteredbytile.fq.gz ]; then
     filterbytile.sh \
         in=temp.fq.gz \
         out=filteredbytile.fq.gz \
-    threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
+        threads=[% opt.parallel %][% IF opt.xmx %] -Xmx[% opt.xmx %][% END %]
 fi
 rm temp.fq.gz; ln -s filteredbytile.fq.gz temp.fq.gz
 [% END -%]
