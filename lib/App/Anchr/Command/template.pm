@@ -17,9 +17,7 @@ sub opt_spec {
         [ "genome=i",     "your best guess of the haploid genome size", ],
         [ "is_euk",       "eukaryotes or not", ],
         [ "se",           "single end mode for Illumina", ],
-        [ "separate",     "separate each Qual-Len/Cov-Qual groups", ],
         [ "parallel|p=i", "number of threads", { default => 16 }, ],
-        [ "tmp=s",        "user defined tempdir", ],
         [ "xmx=s",        "set Java memory usage", ],
         [],
         [ 'fastqc',     'run FastQC', ],
@@ -31,19 +29,19 @@ sub opt_spec {
         [],
         [ "trim2=s",   "opts for trimming Illumina reads", { default => "--dedupe" }, ],
         [ "sample2=i", "total sampling coverage of Illumina reads", ],
-        [ "qual2=s",  "quality threshold",                         { default => "25 30" }, ],
-        [ "len2=s",   "filter reads less or equal to this length", { default => "60" }, ],
-        [ "filter=s", "adapter, artifact",                         { default => "adapter" }, ],
+        [ "qual2=s",   "quality threshold",                         { default => "25 30" }, ],
+        [ "len2=s",    "filter reads less or equal to this length", { default => "60" }, ],
+        [ "filter=s",  "adapter, artifact",                         { default => "adapter" }, ],
         [],
         [ 'noquorum',    'skip quorum', ],
         [ 'mergereads',  'also run the mergereads approach', ],
         [ "prefilter=i", "prefilter=N (1 or 2) for tadpole and bbmerge", ],
         [ 'ecphase=s',   'Error-correct phases', { default => "1,2,3", }, ],
         [],
-        [ "cov2=s",  "down sampling coverage of Illumina reads", { default => "40 80" }, ],
-        [ 'tadpole', 'use tadpole to create k-unitigs', ],
-        [ 'megahit', 'feed megahit with sampled mergereads', ],
-        [ 'spades',  'feed spades with sampled mergereads', ],
+        [ "cov2=s",      "down sampling coverage of Illumina reads", { default => "40 80" }, ],
+        [ 'tadpole',     'use tadpole to create k-unitigs', ],
+        [ 'megahit',     'feed megahit with sampled mergereads', ],
+        [ 'spades',      'feed spades with sampled mergereads', ],
         [ "splitp=i",    "parts of splitting", { default => 50 }, ],
         [ "statp=i",     "parts of stats",     { default => 50 }, ],
         [ 'redoanchors', 'redo anchors when merging anchors', ],
@@ -1834,10 +1832,9 @@ sub gen_canu {
 
     return unless $opt->{cov3};
 
-    if ( !$opt->{separate} ) {
-        $sh_name = "5_canu.sh";
-        print "Create $sh_name\n";
-        $template = <<'EOF';
+    $sh_name = "5_canu.sh";
+    print "Create $sh_name\n";
+    $template = <<'EOF';
 [% INCLUDE header.tt2 %]
 log_warn 5_canu.sh
 
@@ -1866,61 +1863,13 @@ parallel --no-run-if-empty --linebuffer -k -j 1 "
 exit;
 
 EOF
-        $tt->process(
-            \$template,
-            {   args => $args,
-                opt  => $opt,
-            },
-            Path::Tiny::path( $args->[0], $sh_name )->stringify
-        ) or die Template->error;
-    }
-    else {
-        for my $cov ( grep {defined} split /\s+/, $opt->{cov3} ) {
-            for my $qual ( grep {defined} split /\s+/, $opt->{qual3} ) {
-                $sh_name = "5_canu_X${cov}-${qual}.sh";
-                print "Create $sh_name\n";
-                $template = <<'EOF';
-[% INCLUDE header.tt2 %]
-log_warn 5_canu.sh
-
-echo >&2 '==> Group X[% cov %]-[% qual %]'
-
-if [ ! -e 3_long/L.X[% cov %].[% qual %].fasta ]; then
-    echo >&2 '  3_long/L.X{[% cov %].[% qual %].fasta not exists'
-    exit;
-fi
-
-if [ -e 5_canu_X[% cov %]-[% qual %]/*.contigs.fasta ]; then
-    echo >&2 '  5_canu_X[% cov %]-[% qual %]/contigs.fasta already presents'
-    exit;
-fi
-
-canu \
-    -p [% opt.basename %] \
-    -d 5_canu_X[% cov %]-[% qual %] \
-    gnuplotTested=true \
-    useGrid=false \
-    genomeSize=[% opt.genome %] \
-    -L-raw 3_long/L.X[% cov %].[% qual %].fasta
-
-# sometimes canu failed
-exit;
-
-EOF
-                $tt->process(
-                    \$template,
-                    {   args => $args,
-                        opt  => $opt,
-                        cov  => $cov,
-                        qual => $qual,
-                    },
-                    Path::Tiny::path( $args->[0], $sh_name )->stringify
-                ) or die Template->error;
-            }
-
-        }
-    }
-
+    $tt->process(
+        \$template,
+        {   args => $args,
+            opt  => $opt,
+        },
+        Path::Tiny::path( $args->[0], $sh_name )->stringify
+    ) or die Template->error;
 }
 
 sub gen_statCanu {
