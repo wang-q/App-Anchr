@@ -2997,9 +2997,9 @@ cp ~/data/anchr/paralogs/model/Results/nip/nip.multi.fas paralogs.fa
 
 * Illumina
 
-    * HiSeq 180 bp [SRX734432](https://www.ncbi.nlm.nih.gov/sra/SRX2527206) SRR1614244
+    * HiSeq 180 bp [SRX734432](https://www.ncbi.nlm.nih.gov/sra/SRX734432) SRR1614244
     * HiSeq 300 bp [SRX179254](https://www.ncbi.nlm.nih.gov/sra/SRX179254) SRR545231
-    * MiSeq 450 bp [SRX179262](https://www.ncbi.nlm.nih.gov/sra/SRX179262:)
+    * MiSeq 450 bp [SRX179262](https://www.ncbi.nlm.nih.gov/sra/SRX179262)
 
 ```bash
 mkdir -p ~/data/anchr/nip/2_illumina
